@@ -19,6 +19,31 @@ var VersionCode = 100;
  * limitations under the License.
  */
  
+var TAG = "[" + ScriptName + "] ";
+
+
+ 
+function showError(e) {
+	if(Level.getWorldName() === null) {
+		ctx.runOnUiThread(new java.lang.Runnable({ run: function(){
+	android.widget.Toast.makeText(ctx, TAG + "\n" + e, android.widget.Toast.LENGTH_LONG).show();
+		}}));
+	}else {
+		var t = (e + "").split(" ");
+		var c = "";
+		var temp = "";
+		for(var l = 0; l < t.length; l++) {
+			if(temp.split("").length > 30) {
+				c += ("\n" + ChatColor.DARK_RED);
+				temp = "";
+			}
+			c += t[l] + " ";
+			temp += t[l];
+		}
+		clientMessage(ChatColor.DARK_RED + "[" + ScriptName + " ERROR LINE: " + e.lineNumber + "]\n" + ChatColor.DARK_RED + c);
+	}
+}
+ 
 function setTexture(prototypeFile, innerPath){
 	try{
 		var dir = new java.io.File(android.os.Environment.getExternalStorageDirectory().getAbsolutePath() + "/Android/data/net.zhuoweizhang.mcpelauncher.pro/files/textures/images/" + innerPath);
@@ -101,14 +126,49 @@ setTexture(new java.io.File(android.os.Environment.getExternalStorageDirectory()
 setTexture(new java.io.File(android.os.Environment.getExternalStorageDirectory().getAbsolutePath() + "/RASHIRUDO1.png"), "mob/RASHIRUDO1.png");
 setTexture(new java.io.File(android.os.Environment.getExternalStorageDirectory().getAbsolutePath() + "/RASHIRUDO2.png"), "mob/RASHIRUDO2.png");
 setTexture(new java.io.File(android.os.Environment.getExternalStorageDirectory().getAbsolutePath() + "/RASHIRUDO3.png"), "mob/RASHIRUDO3.png");
+Block.defineBlock(252, "Light sources", [ ["missing_tile",0],["missing_tile",0],["missing_tile",0],["missing_tile",0], ["missing_tile",0],["missing_tile",0]], 0, false, 0);
+//Block.setRenderLayer(252, 6);
+Block.setRenderType(252, 5);
+Block.setLightOpacity(252, 15);
+Block.setDestroyTime(252, 0);
+Block.setLightLevel(252, 15);
+Block.setExplosionResistance(252, 1);
+Block.setShape(252, 0, 0, 0, 0, 0, 0);
+//Player.addItemCreativeInv(252, 5, 0);
 
 var Skill = {};
 var SkillDat = [];
 var Affect = {};
+var AffectDat = [];
 var Effect = {};
 var EffectDat = [];
 var Models = {};
 var GB_System = {};
+var GB_SystemCache = {shildExceptionList: [], trash: []};
+
+Affect.shock = function(ent, duration, rate, power, range, shockInfection, shockInfRate) {
+	for(var e = 0; e < AffectEnt.length; e++) {
+		if(AffectDat[e].type === "shock" && AffectDat[e].ent === ent) {
+			if(AffectDat[e].duration < 200) {
+				AffectDat[e].duration += duration
+			}
+			if(AffectDat[e].power < power) {
+				AffectDat[e].power = power
+			}
+			if(AffectDat[e].rate < (1/rate)) {
+				AffectDat[e].rate = (1/rate)
+			}
+			if(!AffectDat[e].shockInfection && shockInfection) {
+				AffectDat[e].shockInfection = shockInfection
+			}
+			if(AffectDat[e].shockInfRate < (1/shockInfRate)) {
+				AffectDat[e].shockInfRate = (1/shockInfRate);
+			}
+			return;
+		}
+	}
+	AffectDat.push({type: "shock", ent: ent, duration: duration, rate: 1/rate, power: power, range: range, shockInfention: shockInfention, shockInfRate: 1/shockInfRate});
+}
 
 Effect.shock = function(x, y, z, vX, vY, vZ, duration) {
 	var p = Math.floor(Math.random() * 10);
@@ -126,7 +186,7 @@ Effect.shock = function(x, y, z, vX, vY, vZ, duration) {
 		default:
 			var skin = ["mob/td11.png", "mob/td12.png", "mob/td13.png"];
 	}
-	var e = Level.spawnMob(x, y, z, 39, skin[0]);
+	var e = Level.spawnMob(x, y, z, 11, skin[0]);
 	Entity.setRenderType(e, Models.shock_R.renderType);
 	Entity.setCollisionSize(e, 0, 0);
 	Entity.setRot(e, Math.floor(Math.random() * 360, 0));
@@ -141,118 +201,57 @@ Skill.ZAKERU = function(x, y, z, yaw, pitch,  duration, speed, long, emissionTyp
 
 Skill.RASHIRUDO = function(x, y, z, yaw, duration, hp, minReverseVel, minReverseVelY, shock) {
 	clientMessage(ChatColor.YELLOW + "RASHIRUDO!");
-	SkillDat.push({type: "RASHIRUDO", ent: null, mod: 0, skinType: 1, x: x, y: y, z: z, yaw: yaw, dur: duration, hp: hp, minVel: minReverseVel, minVelY: minReverseVelY, shock: shock});
+	var ax = absRangeX(yaw + 90, 0);
+	var ay = absRangeY(yaw + 90, 0);
+	var az = absRangeZ(yaw + 90, 0);
+	ent = Level.spawnMob(x, y + 1, z, 11, "mob/RASHIRUDO.png");
+	Entity.setRenderType(ent, Models.RASHIRUDO_R.renderType);
+	Entity.setHealth(ent, 74,5);
+	Entity.setCollisionSize(ent, 0, 0);
+	GB_SystemCache.shildExceptionList.push(ent);
+	for(var cy = 0; cy <= 5; cy++) {
+		if(Level.getTile(x, y + cy, z) === 0) {
+			Level.setTile(x, y + cy, z, 252, 0)
+		}
+	}
+	GB_System.RASHIRUDO_Activity(ent, 2, 1, yaw, x, y + 4.5, z, x + (ax * 3.5), y + (ay * 3.5), z + (az * 3.5), x - (ax * 3.5), y - (ay * 3.5), z - (az * 3.5), x + (ax * 3.5), y + (ay * 3.5) + 9, z + (az * 3.5), x - (ax * 3.5), y - (ay * 3.5) + 9, z - (az * 3.5));
+	SkillDat.push({type: "RASHIRUDO", ent: ent, mod: 1, skinType: 1, x: x, y: y, z: z, ax: ax, ay: ay, az: az, yaw: yaw, dur: duration, hp: hp, minVel: minReverseVel, minVelY: minReverseVelY, shock: shock});
 };
 
-GB_System.skillManager = function() {try {
-	for(var e = 0; e < SkillDat.length; e++) {
-		var t = SkillDat[e];
+GB_System.affectManager = function() {try {
+	for(var e = 0; e < AffectDat.length; e++) {
+		var t = AffectData[e];
 		switch(t.type) {
-			case "ZAKERU":
-				for(var f = 0; f < t.ent.length; f++) {
-					Entity.setVelY(t.ent[f][0], 0);
-					Entity.setRot(t.ent[f][0], Math.round(t.yaw), 0);
-					Entity.setVelX(t.ent[f][0], 0);
-					Entity.setVelZ(t.ent[f][0], 0);
-					Entity.setHealth(t.ent[f][0], 744);
-					if(Math.random() < 0.5) {
-						Effect.shock(Entity.getX(t.ent[f][0]) + (Math.random() * 4 - 2), Entity.getY(t.ent[f][0]) + (Math.random() * 4 - 2), Entity.getZ(t.ent[f][0]) + (Math.random() * 4 - 2), Math.random() % 0.2 - 0.1, (Math.random() % 0.2) - 0.1, (Math.random() % 0.2) - 0.1, Math.ceil(Math.random() * 6));
-					}
-					t.ent[f][1]--;
-					if(t.ent[f][1] < 1) {
-						Entity.remove(t.ent[f][0]);
-						t.ent.splice(f, 1);
-					};
+			case "shock":
+				if(--t.tempRate < 1) {
+					t.tempRate = t.rate;
+					var x = Entity.getX(t.ent);
+					var y = Entity.getY(t.ent);
+					var z = Entity.getZ(t.ent);
+					var vx = Math.random();
+					var vy = Math.random();
+					var vz = Math.random();
+					var dmg = Level.spawnMob(x, y+0.5, z, 80, "");
+					Entity.setVelY(dmg, t.power * (-1));
+					Entity.setRenderType(dmg, 0);
+					GB_SystemCache.trash.push([dmg, 2]);
+					Effect.shock(x+vx, y+vy, z+vz, vx/10, vy/10, vz/10, 6);
 				}
-				if(t.number < t.long && t.speed-- < 1) {
-					t.speed = t.maxSpeed;
-					var ent = Level.spawnMob(t.x + (absRangeX(t.yaw, t.pitch) * t.number * 2), t.y + (absRangeY(t.yaw, t.pitch) * t.number * 2), t.z + (absRangeZ(t.yaw, t.pitch) * t.number * 2), 39, "mob/ZAKERU.png");
-					Entity.setHealth(ent, 745);
-					Entity.setCollisionSize(ent, 0, 0);
-					switch(t.number) {
-						case 1:
-						case 2:
-							Entity.setRenderType(ent, Models.ZAKERU16_R.renderType);
-							break;
-						case 3:
-						case 4:
-							Entity.setRenderType(ent, Models.ZAKERU32_R.renderType);
-							break;
-						case 5:
-						case 6:
-							Entity.setRenderType(ent, Models.ZAKERU48_R.renderType);
-							break;
-						default:
-							Entity.setRenderType(ent, Models.ZAKERU64_R.renderType);
-							Level.explode(Math.round(Entity.getX(ent)*100)/100, Math.round(Entity.getY(ent)*100)/100, Math.round(Entity.getZ(ent)*100)/100, 3);
-					}
-					t.ent.push([ent, t.dur]);
-					t.number++;
-				}
-				SkillDat[e] = t;
-				if(t.number === t.long && t.ent.length === 0) {
-					SkillDat.splice(e, 1);
-				}
-				break;
-			case "RASHIRUDO":
-				if(t.mod === 0) {
-					t.ent = Level.spawnMob(t.x, t.y + 1, t.z, 39, "mob/RASHIRUDO.png");
-					Entity.setRenderType(t.ent, Models.RASHIRUDO_R.renderType);
-					Entity.setHealth(t.ent, 74,5);
-					Entity.setCollisionSize(t.ent, 0, 0);
-					t.mod = 1;
-				}else if(t.mod === 1) {
-					Entity.setPosition(t.ent, t.x, Entity.getY(t.ent), t.z);
-					Entity.setRot(t.ent, Math.round(t.yaw), 0);
-					Entity.setVelX(t.ent, absRangeX(t.yaw, 0)/100);
-					Entity.setVelZ(t.ent, absRangeZ(t.yaw, 0)/100);
-					Entity.setHealth(t.ent, 744);
-					if(t.y + 8.7 + 0.2 < Entity.getY(t.ent)) {
-						Entity.setVelY(t.ent, -0.5);
-					}else if(t.y + 8.7 - 0.2 > Entity.getY(t.ent)) {
-						Entity.setVelY(t.ent, 0.5);
-					}
-					if(Math.sqrt(Math.pow(t.x - Entity.getX(t.ent), 2) + Math.pow(t.y + 8 - Entity.getY(t.ent), 2) + Math.pow(t.z - Entity.getZ(t.ent), 2)) < 0.2) {
-						t.mod = 2;
-					}
-				}else if(t.mod === 2) {
-					Entity.setVelX(t.ent, 0);
-					Entity.setVelY(t.ent, 0);
-					Entity.setVelZ(t.ent, 0);
-					Entity.setPosition(t.ent, t.x, t.y + 8.7, t.z);
-					t.dur--;
-					Entity.setHealth(t.ent, 744);
-					Entity.setRot(t.ent, Math.round(t.yaw), 0);
-				};
-				switch(t.skinType) {
-					case 1:
-						Entity.setMobSkin(t.ent, "mob/RASHIRUDO1.png");
-						t.skinType = 2;
-						break;
-					case 2:
-						Entity.setMobSkin(t.ent, "mob/RASHIRUDO2.png");
-						t.skinType = 3;
-						break;
-					case 3:
-						Entity.setMobSkin(t.ent, "mob/RASHIRUDO3.png");
-						t.skinType = 1;
-						break;
-					default:
-						Entity.setMobSkin(t.ent, "mob/RASHIRUDO.png");
-				}
-				SkillDat[e] = t;
-				if(t.dur  < 1) {
-					Entity.remove(t.ent);
-					SkillDat.splice(e, 1);
+				//TODO: shock Infection
+				if(--t.duration < 0) {
+					AffectDat.splice(e, 1)
+				}else {
+					AffectDat[e] = t
 				}
 				break;
 			default:
-				clientMessage("Unknown Skill Type: " + t.type);
-				SkillDat.splice(e, 1);
+				clientMessage(TAG + "Unknown Affect type: " + t.type);
+				AffectDat.splice(e, 1);
+				break;
 		}
 	}
 }catch(e) {
-	clientMessage(e);
+	showError(e);
 }};
 
 GB_System.effectManager = function() {try {
@@ -277,8 +276,188 @@ GB_System.effectManager = function() {try {
 		}
 	};
 }catch(e) {
-	clientMessage(e);
+	showError(e);
 }};
+
+GB_System.skillManager = function() {try {
+	for(var e = 0; e < SkillDat.length; e++) {
+		var t = SkillDat[e];
+		switch(t.type) {
+			case "ZAKERU":
+				for(var f = 0; f < t.ent.length; f++) {
+					Entity.setVelY(t.ent[f][0], 0);
+					Entity.setRot(t.ent[f][0], Math.round(t.yaw), 0);
+					Entity.setVelX(t.ent[f][0], 0);
+					Entity.setVelZ(t.ent[f][0], 0);
+					Entity.setHealth(t.ent[f][0], 744);
+					if(Math.random() < 0.5) {
+						Effect.shock(Entity.getX(t.ent[f][0]) + (Math.random() * 4 - 2), Entity.getY(t.ent[f][0]) + (Math.random() * 4 - 2), Entity.getZ(t.ent[f][0]) + (Math.random() * 4 - 2), Math.random() % 0.2 - 0.1, (Math.random() % 0.2) - 0.1, (Math.random() % 0.2) - 0.1, Math.ceil(Math.random() * 6));
+					}
+					t.ent[f][1]--;
+					if(t.ent[f][1] < 1) {
+						Entity.remove(t.ent[f][0]);
+						if(t.ent[f][5]) {
+							Level.setTile(t.ent[f][2], t.ent[f][3], t.ent[f][4], 0, 0);
+						}
+						t.ent.splice(f, 1);
+					};
+				}
+				if(t.number < t.long && t.speed-- < 1) {
+					t.speed = t.maxSpeed;
+					var ent = Level.spawnMob(t.x + (absRangeX(t.yaw, t.pitch) * t.number * 2), t.y + (absRangeY(t.yaw, t.pitch) * t.number * 2), t.z + (absRangeZ(t.yaw, t.pitch) * t.number * 2), 11, "mob/ZAKERU.png");
+					Entity.setHealth(ent, 745);
+					Entity.setCollisionSize(ent, 0, 0);
+					switch(t.number) {
+						case 1:
+						case 2:
+							Entity.setRenderType(ent, Models.ZAKERU16_R.renderType);
+							break;
+						case 3:
+						case 4:
+							Entity.setRenderType(ent, Models.ZAKERU32_R.renderType);
+							break;
+						case 5:
+						case 6:
+							Entity.setRenderType(ent, Models.ZAKERU48_R.renderType);
+							break;
+						default:
+							Entity.setRenderType(ent, Models.ZAKERU64_R.renderType);
+							//Level.explode(Math.round(Entity.getX(ent)*100)/100, Math.round(Entity.getY(ent)*100)/100, Math.round(Entity.getZ(ent)*100)/100, 3);
+					}
+					var x = Entity.getX(ent);
+					var y = Entity.getY(ent);
+					var z = Entity.getZ(ent);
+					var ex = Level.getTile(x, y, z) === 0;
+					if(ex) {
+						Level.setTile(x, y, z, 252, 0);
+					}
+					t.ent.push([ent, t.dur, x, y, z, ex]);
+					t.number++;
+				}
+				SkillDat[e] = t;
+				if(t.number === t.long && t.ent.length === 0) {
+					SkillDat.splice(e, 1);
+				}
+				break;
+			case "RASHIRUDO":
+				if(t.mod === 1) {
+					Entity.setRot(t.ent, Math.round(t.yaw), 0);
+					Entity.setVelX(t.ent, absRangeX(t.yaw, 0)/100);
+					Entity.setVelZ(t.ent, absRangeZ(t.yaw, 0)/100);
+					Entity.setPosition(t.ent, t.x, Entity.getY(t.ent), t.z);
+					Entity.setHealth(t.ent, 744);
+					if(t.y + 8.7 + 0.2 < Entity.getY(t.ent)) {
+						Entity.setVelY(t.ent, -0.5);
+					}else if(t.y + 8.7 - 0.2 > Entity.getY(t.ent)) {
+						Entity.setVelY(t.ent, 0.5);
+					}
+					if(Math.sqrt(Math.pow(t.x - Entity.getX(t.ent), 2) + Math.pow(t.y + 8 - Entity.getY(t.ent), 2) + Math.pow(t.z - Entity.getZ(t.ent), 2)) < 0.2) {
+						t.mod = 2;
+					}
+				}else if(t.mod === 2) {
+					Entity.setRot(t.ent, Math.round(t.yaw), 0);
+					Entity.setVelY(t.ent, 0);
+					Entity.setVelX(t.ent, absRangeX(t.yaw, 0)/100);
+					Entity.setVelZ(t.ent, absRangeZ(t.yaw, 0)/100);
+					Entity.setPosition(t.ent, t.x, t.y + 8.7, t.z);
+					t.dur--;
+					Entity.setHealth(t.ent, 744);
+				};
+				switch(t.skinType) {
+					case 1:
+						Entity.setMobSkin(t.ent, "mob/RASHIRUDO1.png");
+						t.skinType = 2;
+						break;
+					case 2:
+						Entity.setMobSkin(t.ent, "mob/RASHIRUDO2.png");
+						t.skinType = 3;
+						break;
+					case 3:
+						Entity.setMobSkin(t.ent, "mob/RASHIRUDO3.png");
+						t.skinType = 1;
+						break;
+					default:
+						Entity.setMobSkin(t.ent, "mob/RASHIRUDO.png");
+				}
+				SkillDat[e] = t;
+				if(t.dur  < 1) {
+					Entity.remove(t.ent);
+					for(var cy = 0; cy <= 5; cy++) {
+						if(Level.getTile(t.x, t.y + cy, t.z) === 252) {
+							Level.setTile(t.x, t.y + cy, t.z, 0, 0)
+						}
+					}
+					SkillDat.splice(e, 1);
+				}
+				break;
+			default:
+				clientMessage("Unknown Skill Type: " + t.type);
+				SkillDat.splice(e, 1);
+		}
+	}
+}catch(e) {
+	showError(e);
+}};
+
+GB_System.RASHIRUDO_Activity = function(activator, minVel, addVelY, yaw, centerX, centerY, centerZ, sx1, sy1, sz1, sx2, sy2, sz2, ex1, ey1, ez1, ex2, ey2, ez2) {new java.lang.Thread(new java.lang.Runnable( {run: function() {try {
+	while(Entity.getEntityTypeId(activator) > 0) {
+		var ent = Entity.getAll();
+		var target = [];
+		for(var e = 0; e < ent.length; e++) {
+			if(Math.sqrt(Math.pow(centerX - Entity.getX(ent[e]), 2), Math.pow(centerY - Entity.getY(ent[e]), 2), Math.pow(centerZ - Entity.getZ(ent[e]), 2)) < 0x20) {
+				target.push(ent[e]);
+			}
+		}
+		for(var e = 0; e < target.length; e++) {
+			if(GB_SystemCache.shildExceptionList.indexOf(target[e]) !== -1) {
+				continue;
+			}
+			var X = Entity.getX(target[e]);
+			var Y = Entity.getY(target[e]);
+			var Z = Entity.getZ(target[e]);
+			var vectorX = Entity.getVelX(target[e]);
+			var vectorY = Entity.getVelY(target[e]);
+			var vectorZ = Entity.getVelZ(target[e]);
+			var vectorYaw = getYaw(vectorX, vectorY, vectorZ);
+			var vectorPitch = getPitch(vectorX, vectorY, vectorZ);
+			var vectorSpeed = Math.sqrt(Math.pow(vectorX, 2) + Math.pow(vectorY, 2), Math.pow(vectorZ, 2)); //Velocity
+			var relativeYaw1 = getYaw(sx1 - X, sy1 - Y, sz1 - Z); //left 방향의 yaw
+			var relativeYaw2 = getYaw(sx2 - X, sy2 - Y, sz2 - Z); //right 방향의 yaw
+			var relativePitch1 = getPitch(sx1 - X, sy1 - Y, sz1 - Z); //bottom 방향의 pitch
+			var relativePitch2 = getPitch(sx2 - X, sy2 - Y, sz2 - Z); //top 방향의 pitch
+			if(relativeYaw1 - relativeYaw2 > 180) {
+				relativeYaw2 += 360; //yaw가 360~0도 사이에 끼어서 잘렸을때의 해결책
+				if(relativeYaw2 - vectorYaw >= 360) {
+					vectorYaw += 360; //그에 맞춰서 vector yaw도 변환
+				}
+			}
+			if(relativeYaw2 - relativeYaw1 > 180) {
+				relativeYaw1 += 360; //위와 동일 단 좌우 대칭
+				if(relativeYaw1 - vectorYaw >= 360) {
+					vectorYaw += 360
+				}
+			}
+			if(Math.sqrt(Math.pow(centerX - X, 2) + Math.pow(centerY - Y, 2) + Math.pow(centerZ - Z, 2)) < ((vectorSpeed * 1) + 5)) { //접근속도가 빠를수록 통과버그 방지를 위해 좀 더 멀리서도 튕겨내기
+				if(((relativeYaw1 >= relativeYaw2 && relativeYaw1 >= vectorYaw && vectorYaw >= relativeYaw2) || (relativeYaw1 < relativeYaw2 && relativeYaw1 <= vectorYaw && vectorYaw <= relativeYaw2)) && (relativePitch1 >= vectorPitch && relativePitch2 <= vectorPitch)) { //(타겟의 vector yaw가 실드방향일때 || 좌우대칭*) && 타겟의 vector pitch가 실드방향일땨
+					if(vectorSpeed < minVel) {// 최소 접근속도보다 느릴때
+						Entity.setVelX(target[e], -(absX(vectorX, 0, vectorZ) * minVel));
+						//Entity.setVelY(target[e], -(absY(vectorX, vectorY, vectorZ) * minVel) - addVelY);
+						Entity.setVelY(target[e], 0.5); //수평 방향으로 날리기
+						Entity.setVelZ(target[e], -(absZ(vectorX, 0, vectorZ) * minVel));
+					}else {
+						Entity.setVelX(target[e], -vectorX);
+						Entity.setVelY(target[e], -vectorY - addVelY);
+						Entity.setVelZ(target[e], -vectorZ);
+					}
+					GB_SystemCache.shildExceptionList.push(target[e]);
+				}
+			}
+		}
+		java.lang.Thread.sleep(50);
+	}
+}catch(e) {
+	showError(e);
+}}})).start()};
 
 GB_System.setRot = function(ent, yaw) {new java.lang.Thread(new java.lang.Runnable( {run: function() {try {
 /*	while(Entity.getEntityTypeId(ent) > 0) {
@@ -290,6 +469,17 @@ GB_System.setRot = function(ent, yaw) {new java.lang.Thread(new java.lang.Runnab
 	clientMessage(e);
 }}})).start()};
 
+GB_System.trash = function() {try {
+	for(var e = 0; e < GB_SystemCache.trash.length; e++) {
+		if(GB_SystemCache.trash[1]-- <= 0) {
+			Entity.remove(GB_SystemCache.trash[0]);
+			GB_SystemCache.trash.splice(e, 1);
+		}
+	}
+}catch(e) {
+	showError(e);
+}}
+
 Models.shock_R = Renderer.createHumanoidRenderer();
 Models.shock = function(renderer) {
 	var model=renderer.getModel();
@@ -300,7 +490,7 @@ Models.shock = function(renderer) {
 	var rightLeg=model.getPart("rightLeg").clear();
 	var leftLeg=model.getPart("leftLeg").clear();
 	body.setTextureOffset(0, 0, true);
-	body.addBox(-16, 0, 24, 32, 32, 0, 24);
+	body.addBox(-16, 0, 24, 33, 32, 0, 24);
 	//body.addBox(-16, -16*32, 16*64, 32, 32, 0, 16*64);
 };
 Models.shock(Models.shock_R);
@@ -390,26 +580,93 @@ function procCmd(str) {
 			var x = Player.getX() + (absRangeX(yaw, 0) * 5);
 			var y = Player.getY() + (absRangeY(yaw, 0) * 5) + 3;
 			var z = Player.getZ() + (absRangeZ(yaw, 0) * 5);
-			for(var cy = Math.floor(y); Level.getTile(x, cy, z) === 0 && cy > 0; cy--);
+			for(var cy = Math.floor(y); Level.getTile(x, cy, z) === 0 && Math.floor(y) - cy < 10; cy--);
 			if(Level.getTile(x, y, z) !== 0 || cy === 0) {
 				clientMessage("No space!");
 				return;
 			}
-			Skill.RASHIRUDO(x, cy + 1, z, yaw, 60, 100, 2, 0.5, [true, 0.2, 2, 6, true, 20]);
+			Skill.RASHIRUDO(x, cy + 1, z, yaw, 600, 100, 2, 0.5, [true, 0.2, 2, 6, true, 20]);
 			break;
 		case "t6":
 			Level.explode(Player.getX(), Player.getY(), Player.getZ(), 3);
 			break;
+		case "t7":
+			Player.addItemInventory(252, 64, 0);
+			break;
 	}
 };
 
+function newLevel(str) {
+	GB_SystemCache.shildExceptionList.push(Player.getEntity());
+};
+
+function leaveGame() {
+	GB_SystemCache.shildExceptionList = [];
+};
+
 function modTick() {
-	GB_System.skillManager();
+	GB_System.affectManager();
 	GB_System.effectManager();
+	GB_System.skillManager();
+	GB_System.trash();
 };
 
 function entityAddedHook(ent) {
 	if(Entity.getHealth(ent) === 744) {
 		Entity.remove(ent);
+	}
+};
+
+function entityRemovedHook(ent) {
+	if(GB_SystemCache.shildExceptionList.indexOf(ent) !== -1) {
+		GB_SystemCache.shildExceptionList.splice(GB_SystemCache.shildExceptionList.indexOf(ent), 1);
 	};
-}
+};
+
+function useItem(x, y, z, itemid, blockid, side, itemDamage, blockDamage) {
+	if(Level.getTile(x, y, z) === 252) {
+		Level.setTile(x, y, z, 0, 0)
+	}
+	if(Level.getTile(x+1, y, z) === 252) {
+		Level.setTile(x+1, y, z, 0, 0)
+	}
+	if(Level.getTile(x-1, y, z) === 252) {
+		Level.setTile(x-1, y, z, 0, 0)
+	}
+	if(Level.getTile(x, y+1, z) === 252) {
+		Level.setTile(x, y+1, z, 0, 0)
+	}
+	if(Level.getTile(x, y-1, z) === 252) {
+		Level.setTile(x, y-1, z, 0, 0)
+	}
+	if(Level.getTile(x, y, z+1) === 252) {
+		Level.setTile(x, y, z+1, 0, 0)
+	}
+	if(Level.getTile(x, y, z-1) === 252) {
+		Level.setTile(x, y, z-1, 0, 0)
+	}
+};
+
+function destroyBlock(x, y, z, side) {
+	if(Level.getTile(x, y, z) === 252) {
+		Level.setTile(x, y, z, 0, 0)
+	}
+	if(Level.getTile(x+1, y, z) === 252) {
+		Level.setTile(x+1, y, z, 0, 0)
+	}
+	if(Level.getTile(x-1, y, z) === 252) {
+		Level.setTile(x-1, y, z, 0, 0)
+	}
+	if(Level.getTile(x, y+1, z) === 252) {
+		Level.setTile(x, y+1, z, 0, 0)
+	}
+	if(Level.getTile(x, y-1, z) === 252) {
+		Level.setTile(x, y-1, z, 0, 0)
+	}
+	if(Level.getTile(x, y, z+1) === 252) {
+		Level.setTile(x, y, z+1, 0, 0)
+	}
+	if(Level.getTile(x, y, z-1) === 252) {
+		Level.setTile(x, y, z-1, 0, 0)
+	}
+};
