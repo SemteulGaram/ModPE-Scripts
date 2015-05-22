@@ -21,10 +21,20 @@ var VersionCode = 100;
  */
  
 var TAG = "[" + ScriptName + "] ";
+var ctx = com.mojang.minecraftpe.MainActivity.currentMainActivity.get();
+var FOUR = android.util.TypedValue.applyDimension(android.util.TypedValue.COMPLEX_UNIT_DIP, 1, ctx.getResources().getDisplayMetrics());
 var _SD_CARD = android.os.Environment.getExternalStorageDirectory();
 function _MAP_DIR() {return new java.io.File(_SD_CARD, "games/com.mojang/minecraftWorlds/" + Level.getWorldDir() + "/mods")};
 function _MAP_DATA() {return new java.io.File(_MAP_DIR(), ScriptName + ".data")};
 
+
+
+function uiThread(fc) {
+	return ctx.runOnUiThread(new java.lang.Runnable({run: fc}))
+}
+function thread(fc) {
+	return new java.lang.Thread(new java.lang.Runnable( {run: fc}))
+}
  
 function showError(e) {
 	if(Level.getWorldName() === null) {
@@ -311,8 +321,9 @@ var GB_SystemCache = {shildExceptionList: [], trash: [], blockTrash: [], smoothR
 Affect.shock = function(ent, duration, rate, power, range, shockInfection, shockInfRate) {
 	for(var e = 0; e < AffectEnt.length; e++) {
 		if(AffectDat[e].type === "shock" && AffectDat[e].ent === ent) {
-			if(AffectDat[e].duration < 200) {
-				AffectDat[e].duration += duration
+			AffectDat[e].duration += duration;
+			if(AffectDat[e].duration > 200) {
+				AffectDat[e].duration = 200
 			}
 			if(AffectDat[e].power < power) {
 				AffectDat[e].power = power
@@ -329,7 +340,29 @@ Affect.shock = function(ent, duration, rate, power, range, shockInfection, shock
 			return;
 		}
 	}
-	AffectDat.push({type: "shock", ent: ent, duration: duration, rate: 1/rate, power: power, range: range, shockInfention: shockInfention, shockInfRate: 1/shockInfRate});
+	AffectDat.push({type: "shock", ent: ent, duration: duration, rate: 1/rate, tempRate: 1/rate, power: power, range: range, shockInfention: shockInfention, shockInfRate: 1/shockInfRate});
+};
+
+Affect.magnetic = function(ent, duration, range, rate, power) {
+	for(var e = 0; e < AffectEnt.length; e++) {
+		if(AffectDat[e].type === "magnatic" && AffectDat[e].ent === ent) {
+			AffectDat[e].duration += duration;
+			if(AffectDat[e].duration > 300) {
+				AffectDat[e].duration = 300
+			}
+			if(AffectDat[e].range < range) {
+				AffectDat[e].range = range
+			}
+			if(AffectDat[e].rate < 1/rate) {
+				AffectDat[e].rate = 1/rate
+			}
+			if(AffectDat[e].power < power) {
+				AffectDat[e].power = power
+			}
+			return;
+		}
+	}
+	AffectDat.push({type: "magnatic", ent: ent, duration: duration, range: range, rate: 1/rate, tempRate: 1/rate, power: power});
 }
 
 Effect.shock = function(x, y, z, vX, vY, vZ, duration) {
@@ -352,8 +385,7 @@ Effect.shock = function(x, y, z, vX, vY, vZ, duration) {
 	var e = Level.spawnMob(x, y, z, 11, skin[0]);
 	Entity.setRenderType(e, Models.shock_R.renderType);
 	Entity.setCollisionSize(e, 0, 0);
-	Entity.setRot(e, Math.floor(Math.random() * 360, 0));
-	EffectDat.push({type: "shock", dur: duration, maxDur: duration, ent: e, skin: skin, mod: 1, vX: vX, vY: vY, vZ: vZ});
+	EffectDat.push({type: "shock", duration: duration, maxDuration: duration, ent: e, skin: skin, mod: 1, vX: vX, vY: vY, vZ: vZ});
 };
 
 //The first spell
@@ -502,6 +534,9 @@ GB_System.affectManager = function() {try {
 					AffectDat[e] = t
 				}
 				break;
+			case "magnatic":
+				
+				break;
 			default:
 				clientMessage(TAG + "Unknown Affect type: " + t.type);
 				AffectDat.splice(e, 1);
@@ -521,18 +556,22 @@ GB_System.effectManager = function() {try {
 				Entity.setVelX(t.ent, t.vX);
 				Entity.setVelY(t.ent, t.vY);
 				Entity.setVelZ(t.ent, t.vZ);
-				t.dur--;
-				if(t.maxDur*2/3 > t.dur && t.mod < 2) {
+				Entity.setRot(t.ent, Math.floor(Math.random() * 360), 0);
+				if(t.maxDuration*2/3 >= t.duration && t.mod < 2) {
 					Entity.setMobSkin(t.ent, t.skin[1]);
 					t.mod = 2;
-				}else if(t.maxDur/3 > t.dur && t.mod < 3){
+					clientMessage("t2");
+				}else if(t.maxDuration/3 >= t.duration && t.mod < 3){
 					Entity.setMobSkin(t.ent, t.skin[2]);
 					t.mod = 3;
+					clientMessage("t3");
 				}
-				EffectDat[e] = t;
-				if(t.dur < 1) {
+				if(--t.duration < 1) {
 					Entity.remove(t.ent);
 					EffectDat.splice(e, 1);
+				}else {
+					EffectDat[e] = t;
+					clientMessage(t.duration);
 				}
 				break;
 			default:
@@ -557,8 +596,8 @@ GB_System.skillManager = function() {try {
 					Entity.setVelX(t.ent[f][0], 0);
 					Entity.setVelZ(t.ent[f][0], 0);
 					Entity.setHealth(t.ent[f][0], 744);
-					if(Math.random() < 0.5) {
-						Effect.shock(Entity.getX(t.ent[f][0]) + (Math.random() * 4 - 2), Entity.getY(t.ent[f][0]) + (Math.random() * 4 - 2), Entity.getZ(t.ent[f][0]) + (Math.random() * 4 - 2), Math.random() % 0.2 - 0.1, (Math.random() % 0.2) - 0.1, (Math.random() % 0.2) - 0.1, Math.ceil(Math.random() * 6));
+					if(Math.random() < 0.3) {
+						Effect.shock(Entity.getX(t.ent[f][0]) + (Math.random() * 4 - 2), Entity.getY(t.ent[f][0]) + (Math.random() * 4 - 2), Entity.getZ(t.ent[f][0]) + (Math.random() * 4 - 2), (Math.random() % 0.2) - 0.1, (Math.random() % 0.2) - 0.1, (Math.random() % 0.2) - 0.1, 6);
 					}
 					t.ent[f][1]--;
 					if(t.ent[f][1] < 1) {
