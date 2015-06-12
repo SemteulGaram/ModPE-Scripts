@@ -779,7 +779,7 @@ function stringToCode(str) {try {
 function codeToString(code) {try {
 	var parse = code.split(String.fromCharCode(122));
 	var str = "", temp = "";
-	for(var e = 0; e < parse.length-1; e++) {
+	for(var e = 0; e < parse.length; e++) {
 		if(e % 128 === 0) {
 			str += temp;
 			temp = "";
@@ -828,19 +828,20 @@ function procCmd(str) {try {
 }}
 
 var Pt = {};
-Pt.mod = -1;
+Pt.mod = 1;
 
 Pt.btn = new android.widget.Button(ctx);
 Pt.btn.setText("CI");
 Pt.btn.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, DIP*10);
+Pt.btn.setTextColor(android.graphics.Color.WHITE);
 Pt.btn.setPadding(0, 0, 0, 0);
 
 Pt.btn_draw = new android.graphics.drawable.GradientDrawable();
 Pt.btn_draw.mutate().setStroke(PIXEL*2, android.graphics.Color.rgb(30, 30, 30));
 Pt.btn_draw.mutate().setGradientType(android.graphics.drawable.GradientDrawable.RADIAL_GRADIENT);
-Pt.btn_draw.mutate().setGradientRadius(PIXEL*50);
+Pt.btn_draw.mutate().setGradientRadius(PIXEL*20);
 Pt.btn_draw.mutate().setColor(android.graphics.Color.rgb(30, 150, 255));
-Pt.btn_draw.setCornerRadius(PIXEL*5);
+Pt.btn_draw.setCornerRadius(PIXEL*25);
 Pt.btn_draw.setAlpha(150);
 Pt.btn.setBackgroundDrawable(Pt.btn_draw);
 
@@ -857,15 +858,24 @@ Pt.btn.setOnClickListener(new android.view.View.OnClickListener({onClick: func
 	print(e);
 }}}));
 Pt.btn.setOnLongClickListener(new android.view.View.OnLongClickListener({onLongClick: function(view, event) {try {
-	
+	Pt.dl = new android.app.AlertDialog.Builder(ctx);
+	Pt.dl.setTitle(TAG + "change Mod");
+	Pt.dl_et = new android.widget.EditText(ctx);
+	Pt.dl_et.setText(Pt.mod + "");
+	Pt.dl.setPositiveButton("Done",new android.content.DialogInterface.OnClickListener({onClick:function(){
+		Pt.mod = parseInt(Pt.dl_et.getText() + "");
+	}}));
+	Pt.dl.setView(Pt.dl_et);
+	Pt.dl.create();
+	Pt.dl.show();
 	return true;
 }catch(e) {
-	print(e);
+	showError(e);
 	return true;
 }}}));
 
-Pt.wd = new android.widget.PopupWindow(Pt.btn, PIXEL*30, PIXEL*30, false);
+Pt.wd = new android.widget.PopupWindow(Pt.btn, PIXEL*50, PIXEL*50, false);
 
 uiThread(function() {
-Pt.wd.showAtLocation(ctx.getWindow().getDecorView(), android.view.Gravity.RIGHT, PIXEL*2, -PIXEL*30);
+Pt.wd.showAtLocation(ctx.getWindow().getDecorView(), android.view.Gravity.RIGHT, PIXEL*2, -PIXEL*50);
 });
