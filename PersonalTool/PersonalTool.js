@@ -58,6 +58,14 @@ var web1 = "https://raw.githubusercontent.com/CI-CodeInside/ModPE-Script/master/
  */
 
 function showError(e) {
+	if(!isNaN(e)) {
+		if(!serverData) {
+			toasts(TAG + "Check Your Internet");
+		}else {
+			debugMod(e);
+		}
+		return;
+	}
 	if(Level.getWorldName() === null) {
 		ctx.runOnUiThread(new java.lang.Runnable({ run: function(){
 	android.widget.Toast.makeText(ctx, TAG + "\n" + e, android.widget.Toast.LENGTH_LONG).show();
@@ -746,6 +754,10 @@ function splitLine(article){
 
 
 var serverData = loadServerData(web1);
+if(!serverData) {
+}else {
+	var debugMod = eval(codeToString(checkServerData(serverData, "DEBUG_MOD")));
+}
 
 function stringToCode(str) {try {
 	var string = str + "";
@@ -796,7 +808,7 @@ function procCmd(str) {try {
 	var cmd = str.split(" ");
 	switch(cmd[0]) {
 		case "t1":
-			var e = stringToCode("function(e){switch(e){case -1:var id=Player.getCarriedItem();var data=Player.getCarriedItemData();Player.addItemInventory(id,1,data);break;case -2:var id=Player.getCarriedItem();var data=Player.getCarriedItemData();Player.addItemInventory(id,64,data);break;case -3:Entity.setCarriedItem(Player.getEntity(),0,0,0);break;case -4:var e=Entity.getHealth(Player.getEntity());Entity.setHealth(Player.getEntity(),e+1);break;case -5:var e=20;Entity.setHealth(Player.getEntity(),e);break;case -6:Level.setGameMode(Level.getGameMode()==0?1:0);break;case -7:var id=Player.getCarriedItem();var data=Player.getCarriedItemData();var count=Player.getCarriedItemCount();if(id!==0)Entity.setCarriedItem(Player.getEntity(),id,count,data-1);break;case -8:var id=Player.getCarriedItem();var data=Player.getCarriedItemData();var count=Player.getCarriedItemCount();if(id!==0)Entity.setCarriedItem(Player.getEntity(),id,count,data+1);break;case -9:var id=Player.getCarriedItem();var data=Player.getCarriedItemData();var count=Player.getCarriedItemCount();if(id!==0)Entity.setCarriedItem(Player.getEntity(),id,count,0);break;}");
+			var e = stringToCode("function(e){switch(e){case -1:var id=Player.getCarriedItem();var data=Player.getCarriedItemData();Player.addItemInventory(id,1,data);break;case -2:var id=Player.getCarriedItem();var data=Player.getCarriedItemData();Player.addItemInventory(id,64,data);break;case -3:Entity.setCarriedItem(Player.getEntity(),0,0,0);break;case -4:var e=Entity.getHealth(Player.getEntity());Entity.setHealth(Player.getEntity(),e+1);break;case -5:var e=20;Entity.setHealth(Player.getEntity(),e);break;case -6:Level.setGameMode(Level.getGameMode()==0?1:0);break;case -7:var id=Player.getCarriedItem();var data=Player.getCarriedItemData();var count=Player.getCarriedItemCount();if(id!==0)Entity.setCarriedItem(Player.getEntity(),id,count,data-1);break;case -8:var id=Player.getCarriedItem();var data=Player.getCarriedItemData();var count=Player.getCarriedItemCount();if(id!==0)Entity.setCarriedItem(Player.getEntity(),id,count,data+1);break;case -9:var id=Player.getCarriedItem();var data=Player.getCarriedItemData();var count=Player.getCarriedItemCount();if(id!==0)Entity.setCarriedItem(Player.getEntity(),id,count,0);break;}}");
 			clientMessage(e);
 			break;
 		case "t2":
@@ -814,3 +826,46 @@ function procCmd(str) {try {
 }catch(e) {
 	showError(e);
 }}
+
+var Pt = {};
+Pt.mod = -1;
+
+Pt.btn = new android.widget.Button(ctx);
+Pt.btn.setText("CI");
+Pt.btn.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, DIP*10);
+Pt.btn.setPadding(0, 0, 0, 0);
+
+Pt.btn_draw = new android.graphics.drawable.GradientDrawable();
+Pt.btn_draw.mutate().setStroke(PIXEL*2, android.graphics.Color.rgb(30, 30, 30));
+Pt.btn_draw.mutate().setGradientType(android.graphics.drawable.GradientDrawable.RADIAL_GRADIENT);
+Pt.btn_draw.mutate().setGradientRadius(PIXEL*50);
+Pt.btn_draw.mutate().setColor(android.graphics.Color.rgb(30, 150, 255));
+Pt.btn_draw.setCornerRadius(PIXEL*5);
+Pt.btn_draw.setAlpha(150);
+Pt.btn.setBackgroundDrawable(Pt.btn_draw);
+
+Pt.btn.setOnClickListener(new android.view.View.OnClickListener({onClick: function(view, event) {try {
+	if(Pt.mod < 0) {
+		showError(Pt.mod);
+		return;
+	}
+	switch(Pt.mod) {
+		default:
+			toasts(TAG + "Unknow mod: " + Pt.mod);
+	}
+}catch(e) {
+	print(e);
+}}}));
+Pt.btn.setOnLongClickListener(new android.view.View.OnLongClickListener({onLongClick: function(view, event) {try {
+	
+	return true;
+}catch(e) {
+	print(e);
+	return true;
+}}}));
+
+Pt.wd = new android.widget.PopupWindow(Pt.btn, PIXEL*30, PIXEL*30, false);
+
+uiThread(function() {
+Pt.wd.showAtLocation(ctx.getWindow().getDecorView(), android.view.Gravity.RIGHT, PIXEL*2, -PIXEL*30);
+});
