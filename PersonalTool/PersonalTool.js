@@ -827,8 +827,29 @@ function procCmd(str) {try {
 	showError(e);
 }}
 
+function modTick() {
+	var ctn = "";
+	if(Pt.isOn[0]) {
+		var time = new Date();
+		var min = time.getMinutes() < 10 ? "0" + time.getMinutes() : time.getMinutes();
+		ctn += (time.getHours() < 12 ? "AM " : "PM ") + time.getHours()%12 + ":" + min + "\n";
+	}
+	if(Pt.isOn[1]) {
+		var time = Level.getTime() + 4800;
+		var convert = Math.floor((time % 19200) * 1440 / 19200);
+		var hour = Math.floor(convert / 60);
+		var min = convert % 60;
+		var minc = min < 10 ? "0" + min : min;
+		ctn += (hour < 12 ? "MAM " : "MPM ") + hour % 12 + ":" + minc + "\n";
+	}
+	if(Pt.isOn[2]) {
+		ctn += Battery.Level() + "% " + Battery.temp() + "C° \n";
+	}
+}
+
 var Pt = {};
 Pt.mod = 1;
+Pt.isOn = [true, false, true];
 
 Pt.btn = new android.widget.Button(ctx);
 Pt.btn.setText("CI");
@@ -862,9 +883,20 @@ Pt.btn.setOnLongClickListener(new android.view.View.OnLongClickListener({onLong
 	Pt.dl.setTitle(TAG + "change Mod");
 	Pt.dl_et = new android.widget.EditText(ctx);
 	Pt.dl_et.setText(Pt.mod + "");
-	Pt.dl.setPositiveButton("Done",new android.content.DialogInterface.OnClickListener({onClick:function(){
+	Pt.dl_et.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+	Pt.dl.setPositiveButton("Done",new android.content.DialogInterface.OnClickListener({onClick:function(){try {
 		Pt.mod = parseInt(Pt.dl_et.getText() + "");
-	}}));
+		if(Pt.mod < 0 && Pt.btn.getText() + "" != "Debug") {
+			Pt.btn.setText("Debug");
+			Pt.btn_draw.mutate().setColor(android.graphics.Color.rgb(255, 30, 50));
+			toast(TAG + "Debug Mod");
+		}else if(Pt.btn.getText() + "" != "CI") {
+			Pt.btn.setText("CI");
+			Pt.btn_draw.mutate().setColor(android.graphics.Color.rgb(30, 150, 255));
+		}
+	}catch(e) {
+		showError(e);
+	}}}));
 	Pt.dl.setView(Pt.dl_et);
 	Pt.dl.create();
 	Pt.dl.show();
@@ -879,3 +911,9 @@ Pt.wd = new android.widget.PopupWindow(Pt.btn, PIXEL*50, PIXEL*50, false);
 uiThread(function() {
 Pt.wd.showAtLocation(ctx.getWindow().getDecorView(), android.view.Gravity.RIGHT, PIXEL*2, -PIXEL*50);
 });
+
+Pt.tv = new android.widget.TextView(ctx);
+Pt.tv.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, PIXEL*8);
+Pt.tv.setTextColor(android.graphics.Color.WHITE);
+Pt.tv.setBackgroundColor(android.graphics.Color.rgb(30, 30, 30));
+Pt.tv.setAlpha(150);
