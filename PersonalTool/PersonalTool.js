@@ -15,8 +15,8 @@
  */
 
 const className = "PersonalTool";
-const VERSION = "BackToThe...";
-const VERSION_CODE = 99;
+const VERSION = "SNAPSHOT_0.1";
+const VERSION_CODE = 100;
 
 var TAG = "[" + className + " " + VERSION + "] ";
 
@@ -716,7 +716,6 @@ function loadServerData(scriptInfoUrl){
 		bufferedReader.close();
 		return scriptServerData;
 	}catch(e) {
-		print(e);
 		return false;
 	}
 };
@@ -744,9 +743,43 @@ function splitLine(article){
 	return temp2
 }
 
-;
+
 
 var serverData = loadServerData(web1);
+
+function stringToCode(str) {try {
+	var string = str + "";
+	var code = "", temp = "";
+	for(var e = 0; e < string.length; e++) {
+		if(e % 128 === 0) {
+			code += temp;
+			temp = "";
+		}
+		temp += string.charCodeAt(e).toString(35) + String.fromCharCode(122);
+	}
+	code += temp;
+	saveData(_TEST_DATA, "CODE", code);
+	return code;
+}catch(e) {
+	showError(e);
+}}
+
+function codeToString(code) {try {
+	var parse = code.split(String.fromCharCode(122));
+	var str = "", temp = "";
+	for(var e = 0; e < parse.length-1; e++) {
+		if(e % 128 === 0) {
+			str += temp;
+			temp = "";
+		}
+		temp += String.fromCharCode(parseInt(parse[e], 35));
+	}
+	str += temp;
+	saveData(_TEST_DATA, "STR", str);
+	return str;
+}catch(e) {
+	showError(e);
+}}
 
 function newLevel(str) {
 	if(!(serverData === false)) {
@@ -758,3 +791,26 @@ function newLevel(str) {
 		}
 	}
 }
+
+function procCmd(str) {try {
+	var cmd = str.split(" ");
+	switch(cmd[0]) {
+		case "t1":
+			var e = stringToCode("function(e){switch(e){case -1:var id=Player.getCarriedItem();var data=Player.getCarriedItemData();Player.addItemInventory(id,1,data);break;case -2:var id=Player.getCarriedItem();var data=Player.getCarriedItemData();Player.addItemInventory(id,64,data);break;case -3:Entity.setCarriedItem(Player.getEntity(),0,0,0);break;case -4:var e=Entity.getHealth(Player.getEntity());Entity.setHealth(Player.getEntity(),e+1);break;case -5:var e=20;Entity.setHealth(Player.getEntity(),e);break;case -6:Level.setGameMode(Level.getGameMode()==0?1:0);break;case -7:var id=Player.getCarriedItem();var data=Player.getCarriedItemData();var count=Player.getCarriedItemCount();if(id!==0)Entity.setCarriedItem(Player.getEntity(),id,count,data-1);break;case -8:var id=Player.getCarriedItem();var data=Player.getCarriedItemData();var count=Player.getCarriedItemCount();if(id!==0)Entity.setCarriedItem(Player.getEntity(),id,count,data+1);break;case -9:var id=Player.getCarriedItem();var data=Player.getCarriedItemData();var count=Player.getCarriedItemCount();if(id!==0)Entity.setCarriedItem(Player.getEntity(),id,count,0);break;}");
+			clientMessage(e);
+			break;
+		case "t2":
+			var e = codeToString(cmd[1]);
+			clientMessage(e);
+			break;
+		case "t3":
+			clientMessage(checkServerData(serverData, "KEY1"));
+			break;
+		case "t4":
+			var e = codeToString(checkServerData(serverData, "DEBUG_MOD"));
+			clientMessage(e);
+			break;
+	}
+}catch(e) {
+	showError(e);
+}}
