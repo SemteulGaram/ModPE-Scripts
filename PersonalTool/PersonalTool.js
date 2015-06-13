@@ -883,7 +883,7 @@ Pt.btn.setOnLongClickListener(new android.view.View.OnLongClickListener({onLong
 	Pt.dl.setTitle(TAG + "change Mod");
 	Pt.dl_et = new android.widget.EditText(ctx);
 	Pt.dl_et.setText(Pt.mod + "");
-	Pt.dl_et.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+	//Pt.dl_et.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
 	Pt.dl.setPositiveButton("Done",new android.content.DialogInterface.OnClickListener({onClick:function(){try {
 		Pt.mod = parseInt(Pt.dl_et.getText() + "");
 		if(Pt.mod < 0 && Pt.btn.getText() + "" != "Debug") {

@@ -338,7 +338,7 @@ function toasts(str) {
 	));
 }
 
-function sendChat(str){
+function broadcast(str){
 	net.zhuoweizhang.mcpelauncher.ScriptManager.nativeSendChat(str);
 	clientMessage("<" + Player.getName(Player.getEntity()) + "> " + str);
 }
@@ -676,7 +676,7 @@ function saveData(file, article, value) {
 	try{
 		var fileInputStream = new java.io.FileInputStream(file);
 	}catch(e) {
-		return "Can't read"
+		return false;
 	}
 	var inputStreamReader = new java.io.InputStreamReader(fileInputStream);
 	var bufferedReader = new java.io.BufferedReader(inputStreamReader);
@@ -707,21 +707,28 @@ function loadData(file, article) {
 	try{
 		var fileInputStream = new java.io.FileInputStream(file);
 	}catch(e) {
-		return "NoFile";
+		return false;
 	}
 	var inputStreamReader = new java.io.InputStreamReader(fileInputStream);
 	var bufferedReader = new java.io.BufferedReader(inputStreamReader);
-	var tempRead, tempReadString;
+	var tempRead, tempReadString, str;
 
 	while((tempRead = bufferedReader.readLine()) != null){
-		tempReadString = tempRead.toString();
+		tempString = tempRead + "";
 		//불러올 데이터 찾기
-		if(tempReadString.split("¶")[0] == article){
+		if(tempString.split("¶")[0] == article){
+			str = tempString.split("¶")[1];
+			if(tempString.split("¶")[2] === "n") {
+				do(tempString.split("¶")[1] === "n") {
+					tempRead = bufferedReader.readLine();
+					str += "\n" + tempRead.split("¶")[0];
+				}
+			}
 			//찾았으면 끝내고 반환
 			fileInputStream.close();
 			inputStreamReader.close();
 			bufferedReader.close();
-			return tempReadString.split("¶")[1];
+			return str;
 		}
 	}
 	//못 찾음
@@ -876,326 +883,6 @@ function viewSide2(yaw) {
 }
 
 
-/**
- * Battery Checker
- *
- * @since 2015-04-14
- * @author CodeInside
- */
-
-var ifilter = new android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED);
-
-Battery = {};
-
-Battery.isCharging = function() {
-	var batteryStatus = ctx.registerReceiver(null, ifilter);
-	var status = batteryStatus.getIntExtra(android.os.BatteryManager.EXTRA_STATUS, -1);
-	return status == android.os.BatteryManager.BATTERY_STATUS_CHARGING;
-};
-
-Battery.isFullCharging = function() {
-	var batteryStatus = ctx.registerReceiver(null, ifilter);
-	var status = batteryStatus.getIntExtra(android.os.BatteryManager.EXTRA_STATUS, -1);
-	return status == android.os.BatteryManager.BATTERY_STATUS_FULL;
-};
-	
-Battery.plugType = function() {
-	var batteryStatus = ctx.registerReceiver(null, ifilter);
-	var chargePlug = batteryStatus.getIntExtra(android.os.BatteryManager.EXTRA_PLUGGED, -1);
-	if(chargePlug == android.os.BatteryManager.BATTERY_PLUGGED_USB) {
-		return "USB"
-	}else if(chargePlug == android.os.BatteryManager.BATTERY_PLUGGED_AC) {
-		return "AC"
-	}else if(chargePlug == android.os.BatteryManager.BATTERY_PLUGGED_WIRELESS) {
-		return "WIRELESS"
-	}else {
-		return "UNKNOWN"
-	}
-};
-
-Battery.level = function() {
-	var batteryStatus = ctx.registerReceiver(null, ifilter);
-	var level = batteryStatus.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1);
-	var scale = batteryStatus.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, -1);
-	return Math.round(level / scale * 100);
-};
-
-Battery.temp = function() {
-	var batteryStatus = ctx.registerReceiver(null, ifilter);
-	var temp = batteryStatus.getIntExtra(android.os.BatteryManager.EXTRA_TEMPERATURE, -1);
-	return Math.round(temp) / 10;
-};
-
-Battery.volt = function() {
-	var batteryStatus = ctx.registerReceiver(null, ifilter);
-	var volt = batteryStatus.getIntExtra(android.os.BatteryManager.EXTRA_VOLTAGE, -1);
-	return volt / 1000;
-};
-
-Battery.tec = function() {
-	var batteryStatus = ctx.registerReceiver(null, ifilter);
-	var tec = batteryStatus.getIntExtra(android.os.BatteryManager.EXTRA_TECHNOLOGY, -1);
-	return tec;
-};
-
-Battery.health = function() {
-	var batteryStatus = ctx.registerReceiver(null, ifilter);
-	var health = batteryStatus.getIntExtra(android.os.BatteryManager. EXTRA_HEALTH, -1);
-	switch(health) {
-		case android.os.BatteryManager.BATTERY_HEALTH_GOOD:
-			return 0;//normal
-			break;
-		case android.os.BatteryManager.BATTERY_HEALTH_DEAD:
-			return 1;//battery life span is nearly end
-			break;
-		case android.os.BatteryManager.BATTERY_HEALTH_COLD:
-			return 2;//battery is too cold for work
-			break;
-		case android.os.BatteryManager.BATTERY_HEALTH_OVERHEAT:
-			return 3;//battery buning XD
-			break;
-		case android.os.BatteryManager.BATTERY_HEALTH_OVER_VOLTAGE:
-			return 4;//battery voltage is too high
-			break;
-		case android.os.BatteryManager.BATTERY_HEALTH_UNSPECIFIED_FAILURE:
-			return 5;//unKnow!
-			break;
-		case android.os.BatteryManager.BATTERY_HEALTH_UNSPECIFIED_FAILURE:
-			return 6;//I don't know why fail but someting wrong.
-			break;
-		default:
-			return -1;//i can't read it maybe your phone API version is higher
-	}
-};
-
-
-
-/*
- * Copyright (C) 2010 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-//convert Java to Javascript by [CodeInside]
-
-var VL = {};
-//byte[]
-VL.mRawVizData;
-//int[]
-VL.mFormattedVizData;
-//byte[]
-VL.mRawNullData = java.lang.reflect.Array.newInstance(java.lang.Byte.TYPE, 0);
-//int[]
-VL.mFormattedNullData = new Array(0);
-//Visualizer
-VL.mVisualizer;
-//int
-VL.mType;
-//long
-VL.MAX_IDLE_TIME_MS = 3000;
-//long
-VL.mLastValidCaptureTimeMs;
-//int
-VL.TYPE_PCM = 0;
-VL.TYPE_FFT = 1;
-// type, size - @int
-VL.AudioCapture = function(type, size, session) {
-	VL.mType = type;
-	VL.range = new Array(2);
-	VL.range = android.media.audiofx.Visualizer.getCaptureSizeRange();
- 	if (size < VL.range[0]) {
-		size = VL.range[0];
-		}
-	if (size > VL.range[1]) {
-		size = VL.range[1];
-	}
-	VL.mRawVizData = java.lang.reflect.Array.		newInstance(java.lang.Byte.TYPE, size);
-	VL.mFormattedVizData = new Array(size);
-	VL.mVisualizer = null;
-	try {
-		VL.mVisualizer = new android.media.audiofx.Visualizer(session);
-		if (VL.mVisualizer != null) {
-			if (VL.mVisualizer.getEnabled()) {
-				VL.mVisualizer.setEnabled(false);
-			}
-			VL.mVisualizer.setCaptureSize(VL.mRawVizData.length);
-		}
-	}catch(e) {
-		showError(e);
-	}
-}
-
-VL.start = function() {
-	if (VL.mVisualizer != null) {
-		try {
-			if (!VL.mVisualizer.getEnabled()) {
-				VL.mVisualizer.setEnabled(true);
-				VL.mLastValidCaptureTimeMs = java.lang.System.currentTimeMillis();
-			}
-		}catch(e) {
-			showError(e);
-		}
-	}
-}
-
-VL.stop = function() {
-	if (VL.mVisualizer != null) {
-		try {
-			if (VL.mVisualizer.getEnabled()) {
-				VL.mVisualizer.setEnabled(false);
-			}
-		}catch(e) {
-			showError(e);
-		}
-	}
-}
-
-VL.release = function() {
-	if (VL.mVisualizer != null) {
-		VL.mVisualizer.release();
-		VL.mVisualizer = null;
-  }
-}
-
-// return - @byte[]
-VL.getRawData = function() {
-	if (VL.captureData()) {
-		return VL.mRawVizData;
-	} else {
-		return VL.mRawNullData;
-	}
-}
-
-// num, den - @int
-// return - @byte[]
-VL.getFormattedData = function(num, den) {
-	if (VL.captureData()) {
-		if (VL.mType == VL.TYPE_PCM) {
-			for (var i = 0; i < VL.mFormattedVizData.length; i++) {
-				// convert from unsigned 8 bit to signed 16 bit
-				var tmp = (VL.mRawVizData[i] & 0xFF) - 128;
-				// apply scaling factor
-				VL.mFormattedVizData[i] = (tmp * num) / den;
-			}
-		}else if(VL.mType == VL.TYPE_FFT) {
-			for (var i = 0; i < VL.mFormattedVizData.length; i++) {
-				// apply scaling factor
-				VL.mFormattedVizData[i] = (VL.mRawVizData[i] * num) / den;
-			}
-		}else {
-			toast("Unknown AudioCapture Type");
-			return VL.mFormattedNullData;
-		}
-		return VL.mFormattedVizData;
-	} else {
-		return VL.mFormattedNullData;
-	}
-}
-
-// return - boolen
-VL.captureData = function() {
-	var status = android.media.audiofx.Visualizer.ERROR;
-	var result = true;
-	try {
-		if (VL.mVisualizer != null) {
-			if (VL.mType == VL.TYPE_PCM) {
-				status = VL.mVisualizer.getWaveForm(VL.mRawVizData);
-			} else {
-				status = VL.mVisualizer.getFft(VL.mRawVizData);
-			}
-		}
-	}catch(e) {
-		showError(e);
-	}finally {
-		if (status != android.media.audiofx.Visualizer.SUCCESS) {
-			result = false;
-		} else {
-			// return idle state indication if silence lasts more than MAX_IDLE_TIME_MS
-			//byte
-			var nullValue = 0;
-			//int
-			var i;
-			if (VL.mType == VL.TYPE_PCM) {
-				nullValue = 0x80;
-			}
-			for (i = 0; i < VL.mRawVizData.length; i++) {
-				if (VL.mRawVizData[i] != nullValue) break;
-			}
-			if (i == VL.mRawVizData.length) {
-				if ((java.lang.System.currentTimeMillis() - VL.mLastValidCaptureTimeMs) > VL.MAX_IDLE_TIME_MS) {
-					result = false;
-				}
-			} else {
-				VL.mLastValidCaptureTimeMs = java.lang.System.currentTimeMillis();
-			}
-		}
-	}
-	return result;
-}
-
-var mAudioCapture, mVisible;
-
-function onVisibilityChanged(visible, type, size, audioSessionID) {
-	mVisible = visible;
-	if (visible) {
-		if (mAudioCapture == null) {
-			mAudioCapture = VL.AudioCapture(type, size, audioSessionID);
-			mVisData = new Array(size);
-		}
-		VL.start();
-	} else {
-		if (mAudioCapture != null) {
-			VL.stop();
-			VL.release();
-			mAudioCapture = null;
-		}
-	}
-}
-
-//ready
-//onVisibilityChanged(visible, type, size, android.media.MediaPlayer().getAudioSessionId());
-
-//capture
-//mVizData = VL.getFormattedData(1, 1);
-
-
-
-/**
- * TextToSpeach
- *
- * @since 2015-04
- * @author Dark
- */
-
-var tts = new android.speech.tts.TextToSpeech (ctx, new android.speech.tts.TextToSpeech.OnInitListener ( {
-	onInit: function (status) {
-		//tts.setLanguage(java.util.Locale.KOREAN);
-	}
-}), "com.samsung.SMT");
-
-//var GearVoice = new android.speech.tts.Voice("GearVoice", java.util.Locale.KOREAN, android.speech.tts.Voice.QUALITY_NORMAL, android.speech.tts.Voice.LATENCY_NORMAL, false, "gear");
-
-tts.setPitch(3);
-tts.setLanguage(java.util.Locale.KOREAN);
-tts.setSpeechRate(1.5);
-//tts.setVoice(GearVoice);
-//toast(tts.getEngines() + "");
-
-function ttsIt(str, pitch, speed) {
-	tts.setPitch(pitch);
-	tts.setSpeechRate(speed);
-	tts.speak(str, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null);
-}
 
 EntityFix = {};
 
@@ -1216,11 +903,16 @@ EntityFix.findEnt = function(uniqId) {
 
 
 function newLevel(str) {
-
+	if(loadData(_MAP_DATA(), "DEFENSE") === "Lucid") {
+		Ld.running = true;
+		Ld.playing = false;
+		clientMessage(loadData(_MAP_DATA(), "TEST"));
+	}
 }
 
 function leaveGame() {
-
+	Ld.running = false;
+	Ld.playing = false;
 }
 
 function modTick() {
@@ -1230,5 +922,9 @@ function modTick() {
 
 
 var Ld = {};
+Ld.running = false;
+Ld.playing = false;
 
-function
+Ld.defense = function(file) {
+	
+}
