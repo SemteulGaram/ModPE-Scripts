@@ -29,7 +29,7 @@ var _FONT = new java.io.File(_MOD_DIR, "minecraft.ttf");
 var _MAIN_DATA = new java.io.File(_MAIN_DIR, "setting.json");
 var _TEST_DATA = new java.io.File(_MAIN_DIR, "lastLog.txt");
 function _MAP_DIR() {return new java.io.File(_SD_CARD, "games/com.mojang/minecraftWorlds/" + Level.getWorldDir() + "/mods")}
-function _MAP_DATA() {return new java.io.File(_MAP_DIR(), className + ".data")}
+function _MAP_DATA() {return new java.io.File(_MAP_DIR(), className + ".json")}
 var DIP = PIXEL * loadData(_MAIN_DATA, "DIPS");
 if(DIP == null){
 	DIP = PIXEL;
@@ -67,41 +67,41 @@ var mcpeTG_BF = android.graphics.BitmapFactory.decodeStream(mcpeTG);
 //꽉찬배경 나인패치
 var mcpeBGRaw = android.graphics.Bitmap.createBitmap(mcpeSS_BF, 0, 0, 16, 16);
 var mcpeBG = android.graphics.Bitmap.createScaledBitmap(mcpeBGRaw, PIXEL*32, PIXEL*32, false);
-var mcpeBG9 = function() {ninePatch1(mcpeBG, PIXEL*12, PIXEL*12, PIXEL*24, PIXEL*24)}
+var mcpeBG9 = function() {return ninePatch1(mcpeBG, PIXEL*12, PIXEL*12, PIXEL*24, PIXEL*24)}
 //배경 나인패치
 var mcpeBGTRaw = android.graphics.Bitmap.createBitmap(mcpeSS_BF, 34, 43, 14, 14);
 var mcpeBGT = android.graphics.Bitmap.createScaledBitmap(mcpeBGTRaw, PIXEL*32, PIXEL*32, false);
-var mcpeBGT9 = function() {ninePatch1(mcpeBGT, PIXEL*12, PIXEL*12, PIXEL*22, PIXEL*22)}
+var mcpeBGT9 = function() {return ninePatch1(mcpeBGT, PIXEL*12, PIXEL*12, PIXEL*22, PIXEL*22)}
 //타이틀바 나인패치
 var mcpeTitleBarRaw = android.graphics.Bitmap.createBitmap(mcpeTG_BF, 150, 26, 14, 25);
 var mcpeTitleBar = android.graphics.Bitmap.createScaledBitmap(mcpeTitleBarRaw, PIXEL*28, PIXEL*50, false);
-var mcpeTitleBar9 = function()  {ninePatch1(mcpeTitleBar, PIXEL*8, PIXEL*8, PIXEL*20, PIXEL*22)}
+var mcpeTitleBar9 = function()  {return ninePatch1(mcpeTitleBar, PIXEL*8, PIXEL*8, PIXEL*20, PIXEL*22)}
 //종료 버튼 나인패치
 var mcpeExitRaw = android.graphics.Bitmap.createBitmap(mcpeSS_BF, 60, 0, 18, 18);
 var mcpeExit = android.graphics.Bitmap.createScaledBitmap(mcpeExitRaw, 18*PIXEL, 18*PIXEL, false);
-var mcpeExit9 = function() {ninePatch1(mcpeExit, PIXEL*6, PIXEL*6, PIXEL*30, PIXEL*30)}
+var mcpeExit9 = function() {return ninePatch1(mcpeExit, PIXEL*6, PIXEL*6, PIXEL*30, PIXEL*30)}
 var mcpeExitB = new android.graphics.drawable.BitmapDrawable(ctx.getResources(), mcpeExit);
 mcpeExitB.setAntiAlias(false);
 //종료 버튼(클릭) 나인패치
 var mcpeExitClickRaw = android.graphics.Bitmap.createBitmap(mcpeSS_BF, 78, 0, 18, 18);
 var mcpeExitClick = android.graphics.Bitmap.createScaledBitmap(mcpeExitClickRaw, PIXEL*36, PIXEL*36, false);
-var mcpeExitClick9 = function() {ninePatch1(mcpeExitClick, PIXEL*6, PIXEL*6, PIXEL*32, PIXEL*32)}
+var mcpeExitClick9 = function() {return ninePatch1(mcpeExitClick, PIXEL*6, PIXEL*6, PIXEL*32, PIXEL*32)}
 //버튼 나인패치
 var mcpeBtnRaw = android.graphics.Bitmap.createBitmap(mcpeSS_BF,8,32,8,8);
 var mcpeBtn = android.graphics.Bitmap.createScaledBitmap(mcpeBtnRaw, PIXEL*16, PIXEL*16, false);
-var mcpeBtn9 = function() {ninePatch1(mcpeBtn, PIXEL*6, PIXEL*4, PIXEL*14, PIXEL*14)}
+var mcpeBtn9 = function() {return ninePatch1(mcpeBtn, PIXEL*6, PIXEL*4, PIXEL*14, PIXEL*14)}
 //버튼(클릭) 나인패치
 var mcpeBtnClickRaw = android.graphics.Bitmap.createBitmap(mcpeSS_BF,0,32,8,8);
 var mcpeBtnClick = android.graphics.Bitmap.createScaledBitmap(mcpeBtnClickRaw, PIXEL*16, PIXEL*16,false);
-var mcpeBtnClick9 = function() {ninePatch1(mcpeBtnClick, PIXEL*4, PIXEL*4, PIXEL*12, PIXEL*14)}
+var mcpeBtnClick9 = function() {return ninePatch1(mcpeBtnClick, PIXEL*4, PIXEL*4, PIXEL*12, PIXEL*14)}
 //미니버튼 나인패치
 var mcpeMiniBtnRaw = android.graphics.Bitmap.createBitmap(mcpeSS_BF,8,33,8,7);
 var mcpeMiniBtn = android.graphics.Bitmap.createScaledBitmap(mcpeMiniBtnRaw, PIXEL*16, PIXEL*14, false);
-var mcpeMiniBtn9 = function() {ninePatch1(mcpeMiniBtn, PIXRL*2, PIXEL*2, PIXEL*12, PIXEL*14)}
+var mcpeMiniBtn9 = function() {return ninePatch1(mcpeMiniBtn, PIXEL*2, PIXEL*2, PIXEL*12, PIXEL*14)}
 //미니버튼(클릭) 나인패치
 var mcpeMiniBtnClickRaw = android.graphics.Bitmap.createBitmap(mcpeSS_BF,0,32,8,7);
-var mcpeMiniBtnClick = android.graphics.Bitmap.createScaledBitmap(mcpeMiniBtnClickRaw, PIXEP*16, PIXEL*14, false);
-var mcpeMiniBtnClick9 = function() {ninePatch1(mcpeMiniBtnClick, PIXEL*4, PIXEL*4, PIXEL*12, PIXEL*12)}
+var mcpeMiniBtnClick = android.graphics.Bitmap.createScaledBitmap(mcpeMiniBtnClickRaw, PIXEL*16, PIXEL*14, false);
+var mcpeMiniBtnClick9 = function() {return ninePatch1(mcpeMiniBtnClick, PIXEL*4, PIXEL*4, PIXEL*12, PIXEL*12)}
 //텍스트뷰 나인패치
 var b = android.graphics.Color.parseColor("#6b6163");
 var i = android.graphics.Color.parseColor("#3a393a");
@@ -116,7 +116,7 @@ b,b,b,b,b,b
 var mcpeTextViewRaw = android.graphics.Bitmap.createBitmap(6, 6, android.graphics.Bitmap.Config.ARGB_8888);
 mcpeTextViewRaw.setPixels(mcpeTextViewPixel, 0, 6, 0, 0, 6, 6);
 var mcpeTextView = android.graphics.Bitmap.createScaledBitmap(mcpeTextViewRaw, PIXEL*6, PIXEL*6, false);
-var mcpeTextView9 = function() {ninePatch1(mcpeTextView, PIXEL*3, PIXEL*3, PIXEL*4, PIXEL*4)}
+var mcpeTextView9 = function() {return ninePatch1(mcpeTextView, PIXEL*3, PIXEL*3, PIXEL*4, PIXEL*4)}
 
 var r = android.graphics.Color.parseColor("#ff0000");
 var y = android.graphics.Color.parseColor("#ffff00");
@@ -165,9 +165,9 @@ var mcpeVisPixel = [
 0,0,0,0,0,0,0
 ];
 var mcpeVisRaw = android.graphics.Bitmap.createBitmap(7, 41, android.graphics.Bitmap.Config.ARGB_8888);
-mcpeTextViewRaw.setPixels(mcpeVisPixel, 0, 7, 0, 0, 7, 41);
+mcpeVisRaw.setPixels(mcpeVisPixel, 0, 7, 0, 0, 7, 41);
 var mcpeVis = android.graphics.Bitmap.createScaledBitmap(mcpeVisRaw, PIXEL*7, PIXEL*41, false);
-var mcpeVis9 = function() {ninePatch1(mcpeVis, PIXEL*0, PIXEL*0, PIXEL*7, PIXEL*41)}
+var mcpeVis9 = function() {return ninePatch1(mcpeVis, PIXEL*0, PIXEL*0, PIXEL*7, PIXEL*41)}
 
 var w = android.graphics.Color.parseColor("#ffffff");
 var mcpeH_VisPixel = [
@@ -180,7 +180,7 @@ var mcpeH_VisPixel = [
 var mcpeH_VisRaw = android.graphics.Bitmap.createBitmap(37, 4, android.graphics.Bitmap.Config.ARGB_8888);
 mcpeH_VisRaw.setPixels(mcpeH_VisPixel, 0, 37, 0, 0, 37, 4);
 var mcpeH_Vis = android.graphics.Bitmap.createScaledBitmap(mcpeH_VisRaw, PIXEL*37, PIXEL*4, false);
-var mcpeH_Vis9 = function() {ninePatch1(mcpeH_Vis, PIXEL*0, PIXEL*0, PIXEL*37, PIXEL*4)}
+var mcpeH_Vis9 = function() {return ninePatch1(mcpeH_Vis, PIXEL*0, PIXEL*0, PIXEL*37, PIXEL*4)}
 var mcpeH_VisArray = [];
 for(var e = 0; e < 12; e++) {
 	mcpeH_VisArray.push(android.graphics.Bitmap.createScaledBitmap(android.graphics.Bitmap.createBitmap(mcpeH_VisRaw, 0, 0, 4 + 3*e, 4), PIXEL*(24 + 18*e), PIXEL*24, false));
@@ -718,11 +718,11 @@ function loadData(file, article) {
 		//불러올 데이터 찾기
 		if(tempString.split("¶")[0] == article){
 			str = tempString.split("¶")[1];
-			if(tempString.split("¶")[2] === "n") {
-				do(tempString.split("¶")[1] === "n") {
+			if(tempString.split("¶")[2] == "n") {
+				do {
 					tempRead = bufferedReader.readLine();
 					str += "\n" + tempRead.split("¶")[0];
-				}
+				}while (tempString.split("¶")[1] == "n");
 			}
 			//찾았으면 끝내고 반환
 			fileInputStream.close();
