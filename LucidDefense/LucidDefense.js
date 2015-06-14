@@ -31,7 +31,7 @@ var _TEST_DATA = new java.io.File(_MAIN_DIR, "lastLog.txt");
 function _MAP_DIR() {return new java.io.File(_SD_CARD, "games/com.mojang/minecraftWorlds/" + Level.getWorldDir() + "/mods")}
 function _MAP_DATA() {return new java.io.File(_MAP_DIR(), className + ".json")}
 var DIP = PIXEL * loadData(_MAIN_DATA, "DIPS");
-if(DIP == null){
+if(DIP == null || DIP == 0){
 	DIP = PIXEL;
 }
 if(!(_MAIN_DIR.exists())) {
@@ -721,8 +721,9 @@ function loadData(file, article) {
 			if(tempString.split("¶")[2] == "n") {
 				do {
 					tempRead = bufferedReader.readLine();
-					str += "\n" + tempRead.split("¶")[0];
-				}while (tempString.split("¶")[1] == "n");
+					tempString = tempRead + "";
+					str += "\n" + tempString.split("¶")[0];
+				}while(tempString.split("¶")[1] == "n");
 			}
 			//찾았으면 끝내고 반환
 			fileInputStream.close();
@@ -906,13 +907,32 @@ function newLevel(str) {
 	if(loadData(_MAP_DATA(), "DEFENSE") === "Lucid") {
 		Ld.running = true;
 		Ld.playing = false;
-		clientMessage(loadData(_MAP_DATA(), "TEST"));
+		if(Ld.btnAlive == false) {
+			uiThread(function() {try {
+				Ld.wd.showAtLocation(ctx.getWindow().getDecorView(), android.view.Gravity.RIGHT | android.view.Gravity.TOP, DIP*2, DIP*30);
+				Ld.btnAlive = true;
+			}catch(e) {
+				showError(e);
+			}});
+		}
 	}
 }
 
 function leaveGame() {
 	Ld.running = false;
 	Ld.playing = false;
+	if(Ld.btnAlive) {
+		Ld.wd.dismiss();
+		Ld.btnAlive = false;
+	}
+}
+
+function procCmd(str) {
+	var cmd = str.split(" ");
+	//GET OUT OF MY SCRIPT FOOL COMMEDS THERE IS JUST ONLY BUTTON IN HERE
+	if(cmd[0] === "mod") {
+		broadcast(TAG + "by CodeInside");
+	}
 }
 
 function modTick() {
@@ -924,7 +944,31 @@ function modTick() {
 var Ld = {};
 Ld.running = false;
 Ld.playing = false;
+Ld.btnAlive = false;
 
 Ld.defense = function(file) {
 	
 }
+
+Ld.btn = new android.widget.Button(ctx);
+Ld.btn.setTransformationMethod(null);
+Ld.btn.setLayerType(android.view.View.LAYER_TYPE_SOFTWARE, null);
+Ld.btn.setGravity(android.view.Gravity.CENTER);
+Ld.btn.setPadding(0, 0, 0, 0);
+Ld.btn.setText("Lucid");
+Ld.btn.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, DIP*11);
+Ld.btn.setTextColor(android.graphics.Color.rgb(30, 150, 255));
+Ld.btn.setShadowLayer(1, DIP/2, DIP/2, android.graphics.Color.GRAY);
+
+Ld.btn_d = new android.graphics.drawable.GradientDrawable();
+Ld.btn_d.mutate().setStroke(DIP*2, android.graphics.Color.BLUE);
+Ld.btn_d.mutate().setGradientType(android.graphics.drawable.GradientDrawable.RADIAL_GRADIENT);
+Ld.btn_d.mutate().setGradientRadius(DIP*35);
+Ld.btn_d.mutate().setColor(android.graphics.Color.WHITE);
+Ld.btn_d.setCornerRadius(DIP*15);
+Ld.btn.setBackgroundDrawable(Ld.btn_d);
+
+Ld.btn_p = new android.widget.RelativeLayout.LayoutParams(DIP*70, DIP*30);
+Ld.btn.setLayoutParams(Ld.btn_p);
+
+Ld.wd = new android.widget.PopupWindow(Ld.btn, DIP*70, DIP*30, false);
