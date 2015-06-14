@@ -1012,3 +1012,75 @@ Ld.btn_p = new android.widget.RelativeLayout.LayoutParams(DIP*70, DIP*30);
 Ld.btn.setLayoutParams(Ld.btn_p);
 
 Ld.wd = new android.widget.PopupWindow(Ld.btn, DIP*70, DIP*30, false);
+
+
+
+Ld.mainDl = new android.app.AlertDialog.Builder(ctx);
+Ld.mainDl.setTitle(TAG);
+
+Ld.mainDlSv = new android.widget.ScrollView(ctx);
+
+Ld.mainDlLl = new android.widget.LinearLayout(ctx);
+
+Ld.mainDlC1 = new android.widget.Button(ctx);
+Ld.mainDlC1.setText("Start");
+Ld.mainDlC1.setOnClickListener(android.view.View.OnClickListener(
+	onClick: function(view, event) {try {
+	
+	}catch(e) {
+		showError(e);
+	}}
+));
+Ld.mainDlLl.addView(Ld.mainDlC1);
+
+Ld.mainDlC2 = new android.widget.Button(ctx);
+Ld.mainDlC2.setText("Teleport");
+Ld.mainDlC2.setOnClickListener(android.view.View.OnClickListener(
+	onClick: function(view, event) {try {
+	
+	}catch(e) {
+		showError(e);
+	}}
+));
+Ld.mainDlLl.addView(Ld.mainDlC2);
+
+Ld.mainDlC3 = new android.widget.Button(ctx);
+Ld.mainDlC3.setText("Heal");
+Ld.mainDlC3.setOnClickListener(android.view.View.OnClickListener(
+	onClick: function(view, event) {try {
+	
+	}catch(e) {
+		showError(e);
+	}}
+));
+Ld.mainDlLl.addView(Ld.mainDlC3);
+
+Ld.mainDlC4 = new android.widget.Button(ctx);
+Ld.mainDlC4.setText("Kill(Clean Inventory)");
+Ld.mainDlC4.setOnClickListener(android.view.View.OnClickListener(
+	onClick: function(view, event) {try {
+	
+	}catch(e) {
+		showError(e);
+	}}
+));
+Ld.mainDlLl.addView(Ld.mainDlC4);
+
+Ld.mainDlC5 = new android.widget.Button(ctx);
+Ld.mainDlC5.setText("Ban");
+Ld.mainDlC5.setOnClickListener(android.view.View.OnClickListener(
+	onClick: function(view, event) {try {
+	
+	}catch(e) {
+		showError(e);
+	}}
+));
+Ld.mainDlLl.addView(Ld.mainDlC5);
+
+Ld.mainDlSv.addView(Ld.mainDlLl);
+
+Ld.mainDl.setView(Ld.mainDlSv);
+
+Ld.mainDl.setNegativeButton("back", null);
+
+Ld.mainDl.create();
