@@ -945,6 +945,7 @@ var Ld = {};
 Ld.running = false;
 Ld.playing = false;
 Ld.btnAlive = false;
+Ld.dialogMod = null;
 
 Ld.defense = function(file) {
 	
@@ -1021,12 +1022,13 @@ Ld.mainDl.setTitle(TAG);
 Ld.mainDlSv = new android.widget.ScrollView(ctx);
 
 Ld.mainDlLl = new android.widget.LinearLayout(ctx);
+Ld.mainDlLl.setOrientation(1);
 
 Ld.mainDlC1 = new android.widget.Button(ctx);
 Ld.mainDlC1.setText("Start");
 Ld.mainDlC1.setOnClickListener(android.view.View.OnClickListener(
 	onClick: function(view, event) {try {
-	
+		
 	}catch(e) {
 		showError(e);
 	}}
@@ -1037,7 +1039,8 @@ Ld.mainDlC2 = new android.widget.Button(ctx);
 Ld.mainDlC2.setText("Teleport");
 Ld.mainDlC2.setOnClickListener(android.view.View.OnClickListener(
 	onClick: function(view, event) {try {
-	
+		Ld.dialogMod = "TELEPORT":
+		Ld.selectPlayer();
 	}catch(e) {
 		showError(e);
 	}}
@@ -1084,3 +1087,37 @@ Ld.mainDl.setView(Ld.mainDlSv);
 Ld.mainDl.setNegativeButton("back", null);
 
 Ld.mainDl.create();
+
+
+Ld.selectPlayer = function() {
+	Ld.playerDl = new android.app.AlertDialog.Builder(ctx);
+	Ld.playerDl.setTitle("Select Player");
+	
+	Ld.playerDlSv = new android.widget.ScrollView(ctx);
+	
+	Ld.playerDlLl = new android.widget.LinearLayout(ctx);
+	Ld.playerDlLl.setOrientation(1);
+	
+	
+	var a = Entity.getAll();
+	var p = [];
+	for(var e = 0; e < a.length; e++) {
+		if(Player.isPlayer(a[e])) {
+			p.push(a[e]);
+		}
+	}
+	
+	for(var e = 0; e < p.length; e++) {
+		var b = new android.widget Button(ctx);
+		b.setText(Player.getName(p[e]));
+		Ld.playerDlLl.addView(b);
+	}
+	
+	Ld.playerDlSv.addView(Ld.playerDlLl);
+	
+	Ld.playerDl.setView(Ld.playerDlSv);
+	
+	Ld.playerDl.setNegativeButton("back", null);
+	Ld.playerDl.create();
+	Ld.playerDl.show();
+}
