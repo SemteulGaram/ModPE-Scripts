@@ -337,7 +337,10 @@ function bgsManager() {try {
 			bgsData.splice(e, 1);
 			continue;
 		}
-		bgsData[e].ct.setVolume(bgsL(bgsData[e].x, bgsData[e].y, bgsData[e].z, bgsData[e].range, bgsData[e].power)*bgsData[e].vol, bgsR(bgsData[e].x, bgsData[e].y, bgsData[e].z, bgsData[e].range, bgsData[e].power)*bgsData[e].vol);
+		var L = bgsL(bgsData[e].x, bgsData[e].y, bgsData[e].z, bgsData[e].range, bgsData[e].power)*bgsData[e].vol;
+		var R = bgsR(bgsData[e].x, bgsData[e].y, bgsData[e].z, bgsData[e].range, bgsData[e].power)*bgsData[e].vol;
+		clientMessage(Math.floor(L*100) + " " + Math.floor(R*100));
+		bgsData[e].ct.setVolume(L, R);
 	}
 }catch(e) {
 	debug("bgsManager", "errorLine: " + e.lineNumber);
@@ -345,19 +348,6 @@ function bgsManager() {try {
 }}
 
 function stereoL(x, y, z, power) {
-	var e = locToYaw(Player.getX() - x, Player.getY() - y, Player.getZ() - z);
-	var t = e - Entity.getYaw(Player.getEntity()) + 180 - 135;
-	if(t > 0) {
-		t %= 360;
-	}else {
-		while(t < 0) {
-			t += 360;
-		}
-	}
-	return 1 - (Math.sin(t*Math.PI/180)/power);
-}
-
-function stereoR(x, y, z, power) {
 	var e = locToYaw(Player.getX() - x, Player.getY() - y, Player.getZ() - z);
 	var t = e - Entity.getYaw(Player.getEntity()) + 180 - 45;
 	if(t > 0) {
@@ -367,7 +357,28 @@ function stereoR(x, y, z, power) {
 			t += 360;
 		}
 	}
-	return 1 - (Math.sin(t*Math.PI/180)/power);
+	if(t >= 0 && t <= 180) {
+		return 1 - (Math.sin(t*Math.PI/180)/power);
+	}else {
+		return 1;
+	}
+}
+
+function stereoR(x, y, z, power) {
+	var e = locToYaw(Player.getX() - x, Player.getY() - y, Player.getZ() - z);
+	var t = e - Entity.getYaw(Player.getEntity()) + 180 - 135;
+	if(t > 0) {
+		t %= 360;
+	}else {
+		while(t < 0) {
+			t += 360;
+		}
+	}
+	if(t >= 0 && t <= 180) {
+		return 1 - (Math.sin(t*Math.PI/180)/power);
+	}else {
+		return 1;
+	}
 }
 
 function bgsL(x, y, z, range, power) {
@@ -375,10 +386,10 @@ function bgsL(x, y, z, range, power) {
 	if(distance < range) {
 		return stereoL(x, y, z, 3 * (range/distance));
 	}else {
-		if((distance - range) * power > 1) {
+		if(Math.sqrt(distance - range) * power > 1.5) {
 			return 0;
 		}
-		var r = stereoL(x, y, z, 3) - ((distance - range) * power);
+		var r = stereoL(x, y, z, 3) - (Math.sqrt(distance - range) * power);
 		if(r < 0) {
 			return 0;
 		}
@@ -391,10 +402,10 @@ function bgsR(x, y, z, range, power) {
 	if(distance < range) {
 		return stereoR(x, y, z, 3 * (range/distance));
 	}else {
-		if((distance - range) * power > 1) {
+		if(Math.sqrt(distance - range) * power > 1.5) {
 			return 0;
 		}
-		var r = stereoR(x, y, z, 3) - ((distance - range) * power);
+		var r = stereoR(x, y, z, 3) - (Math.sqrt(distance - range) * power);
 		if(r < 0) {
 			return 0;
 		}
@@ -458,7 +469,7 @@ function procCmd(str) {
 		warningPopup("점멸 경고창 활성화");
 	}else {
 		//activeButton(str, null);
-		bgs(Player.getX(), Player.getY(), Player.getZ(), Assets.mus1, 5, 0.1, 1, false, function() {print("not able")});
+		bgs(Player.getX(), Player.getY(), Player.getZ(), Assets.mus1, 5, 0.3, 1, false, function() {print("not able")});
 	}
 }
 
