@@ -349,7 +349,7 @@ function bgsManager() {try {
 
 function stereoL(x, y, z, power) {
 	var e = locToYaw(Player.getX() - x, Player.getY() - y, Player.getZ() - z);
-	var t = e - Entity.getYaw(Player.getEntity()) + 180 - 45;
+	var t = e - Entity.getYaw(Player.getEntity()) + 180 - 10;
 	if(t > 0) {
 		t %= 360;
 	}else {
@@ -366,7 +366,7 @@ function stereoL(x, y, z, power) {
 
 function stereoR(x, y, z, power) {
 	var e = locToYaw(Player.getX() - x, Player.getY() - y, Player.getZ() - z);
-	var t = e - Entity.getYaw(Player.getEntity()) + 180 - 135;
+	var t = e - Entity.getYaw(Player.getEntity()) + 180 - 170;
 	if(t > 0) {
 		t %= 360;
 	}else {
@@ -386,7 +386,7 @@ function bgsL(x, y, z, range, power) {
 	if(distance < range) {
 		return stereoL(x, y, z, 3 * (range/distance));
 	}else {
-		if(Math.sqrt(distance - range) * power > 1.5) {
+		if(Math.sqrt(distance - range) * power > 1) {
 			return 0;
 		}
 		var r = stereoL(x, y, z, 3) - (Math.sqrt(distance - range) * power);
@@ -402,7 +402,7 @@ function bgsR(x, y, z, range, power) {
 	if(distance < range) {
 		return stereoR(x, y, z, 3 * (range/distance));
 	}else {
-		if(Math.sqrt(distance - range) * power > 1.5) {
+		if(Math.sqrt(distance - range) * power > 1) {
 			return 0;
 		}
 		var r = stereoR(x, y, z, 3) - (Math.sqrt(distance - range) * power);
