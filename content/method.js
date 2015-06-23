@@ -30,33 +30,32 @@ var _MAIN_DATA = new java.io.File(_MAIN_DIR, "setting.json");
 var _TEST_DATA = new java.io.File(_MAIN_DIR, "lastLog.txt");
 function _MAP_DIR() {return new java.io.File(_SD_CARD, "games/com.mojang/minecraftWorlds/" + Level.getWorldDir() + "/mods")}
 function _MAP_DATA() {return new java.io.File(_MAP_DIR(), className + ".json")}
-var DIP = PIXEL * loadData(_MAIN_DATA, "DIPS");
-if(DIP == null || DIP == 0){
-	DIP = PIXEL;
-}
 if(!(_MAIN_DIR.exists())) {
 	_MAIN_DIR.mkdirs();
 }
 if(!(_MAIN_DATA.exists())) {
 	_MAIN_DATA.createNewFile();
 }
+var DIP = PIXEL * loadData(_MAIN_DATA, "DIPS");
+if(DIP == null || DIP == 0){
+	DIP = PIXEL;
+}
 
 
 
-//留덉씤�щ옒�꾪듃 由ъ냼��
 //NOT USE(TEXTURE PACK MISSING)
 var mcpeCPC = ctx.createPackageContext("com.mojang.minecraftpe", android.content.Context.CONTEXT_IGNORE_SECURITY);
 var mcpeAssets = mcpeCPC.getAssets();
-//spritesheet.png �뚯씪 �묎렐
+//spritesheet.png
 var mcpeSS;
 try{
 	mcpeSS = ModPE.openInputStreamFromTexturePack("images/gui/spritesheet.png");
 }catch(e) {
-	//�쏅궇 踰꾩쟾�� ���� �명솚��
+	//old version
 	mcpeSS = mcpeAssets.open("images/gui/spritesheet.png");
 }
 var mcpeSS_BF = android.graphics.BitmapFactory.decodeStream(mcpeSS);
-//touchgui.png �뚯씪 �묎렐
+//touchgui.png
 var mcpeTG;
 try {
 	mcpeTG = ModPE.openInputStreamFromTexturePack("images/gui/touchgui.png");
@@ -64,15 +63,12 @@ try {
 	mcpeTG = mcpeAssets.open("images/gui/touchgui.png");
 }
 var mcpeTG_BF = android.graphics.BitmapFactory.decodeStream(mcpeTG);
-//苑됱갔諛곌꼍 �섏씤�⑥튂
 var mcpeBGRaw = android.graphics.Bitmap.createBitmap(mcpeSS_BF, 0, 0, 16, 16);
 var mcpeBG = android.graphics.Bitmap.createScaledBitmap(mcpeBGRaw, PIXEL*32, PIXEL*32, false);
 var mcpeBG9 = function() {return ninePatch1(mcpeBG, PIXEL*12, PIXEL*12, PIXEL*24, PIXEL*24)}
-//諛곌꼍 �섏씤�⑥튂
 var mcpeBGTRaw = android.graphics.Bitmap.createBitmap(mcpeSS_BF, 34, 43, 14, 14);
 var mcpeBGT = android.graphics.Bitmap.createScaledBitmap(mcpeBGTRaw, PIXEL*32, PIXEL*32, false);
 var mcpeBGT9 = function() {return ninePatch1(mcpeBGT, PIXEL*12, PIXEL*12, PIXEL*22, PIXEL*22)}
-//���댄�諛� �섏씤�⑥튂
 var mcpeTitleBarRaw = android.graphics.Bitmap.createBitmap(mcpeTG_BF, 150, 26, 14, 25);
 var mcpeTitleBar = android.graphics.Bitmap.createScaledBitmap(mcpeTitleBarRaw, PIXEL*28, PIXEL*50, false);
 var mcpeTitleBar9 = function()  {return ninePatch1(mcpeTitleBar, PIXEL*8, PIXEL*8, PIXEL*20, PIXEL*22)}
@@ -338,7 +334,7 @@ function toasts(str) {
 	));
 }
 
-function sendChat(str){
+function broadcast(str){
 	net.zhuoweizhang.mcpelauncher.ScriptManager.nativeSendChat(str);
 	clientMessage("<" + Player.getName(Player.getEntity()) + "> " + str);
 }
@@ -426,7 +422,7 @@ function checkServerData(data, article){
 };
 
 function splitLine(article){
-	var temp = checkServerData(article).split("쨋"); 
+	var temp = checkServerData(article).split("¶"); 
 	var temp2 = ""; 
 	for(var e in temp){
 		temp2 += temp[e]+"\n"
@@ -480,10 +476,10 @@ function setTexture(prototypeFile, innerPath){
 			ex = true;
 		}
 		if(!ex) {
-			toast(TAG + prototypeFile.getName() + " 由ъ냼�ㅽ뙆�� �곸슜 �ㅽ뙣\n�덈뱶濡쒖씠�쒓� �꾨땶媛���?");
+			toast(TAG + prototypeFile.getName() + " can't find blocklauncher dir'");
 		}
 	}catch(e){
-		toasts(prototypeFile.getName() + " 由ъ냼�ㅽ뙆�쇱씠 �놁뒿�덈떎");
+		toasts(prototypeFile.getName() + " is not exists");
 	}
 };
 
@@ -669,7 +665,6 @@ function absZ(x, y, z) {
  */
 
 function saveData(file, article, value) {
-	//�쎄린
 	if(!file.exists()) {
 		file.createNewFile()
 	}
@@ -684,26 +679,22 @@ function saveData(file, article, value) {
 	var tempSaved = "";
 	while((tempRead = bufferedReader.readLine()) != null){
 		tempReadString = tempRead.toString();
-		//吏�湲� �덈줈 ���ν븷 �곗씠�곕뒗 �쎌� �딄린
-		if(tempReadString.split("쨋")[0] == article)
+		if(tempReadString.split("¶")[0] == article)
 			continue;
 		tempSaved += tempReadString + "\n";
 	}
-	//�쎌뼱�ㅺ린 �꾨즺
 	fileInputStream.close();
 	inputStreamReader.close();
 	bufferedReader.close();
-	//�곌린
 	var fileOutputStream = new java.io.FileOutputStream(file);
 	var outputStreamWriter = new java.io.OutputStreamWriter(fileOutputStream);
-	outputStreamWriter.write(tempSaved + article + "쨋" + value);
-	//�곌린 �꾨즺
+	outputStreamWriter.write(tempSaved + article + "¶" + value);
 	outputStreamWriter.close();
 	fileOutputStream.close();
+	return true;
 }
 
 function loadData(file, article) {
-	//�쎄린
 	try{
 		var fileInputStream = new java.io.FileInputStream(file);
 	}catch(e) {
@@ -712,31 +703,26 @@ function loadData(file, article) {
 	var inputStreamReader = new java.io.InputStreamReader(fileInputStream);
 	var bufferedReader = new java.io.BufferedReader(inputStreamReader);
 	var tempRead, tempReadString, str;
-
 	while((tempRead = bufferedReader.readLine()) != null){
 		tempString = tempRead + "";
-		//遺덈윭�� �곗씠�� 李얘린
-		if(tempString.split("쨋")[0] == article){
-			str = tempString.split("쨋")[1];
-			if(tempString.split("쨋")[2] == "n") {
+		if(tempString.split("¶")[0] == article){
+			str = tempString.split("¶")[1];
+			if(tempString.split("¶")[2] == "n") {
 				do {
 					tempRead = bufferedReader.readLine();
 					tempString = tempRead + "";
-					str += "\n" + tempString.split("쨋")[0];
-				}while(tempString.split("쨋")[1] == "n");
+					str += "\n" + tempString.split("¶")[0];
+				}while(tempString.split("¶")[1] == "n");
 			}
-			//李얠븯�쇰㈃ �앸궡怨� 諛섑솚
 			fileInputStream.close();
 			inputStreamReader.close();
 			bufferedReader.close();
 			return str;
 		}
 	}
-	//紐� 李얠쓬
 	fileInputStream.close();
 	inputStreamReader.close();
 	bufferedReader.close();
-	//�놁쑝硫� 諛섑솚
 	return null;
 }
 
@@ -750,7 +736,6 @@ function loadData(file, article) {
  */
 
 function saveSetting(article, value) {
-	//�쎄린
 	var fileInputStream = new java.io.FileInputStream(new java.io.File(android.os.Environment.getExternalStorageDirectory() + "/games/com.mojang/minecraftpe/options.txt"));
 	var inputStreamReader = new java.io.InputStreamReader(fileInputStream);
 	var bufferedReader = new java.io.BufferedReader(inputStreamReader);
@@ -758,20 +743,16 @@ function saveSetting(article, value) {
 	var tempSaved = "";
 	while((tempRead = bufferedReader.readLine()) != null){
 		tempReadString = tempRead.toString();
-		//吏�湲� �덈줈 ���ν븷 �곗씠�곕뒗 �쎌� �딄린
 		if(tempReadString.split(":")[0] == article)
 			continue;
 		tempSaved += tempReadString + "\n";
 	}
-	//�쎌뼱�ㅺ린 �꾨즺
 	fileInputStream.close();
 	inputStreamReader.close();
 	bufferedReader.close();
-	//�곌린
 	var fileOutputStream = new java.io.FileOutputStream(new java.io.File(android.os.Environment.getExternalStorageDirectory() + "/games/com.mojang/minecraftpe/options.txt"));
 	var outputStreamWriter = new java.io.OutputStreamWriter(fileOutputStream);
 	outputStreamWriter.write(tempSaved + article + ":" + value);
-	//�곌린 �꾨즺
 	outputStreamWriter.close();
 	fileOutputStream.close();
 	//this is not work
@@ -779,7 +760,6 @@ function saveSetting(article, value) {
 }
 
 function loadSetting(article) {
-	//�쎄린
 	var fileInputStream = new java.io.FileInputStream(new java.io.File(android.os.Environment.getExternalStorageDirectory() + "/games/com.mojang/minecraftpe/options.txt"));
 	var inputStreamReader = new java.io.InputStreamReader(fileInputStream);
 	var bufferedReader = new java.io.BufferedReader(inputStreamReader);
@@ -787,20 +767,16 @@ function loadSetting(article) {
 
 	while((tempRead = bufferedReader.readLine()) != null){
 		tempReadString = tempRead.toString();
-		//遺덈윭�� �곗씠�� 李얘린
 		if(tempReadString.split(":")[0] == article){
-			//李얠븯�쇰㈃ �앸궡怨� 諛섑솚
 			fileInputStream.close();
 			inputStreamReader.close();
 			bufferedReader.close();
 			return tempReadString.split(":")[1];
 		}
 	}
-	//紐� 李얠쓬
 	fileInputStream.close();
 	inputStreamReader.close();
 	bufferedReader.close();
-	//�놁쑝硫� 諛섑솚
 	return null;
 }
 
