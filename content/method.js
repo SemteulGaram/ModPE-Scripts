@@ -283,7 +283,7 @@ C,E,E,E,E,E,E,E,E,E,E,E,E,E,E,E,E,D
 /**
  * Error report
  *
- * @since 2015-04-??
+ * @since 2015-04
  * @author CodeInside
  *
  * @param {error} e
@@ -377,30 +377,38 @@ function thread(fc) {
 /**
  * Download file
  *
- * @since 2015-01-10
+ * @since 2015-01
  * @author CodeInside
+ * 
+ * @param <File> path
+ * @param <String> url
+ * @param <ProgressBar|Null> progressBar
  */
 
-function downloadFile(path, url) {
+function downloadFile(path, url, progressBar) {
 	try{
 		var tempApiUrl = new java.net.URL(url);
 		var tempApiUrlConn = tempApiUrl.openConnection();
 		tempApiUrlConn.connect();
-
 		var tempBis = new java.io.BufferedInputStream(tempApiUrl.openStream());
+		if(progressBar !== null) {
+			progressBar.setMax(tempApiUrlConn.getContentLength());
+		}
 		var tempFos = new java.io.FileOutputStream(path);
 		var tempData = java.lang.reflect.Array.newInstance(java.lang.Byte.TYPE, 1024);
 		var tempTotal = 0, tempCount;
 		while ((tempCount = tempBis.read(tempData)) != -1) {
-			tempTotal += tempCount;
 			tempFos.write(tempData, 0, tempCount);
+			tempTotal += tempCount;
+			if(progressBar !== null) {
+				progressBar.setProgress(tempTotal);
+			}
 		}
 		tempFos.flush();
 		tempFos.close();
 		tempBis.close();
 		return true;
 	}catch(e){
-		debug(e.lineNumber + " " + e);
 		return false;
 	}
 }
@@ -450,7 +458,7 @@ function splitLine(article){
 /**
  * Set texture
  *
- * @since 2015-04-01
+ * @since 2015-04
  * @author CodeInside
  *
  * @param {File} prototypeFile
@@ -502,12 +510,12 @@ function setTexture(prototypeFile, innerPath){
 
 //==============================
 //-NinePatch JS
-//Copyright짰 2015 affogatoman(colombia2)
+//Copyright® 2015 affogatoman(colombia2)
 //==============================
 /**
  * Nine Patch
  *
- * @since 2015-??-??
+ * @since 2015
  * @author affogatoman
  */
 
@@ -583,7 +591,7 @@ function ninePatch2(bitmap, top, left, bottom, right, width, height) {
 /**
  * Location(x, y, z) to Vector(yaw, pitch)
  *
- * @since 2015-01-??
+ * @since 2015-01
  * @author ToonRaOn
  */
 
@@ -620,7 +628,7 @@ function locToPitch(x, y, z) {
 /**
  * Entity range
  *
- * @since 2015-01-??
+ * @since 2015-01
  * @author CodeInside
  */
 
@@ -633,7 +641,7 @@ function rangeEnt(a, b) {
 /**
  * Vector(yaw, pitch) to Location(x, y, z)
  *
- * @since 2015-01-??
+ * @since 2015-01
  * @author CodeInside
  */
 
@@ -654,7 +662,7 @@ function vectorToZ(y, p) {
 /**
  * Absolute range x, y, z
  *
- * @since 2015-01-??
+ * @since 2015-01
  * @author CodeInside
  */
 
@@ -675,7 +683,7 @@ function absZ(x, y, z) {
 /**
  * save/load Data
  *
- * @since 2015-02-11
+ * @since 2015-02
  * @author CodeInside
  */
 
@@ -746,7 +754,7 @@ function loadData(file, article) {
 /**
  * load/save Minecraft Setting
  *
- * @since 2015-04-12
+ * @since 2015-04
  * @author CodeInside
  */
 
@@ -818,7 +826,7 @@ EntityFix.findEnt = function(uniqId) {
 /**
  * View Side
  *
- * @since 2015-04-13
+ * @since 2015-04
  * @author CodeInside
  */
 
@@ -897,7 +905,7 @@ function viewSide2(yaw) {
 /**
  * Battery Checker
  *
- * @since 2015-04-14
+ * @since 2015-04
  * @author CodeInside
  */
 
@@ -1185,6 +1193,147 @@ function onVisibilityChanged(visible, type, size, audioSessionID) {
 
 //capture
 //mVizData = VL.getFormattedData(1, 1);
+
+
+
+/**
+ * Stereo BGS
+ *
+ * @since 2015-06
+ * @author CodeInside
+ *
+ * @param (Int|Null) x
+ * @param (Int|Null) y
+ * @param (Int|Null) z
+ * @param (Object|Null) ent
+ * @param (File) file <music>
+ * @param (Int) range <0~>
+ * @param (Float) airResistanse <0~1>
+ * @param (Float) vol <0~1>
+ * @param (Boolean) loop
+ * @param (Function|Null) stopFunc
+ */
+//IT IS VERY UNSTABLR, IT NEED A TEST
+
+var bgsData = [];
+
+function bgs(x, y, z, ent, file, range, airResistance, vol, loop, stopFunc) {try {
+	var controler = android.media.MediaPlayer();
+	controler.setDataSource(file.getAbsolutePath());
+	controler.setLooping(loop);
+	if(ent !== null) {
+		x = Entity.getX(ent);
+		y = Entity.getY(ent);
+		z = Entity.getZ(ent);
+	}
+	var v = bgsMeasure(x, y, z, range, airResistance);
+	controler.setVolume(v[0]*vol, v[1]*vol);
+	controler.prepare();
+	controler.start();
+	bgsData.push({x: x, y: y, z: z, ent: ent, ct: controler, file: file, session: controler.getAudioSessionId(), vol: vol, range: range, airResistance: airResistance, loop: loop, stopFunc: stopFunc});
+}catch(e) {
+	showError(e);
+}}
+
+function bgsManager() {try {
+	for(var e = 0; e < bgsData.length; e++) {
+		if(!bgsData[e].ct.isPlaying()) {
+			bgsData[e].ct.release();
+			bgsData.splice(e, 1);
+			continue;
+		}
+		if(bgsData[e].stopFunc !== null && bgsData[e].stopFunc(e)) {
+			bgsData[e].ct.stop();
+			bgsData[e].ct.release();
+			bgsData.splice(e, 1);
+			continue;
+		}
+		if(Entity.getHealth(bgsData[e].ent) <= 0) {
+			 bgsData[e].ent = null;
+		}
+		if(bgsData[e].ent !== null) {
+			bgsData[e].x = Entity.getX(bgsData[e].ent);
+			bgsData[e].y = Entity.getY(bgsData[e].ent);
+			bgsData[e].z = Entity.getZ(bgsData[e].ent);
+		}
+		var v = bgsMeasure(bgsData[e].x, bgsData[e].y, bgsData[e].z, bgsData[e].range, bgsData[e].airResistance);
+		bgsData[e].ct.setVolume(v[0]*bgsData[e].vol, v[1]*bgsData[e].vol);
+	}
+}catch(e) {
+	showError(e);
+}}
+
+function stereoL(x, y, z, power) {
+	var e = locToYaw(Player.getX() - x, Player.getY() - y, Player.getZ() - z);
+	var t = e - Entity.getYaw(Player.getEntity()) + 180 - 10;
+	if(t > 0) {
+		t %= 360;
+	}else {
+		while(t < 0) {
+			t += 360;
+		}
+	}
+	if(t >= 0 && t <= 180) {
+		return 1 - (Math.sin(t*Math.PI/180)/power);
+	}else {
+		return 1;
+	}
+}
+
+function stereoR(x, y, z, power) {
+	var e = locToYaw(Player.getX() - x, Player.getY() - y, Player.getZ() - z);
+	var t = e - Entity.getYaw(Player.getEntity()) + 180 - 170;
+	if(t > 0) {
+		t %= 360;
+	}else {
+		while(t < 0) {
+			t += 360;
+		}
+	}
+	if(t >= 0 && t <= 180) {
+		return 1 - (Math.sin(t*Math.PI/180)/power);
+	}else {
+		return 1;
+	}
+}
+
+function bgsMeasure(x, y, z, range, airResistance) {
+	var distance = Math.sqrt(Math.pow(Player.getY() - y, 2) + Math.pow(Player.getX() - x, 2) + Math.pow(Player.getZ() - z, 2));
+	if(distance < range) {
+		return [stereoL(x, y, z, 3 * (range/distance)), stereoR(x, y, z, 3 * (range/distance))];
+	}else {
+		if(Math.sqrt(distance - range) * airResistance > 1) {
+			return [0, 0];
+		}
+		var l = stereoL(x, y, z, 3) - (Math.sqrt(distance - range) * airResistance);
+		var r = stereoR(x, y, z, 3) - (Math.sqrt(distance - range) * airResistance);
+		if(l < 0) {
+			l = 0;
+		}
+		if(r < 0) {
+			r = 0;
+		}
+		return [l, r];
+	}
+}
+
+/*
+function bgsR(x, y, z, range, airResistance) {
+	var distance = Math.sqrt(Math.pow(Player.getY() - y, 2) + Math.pow(Player.getX() - x, 2) + Math.pow(Player.getZ() - z, 2));
+	if(distance < range) {
+		return stereoR(x, y, z, 3 * (range/distance));
+	}else {
+		if(Math.sqrt(distance - range) * power > 1) {
+			return 0;
+		}
+		var r = stereoR(x, y, z, 3) - (Math.sqrt(distance - range) * airResistance);
+		if(r < 0) {
+			return 0;
+		}
+		return r;
+	}
+}
+*/
 
 
 
