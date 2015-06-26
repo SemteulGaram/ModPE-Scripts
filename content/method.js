@@ -40,6 +40,28 @@ var DIP = PIXEL * loadData(_MAIN_DATA, "DIPS");
 if(DIP == null || DIP == 0){
 	DIP = PIXEL;
 }
+var Thread = java.lang.Thread;
+var Runnable = java.lang.Runnable;
+var AlertDialog = android.app.AlertDialog;
+var View = android.view.View;
+var ViewGroup = android.view.ViewGroup;
+var MotionEvent = android.view.MotionEvent;
+var Gravity = android.view.Gravity;
+var FrameLayout = android.widget.FrameLayout;
+var RelativeLayout = android.widget.RelativeLayout;
+var LinearLayout = android.widget.LinearLayout;
+var TextView = android.widget.TextView;
+var Button = android.widget.Button;
+var PopupWindow = android.widget.PopupWindow;
+var StateListDrawable = android.graphics.drawable.StateListDrawable;
+var GradientDrawable = android.graphics.drawable.GradientDrawable;
+var BitmapDrawable = android.graphics.drawable.BitmapDrawable;
+var Bitmap = android.graphics.Bitmap;
+var Color = android.graphics.Color;
+var Canvas = android.graphics.Canvas;
+var Paint = android.graphics.Paint;
+var Shader = android.graphics.Shader;
+var ArrayList = java.util.ArrayList;
 
 
 
@@ -348,13 +370,6 @@ function uiThread(fc) {
 }
 function thread(fc) {
 	return new java.lang.Thread(new java.lang.Runnable( {run: fc}))
-}
-function multiThread(fc) {
-	if(Level.getWorldDir() !== null) {
-		new java.lang.Thread(new java.lang.Runnable( {run: fc})).start()
-	}else {
-		uiThread(fc)
-	}
 }
 
 
