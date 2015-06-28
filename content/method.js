@@ -22,24 +22,27 @@ var TAG = "[" + className + " " + VERSION + "] ";
 
 var ctx = com.mojang.minecraftpe.MainActivity.currentMainActivity.get();
 var PIXEL = android.util.TypedValue.applyDimension(android.util.TypedValue.COMPLEX_UNIT_DIP, 1, ctx.getResources().getDisplayMetrics());
-var _SD_CARD = android.os.Environment.getExternalStorageDirectory();
-var _MOD_DIR = new java.io.File(_SD_CARD, "games/com.mojang/minecraftpe/mods");
-var _MAIN_DIR = new java.io.File(_MOD_DIR, className);
-var _FONT = new java.io.File(_MOD_DIR, "minecraft.ttf");
-var _MAIN_DATA = new java.io.File(_MAIN_DIR, "setting.json");
-var _TEST_DATA = new java.io.File(_MAIN_DIR, "lastLog.txt");
-function _MAP_DIR() {return new java.io.File(_SD_CARD, "games/com.mojang/minecraftWorlds/" + Level.getWorldDir() + "/mods")}
-function _MAP_DATA() {return new java.io.File(_MAP_DIR(), className + ".json")}
-if(!(_MAIN_DIR.exists())) {
-	_MAIN_DIR.mkdirs();
+var FILE_SD_CARD = android.os.Environment.getExternalStorageDirectory();
+var FILE_MOD_DIR = new java.io.File(FILE_SD_CARD, "games/com.mojang/minecraftpe/mods");
+var FILE_MAIN_DIR = new java.io.File(FILE_MOD_DIR, className);
+var FILE_FONT = new java.io.File(FILE_MOD_DIR, "minecraft.ttf");
+var FILE_MAIN_DATA = new java.io.File(FILE_MAIN_DIR, "setting.json");
+var FILE_TEST_DATA = new java.io.File(FILE_MAIN_DIR, "lastLog.txt");
+var FILE_NO_MEDIA = new java.io.File(FILE_MAIN_DIR, ".nomedia");
+function FILE_MAP_DIR() {return new java.io.File(FILE_SD_CARD, "games/com.mojang/minecraftWorlds/" + Level.getWorldDir() + "/mods")}
+function FILE_MAP_DATA() {return new java.io.File(FILE_MAP_DIR(), className + ".json")}
+if(!(FILE_MAIN_DIR.exists())) {
+	FILE_MAIN_DIR.mkdirs();
+	FILE_NO_MEDIA.createNewFile();
 }
-if(!(_MAIN_DATA.exists())) {
-	_MAIN_DATA.createNewFile();
+if(!(FILE_MAIN_DATA.exists())) {
+	FILE_MAIN_DATA.createNewFile();
 }
-var DIP = PIXEL * loadData(_MAIN_DATA, "DIPS");
+var DIP = PIXEL * loadData(FILE_MAIN_DATA, "DIPS");
 if(DIP == null || DIP == 0){
 	DIP = PIXEL;
 }
+var Context = android.content.Context;
 var Thread = java.lang.Thread;
 var Runnable = java.lang.Runnable;
 var AlertDialog = android.app.AlertDialog;
@@ -52,78 +55,85 @@ var RelativeLayout = android.widget.RelativeLayout;
 var LinearLayout = android.widget.LinearLayout;
 var TextView = android.widget.TextView;
 var Button = android.widget.Button;
+var ImageView = android.widget.ImageView;
+var ProgressBar = android.widget.ProgressBar;
 var PopupWindow = android.widget.PopupWindow;
 var StateListDrawable = android.graphics.drawable.StateListDrawable;
 var GradientDrawable = android.graphics.drawable.GradientDrawable;
 var BitmapDrawable = android.graphics.drawable.BitmapDrawable;
+var ColorDrawable = android.graphics.drawable.ColorDrawable;
+var ClipDrawable = android.graphics.drawable.ClipDrawable;
+var LayerDrawable = android.graphics.drawable.LayerDrawable;
 var Bitmap = android.graphics.Bitmap;
+var BitmapFactory = android.graphics.BitmapFactory;
 var Color = android.graphics.Color;
 var Canvas = android.graphics.Canvas;
 var Paint = android.graphics.Paint;
+var Path = android.graphics.Path;
 var Shader = android.graphics.Shader;
 var ArrayList = java.util.ArrayList;
 
 
-
+var Assets = {};
 //NOT USE(TEXTURE PACK MISSING)
-var mcpeCPC = ctx.createPackageContext("com.mojang.minecraftpe", android.content.Context.CONTEXT_IGNORE_SECURITY);
-var mcpeAssets = mcpeCPC.getAssets();
+Assets.mcpeCPC = ctx.createPackageContext("com.mojang.minecraftpe", Context.CONTEXT_IGNORE_SECURITY);
+Assets.mcpe = Assets.mcpeCPC.getAssets();
 //spritesheet.png
-var mcpeSS;
 try{
-	mcpeSS = ModPE.openInputStreamFromTexturePack("images/gui/spritesheet.png");
+	Assets.mcpeSS = ModPE.openInputStreamFromTexturePack("images/gui/spritesheet.png");
 }catch(e) {
 	//old version
-	mcpeSS = mcpeAssets.open("images/gui/spritesheet.png");
+	Assets.mcpeSS = mcpeAssets.open("images/gui/spritesheet.png");
 }
-var mcpeSS_BF = android.graphics.BitmapFactory.decodeStream(mcpeSS);
+Assets.mcpeSS_BF = BitmapFactory.decodeStream(Assets.mcpeSS);
 //touchgui.png
-var mcpeTG;
 try {
-	mcpeTG = ModPE.openInputStreamFromTexturePack("images/gui/touchgui.png");
+	Assets.mcpeTG = ModPE.openInputStreamFromTexturePack("images/gui/touchgui.png");
 }catch(e) {
-	mcpeTG = mcpeAssets.open("images/gui/touchgui.png");
+	Assets.mcpeTG = mcpeAssets.open("images/gui/touchgui.png");
 }
-var mcpeTG_BF = android.graphics.BitmapFactory.decodeStream(mcpeTG);
-var mcpeBGRaw = android.graphics.Bitmap.createBitmap(mcpeSS_BF, 0, 0, 16, 16);
-var mcpeBG = android.graphics.Bitmap.createScaledBitmap(mcpeBGRaw, PIXEL*32, PIXEL*32, false);
-var mcpeBG9 = function() {return ninePatch1(mcpeBG, PIXEL*12, PIXEL*12, PIXEL*24, PIXEL*24)}
-var mcpeBGTRaw = android.graphics.Bitmap.createBitmap(mcpeSS_BF, 34, 43, 14, 14);
-var mcpeBGT = android.graphics.Bitmap.createScaledBitmap(mcpeBGTRaw, PIXEL*32, PIXEL*32, false);
-var mcpeBGT9 = function() {return ninePatch1(mcpeBGT, PIXEL*12, PIXEL*12, PIXEL*22, PIXEL*22)}
-var mcpeTitleBarRaw = android.graphics.Bitmap.createBitmap(mcpeTG_BF, 150, 26, 14, 25);
-var mcpeTitleBar = android.graphics.Bitmap.createScaledBitmap(mcpeTitleBarRaw, PIXEL*28, PIXEL*50, false);
-var mcpeTitleBar9 = function()  {return ninePatch1(mcpeTitleBar, PIXEL*8, PIXEL*8, PIXEL*20, PIXEL*22)}
-//醫낅즺 踰꾪듉 �섏씤�⑥튂
-var mcpeExitRaw = android.graphics.Bitmap.createBitmap(mcpeSS_BF, 60, 0, 18, 18);
-var mcpeExit = android.graphics.Bitmap.createScaledBitmap(mcpeExitRaw, 18*PIXEL, 18*PIXEL, false);
-var mcpeExit9 = function() {return ninePatch1(mcpeExit, PIXEL*6, PIXEL*6, PIXEL*30, PIXEL*30)}
-var mcpeExitB = new android.graphics.drawable.BitmapDrawable(ctx.getResources(), mcpeExit);
-mcpeExitB.setAntiAlias(false);
-//醫낅즺 踰꾪듉(�대┃) �섏씤�⑥튂
-var mcpeExitClickRaw = android.graphics.Bitmap.createBitmap(mcpeSS_BF, 78, 0, 18, 18);
-var mcpeExitClick = android.graphics.Bitmap.createScaledBitmap(mcpeExitClickRaw, PIXEL*36, PIXEL*36, false);
-var mcpeExitClick9 = function() {return ninePatch1(mcpeExitClick, PIXEL*6, PIXEL*6, PIXEL*32, PIXEL*32)}
-//踰꾪듉 �섏씤�⑥튂
-var mcpeBtnRaw = android.graphics.Bitmap.createBitmap(mcpeSS_BF,8,32,8,8);
-var mcpeBtn = android.graphics.Bitmap.createScaledBitmap(mcpeBtnRaw, PIXEL*16, PIXEL*16, false);
-var mcpeBtn9 = function() {return ninePatch1(mcpeBtn, PIXEL*6, PIXEL*4, PIXEL*14, PIXEL*14)}
-//踰꾪듉(�대┃) �섏씤�⑥튂
-var mcpeBtnClickRaw = android.graphics.Bitmap.createBitmap(mcpeSS_BF,0,32,8,8);
-var mcpeBtnClick = android.graphics.Bitmap.createScaledBitmap(mcpeBtnClickRaw, PIXEL*16, PIXEL*16,false);
-var mcpeBtnClick9 = function() {return ninePatch1(mcpeBtnClick, PIXEL*4, PIXEL*4, PIXEL*12, PIXEL*14)}
-//誘몃땲踰꾪듉 �섏씤�⑥튂
-var mcpeMiniBtnRaw = android.graphics.Bitmap.createBitmap(mcpeSS_BF,8,33,8,7);
-var mcpeMiniBtn = android.graphics.Bitmap.createScaledBitmap(mcpeMiniBtnRaw, PIXEL*16, PIXEL*14, false);
-var mcpeMiniBtn9 = function() {return ninePatch1(mcpeMiniBtn, PIXEL*2, PIXEL*2, PIXEL*12, PIXEL*14)}
-//誘몃땲踰꾪듉(�대┃) �섏씤�⑥튂
-var mcpeMiniBtnClickRaw = android.graphics.Bitmap.createBitmap(mcpeSS_BF,0,32,8,7);
-var mcpeMiniBtnClick = android.graphics.Bitmap.createScaledBitmap(mcpeMiniBtnClickRaw, PIXEL*16, PIXEL*14, false);
-var mcpeMiniBtnClick9 = function() {return ninePatch1(mcpeMiniBtnClick, PIXEL*4, PIXEL*4, PIXEL*12, PIXEL*12)}
-//�띿뒪�몃럭 �섏씤�⑥튂
-var b = android.graphics.Color.parseColor("#6b6163");
-var i = android.graphics.Color.parseColor("#3a393a");
-var mcpeTextViewPixel = [
+Assets.mcpeTG_BF = BitmapFactory.decodeStream(Assets.mcpeTG);
+
+Assets.background_raw = Bitmap.createBitmap(Assets.mcpeSS_BF, 0, 0, 16, 16);
+Assets.background = Bitmap.createScaledBitmap(Assets.background_raw, PIXEL*32, PIXEL*32, false);
+Assets.background_9 = function() {return ninePatch1(Assets.background, PIXEL*12, PIXEL*12, PIXEL*24, PIXEL*24)}
+
+Assets.fullBackground_raw = Bitmap.createBitmap(Assets.mcpeSS_BF, 34, 43, 14, 14);
+Assets.fullBackground = Bitmap.createScaledBitmap(Assets.fullBackground_raw, PIXEL*32, PIXEL*32, false);
+Assets.fullBackground_9 = function() {return ninePatch1(Assets.fullBackground, PIXEL*12, PIXEL*12, PIXEL*22, PIXEL*22)}
+
+Assets.title_raw = Bitmap.createBitmap(Assets.mcpeTG_BF, 150, 26, 14, 25);
+Assets.title = Bitmap.createScaledBitmap(Assets.title_raw, PIXEL*28, PIXEL*50, false);
+Assets.title_9 = function()  {return ninePatch1(Assets.title, PIXEL*8, PIXEL*8, PIXEL*20, PIXEL*22)}
+
+Assets.exit_raw = Bitmap.createBitmap(Assets.mcpeSS_BF, 60, 0, 18, 18);
+Assets.exit = Bitmap.createScaledBitmap(Assets.exit_raw, 18*PIXEL, 18*PIXEL, false);
+Assets.exit_9 = function() {return ninePatch1(Assets.exit, PIXEL*6, PIXEL*6, PIXEL*30, PIXEL*30)}
+
+Assets.exitClick_raw = Bitmap.createBitmap(Assets.mcpeSS_BF, 78, 0, 18, 18);
+Assets.exitClick = Bitmap.createScaledBitmap(Assets.exitClick_raw, PIXEL*36, PIXEL*36, false);
+Assets.exitClick_9 = function() {return ninePatch1(Assets.exitClick, PIXEL*6, PIXEL*6, PIXEL*32, PIXEL*32)}
+
+Assets.button_raw = Bitmap.createBitmap(Assets.mcpeSS_BF,8,32,8,8);
+Assets.button = Bitmap.createScaledBitmap(Assets.button_raw, PIXEL*16, PIXEL*16, false);
+Assets.button_9 = function() {return ninePatch1(Assets.button, PIXEL*6, PIXEL*4, PIXEL*14, PIXEL*14)}
+
+Assets.buttonClick_raw = Bitmap.createBitmap(Assets.mcpeSS_BF,0,32,8,8);
+Assets.buttonClick = Bitmap.createScaledBitmap(Assets.buttonClick_raw, PIXEL*16, PIXEL*16, false);
+Assets.buttonClick_9 = function() {return ninePatch1(Assets.buttonClick, PIXEL*4, PIXEL*4, PIXEL*12, PIXEL*14)}
+
+Assets.miniButton_raw = Bitmap.createBitmap(Assets.mcpeSS_BF,8,33,8,7);
+Assets.miniButton = Bitmap.createScaledBitmap(Assets.miniButton_raw, PIXEL*16, PIXEL*14, false);
+Assets.miniButton_9 = function() {return ninePatch1(Assets.miniButton, PIXEL*2, PIXEL*2, PIXEL*12, PIXEL*14)}
+
+Assets.miniButtonClick_raw = Bitmap.createBitmap(Assets.mcpeSS_BF,0,32,8,7);
+Assets.miniButtonClick = Bitmap.createScaledBitmap(Assets.miniButtonClick_raw, PIXEL*16, PIXEL*14, false);
+Assets.miniButtonClick_9 = function() {return ninePatch1(Assets.miniButtonClick, PIXEL*4, PIXEL*4, PIXEL*12, PIXEL*12)}
+
+
+var b = Color.parseColor("#6b6163");
+var i = Color.parseColor("#3a393a");
+Assets.textView_pixel = [
 b,b,b,b,b,b,
 b,b,b,b,b,b,
 b,b,i,i,b,b,
@@ -131,11 +141,12 @@ b,b,i,i,b,b,
 b,b,b,b,b,b,
 b,b,b,b,b,b
 ];
-var mcpeTextViewRaw = android.graphics.Bitmap.createBitmap(6, 6, android.graphics.Bitmap.Config.ARGB_8888);
-mcpeTextViewRaw.setPixels(mcpeTextViewPixel, 0, 6, 0, 0, 6, 6);
-var mcpeTextView = android.graphics.Bitmap.createScaledBitmap(mcpeTextViewRaw, PIXEL*6, PIXEL*6, false);
-var mcpeTextView9 = function() {return ninePatch1(mcpeTextView, PIXEL*3, PIXEL*3, PIXEL*4, PIXEL*4)}
+Assets.textView_raw = Bitmap.createBitmap(6, 6, Bitmap.Config.ARGB_8888);
+Assets.textView_raw.setPixels(Assets.textView_pixel, 0, 6, 0, 0, 6, 6);
+Assets.textView = Bitmap.createScaledBitmap(Assets.textView_raw, PIXEL*6, PIXEL*6, false);
+Assets.textView_9 = function() {return ninePatch1(Assets.textView, PIXEL*3, PIXEL*3, PIXEL*4, PIXEL*4)}
 
+/*
 var r = android.graphics.Color.parseColor("#ff0000");
 var y = android.graphics.Color.parseColor("#ffff00");
 var w = android.graphics.Color.parseColor("#ffffff");
@@ -192,8 +203,8 @@ var mcpeH_VisPixel = [
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,
 0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,
-0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0/*,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*/
+0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 ];
 var mcpeH_VisRaw = android.graphics.Bitmap.createBitmap(37, 4, android.graphics.Bitmap.Config.ARGB_8888);
 mcpeH_VisRaw.setPixels(mcpeH_VisPixel, 0, 37, 0, 0, 37, 4);
@@ -204,7 +215,7 @@ for(var e = 0; e < 12; e++) {
 	mcpeH_VisArray.push(android.graphics.Bitmap.createScaledBitmap(android.graphics.Bitmap.createBitmap(mcpeH_VisRaw, 0, 0, 4 + 3*e, 4), PIXEL*(24 + 18*e), PIXEL*24, false));
 }
 var mcpeH_VisNull = android.graphics.Bitmap.createScaledBitmap(android.graphics.Bitmap.createBitmap(mcpeH_VisRaw, 0, 0, 1, 4), PIXEL*6, PIXEL*24, false);
-/*
+
 var A = android.graphics.Color.parseColor("#d4cdc8");
 var B = android.graphics.Color.parseColor("#bcb1aa");
 var C = android.graphics.Color.parseColor("#868686");
@@ -1248,7 +1259,7 @@ function bgsManager() {try {
 			bgsData.splice(e, 1);
 			continue;
 		}
-		if(Entity.getHealth(bgsData[e].ent) <= 0) {
+		if(bgsData[e].ent !== null && Entity.getHealth(bgsData[e].ent) <= 0) {
 			 bgsData[e].ent = null;
 		}
 		if(bgsData[e].ent !== null) {
@@ -1302,7 +1313,7 @@ function bgsMeasure(x, y, z, range, airResistance) {
 	if(distance < range) {
 		return [stereoL(x, y, z, 3 * (range/distance)), stereoR(x, y, z, 3 * (range/distance))];
 	}else {
-		if(Math.sqrt(distance - range) * airResistance > 1) {
+		if(Math.sqrt(distance - range) * airResistance > 1.2) {
 			return [0, 0];
 		}
 		var l = stereoL(x, y, z, 3) - (Math.sqrt(distance - range) * airResistance);
