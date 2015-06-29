@@ -42,6 +42,16 @@ var DIP = PIXEL * loadData(FILE_MAIN_DATA, "DIPS");
 if(DIP == null || DIP == 0){
 	DIP = PIXEL;
 }
+
+
+
+var Byte = java.lang.Byte;
+var Int = java.lang.Integer;
+var Float = java.lang.Float;
+var Double = java.lang.Double;
+var Boolean = java.lang.Boolean;
+var Long = java.lang.Long;
+var Short = java.lang.Short;
 var Context = android.content.Context;
 var Thread = java.lang.Thread;
 var Runnable = java.lang.Runnable;
@@ -73,6 +83,12 @@ var Path = android.graphics.Path;
 var Shader = android.graphics.Shader;
 var ArrayList = java.util.ArrayList;
 
+var c = {};
+c.m = ViewGroup.LayoutParams.MATCH_PARENT;
+c.w = ViewGroup.LayoutParams.WRAP_CONTENT;
+c.a = java.lang.reflect.Array.newInstance;
+
+
 
 var Assets = {};
 //NOT USE(TEXTURE PACK MISSING)
@@ -94,17 +110,35 @@ try {
 }
 Assets.mcpeTG_BF = BitmapFactory.decodeStream(Assets.mcpeTG);
 
-Assets.background_raw = Bitmap.createBitmap(Assets.mcpeSS_BF, 0, 0, 16, 16);
-Assets.background = Bitmap.createScaledBitmap(Assets.background_raw, PIXEL*32, PIXEL*32, false);
-Assets.background_9 = function() {return ninePatch1(Assets.background, PIXEL*12, PIXEL*12, PIXEL*24, PIXEL*24)}
-
-Assets.fullBackground_raw = Bitmap.createBitmap(Assets.mcpeSS_BF, 34, 43, 14, 14);
+Assets.fullBackground_raw = Bitmap.createBitmap(Assets.mcpeSS_BF, 0, 0, 16, 16);
 Assets.fullBackground = Bitmap.createScaledBitmap(Assets.fullBackground_raw, PIXEL*32, PIXEL*32, false);
-Assets.fullBackground_9 = function() {return ninePatch1(Assets.fullBackground, PIXEL*12, PIXEL*12, PIXEL*22, PIXEL*22)}
+Assets.fullBackground_9 = function() {return ninePatch1(Assets.fullBackground, PIXEL*12, PIXEL*12, PIXEL*24, PIXEL*24)}
 
-Assets.title_raw = Bitmap.createBitmap(Assets.mcpeTG_BF, 150, 26, 14, 25);
-Assets.title = Bitmap.createScaledBitmap(Assets.title_raw, PIXEL*28, PIXEL*50, false);
-Assets.title_9 = function()  {return ninePatch1(Assets.title, PIXEL*8, PIXEL*8, PIXEL*20, PIXEL*22)}
+Assets.background_raw = Bitmap.createBitmap(Assets.mcpeSS_BF, 34, 43, 14, 14);
+Assets.background = Bitmap.createScaledBitmap(Assets.background_raw, PIXEL*28, PIXEL*28, false);
+Assets.background_9 = function() {return ninePatch1(Assets.background, PIXEL*12, PIXEL*12, PIXEL*22, PIXEL*22)}
+
+Assets.title_left_raw = Bitmap.createBitmap(Assets.mcpeTG_BF, 150, 26, 2, 25);
+Assets.title_left_pixel = new c.a(Int.TYPE, 50);
+Assets.title_right_raw = Bitmap.createBitmap(Assets.mcpeTG_BF, 162, 26, 2, 25);
+Assets.title_right_pixel = new c.a(Int.TYPE, 50);
+Assets.title_center_raw = Bitmap.createBitmap(Assets.mcpeTG_BF, 153, 26, 8, 25);
+Assets.title_center_pixel = new c.a(Int.TYPE, 200);
+Assets.title_bottom_raw = Bitmap.createBitmap(Assets.mcpeTG_BF, 153, 52, 8, 3);
+Assets.title_bottom_pixel = new c.a(Int.TYPE, 24);
+Assets.title_left_raw.getPixels(Assets.title_left_pixel, 0, 2, 0, 0, 2, 25);
+Assets.title_right_raw.getPixels(Assets.title_right_pixel, 0, 2, 0, 0, 2, 25);
+Assets.title_center_raw.getPixels(Assets.title_center_pixel, 0, 8, 0, 0, 8, 25);
+Assets.title_bottom_raw.getPixels(Assets.title_bottom_pixel, 0, 8, 0, 0, 8, 3);
+Assets.title_pixel = margeArray(Assets.title_left_pixel, Assets.title_center_pixel, "HORIZONTAL", 2, 25, 8, 25, null);
+Assets.title_pixel = margeArray(Assets.title_pixel, Assets.title_right_pixel, "HORIZONTAL", 10, 25, 2, 25, null);
+Assets.title_pixel = margeArray(Assets.title_pixel, Assets.title_bottom_pixel, "VERTICAL", 12, 25, 8, 3, null);
+Assets.title_raw = Bitmap.createBitmap(12, 28, Bitmap.Config.ARGB_8888);
+Assets.title_raw.setPixels(Assets.title_pixel, 0, 12, 0, 0, 12, 28);
+Assets.title = Bitmap.createScaledBitmap(Assets.title_raw, PIXEL*24, PIXEL*56, false);
+Assets.title_9 = function() {
+	return ninePatch1(Assets.title, PIXEL*5, PIXEL*5, PIXEL*46, PIXEL*20);
+}
 
 Assets.exit_raw = Bitmap.createBitmap(Assets.mcpeSS_BF, 60, 0, 18, 18);
 Assets.exit = Bitmap.createScaledBitmap(Assets.exit_raw, 18*PIXEL, 18*PIXEL, false);
@@ -597,6 +631,74 @@ function ninePatch2(bitmap, top, left, bottom, right, width, height) {
 	var patch = new android.graphics.drawable.NinePatchDrawable(ctx.getResources(), bitmap, buffer.array(), new android.graphics.Rect(), "");
 	//var bm = android.graphics.Bitmap.createBitmap(width, height, android.graphics.Bitmap.Config.ARGB_8888);
 	return patch;
+}
+
+/**
+ * Marge Array
+ *
+ * @since 2015-06
+ * @author CodeInside
+ *
+ * @param (Array) arr1
+ * @param (Array) arr2
+ * @param (String) margeType <HORIZONTAL, VERTICAL>
+ * @param (Int) width1
+ * @param (Int) height1
+ * @param (Int) width2
+ * @param (Int) height2
+ * @param (...) fillBlank
+ * @return (Array) 
+ */
+function margeArray(arr1, arr2, margeType, width1, height1, width2, height2, fillBlank) {
+	var arr = [];
+	switch(margeType) {
+		case "HORIZONTAL":
+			var maxHeight = height1 >= height2 ? height1 : height2;
+			for(var e = 0; e < maxHeight; e++) {
+				if(e < height1) {
+					for(var f = 0; f < width1; e++) {
+						arr.push(arr1[(e*width1) + f]
+					}
+				}else {
+					for(var f = 0; f < width1; e++) {
+						arr.push(fillBlank);
+					}
+				}
+				if(e < height2) {
+					for(var f = 0; f < width2; e++) {
+						arr.push(arr2[(e*width2) + f]);
+					}
+				}else {
+					for(var f = 0; f < width2; e++) {
+						arr.push(fillBlank);
+					}
+				}
+			}
+			break;
+		case "VERTICAL":
+			var maxWidth = width1 >= width2 ? width1 : width2;
+			for(var e = 0; e < height1 + height2; e++) {
+				for(var f = 0; f < maxWidth; f++) {
+					if(e < height1) {
+						if(f < width1) {
+							arr.push(arr1[(e*width1) + f]);
+						}else {
+							arr.push(fillBlank);
+						}
+					}else {
+						if(f < width2) {
+							arr.push(arr1[((e-height1)*width2) + f]);
+						}else {
+							arr.push(fillBlank);
+						}
+					}
+				}
+			}
+			break;
+		default:
+			print("Unknown margeType: " + margeType);
+	}
+	return arr;
 }
 
 /**
