@@ -63,6 +63,7 @@ var Gravity = android.view.Gravity;
 var FrameLayout = android.widget.FrameLayout;
 var RelativeLayout = android.widget.RelativeLayout;
 var LinearLayout = android.widget.LinearLayout;
+var ScrollView = android.widget.ScrollView;
 var TextView = android.widget.TextView;
 var Button = android.widget.Button;
 var ImageView = android.widget.ImageView;
@@ -87,6 +88,9 @@ var c = {};
 c.m = ViewGroup.LayoutParams.MATCH_PARENT;
 c.w = ViewGroup.LayoutParams.WRAP_CONTENT;
 c.a = java.lang.reflect.Array.newInstance;
+c.r = RelativeLayout;
+c.l = LinearLayout;
+c.p = android.util.TypedValue.COMPLEX_UNIT_PX;
 
 
 
@@ -179,6 +183,23 @@ Assets.textView_raw = Bitmap.createBitmap(6, 6, Bitmap.Config.ARGB_8888);
 Assets.textView_raw.setPixels(Assets.textView_pixel, 0, 6, 0, 0, 6, 6);
 Assets.textView = Bitmap.createScaledBitmap(Assets.textView_raw, PIXEL*6, PIXEL*6, false);
 Assets.textView_9 = function() {return ninePatch1(Assets.textView, PIXEL*3, PIXEL*3, PIXEL*4, PIXEL*4)}
+
+function mcpeText(size, text, shadow) {
+	var tv = new TextView(ctx);
+	tv.setTransformationMethod(null);
+	tv.setLayerType(android.view.View.LAYER_TYPE_SOFTWARE, null);
+	if(shadow) {
+		tv.setShadowLayer(1/0xffffffff, DIP*1.3, DIP*1.3, Color.DKGRAY);
+	}
+	tv.setTextColor(Color.WHITE);
+	tv.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, DIP*size);
+	if(FILE_FONT.exists()) {
+		tv.setTypeface(android.graphics.Typeface.createFromFile(FILE_FONT));
+	};
+	tv.setPadding(0, 0, 0, 0);
+	tv.setText(text);
+	return tv;
+}
 
 /*
 var r = android.graphics.Color.parseColor("#ff0000");
@@ -946,37 +967,37 @@ EntityFix.findEnt = function(uniqId) {
 function viewSide(yaw) {
 	var temp = yaw % 360;
 	if((temp >= 0 && temp < 11.25) || (temp >= 348.75 && temp < 360))
-		return "遺�(Z+)";
+		return "북(Z+)";
 	else if(temp >= 11.25 && temp < 33.75)
-		return "遺곷턿��";
+		return "북북동";
 	else if(temp >= 33.75 && temp < 56.25)
-		return "遺곷룞";
+		return "북동";
 	else if(temp >= 56.25 && temp < 78.75)
-		return "遺곷룞��";
+		return "북동동";
 	else if(temp >= 78.75 && temp < 101.25)
-		return "��(-X)";
+		return "동(-X)";
 	else if(temp >= 101.25 && temp < 123.75)
-		return "�⑤룞��";
+		return "남동동";
 	else if(temp >= 123.75 && temp < 146.25)
-		return "�⑤룞";
+		return "남동";
 	else if(temp >= 146.25 && temp < 168.75)
-		return "�⑤궓��";
+		return "남남동";
 	else if(temp >= 168.75 && temp < 191.25)
-		return "��(Z-)";
+		return "남(Z-)";
 	else if(temp >= 191.25 && temp < 213.75)
-		return "�⑤궓��";
+		return "남남서";
 	else if(temp >= 213.75 && temp < 236.25)
-		return "�⑥꽌";
+		return "남서";
 	else if(temp >= 236.25 && temp < 258.75)
-		return "�⑥꽌��";
+		return "남서서";
 	else if(temp >= 258.75 && temp < 281.25)
-		return "��(X+)";
+		return "서(X+)";
 	else if(temp >= 281.25 && temp < 303.75)
-		return "遺곸꽌��";
+		return "북서서";
 	else if(temp >= 303.75 && temp < 326.25)
-		return "遺곸꽌";
+		return "북서";
 	else if(temp >= 326.25 && temp < 348.75)
-		return "遺곷턿��";
+		return "북북서";
 	else
 		return "NaY";
 }
@@ -1478,7 +1499,7 @@ function ttsIt(str, pitch, speed) {
 }
 
 /*
-Level.addParticle�� �곗씠�� �뚰떚�는좊ぉ濡�
+Level.addParticle에 쓰이는 파티클 목록
 
 ParticleType.blockcrack
 ParticleType.crit
@@ -1492,9 +1513,9 @@ ParticleType.snowballpoof
 ParticleType.mobFlame
 ParticleType.heart
 
-혻
+ 
 
-Level.playSound�� �곗씠�� �뚮━�뚯씪 紐⑸줉
+Level.playSound에 쓰이는 소리파일 목록
 
 step.cloth
 step.grass
@@ -1544,118 +1565,118 @@ damage.fallsmall
 
 
 
-Entity.getEntityTypeId�� �곗씠�� �뷀떚�� ���� �꾩씠�붋좊ぉ濡�
+Entity.getEntityTypeId에 쓰이는 엔티티 타입 아이디 목록
 
-�뚮젅�댁뼱 - 0
-�� - 10
-�� - 11
-�쇱� - 12
-�� - 13
-�묐� - 14
-二쇰� - 15
-踰꾩꽢�� - 16
-醫�鍮� - 32
-�щ━�� - 33
-�ㅼ펷�덊넠 - 34
-嫄곕� - 35
-醫�鍮꾪뵾洹몃㎤ - 36
-�щ씪�� - 37
-�붾뜑留� - 38
-醫�踰뚮젅 - 39
-�⑥뼱吏� �꾩씠�� - 64
-�먰솕�� TNT - 65
-�⑥뼱吏��� 釉붾윮 - 66
-�붿궡 - 80
-�섏졇吏� �덈뜦�� - 81
-�섏졇吏� �ш� - 82
-洹몃┝ - 83
-留덉씤移댄듃 - 84
-
-
-
-Entity.getRenderType�� �곗씠�� �뷀떚�� �뚮뜑留겶좏��� �꾩씠�붋좊ぉ濡�
-
-�щ챸�� - 0
-�щ챸�� - 1
-�덊븯�� 釉붾줉혻- 2
-�뚮젅�댁뼱 - 3
-�낃� - 4
-�� - 5
-�� - 6
-踰꾩꽢�� - 7
-�쇱� - 8
-�� - 9
-�묐� - 10
-二쇰� - 11
-�щ챸�붋�-혻12
-醫�鍮꽷�- 13
-�ㅼ펷�덊넠 - 14
-嫄곕� - 15
-醫�踰뚮젅 - 16
-�щ━�� - 17
-�щ씪�� - 18
-�붾뜑留� - 19
-�붿궡 - 20
-�낃� - 21
-�ш� - 22
-�덈뜦�� - 23
-�낃� - 24
-�낃� - 25
-留덉씤移댄듃 - 26
+플레이어 - 0
+닭 - 10
+소 - 11
+돼지 - 12
+양 - 13
+늑대 - 14
+주민 - 15
+버섯소 - 16
+좀비 - 32
+크리퍼 - 33
+스켈레톤 - 34
+거미 - 35
+좀비피그맨 - 36
+슬라임 - 37
+엔더맨 - 38
+좀벌레 - 39
+떨어진 아이템 - 64
+점화된 TNT - 65
+떨어지는 블럭 - 66
+화살 - 80
+던져진 눈덩이 - 81
+던져진 달걀 - 82
+그림 - 83
+마인카트 - 84
 
 
 
-ChatColor �됯퉼 紐⑸줉
+Entity.getRenderType에 쓰이는 엔티티 렌더링 타입 아이디 목록
 
-寃����� -혻ChatColor.BLACK
-吏숈� �뚮��� -혻ChatColor.DARK_BLUE
-吏숈�혻珥덈줉�� -혻ChatColor.DARK_GREEN
-吏숈�혻泥�줉�� -혻ChatColor.DARK_AQUA
-�붿쟻��-혻ChatColor.DARK_RED
-�대몢�� 蹂대씪�� -혻ChatColor.DARK_PURPLE
-湲덉깋 -혻ChatColor.GOLD
-�뚯깋 -혻ChatColor.GRAY
-吏숈� �뚯깋 -혻ChatColor.DARK_GRAY
-�뚮��� -혻ChatColor.BLUE
-珥덈줉�됀잺hatColor.GREEN
-泥�줉�� -혻ChatColor.AQUA
-鍮④컙�� -혻ChatColor.RED
-諛앹� 蹂대씪�� -혻ChatColor.LIGHT_PURPLE
-�몃��� -혻ChatColor.YELLOW
-�섏��� -혻ChatColor.WHITE
-
-
-
-Block.getRenderType�� �곗씠�� 釉붾윮 �뚮뜑留겶좏��� �꾩씠�붋좊ぉ濡�
-
-�쒖��� - (-1)
-�쇰컲�곸씤 �뺤쑁癒쇱껜 釉붾윮, ��씤 ��, �몃옪�꾩뼱,혻耳��댄겕, �묓꽭 移댄렖혻- 0
-�ы깢�섏닔, 1移� �붾뵒, 嫄곕�以�, 1移맞좉퀬�щ━혻- 1
-�좎튂 - 2
-遺� - 3
-�좎껜 - 4
-�띿옉臾� - 6
-臾� - 7
-�щ떎由� - 8
-�덉씪 - 9
-怨꾨떒 - 10
-�섎Т혻�명�由� - 11
-�좎씤�� - 13
-移⑤� - 14
-�좊━��, 泥좏뙋혻- 18
-�⑷뎬 - 20
-�명�由� 臾� - 21
-李쎄퀬 - 22
-由대━�⑤뱶 - 23
-�붾뜑 �ы깉 - 26
-�섎Т, 嫄댁큹 �붾� �� �놁쑝濡� �뺥옄 �� �덈뒗 釉붾윮혻- 31
-�� �명�由� - 32
-2移� �붾뵒瑜� �ы븿�� 紐⑤뱺 2移몄쭨由� �앸Ъ혻- 40
-�꾩뿉 �곸� �뚮뜑留� 1�� �ㅼ뼱媛�吏��딅뒗혻紐⑤뱺혻1移몄쭨由� �앸Ъ, 洹좊쪟혻- 65
+투명화 - 0
+투명화 - 1
+새하얀 블록 - 2
+플레이어 - 3
+팅김 - 4
+닭 - 5
+소 - 6
+버섯소 - 7
+돼지 - 8
+양 - 9
+늑대 - 10
+주민 - 11
+투명화 - 12
+좀비 - 13
+스켈레톤 - 14
+거미 - 15
+좀벌레 - 16
+크리퍼 - 17
+슬라임 - 18
+엔더맨 - 19
+화살 - 20
+팅김 - 21
+달걀 - 22
+눈덩이 - 23
+팅김 - 24
+팅김 - 25
+마인카트 - 26
 
 
 
-Items.meta 遺덊븘�뷀븳 臾몄옄�� ��젣蹂�
+ChatColor 색깔 목록
+
+검은색 - ChatColor.BLACK
+짙은 파란색 - ChatColor.DARK_BLUE
+짙은 초록색 - ChatColor.DARK_GREEN
+짙은 청록색 - ChatColor.DARK_AQUA
+암적색- ChatColor.DARK_RED
+어두운 보라색 - ChatColor.DARK_PURPLE
+금색 - ChatColor.GOLD
+회색 - ChatColor.GRAY
+짙은 회색 - ChatColor.DARK_GRAY
+파란색 - ChatColor.BLUE
+초록색 ChatColor.GREEN
+청록색 - ChatColor.AQUA
+빨간색 - ChatColor.RED
+밝은 보라색 - ChatColor.LIGHT_PURPLE
+노란색 - ChatColor.YELLOW
+하얀색 - ChatColor.WHITE
+
+
+
+Block.getRenderType에 쓰이는 블럭 렌더링 타입 아이디 목록
+
+표지판 - (-1)
+일반적인 정육먼체 블럭, 덮인 눈, 트랩도어, 케이크, 양털 카펫 - 0
+사탕수수, 1칸 잔디, 거미줄, 1칸 고사리 - 1
+토치 - 2
+불 - 3
+유체 - 4
+농작물 - 6
+문 - 7
+사다리 - 8
+레일 - 9
+계단 - 10
+나무 울타리 - 11
+선인장 - 13
+침대 - 14
+유리판, 철판 - 18
+덩굴 - 20
+울타리 문 - 21
+창고 - 22
+릴리패드 - 23
+엔더 포탈 - 26
+나무, 건초 더미 등 옆으로 눕힐 수 있는 블럭 - 31
+돌 울타리 - 32
+2칸 잔디를 포함한 모든 2칸짜리 식물 - 40
+위에 적은 렌더링 1에 들어가지않는 모든 1칸짜리 식물, 균류 - 65
+
+
+
+Items.meta 불필요한 문자열 삭제본
 
 apple
 apple_golden
@@ -1811,7 +1832,7 @@ compass_item
 
 
 
-Terrain.meta 遺덊븘�뷀븳 臾몄옄�� ��젣蹂�
+Terrain.meta 불필요한 문자열 삭제본
 
 grass
 stone
