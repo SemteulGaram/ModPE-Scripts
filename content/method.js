@@ -56,6 +56,7 @@ var Context = android.content.Context;
 var Thread = java.lang.Thread;
 var Runnable = java.lang.Runnable;
 var AlertDialog = android.app.AlertDialog;
+var DialogInterface = android.content.DialogInterface;
 var View = android.view.View;
 var ViewGroup = android.view.ViewGroup;
 var MotionEvent = android.view.MotionEvent;
@@ -65,6 +66,7 @@ var RelativeLayout = android.widget.RelativeLayout;
 var LinearLayout = android.widget.LinearLayout;
 var ScrollView = android.widget.ScrollView;
 var TextView = android.widget.TextView;
+var EditText = android.widget.EditText;
 var Button = android.widget.Button;
 var ImageView = android.widget.ImageView;
 var ProgressBar = android.widget.ProgressBar;
@@ -358,7 +360,7 @@ C,E,E,E,E,E,E,E,E,E,E,E,E,E,E,E,E,D
 function showError(e) {
 	if(Level.getWorldName() === null) {
 		ctx.runOnUiThread(new java.lang.Runnable({ run: function(){
-	android.widget.Toast.makeText(ctx, TAG + "\n" + e, android.widget.Toast.LENGTH_LONG).show();
+	android.widget.Toast.makeText(ctx, "[" + className + " ERROR LINE: " + e.lineNumber + "]" + "\n" + e, android.widget.Toast.LENGTH_LONG).show();
 		}}));
 	}else {
 		var t = (e + "").split(" ");
@@ -940,6 +942,10 @@ function loadSetting(article) {
 
 
 EntityFix = {};
+
+EntityFix.getId = function(obj1) {
+	return Entity.getUniqueId(obj1);
+}
 
 EntityFix.isEqual = function(obj1, obj2) {
 	return Entity.getUniqueId(obj1) === Entity.getUniqueId(obj2);
