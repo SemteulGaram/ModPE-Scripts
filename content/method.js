@@ -961,6 +961,16 @@ EntityFix.findEnt = function(uniqId) {
 	}
 }
 
+EntityFix.findPlayer = function(name) {
+	var list = Entity.getAll();
+	var max = list.length;
+	for(var e = 0; e < max; e++) {
+		if(Player.isPlayer(list[e]) && Player.getName(list[e]) === name) {
+			return list[e];
+		}
+	}
+}
+
 
 
 /**
