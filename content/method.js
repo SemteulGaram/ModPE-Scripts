@@ -56,7 +56,6 @@ var Context = android.content.Context;
 var Thread = java.lang.Thread;
 var Runnable = java.lang.Runnable;
 var AlertDialog = android.app.AlertDialog;
-var DialogInterface = android.content.DialogInterface;
 var View = android.view.View;
 var ViewGroup = android.view.ViewGroup;
 var MotionEvent = android.view.MotionEvent;
@@ -66,7 +65,6 @@ var RelativeLayout = android.widget.RelativeLayout;
 var LinearLayout = android.widget.LinearLayout;
 var ScrollView = android.widget.ScrollView;
 var TextView = android.widget.TextView;
-var EditText = android.widget.EditText;
 var Button = android.widget.Button;
 var ImageView = android.widget.ImageView;
 var ProgressBar = android.widget.ProgressBar;
@@ -84,7 +82,10 @@ var Canvas = android.graphics.Canvas;
 var Paint = android.graphics.Paint;
 var Path = android.graphics.Path;
 var Shader = android.graphics.Shader;
+var Typeface = android.graphics.Typeface;
 var ArrayList = java.util.ArrayList;
+var Calendar = java.util.Calendar;
+var GregorianCalendar = java.util.GregorianCalendar
 
 var c = {};
 c.m = ViewGroup.LayoutParams.MATCH_PARENT;
@@ -360,7 +361,7 @@ C,E,E,E,E,E,E,E,E,E,E,E,E,E,E,E,E,D
 function showError(e) {
 	if(Level.getWorldName() === null) {
 		ctx.runOnUiThread(new java.lang.Runnable({ run: function(){
-	android.widget.Toast.makeText(ctx, "[" + className + " ERROR LINE: " + e.lineNumber + "]" + "\n" + e, android.widget.Toast.LENGTH_LONG).show();
+	android.widget.Toast.makeText(ctx, TAG + "\n" + e, android.widget.Toast.LENGTH_LONG).show();
 		}}));
 	}else {
 		var t = (e + "").split(" ");
@@ -679,21 +680,29 @@ function margeArray(arr1, arr2, margeType, width1, height1, width2, height2, fil
 			var maxHeight = height1 >= height2 ? height1 : height2;
 			for(var e = 0; e < maxHeight; e++) {
 				if(e < height1) {
-					for(var f = 0; f < width1; e++) {
-						arr.push(arr1[(e*width1) + f]
+					for(var f = 0; f < width1; f++) {
+						arr.push(arr1[(e*width1) + f]);
 					}
 				}else {
-					for(var f = 0; f < width1; e++) {
-						arr.push(fillBlank);
+					for(var f = 0; f < width1; f++) {
+						if(fillBlank === null) {
+							arr.push(arr1[(width1*(height1-1)) + f]);
+						}else {
+							arr.push(fillBlank);
+						}
 					}
 				}
 				if(e < height2) {
-					for(var f = 0; f < width2; e++) {
+					for(var f = 0; f < width2; f++) {
 						arr.push(arr2[(e*width2) + f]);
 					}
 				}else {
-					for(var f = 0; f < width2; e++) {
-						arr.push(fillBlank);
+					for(var f = 0; f < width2; f++) {
+						if(fillBlank === null) {
+							arr.push(arr2[(width2*(height2-1)) + f]);
+						}else {
+							arr.push(fillBlank);
+						}
 					}
 				}
 			}
@@ -706,13 +715,21 @@ function margeArray(arr1, arr2, margeType, width1, height1, width2, height2, fil
 						if(f < width1) {
 							arr.push(arr1[(e*width1) + f]);
 						}else {
-							arr.push(fillBlank);
+							if(fillBlank === null) {
+								arr.push(arr1[((e+1)*width1) - 1]);
+							}else {
+								arr.push(fillBlank);
+							}
 						}
 					}else {
 						if(f < width2) {
-							arr.push(arr1[((e-height1)*width2) + f]);
+							arr.push(arr2[((e-height1)*width2) + f]);
 						}else {
-							arr.push(fillBlank);
+							if(fillBlank === null) {
+								arr.push(arr2[((e-height1+1)*width2) - 1]);
+							}else {
+								arr.push(fillBlank);
+							}
 						}
 					}
 				}
@@ -943,10 +960,6 @@ function loadSetting(article) {
 
 EntityFix = {};
 
-EntityFix.getId = function(obj1) {
-	return Entity.getUniqueId(obj1);
-}
-
 EntityFix.isEqual = function(obj1, obj2) {
 	return Entity.getUniqueId(obj1) === Entity.getUniqueId(obj2);
 }
@@ -956,16 +969,6 @@ EntityFix.findEnt = function(uniqId) {
 	var max = list.length;
 	for(var e = 0; e < max; e++) {
 		if(uniqId === Entity.getUniqueId(list[e])) {
-			return list[e];
-		}
-	}
-}
-
-EntityFix.findPlayer = function(name) {
-	var list = Entity.getAll();
-	var max = list.length;
-	for(var e = 0; e < max; e++) {
-		if(Player.isPlayer(list[e]) && Player.getName(list[e]) === name) {
 			return list[e];
 		}
 	}
@@ -1072,7 +1075,7 @@ Battery.isCharging = function() {
 Battery.isFullCharging = function() {
 	var batteryStatus = ctx.registerReceiver(null, ifilter);
 	var status = batteryStatus.getIntExtra(android.os.BatteryManager.EXTRA_STATUS, -1);
-	return혻status == android.os.BatteryManager.BATTERY_STATUS_FULL;
+	return status == android.os.BatteryManager.BATTERY_STATUS_FULL;
 };
 	
 Battery.plugType = function() {
@@ -1133,7 +1136,7 @@ Battery.health = function() {
 		case android.os.BatteryManager.BATTERY_HEALTH_OVER_VOLTAGE:
 			return 4;//battery voltage is too high
 			break;
-		case android.os.BatteryManager.BATTERY_HEALTH_UNSPECIFIED_FAILURE:
+		case android.os.BatteryManager.BATTERY_HEALTH_UNKNOWNLURE:
 			return 5;//unKnow!
 			break;
 		case android.os.BatteryManager.BATTERY_HEALTH_UNSPECIFIED_FAILURE:
