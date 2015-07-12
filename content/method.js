@@ -997,7 +997,7 @@ EntityExtra.getNearPlayers = function() {
 		}
 	}
 	while(r.length > 0) {
-		var i = r.indexof(Math.min.apply(null, r));
+		var i = r.indexOf(Math.min.apply(null, r));
 		n.push(f[i]);
 		f.splice(i, 1);
 		r.splice(i, 1);
