@@ -82,10 +82,11 @@ var Canvas = android.graphics.Canvas;
 var Paint = android.graphics.Paint;
 var Path = android.graphics.Path;
 var Shader = android.graphics.Shader;
+var Matrix = android.graphics.Matrix;
 var Typeface = android.graphics.Typeface;
 var ArrayList = java.util.ArrayList;
 var Calendar = java.util.Calendar;
-var GregorianCalendar = java.util.GregorianCalendar
+var GregorianCalendar = java.util.GregorianCalendar;
 
 var c = {};
 c.m = ViewGroup.LayoutParams.MATCH_PARENT;
@@ -974,6 +975,34 @@ EntityFix.findEnt = function(uniqId) {
 	}
 }
 
+
+
+var EntityExtra = {};
+
+EntityExtra.getRange = function(obj1, obj2) {try {
+	return Math.sqrt(Math.pow(Entity.getX(obj1) - Entity.getX(obj2), 2) + Math.pow(Entity.getY(obj1) - Entity.getY(obj2), 2) + Math.pow(Entity.getZ(obj1) - Entity.getZ(obj2), 2));
+}catch(e) {
+	return null;
+}};
+
+EntityExtra.getNearPlayers = function() {
+	var a = Entity.getAll();
+	var f = [];
+	var r = [];
+	var n = [];
+	for(var e = 0; e < a.length; e++) {
+		if(Player.isPlayer(a[e]) && !EntityFix.isEqual(a[e], Player.getEntity())) {
+			f.push(a[e]);
+			r.push(EntityExtra.getRange(a[e], Player.getEntity()));
+		}
+	while(r.length <= 0) {
+		var i = r.indexof(Math.min.apply(null, r));
+		n.push(f[i]);
+		f.splice(i, 1);
+		r.splice(i, 1);
+	}
+	return n;
+}
 
 
 /**
