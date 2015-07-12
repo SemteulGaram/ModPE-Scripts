@@ -995,7 +995,8 @@ EntityExtra.getNearPlayers = function() {
 			f.push(a[e]);
 			r.push(EntityExtra.getRange(a[e], Player.getEntity()));
 		}
-	while(r.length <= 0) {
+	}
+	while(r.length > 0) {
 		var i = r.indexof(Math.min.apply(null, r));
 		n.push(f[i]);
 		f.splice(i, 1);
