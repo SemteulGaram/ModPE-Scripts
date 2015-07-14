@@ -363,7 +363,7 @@ C,E,E,E,E,E,E,E,E,E,E,E,E,E,E,E,E,D
 function showError(e) {
 	if(Level.getWorldName() === null) {
 		ctx.runOnUiThread(new java.lang.Runnable({ run: function(){
-	android.widget.Toast.makeText(ctx, TAG + "\n" + e, android.widget.Toast.LENGTH_LONG).show();
+	android.widget.Toast.makeText(ctx, "[" + className + " ERROR LINE: " + e.lineNumber + "]" + "\n" + e, android.widget.Toast.LENGTH_LONG).show();
 		}}));
 	}else {
 		var t = (e + "").split(" ");
