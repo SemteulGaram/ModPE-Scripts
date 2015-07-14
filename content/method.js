@@ -95,11 +95,12 @@ c.a = java.lang.reflect.Array.newInstance;
 c.r = RelativeLayout;
 c.l = LinearLayout;
 c.p = android.util.TypedValue.COMPLEX_UNIT_PX;
+c.s = net.zhuoweizhang.mcpelauncher.ScriptManager;
 
 
 
 var Assets = {};
-//NOT USE(TEXTURE PACK MISSING)
+//DO NOT USE(TEXTURE PACK MISSING)
 Assets.mcpeCPC = ctx.createPackageContext("com.mojang.minecraftpe", Context.CONTEXT_IGNORE_SECURITY);
 Assets.mcpe = Assets.mcpeCPC.getAssets();
 //spritesheet.png
@@ -966,13 +967,21 @@ EntityFix.isEqual = function(obj1, obj2) {
 }
 
 EntityFix.findEnt = function(uniqId) {
-	var list = Entity.getAll();
+	var list = EntityFix.getAll();
 	var max = list.length;
 	for(var e = 0; e < max; e++) {
 		if(uniqId === Entity.getUniqueId(list[e])) {
 			return list[e];
 		}
 	}
+}
+
+EntityFix.getAll = function() {
+	var entities = new Array(c.s.allentities.size());
+		for(var n = 0; entities.length > n; n++){
+			entities[n] = c.s.allentities.get(n);
+		}
+		return entities;
 }
 
 
@@ -986,7 +995,7 @@ EntityExtra.getRange = function(obj1, obj2) {try {
 }};
 
 EntityExtra.getNearPlayers = function() {
-	var a = Entity.getAll();
+	var a = EntityFix.getAll();
 	var f = [];
 	var r = [];
 	var n = [];
