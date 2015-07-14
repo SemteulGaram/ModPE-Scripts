@@ -24,6 +24,9 @@ function destroyBlock(x, y, z, side) {
 						if(bi === 1 && bd === 0) {
 							Level.destroyBlock(mx, my, mz, false);
 							Level.dropItem(mx+0.5, my+0.5, mz+0.5, 1, 4, 1, 0);
+						}else if(bi === 16) {
+							Level.destroyBlock(mx, my, mz, false);
+							Level.dropItem(mx+0.5, my+0.5, mz+0.5, 1, 263, 1, 0);
 						}else {
 							Level.destroyBlock(mx, my, mz, true);
 						}
@@ -40,6 +43,9 @@ function destroyBlock(x, y, z, side) {
 						if(bi === 1 && bd === 0) {
 							Level.destroyBlock(mx, my, mz, false);
 							Level.dropItem(mx+0.5, my+0.5, mz+0.5, 1, 4, 1, 0);
+						}else if(bi === 16) {
+							Level.destroyBlock(mx, my, mz, false);
+							Level.dropItem(mx+0.5, my+0.5, mz+0.5, 1, 263, 1, 0);
 						}else {
 							Level.destroyBlock(mx, my, mz, true);
 						}
@@ -56,6 +62,9 @@ function destroyBlock(x, y, z, side) {
 						if(bi === 1 && bd === 0) {
 							Level.destroyBlock(mx, my, mz, false);
 							Level.dropItem(mx+0.5, my+0.5, mz+0.5, 1, 4, 1, 0);
+						}else if(bi === 16) {
+							Level.destroyBlock(mx, my, mz, false);
+							Level.dropItem(mx+0.5, my+0.5, mz+0.5, 1, 263, 1, 0);
 						}else {
 							Level.destroyBlock(mx, my, mz, true);
 						}
