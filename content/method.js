@@ -206,6 +206,43 @@ function mcpeText(size, text, shadow) {
 	return tv;
 }
 
+function mcpeButton(size, text) {
+	var btn = new Button(ctx);
+	btn.setTransformationMethod(null);
+	btn.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+	btn.setPadding(DIP*8, DIP*8, DIP*8, DIP*8);
+	btn.setText(text);
+	btn.setTextColor(Color.WHITE);
+	btn.setTextSize(c.p, size);
+	btn.setShadowLayer(1/0xffffffff, DIP*1.3, DIP*1.3, Color.DKGRAY);
+	if(FILE_FONT.exists()) {
+		btn.setTypeface(android.graphics.Typeface.createFromFile(FILE_FONT));
+	}
+	btn.setBackgroundDrawable(Assets.button_9());
+	
+	btn.setOnTouchListener(View.OnTouchListener({onTouch: function(view, event) {try {
+		switch(event.action) {
+			case MotionEvent.ACTION_DOWN:
+			view.setBackgroundDrawable(Assets.buttonClick_9());
+			view.setTextColor(Color.parseColor("#ffff50"));
+			view.setPadding(DIP*8, DIP*12, DIP*8, DIP*8);
+			break;
+			case MotionEvent.ACTION_CANCEL:
+			case MotionEvent.ACTION_UP:
+			view.setBackgroundDrawable(Assets.button_9());
+			view.setTextColor(Color.WHITE);
+			view.setPadding(DIP*8, DIP*8, DIP*8, DIP*8);
+			break;
+		}
+		return false;
+	}catch(e) {
+		showError(e);
+		return false;
+	}}}));
+	
+	return btn;
+}
+
 /*
 var r = android.graphics.Color.parseColor("#ff0000");
 var y = android.graphics.Color.parseColor("#ffff00");

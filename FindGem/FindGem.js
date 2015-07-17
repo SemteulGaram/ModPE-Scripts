@@ -197,7 +197,7 @@ function mcpeText(size, text, shadow) {
 		tv.setShadowLayer(1/0xffffffff, DIP*1.3, DIP*1.3, Color.DKGRAY);
 	}
 	tv.setTextColor(Color.WHITE);
-	tv.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, DIP*size);
+	tv.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, size);
 	if(FILE_FONT.exists()) {
 		tv.setTypeface(android.graphics.Typeface.createFromFile(FILE_FONT));
 	};
@@ -205,6 +205,112 @@ function mcpeText(size, text, shadow) {
 	tv.setText(text);
 	return tv;
 }
+
+function mcpeButton(size, text) {
+	var btn = new Button(ctx);
+	btn.setTransformationMethod(null);
+	btn.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+	btn.setPadding(DIP*8, DIP*8, DIP*8, DIP*8);
+	btn.setText(text);
+	btn.setTextColor(Color.WHITE);
+	btn.setTextSize(c.p, size);
+	btn.setShadowLayer(1/0xffffffff, DIP*1.3, DIP*1.3, Color.DKGRAY);
+	if(FILE_FONT.exists()) {
+		btn.setTypeface(android.graphics.Typeface.createFromFile(FILE_FONT));
+	}
+	btn.setBackgroundDrawable(Assets.button_9());
+	
+	btn.setOnTouchListener(View.OnTouchListener({onTouch: function(view, event) {try {
+		switch(event.action) {
+			case MotionEvent.ACTION_DOWN:
+			view.setBackgroundDrawable(Assets.buttonClick_9());
+			view.setTextColor(Color.parseColor("#ffff80"));
+			view.setPadding(DIP*8, DIP*12, DIP*8, DIP*8);
+			break;
+			case MotionEvent.ACTION_CANCEL:
+			case MotionEvent.ACTION_UP:
+			view.setBackgroundDrawable(Assets.button_9());
+			view.setTextColor(Color.WHITE);
+			view.setPadding(DIP*8, DIP*8, DIP*8, DIP*8);
+			break;
+		}
+		return false;
+	}catch(e) {
+		showError(e);
+		return false;
+	}}}));
+	
+	return btn;
+}
+
+function mcpeDialog(title, layout, btnName, btnFunc) {
+	var l = new c.r(ctx);
+	l.setId(randomId());
+	l.setBackgroundDrawable(Assets.background_9());
+	
+	var t = new c.r(ctx);
+	t.setId(randomId());
+	t.setBackgroundDrawable(Assets.title_9());
+	t.setPadding(DIP*8, DIP*8, DIP*8, DIP*14);
+	var t_p = new c.r.LayoutParams(c.m, c.w);
+	t_p.addRule(c.r.ALIGN_PARENT_TOP, l.getId());
+	t.setLayoutParams(t_p);
+	
+	var tt = mcpeText(DIP*16, title, true);
+	var tt_p = new c.r.LayoutParams(c.w, c.w);
+	tt_p.addRule(c.r.CENTER_IN_PARENT, t.getId());
+	tt.setLayoutParams(tt_p);
+	t.addView(tt);
+	
+	var tb = mcpeButton(DIP*16, "Back");
+	var tb_p = new c.r.LayoutParams(DIP*70, DIP*34);
+	tb_p.setMargins(0, 0, 0, 0);
+	tb_p.addRule(c.r.ALIGN_PARENT_LEFT, t.getId());
+	tb_p.addRule(c.r.ALIGN_PARENT_TOP, t.getId());
+	tb.setLayoutParams(tb_p);
+	t.addView(tb);
+	
+	var ta = mcpeButton(DIP*16, btnName);
+	var ta_p = new c.r.LayoutParams(DIP*70, DIP*34);
+	ta_p.setMargins(0, 0, 0, 0);
+	ta_p.addRule(c.r.ALIGN_PARENT_RIGHT, t.getId());
+	ta_p.addRule(c.r.ALIGN_PARENT_TOP, t.getId());
+	ta.setLayoutParams(ta_p);
+	t.addView(ta);
+	
+	var ct = new ScrollView(ctx);
+	var ct_p = new c.r.LayoutParams(c.m, c.m);
+	ct_p.setMargins(DIP*8, 0, DIP*8, DIP*8);
+	ct_p.addRule(c.r.BELOW, t.getId());
+	ct.setLayoutParams(ct_p);
+	ct.addView(layout);
+	
+	l.addView(t);
+	l.addView(ct);
+	
+	var w = new PopupWindow(l, DIP*300, DIP*240, false);
+	
+	uiThread(function() {try {
+		w.showAtLocation(ctx.getWindow().getDecorView(), Gravity.CENTER, 0, 0);
+		tb.setOnClickListener(View.OnClickListener({onClick: function(view, event) {try {
+		w.dismiss();
+	}catch(e) {
+		showError(e);
+	}}}));
+	
+	ta.setOnClickListener(View.OnClickListener({onClick: function(view, event) {try {
+		w.dismiss();
+		btnFunc();
+	}catch(e) {
+		showError(e);
+	}}}));
+	
+	}catch(e) {
+		showError(e);
+	}});
+}
+
+mcpeDialog("hello", new Button(ctx), "Aaaaaaa", function() {print("hello")});
 
 /**
  * Error report
@@ -632,14 +738,14 @@ function loadSetting(article) {
 
 
 
-EntityFix = {};
+var EntityExtra = {};
 
-EntityFix.isEqual = function(obj1, obj2) {
+EntityExtra.isEqual = function(obj1, obj2) {
 	return Entity.getUniqueId(obj1) === Entity.getUniqueId(obj2);
 }
 
-EntityFix.findEnt = function(uniqId) {
-	var list = EntityFix.getAll();
+EntityExtra.findEnt = function(uniqId) {
+	var list = EntityExtra.getAll();
 	var max = list.length;
 	for(var e = 0; e < max; e++) {
 		if(uniqId === Entity.getUniqueId(list[e])) {
@@ -648,7 +754,7 @@ EntityFix.findEnt = function(uniqId) {
 	}
 }
 
-EntityFix.getAll = function() {
+EntityExtra.getAll = function() {
 	var entities = new Array(c.s.allentities.size());
 		for(var n = 0; entities.length > n; n++){
 			entities[n] = c.s.allentities.get(n);
@@ -656,18 +762,39 @@ EntityFix.getAll = function() {
 		return entities;
 }
 
-
-
-var EntityExtra = {};
-
 EntityExtra.getRange = function(obj1, obj2) {try {
 	return Math.sqrt(Math.pow(Entity.getX(obj1) - Entity.getX(obj2), 2) + Math.pow(Entity.getY(obj1) - Entity.getY(obj2), 2) + Math.pow(Entity.getZ(obj1) - Entity.getZ(obj2), 2));
 }catch(e) {
 	return null;
 }};
 
-EntityExtra.getNearPlayers = function() {
-	var a = EntityFix.getAll();
+
+
+var PlayerExtra = {};
+
+PlayerExtra.isOnline = function(player) {
+	var list = EntityExtra.getAll();
+	for(var e = 0; e < list.length; e++) {
+		if(Player.isPlayer(list[e]) && EntityExtra.isEqual(list[e], player)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+PlayerExtra.getOnlinePlayers = function() {
+	var entitys = EntityExtra.getAll();
+	var list = [];
+	for(var e = 0; e < entitys.length; e++) {
+		if(Player.isPlayer(entitys[e])) {
+			list.push(entitys[e]);
+		}
+	}
+	return list;
+}
+
+PlayerExtra.getNearPlayers = function() {
+	var a = EntityExtra.getAll();
 	var f = [];
 	var r = [];
 	var n = [];
@@ -686,6 +813,12 @@ EntityExtra.getNearPlayers = function() {
 	return n;
 }
 
+
+
+function randomId() {
+	return Math.floor(Math.random()*0xffffff);
+}
+
 thread(function() {try {
 	if(!FILE_FONT.exists()) {
 		if(!downloadFile(FILE_FONT, "https://www.dropbox.com/s/y1o46b2jkbxwl3o/minecraft.ttf?dl=1")) {
@@ -699,12 +832,61 @@ thread(function() {try {
 
 var gm = {};
 gm.windowAlive = false;
+gm.menuWindowAlive = false;
+
+gm.isRun = false;
+gm.userData = [];
+
+
+
+gm.getIndexByName = function(name) {
+	for(var e = 0; e < gm.userData.length; e++) {
+		if(gm.userData[e].name == name) {
+			return e;
+		}
+	}
+	return -1;
+}
+
+
+
+gm.selectPlayers = function() {
+	var list = PlayerExtra.getOnlinePlayers();
+	
+	var l = new c.l(ctx);
+	l.setOrientation(c.l.VERTICAL);
+	
+	for(var e = 0; e < list.length; e++) {
+		var name = Player.getName(list[e]);
+		var b = mcpeButton(DIP*16, name);
+		if(gm.getIndexByName(name) !== -1) {
+			b.setTextColor(Color.parseColor("#ffff80"));
+		}
+		b.setOnClickListener(View.OnClickListener({onClick: function(view, event) {try {
+			var i = gm.getIndexByName(name);
+			if(i === -1) {
+				gm.userData.push({name: name, elemental: [], kill: 0, killList: [], death: false});
+				view.setTextColor(Color.parseColor("#ffff80"));
+			}else {
+				gm.userData.splice(i, 1);
+				view.setTextColor(Color.WHITE);
+			}
+		}catch(e) {
+			showError(e);
+		}}}));
+		l.addView(b);
+	}
+	mcpeDialog("Select...", l, "Done", function() {});
+}
+
+
 
 gm.loadGui = function() {
 	debug("load gui");
 	gm.btn = new Button(ctx);
 	gm.btn.setTransformationMethod(null);
 	gm.btn.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+	gm.btn.setPadding(0,0,0,0);
 	gm.btn.setText("Gem");
 	gm.btn.setTextColor(Color.WHITE);
 	gm.btn.setTextSize(c.p, DIP*16);
@@ -714,7 +896,33 @@ gm.loadGui = function() {
 	}
 	gm.btn.setBackgroundDrawable(Assets.button_9());
 	
-	gm.window = new PopupWindow(gm.btn, DIP*100, DIP*50, false);
+	gm.btn.setOnTouchListener(View.OnTouchListener({onTouch: function(view, event) {try {
+		switch(event.action) {
+			case MotionEvent.ACTION_DOWN:
+			view.setBackgroundDrawable(Assets.buttonClick_9());
+			view.setTextColor(Color.parseColor("#ffff80"));
+			view.setPadding(0,DIP*4,0,0);
+			break;
+			case MotionEvent.ACTION_CANCEL:
+			case MotionEvent.ACTION_UP:
+			view.setBackgroundDrawable(Assets.button_9());
+			view.setTextColor(Color.WHITE);
+			view.setPadding(0,0,0,0);
+			break;
+		}
+		return false;
+	}catch(e) {
+		showError(e);
+		return false;
+	}}}));
+	
+	gm.btn.setOnClickListener(View.OnClickListener({onClick: function(view, event) {try {
+		gm.showMenu(true);
+	}catch(e) {
+		showError(e);
+	}}}));
+	
+	gm.window = new PopupWindow(gm.btn, DIP*60, DIP*34, false);
 	debug("window loaded");
 }
 
@@ -723,7 +931,8 @@ gm.showWindow = function(vis) {
 		if(gm.windowAlive) return;
 		debug("window show");
 		uiThread(function() {try {
-			gm.window.showAtLocation(ctx.getWindow().getDecorView(), Gravity.TOP|Gravity.RIGHT, DIP*60, 0);
+			gm.window.showAtLocation(ctx.getWindow().getDecorView(), Gravity.TOP|Gravity.RIGHT, DIP*40, DIP*5);
+			gm.windowAlive = true;
 		}catch(e) {
 			showError(e);
 		}});
@@ -732,11 +941,132 @@ gm.showWindow = function(vis) {
 		debug("window close");
 		uiThread(function() {try {
 			gm.window.dismiss();
+			gm.windowAlive = false;
 		}catch(e) {
 			showError(e);
 		}});
 	}
 }
 
+gm.loadMenuGui = function() {
+	gm.menu = c.r(ctx);
+	gm.menu.setId(randomId());
+	gm.menu.setBackgroundColor(Color.argb(150,0,0,0));
+	
+	gm.title = new c.r(ctx);
+	gm.title.setId(randomId());
+	gm.title.setPadding(0, 0, 0, DIP*6);
+	gm.title.setBackgroundDrawable(Assets.title_9());
+	gm.title_p = new c.r.LayoutParams(c.m, c.w);
+	gm.title_p.addRule(c.r.ALIGN_PARENT_TOP, gm.menu.getId());
+	gm.title.setLayoutParams(gm.title_p);
+	
+	gm.menu_back = mcpeButton(DIP*16, "Back");
+	gm.menu_back_p = new c.r.LayoutParams(DIP*70, DIP*34);
+	gm.menu_back_p.setMargins(DIP*8, DIP*8, 0, 0);
+	gm.menu_back_p.addRule(c.r.ALIGN_PARENT_TOP, gm.title.getId());
+	gm.menu_back_p.addRule(c.r.ALIGN_PARENT_LEFT, gm.title.getId());
+	gm.menu_back.setLayoutParams(gm.menu_back_p);
+	gm.menu_back.setOnClickListener(View.OnClickListener({onClick: function(view, event) {try {
+		gm.showMenu(false);
+	}catch(e) {
+		showError(e);
+	}}}));
+	gm.title.addView(gm.menu_back);
+	
+	gm.menu_text = mcpeText(DIP*16, "Find Gem", true);
+	gm.menu_text_p = new c.r.LayoutParams(c.w, c.w);
+	gm.menu_text_p.addRule(c.r.CENTER_IN_PARENT, gm.title.getId());
+	gm.menu_text.setLayoutParams(gm.menu_text_p);
+	gm.title.addView(gm.menu_text);
+	
+	gm.menu.addView(gm.title);
+	
+	gm.ctn = new ScrollView(ctx);
+	gm.ctn_p = new c.r.LayoutParams(c.m, c.m);
+	gm.ctn_p.addRule(c.r.BELOW, gm.title.getId());
+	gm.ctn.setLayoutParams(gm.ctn_p);
+	
+	gm.ctn_l = new c.l(ctx);
+	gm.ctn_l.setOrientation(c.l.VERTICAL);
+	
+	gm.ctn1 = mcpeButton(DIP*16, "Play");
+	gm.ctn1.setOnClickListener(View.OnClickListener({onClick: function(view, event) {try {
+		if(gm.userData.length <= 0) {
+			mcpeDialog("Warning", mcpeText(DIP*14, "Player list isn't selected.\n\nClick 'Play' to play with all user.\n\nClick 'Back' to select player list.", true), "Play", gm.ready);
+			return;
+		}
+		gm.ready();
+	}catch(e) {
+		showError(e);
+	}}}));
+	gm.ctn1_p = new c.l.LayoutParams((ctx.getWindowManager().getDefaultDisplay().getWidth()/2) - DIP*32, DIP*50);
+	gm.ctn1_p.setMargins(DIP*8, DIP*4, DIP*8, DIP*4);
+	gm.ctn1.setLayoutParams(gm.ctn1_p);
+	gm.ctn_l.addView(gm.ctn1);
+	
+	gm.ctn2 = mcpeButton(DIP*16, "Select Players");
+	gm.ctn2.setOnClickListener(View.OnClickListener({onClick: function(view, event) {try {
+		gm.selectPlayers();
+	}catch(e) {
+		showError(e);
+	}}}));
+	gm.ctn2_p = new c.l.LayoutParams((ctx.getWindowManager().getDefaultDisplay().getWidth()/2) - DIP*32, DIP*50);
+	gm.ctn2_p.setMargins(DIP*8, DIP*4, DIP*8, DIP*4);
+	gm.ctn2.setLayoutParams(gm.ctn2_p);
+	gm.ctn_l.addView(gm.ctn2);
+	
+	gm.ctn3 = mcpeButton(DIP*16, "Setting");
+	gm.ctn3.setOnClickListener(View.OnClickListener({onClick: function(view, event) {try {
+		
+	}catch(e) {
+		showError(e);
+	}}}));
+	gm.ctn3_p = new c.l.LayoutParams((ctx.getWindowManager().getDefaultDisplay().getWidth()/2) - DIP*32, DIP*50);
+	gm.ctn3_p.setMargins(DIP*8, DIP*4, DIP*8, DIP*4);
+	gm.ctn3.setLayoutParams(gm.ctn3_p);
+	gm.ctn_l.addView(gm.ctn3);
+	
+	gm.ctn4 = mcpeButton(DIP*16, "---");
+	gm.ctn4.setOnClickListener(View.OnClickListener({onClick: function(view, event) {try {
+		
+	}catch(e) {
+		showError(e);
+	}}}));
+	gm.ctn4_p = new c.l.LayoutParams((ctx.getWindowManager().getDefaultDisplay().getWidth()/2) - DIP*32, DIP*50);
+	gm.ctn4_p.setMargins(DIP*8, DIP*4, DIP*8, DIP*4);
+	gm.ctn4.setLayoutParams(gm.ctn4_p);
+	gm.ctn_l.addView(gm.ctn4);
+	
+	gm.ctn.addView(gm.ctn_l);
+	
+	gm.menu.addView(gm.ctn);
+	
+	gm.menuWindow = new PopupWindow(gm.menu, ctx.getWindowManager().getDefaultDisplay().getWidth(), ctx.getWindowManager().getDefaultDisplay().getHeight(), false);
+}
+
+gm.showMenu = function(vis) {try {
+	if(vis) {
+		if(gm.menuWindowAlive) return;
+		uiThread(function() {try {
+			gm.menuWindow.showAtLocation(ctx.getWindow().getDecorView(), Gravity.LEFT|Gravity.TOP, 0, 0);
+			gm.menuWindowAlive = true;
+		}catch(e) {
+			showError(e);
+		}});
+	}else {
+		if(!gm.menuWindowAlive) return;
+		uiThread(function() {try {
+			gm.menuWindow.dismiss();
+			gm.menuWindowAlive = false;
+		}catch(e) {
+			showError(e);
+		}});
+	}
+}catch(e) {
+	showError(e);
+}}
+
 gm.loadGui();
+gm.loadMenuGui();
 gm.showWindow(true);
