@@ -64,9 +64,11 @@ var FrameLayout = android.widget.FrameLayout;
 var RelativeLayout = android.widget.RelativeLayout;
 var LinearLayout = android.widget.LinearLayout;
 var ScrollView = android.widget.ScrollView;
+var HorizontalScrollView = android.widget.HorizontalScrollView;
 var TextView = android.widget.TextView;
 var Button = android.widget.Button;
 var ImageView = android.widget.ImageView;
+var EditText = android.widget.EditText;
 var ProgressBar = android.widget.ProgressBar;
 var PopupWindow = android.widget.PopupWindow;
 var StateListDrawable = android.graphics.drawable.StateListDrawable;
@@ -241,6 +243,74 @@ function mcpeButton(size, text) {
 	}}}));
 	
 	return btn;
+}
+
+function mcpeDialog(title, layout, btnName, btnFunc, btn2Name, btn2Func) {
+	var l = new c.r(ctx);
+	l.setId(randomId());
+	l.setBackgroundDrawable(Assets.background_9());
+	
+	var t = new c.r(ctx);
+	t.setId(randomId());
+	t.setBackgroundDrawable(Assets.title_9());
+	t.setPadding(DIP*8, DIP*8, DIP*8, DIP*14);
+	var t_p = new c.r.LayoutParams(c.m, c.w);
+	t_p.addRule(c.r.ALIGN_PARENT_TOP, l.getId());
+	t.setLayoutParams(t_p);
+	
+	var tt = mcpeText(DIP*16, title, true);
+	var tt_p = new c.r.LayoutParams(c.w, c.w);
+	tt_p.addRule(c.r.CENTER_IN_PARENT, t.getId());
+	tt.setLayoutParams(tt_p);
+	t.addView(tt);
+	
+	var tb = mcpeButton(DIP*16, btn2Name);
+	var tb_p = new c.r.LayoutParams(DIP*70, DIP*34);
+	tb_p.setMargins(0, 0, 0, 0);
+	tb_p.addRule(c.r.ALIGN_PARENT_LEFT, t.getId());
+	tb_p.addRule(c.r.ALIGN_PARENT_TOP, t.getId());
+	tb.setLayoutParams(tb_p);
+	t.addView(tb);
+	
+	var ta = mcpeButton(DIP*16, btnName);
+	var ta_p = new c.r.LayoutParams(DIP*70, DIP*34);
+	ta_p.setMargins(0, 0, 0, 0);
+	ta_p.addRule(c.r.ALIGN_PARENT_RIGHT, t.getId());
+	ta_p.addRule(c.r.ALIGN_PARENT_TOP, t.getId());
+	ta.setLayoutParams(ta_p);
+	t.addView(ta);
+	
+	var ct = new ScrollView(ctx);
+	var ct_p = new c.r.LayoutParams(c.m, c.m);
+	ct_p.setMargins(DIP*8, 0, DIP*8, DIP*8);
+	ct_p.addRule(c.r.BELOW, t.getId());
+	ct.setLayoutParams(ct_p);
+	ct.addView(layout);
+	
+	l.addView(t);
+	l.addView(ct);
+	
+	var w = new PopupWindow(l, DIP*300, DIP*240, false);
+	
+	uiThread(function() {try {
+		w.showAtLocation(ctx.getWindow().getDecorView(), Gravity.CENTER, 0, 0);
+		tb.setOnClickListener(View.OnClickListener({onClick: function(view, event) {try {
+		w.dismiss();
+		btn2Func();
+	}catch(e) {
+		showError(e);
+	}}}));
+	
+	ta.setOnClickListener(View.OnClickListener({onClick: function(view, event) {try {
+		w.dismiss();
+		btnFunc();
+	}catch(e) {
+		showError(e);
+	}}}));
+	
+	}catch(e) {
+		showError(e);
+	}});
 }
 
 /*
@@ -997,14 +1067,14 @@ function loadSetting(article) {
 
 
 
-EntityFix = {};
+var EntityExtra = {};
 
-EntityFix.isEqual = function(obj1, obj2) {
+EntityExtra.isEqual = function(obj1, obj2) {
 	return Entity.getUniqueId(obj1) === Entity.getUniqueId(obj2);
 }
 
-EntityFix.findEnt = function(uniqId) {
-	var list = EntityFix.getAll();
+EntityExtra.findEnt = function(uniqId) {
+	var list = EntityExtra.getAll();
 	var max = list.length;
 	for(var e = 0; e < max; e++) {
 		if(uniqId === Entity.getUniqueId(list[e])) {
@@ -1013,17 +1083,14 @@ EntityFix.findEnt = function(uniqId) {
 	}
 }
 
-EntityFix.getAll = function() {
-	var entities = new Array(c.s.allentities.size());
+EntityExtra.getAll = function() {
+	var a = c.s.allentities;
+	var entities = new Array(a.size());
 		for(var n = 0; entities.length > n; n++){
-			entities[n] = c.s.allentities.get(n);
+			entities[n] = a.get(n);
 		}
 		return entities;
 }
-
-
-
-var EntityExtra = {};
 
 EntityExtra.getRange = function(obj1, obj2) {try {
 	return Math.sqrt(Math.pow(Entity.getX(obj1) - Entity.getX(obj2), 2) + Math.pow(Entity.getY(obj1) - Entity.getY(obj2), 2) + Math.pow(Entity.getZ(obj1) - Entity.getZ(obj2), 2));
@@ -1031,8 +1098,33 @@ EntityExtra.getRange = function(obj1, obj2) {try {
 	return null;
 }};
 
-EntityExtra.getNearPlayers = function() {
-	var a = EntityFix.getAll();
+
+
+var PlayerExtra = {};
+
+PlayerExtra.isOnline = function(player) {
+	var list = EntityExtra.getAll();
+	for(var e = 0; e < list.length; e++) {
+		if(Player.isPlayer(list[e]) && EntityExtra.isEqual(list[e], player)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+PlayerExtra.getOnlinePlayers = function() {
+	var entitys = EntityExtra.getAll();
+	var list = [];
+	for(var e = 0; e < entitys.length; e++) {
+		if(Player.isPlayer(entitys[e])) {
+			list.push(entitys[e]);
+		}
+	}
+	return list;
+}
+
+PlayerExtra.getNearPlayers = function() {
+	var a = EntityExtra.getAll();
 	var f = [];
 	var r = [];
 	var n = [];
@@ -1050,6 +1142,7 @@ EntityExtra.getNearPlayers = function() {
 	}
 	return n;
 }
+
 
 
 /**
