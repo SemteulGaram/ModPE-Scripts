@@ -52,9 +52,12 @@ var Double = java.lang.Double;
 var Boolean = java.lang.Boolean;
 var Long = java.lang.Long;
 var Short = java.lang.Short;
+var File = java.io.File;
 var Context = android.content.Context;
+var Activity = android.app.Activity;
 var Thread = java.lang.Thread;
 var Runnable = java.lang.Runnable;
+var Process = android.os.Process;
 var AlertDialog = android.app.AlertDialog;
 var View = android.view.View;
 var ViewGroup = android.view.ViewGroup;
@@ -68,8 +71,10 @@ var HorizontalScrollView = android.widget.HorizontalScrollView;
 var TextView = android.widget.TextView;
 var Button = android.widget.Button;
 var ImageView = android.widget.ImageView;
+var ImageButton = android.widget.ImageButton;
 var EditText = android.widget.EditText;
 var ProgressBar = android.widget.ProgressBar;
+var SeekBar = android.widget.SeekBar;
 var PopupWindow = android.widget.PopupWindow;
 var StateListDrawable = android.graphics.drawable.StateListDrawable;
 var GradientDrawable = android.graphics.drawable.GradientDrawable;
@@ -89,6 +94,7 @@ var Typeface = android.graphics.Typeface;
 var ArrayList = java.util.ArrayList;
 var Calendar = java.util.Calendar;
 var GregorianCalendar = java.util.GregorianCalendar;
+var MediaPlayer = android.media.MediaPlayer;
 
 var c = {};
 c.m = ViewGroup.LayoutParams.MATCH_PARENT;
@@ -1084,7 +1090,7 @@ EntityExtra.findEnt = function(uniqId) {
 }
 
 EntityExtra.getAll = function() {
-	var a = c.s.allentities;
+	var a = net.zhuoweizhang.mcpelauncher.ScriptManager.allentities;
 	var entities = new Array(a.size());
 		for(var n = 0; entities.length > n; n++){
 			entities[n] = a.get(n);
@@ -1493,7 +1499,7 @@ VL.captureData = function() {
 
 var mAudioCapture, mVisible;
 
-function onVisibilityChanged(visible, type, size, audioSessionID) {
+VL.onVisibilityChanged = function(visible, type, size, audioSessionID) {
 	mVisible = visible;
 	if (visible) {
 		if (mAudioCapture == null) {
@@ -1685,6 +1691,10 @@ function ttsIt(str, pitch, speed) {
 	tts.setSpeechRate(speed);
 	tts.speak(str, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null);
 }
+
+/*
+android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND);
+*/
 
 /*
 Level.addParticle에 쓰이는 파티클 목록
