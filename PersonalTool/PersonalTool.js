@@ -853,15 +853,15 @@ Pt.isOn = [true, false, true];
 
 Pt.btn = new android.widget.Button(ctx);
 Pt.btn.setText("CI");
-Pt.btn.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, DIP*10);
+Pt.btn.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, DIP*2);
 Pt.btn.setTextColor(android.graphics.Color.WHITE);
 Pt.btn.setPadding(0, 0, 0, 0);
 
 Pt.btn_draw = new android.graphics.drawable.GradientDrawable();
-Pt.btn_draw.mutate().setStroke(PIXEL*2, android.graphics.Color.rgb(30, 30, 30));
+//Pt.btn_draw.mutate().setStroke(PIXEL*2, android.graphics.Color.rgb(30, 30, 30));
 Pt.btn_draw.mutate().setGradientType(android.graphics.drawable.GradientDrawable.RADIAL_GRADIENT);
 Pt.btn_draw.mutate().setGradientRadius(PIXEL*20);
-Pt.btn_draw.mutate().setColor(android.graphics.Color.rgb(30, 150, 255));
+Pt.btn_draw.mutate().setColor(android.graphics.Color.argb(10, 30, 150, 255));
 Pt.btn_draw.setCornerRadius(PIXEL*25);
 Pt.btn_draw.setAlpha(150);
 Pt.btn.setBackgroundDrawable(Pt.btn_draw);
@@ -888,11 +888,11 @@ Pt.btn.setOnLongClickListener(new android.view.View.OnLongClickListener({onLong
 		Pt.mod = parseInt(Pt.dl_et.getText() + "");
 		if(Pt.mod < 0 && Pt.btn.getText() + "" != "Debug") {
 			Pt.btn.setText("Debug");
-			Pt.btn_draw.mutate().setColor(android.graphics.Color.rgb(255, 30, 50));
+			Pt.btn_draw.mutate().setColor(android.graphics.Color.argb(10, 255, 30, 50));
 			toast(TAG + "Debug Mod");
 		}else if(Pt.btn.getText() + "" != "CI") {
 			Pt.btn.setText("CI");
-			Pt.btn_draw.mutate().setColor(android.graphics.Color.rgb(30, 150, 255));
+			Pt.btn_draw.mutate().setColor(android.graphics.Color.argb(10, 30, 150, 255));
 		}
 	}catch(e) {
 		showError(e);

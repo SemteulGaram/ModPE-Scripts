@@ -67,6 +67,7 @@ var ScrollView = android.widget.ScrollView;
 var TextView = android.widget.TextView;
 var Button = android.widget.Button;
 var ImageView = android.widget.ImageView;
+var EditText = android.widget.EditText;
 var ProgressBar = android.widget.ProgressBar;
 var PopupWindow = android.widget.PopupWindow;
 var StateListDrawable = android.graphics.drawable.StateListDrawable;
@@ -243,7 +244,7 @@ function mcpeButton(size, text) {
 	return btn;
 }
 
-function mcpeDialog(title, layout, btnName, btnFunc) {
+function mcpeDialog(title, layout, btnName, btnFunc, btn2Name, btn2Func) {
 	var l = new c.r(ctx);
 	l.setId(randomId());
 	l.setBackgroundDrawable(Assets.background_9());
@@ -262,7 +263,7 @@ function mcpeDialog(title, layout, btnName, btnFunc) {
 	tt.setLayoutParams(tt_p);
 	t.addView(tt);
 	
-	var tb = mcpeButton(DIP*16, "Back");
+	var tb = mcpeButton(DIP*16, btn2Name);
 	var tb_p = new c.r.LayoutParams(DIP*70, DIP*34);
 	tb_p.setMargins(0, 0, 0, 0);
 	tb_p.addRule(c.r.ALIGN_PARENT_LEFT, t.getId());
@@ -294,6 +295,7 @@ function mcpeDialog(title, layout, btnName, btnFunc) {
 		w.showAtLocation(ctx.getWindow().getDecorView(), Gravity.CENTER, 0, 0);
 		tb.setOnClickListener(View.OnClickListener({onClick: function(view, event) {try {
 		w.dismiss();
+		btn2Func();
 	}catch(e) {
 		showError(e);
 	}}}));
@@ -310,7 +312,7 @@ function mcpeDialog(title, layout, btnName, btnFunc) {
 	}});
 }
 
-mcpeDialog("hello", new Button(ctx), "Aaaaaaa", function() {print("hello")});
+mcpeDialog("hello", new Button(ctx), "Aaaaaaa", function() {print("hello")}, "Back", function() {});
 
 /**
  * Error report
@@ -356,7 +358,7 @@ function debug(str) {
 	if(debugging) {
 		if(!gm.onMap) {
 			 ctx.runOnUiThread(new java.lang.Runnable({ run: function(){
-		android.widget.Toast.makeText(ctx, "[Debug]\n" + str, android.widget.Toast.LENGTH_LONG).show();
+		android.widget.Toast.makeText(ctx, "[Debug]\n" + str, android.widget.Toast.LENGTH_SHORT).show();
 			}}));
 		}else {
 			clientMessage("[debug] " + str);
@@ -390,7 +392,7 @@ function toasts(str) {
 
 function broadcast(str){
 	net.zhuoweizhang.mcpelauncher.ScriptManager.nativeSendChat(str);
-	clientMessage("<" + Player.getName(Player.getEntity()) + "> " + str);
+	//clientMessage("<" + Player.getName(Player.getEntity()) + "> " + str);
 }
 
 function sleep(int){
@@ -830,6 +832,27 @@ thread(function() {try {
 	showError(e);
 }});
 
+function newLevel(str) {
+	gm.onMap = true;
+}
+
+function leaveGame() {
+	gm.onMap = false;
+}
+
+function modTick() {
+	
+}
+
+function attackHook(attacker, victim) {
+	
+}
+
+function deathHook(attacker, victim) {
+	preventDefault();
+	gm.killFilter(attacker, victim);
+}
+
 var gm = {};
 gm.windowAlive = false;
 gm.menuWindowAlive = false;
@@ -859,16 +882,21 @@ gm.selectPlayers = function() {
 	for(var e = 0; e < list.length; e++) {
 		var name = Player.getName(list[e]);
 		var b = mcpeButton(DIP*16, name);
-		if(gm.getIndexByName(name) !== -1) {
+		var i = gm.getIndexByName(name);
+		debug(name + " index: " + i);
+		if(i !== -1) {
 			b.setTextColor(Color.parseColor("#ffff80"));
 		}
 		b.setOnClickListener(View.OnClickListener({onClick: function(view, event) {try {
+			var name = view.getText() + "";
 			var i = gm.getIndexByName(name);
 			if(i === -1) {
 				gm.userData.push({name: name, elemental: [], kill: 0, killList: [], death: false});
+				debug(name + " push! " + gm.getIndexByName(name));
 				view.setTextColor(Color.parseColor("#ffff80"));
 			}else {
 				gm.userData.splice(i, 1);
+				debug(name + " splice! " + gm.getIndexByName(name));
 				view.setTextColor(Color.WHITE);
 			}
 		}catch(e) {
@@ -876,8 +904,191 @@ gm.selectPlayers = function() {
 		}}}));
 		l.addView(b);
 	}
-	mcpeDialog("Select...", l, "Done", function() {});
+	mcpeDialog("Select...", l, "Done", function() {}, "Back", function() {});
 }
+
+
+
+gm.readyAll = function() {
+	var list = PlayerExtra.getOnlinePlayers();
+	for(var e = 0; e < list.length; e++) {
+		var name = Player.getName(list[e]);
+		var i = gm.getIndexByName(name);
+		if(i === -1) {
+			gm.userData.push({name: name, elemental: [], kill: 0, killList: [], death: false});
+		}
+	}
+	gm.ready();
+}
+
+
+
+gm.ready = function() {
+	if(gm.userData.length < 1) {
+		mcpeDialog("Warning", mcpeText(DIP*16, "선택한 참여 플레이어가 2명 이하입니다.\n게임을 계속 진행할 수 없습니다.\n\n'Ok'를 누르면 종료합니다...", true), "Ok", function() {}, "Back", function() {});
+		broadcast(ChatColor.DARK_RED + TAG + "참가하는 플레이어가 2명 보다 적습니다.");
+		broadcast(ChatColor.DARK_RED + TAG + "게임을 진행할 수 없습니다.");
+		return;
+	}else if(gm.userData.length < 8) {
+		mcpeDialog("Warning", mcpeText(DIP*16, "참가하는 플레이어가 8명 보다 적습니다.\n한 사람에게 2개 이상의 보석이 주어질 수 있습니다.\n\n'Ok'를 눌러 계속합니다...", true), "Ok", function() {gm.isRun = true;gm.needHelp();broadcast(ChatColor.RED + TAG + "참가하는 플레이어가 8명 보다 적습니다.");broadcast(ChatColor.RED + "한 사람에게 2개 이상의 보석이 주어질 수 있습니다")}, "Back", function() {});
+		return;
+	}
+	gm.isRun = true;
+	gm.needHelp();
+}
+
+
+
+gm.needHelp = function() {
+	var help = function() {thread(function() {try {
+		broadcast(ChatColor.YELLOW + TAG + "환영합니다.");
+		sleep(5000);
+		broadcast(ChatColor.YELLOW + "본 게임은 마지막까지 생존하는 분이");
+		broadcast(ChatColor.YELLOW + "이기는 생존게임입니다");
+		sleep(5000);
+		broadcast(ChatColor.YELLOW + "게임이 시작하면");
+		broadcast(ChatColor.AQUA + "다이아몬드, " + ChatColor.GOLD + "금, " + ChatColor.WHITE + "철, " + ChatColor.RED + "레드스톤");
+		broadcast(ChatColor.YELLOW + "중에 하나가 지급됩니다.");
+		sleep(1000);
+		broadcast(ChatColor.AQUA + "다이아몬드" + ChatColor.YELLOW + "은(는) " + ChatColor.GOLD + "금");
+		broadcast(ChatColor.GOLD + "금" + ChatColor.YELLOW + "은(는) " + ChatColor.WHITE + "철");
+		broadcast(ChatColor.WHITE + "철" + ChatColor.YELLOW + "은(는) " + ChatColor.RED + "레드스톤");
+		broadcast(ChatColor.RED + "레드스톤" + ChatColor.YELLOW + "은(는) " + ChatColor.AQUA + "다이아몬드");
+		broadcast(ChatColor.YELLOW + "를 가지고 있는 플레이어를 죽일 수 있습니다");
+		sleep(10000);
+		broadcast(ChatColor.YELLOW + "만약 상대에게 헤당하는 보석이 없으면");
+		broadcast(ChatColor.YELLOW + "죽일 수 없습니다");
+		sleep(5000);
+		broadcast(ChatColor.YELLOW + "상대를 죽이면 보석을 얻을 수 있지만");
+		broadcast(ChatColor.YELLOW + "많은 보석을 얻는다는 것은 그 만큼 죽어서");
+		broadcast(ChatColor.YELLOW + "보석을 잃을 확률도 올라갑니다");
+		sleep(10000);
+		gm.start();
+	}catch(e) {
+		gm.isRun = false;
+		showError(e);
+	}}).start()}
+	mcpeDialog("Need Help?", mcpeText(DIP*16, "도움말을 방송할까요?", true), "Yes", help, "No", gm.start);
+}
+
+
+
+gm.start = function() {
+	thread(function() {try {
+		broadcast(ChatColor.AQUA + TAG + "잠시후 게임이 시작합니다...");
+		sleep(3000);
+		broadcast(ChatColor.DARK_GRAY + TAG + "Load Player List...");
+		var l = gm.userData.length;
+		var p = [0,0,1,1,2,2,3,3];
+		for(var e = 0; e < l; e++) {
+			if(p.length > 0) {
+				var r = Math.floor(Math.random() * p.length);
+				gm.userData[e].elemental.push(p[r]);
+				broadcast(ChatColor.DARK_GRAY + TAG + "Division... " + Math.floor(e/l*100) + "%");
+				p.splice(r, 1);
+			}else {
+				gm.userData[e].elemental.push(Math.floor(Math.random() * 4));
+				broadcast(ChatColor.DARK_GRAY + TAG + "Supplement... " + Math.floor(e/l*100) + "%");
+			}
+			sleep(1000);
+		}
+		while(p.length > 0) {
+			var r = Math.floor(Math.random() * p.length);
+			gm.userData[Math.floor(Math.random() * gm.userData.length)].elemental.push(p[r]);
+			broadcast(ChatColor.DARK_GRAY + TAG + "Extra... " + p.length + "left");
+			p.splice(r, 1);
+			sleep(1000);
+		}
+		var l = c.l(ctx);
+		l.setOrientation(c.l.VERTICAL);
+		l.addView(mcpeText(DIP*16, "킬 타임을 설정해 주세요 (분 단위)", true));
+		var l2 = c.l(ctx);
+		l2.setOrientation(c.l.HORIZONTAL);
+		l2.setGravity(Gravity.CENTER);
+		l2.setPadding(DIP*8, DIP*50, DIP*8, DIP*8);
+		
+		gm.tempDe = mcpeButton(DIP*16, "<");
+		gm.tempDe.setOnClickListener(View.OnClickListener({onClick: function(view, event) {try {
+			var m = parseInt(gm.tempTv.getText() + "");
+			if(m > 0) {
+				gm.tempTv.setText((m - 1) + "");
+			}else {
+				toasts(TAG + "킬 타임은 '0'분 보다 작을 수 없습니다");
+			}
+		}catch(e) {
+			showError(e);
+		}}}));
+		l2.addView(gm.tempDe);
+		
+		gm.tempTv = mcpeText(DIP*16, "3", true);
+		gm.tempTv.setText("3");
+		gm.tempTv.setPadding(DIP*10, 0, DIP*10, 0);
+		l2.addView(gm.tempTv);
+		
+		gm.tempIn = mcpeButton(DIP*16, ">");
+		gm.tempIn.setOnClickListener(View.OnClickListener({onClick: function(view, event) {try {
+			var m = parseInt(gm.tempTv.getText() + "");
+			if(m < 20) {
+				gm.tempTv.setText((m + 1) + "");
+			}else {
+				toasts(TAG + "킬 타임은 '20'분 보다 클 수 없습니다");
+			}
+		}catch(e) {
+			showError(e);
+		}}}));
+		l2.addView(gm.tempIn);
+		
+		l.addView(l2);
+		
+		mcpeDialog("Kill Time", l, "Done", function() {}, "Skip", function() {});
+	}catch(e) {
+		showError(e);
+		gm.isRun = false;
+	}}).start();
+}
+
+
+
+gm.killFilter = function(attacker, victim) {try {
+	var an = Player.getName(attacker);
+	var vn = Player.getName(victim);
+	var i = gm.getIndexByName(an);
+	var vi = gm.getIndexByName(vn);
+	if(i !== -1 && vi !== -1) {
+		
+		for(var e = 0; e < gm.userData[i].elemental.length; e++) {
+			for(var f = 0; f < gm.userData[vi].elemental.length; e++) {
+				var ai = gm.userData[i].elemental[e];
+				if(--ai < 0) {
+					ai = 3;
+				}
+				if(ai === gm.userData[vi].elemental[f]) {
+					debug(an + " kill " + vn);
+					//TODO (kill)
+					return;
+				}
+			}
+		}
+		debug(an + " fail to kill " + vn);
+		for(var e = 0; e < gm.userData[i].elemental.length; e++) {
+			for(var f = 0; f < gm.userData[vi].elemental.length; e++) {
+				var ai = gm.userData[i].elemental[e];
+				if(++ai > 3) {
+					ai = 0;
+				}
+				if(ai === gm.userData[vi].elemental[f]) {
+					debug(vn + " kill " + an);
+					//TODO (kill)
+					return;
+				}
+			}
+		}
+		debug(vn + " fail to kill " + an);
+		//TODO
+	}
+}catch(e) {
+	showError(e);
+}};
 
 
 
@@ -992,8 +1203,12 @@ gm.loadMenuGui = function() {
 	
 	gm.ctn1 = mcpeButton(DIP*16, "Play");
 	gm.ctn1.setOnClickListener(View.OnClickListener({onClick: function(view, event) {try {
+		if(gm.isRun) {
+			mcpeDialog("Warning", mcpeText(DIP*16, "이미 게임이 진행중입니다.\n\n'Ok'를 누르면 취소합니다...", true), "Ok", function() {}, "Back", function() {});
+			return;
+		}
 		if(gm.userData.length <= 0) {
-			mcpeDialog("Warning", mcpeText(DIP*14, "Player list isn't selected.\n\nClick 'Play' to play with all user.\n\nClick 'Back' to select player list.", true), "Play", gm.ready);
+			mcpeDialog("Warning", mcpeText(DIP*16, "참가할 플레이어를 지정하지 않았습니다.\n자동으로 모든 플레이어가 참가합니다.\n\n'Play'를 누르면 계속합니다...", true), "Play", gm.readyAll, "Back", function() {});
 			return;
 		}
 		gm.ready();
