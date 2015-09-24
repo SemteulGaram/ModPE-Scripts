@@ -418,6 +418,8 @@ function setTileManager() {
 		if(setTileManagerData.length > 0) {
 			var d = setTileManagerData.shift();
 			Level.setTile(d[0], d[1], d[2], d[3], d[4]);
+		}else {
+			break;
 		}
 	}
 }
