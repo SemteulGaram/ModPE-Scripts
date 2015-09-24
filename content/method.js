@@ -1692,6 +1692,28 @@ function ttsIt(str, pitch, speed) {
 	tts.speak(str, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null);
 }
 
+
+
+function priceToString(price) {
+	
+}
+
+function dataSizeToString(size) {
+	if(size < 1000) {
+		return size + "B";
+	}else if(size < 1024000) {
+		return parseInt(Math.round(size*100/1024), 10)/100 + "KB";
+	}else if(size < 1048576000) {
+		return parseInt(Math.round(size*100/1048576), 10)/100 + "MB";
+	}else if(size < 1073741824000) {
+		return parseInt(Math.round(size*100/1073741824), 10)/100 + "GB";
+	}else if(size < 1099511627776000) {
+		return parseInt(Math.round(size*100/1099511627776), 10)/100 + "TB";
+	}else {
+		return parseInt(Math.round(size*100/(1099511627776*1024)), 10)/100 + "PB";
+	}
+}
+
 /*
 android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND);
 */
