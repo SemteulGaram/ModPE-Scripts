@@ -54,6 +54,7 @@ var Short = java.lang.Short;
 var File = java.io.File;
 var Context = android.content.Context;
 var Activity = android.app.Activity;
+var Handler = android.os.Handler
 var Thread = java.lang.Thread;
 var Runnable = java.lang.Runnable;
 var Process = android.os.Process;
@@ -74,6 +75,7 @@ var ImageButton = android.widget.ImageButton;
 var EditText = android.widget.EditText;
 var ProgressBar = android.widget.ProgressBar;
 var SeekBar = android.widget.SeekBar;
+var NumberPicker = android.widget.NumberPicker;
 var PopupWindow = android.widget.PopupWindow;
 var StateListDrawable = android.graphics.drawable.StateListDrawable;
 var GradientDrawable = android.graphics.drawable.GradientDrawable;
@@ -330,6 +332,28 @@ Assets.wesButtonClick = new NinePatchAssetCreator([
 0,0,0,p,p,0,0,0,
 ], 8, 8, PIXEL*2, 4, 4, 5, 5);
 
+var p = ScriptColor.normal;
+var o = Color.argb(0x55, 0, 0, 0);
+Assets.toastNormal = new NinePatchAssetCreator([
+p,p,p,
+p,o,p,
+p,p,p
+], 3, 3, PIXEL*2, 2, 2, 2, 2);
+
+var p = ScriptColor.warning;
+Assets.toastWarning = new NinePatchAssetCreator([
+p,p,p,
+p,o,p,
+p,p,p
+], 3, 3, PIXEL*2, 2, 2, 2, 2);
+
+var p = ScriptColor.critical;
+Assets.toastCritical = new NinePatchAssetCreator([
+p,p,p,
+p,o,p,
+p,p,p
+], 3, 3, PIXEL*2, 2, 2, 2, 2);
+
 
 
 function mcpeText(size, text, shadow) {
@@ -452,6 +476,51 @@ function mcpeDialog(title, layout, btnName, btnFunc, btn2Name, btn2Func) {
 	}catch(e) {
 		showError(e);
 	}});
+}
+
+function mcText(str, size, hasShadow, color, shadowColor, width, height, padding, margins) {
+	var tv = new TextView(ctx);
+	tv.setTransformationMethod(null);
+	tv.setLayerType(android.view.View.LAYER_TYPE_SOFTWARE, null);
+	if(FILE_FONT.exists()) {
+		tv.setTypeface(android.graphics.Typeface.createFromFile(FILE_FONT));
+	};
+	tv.setText(str);
+	if(size === null) {
+		tv.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, DIP*0x10);
+	}else {
+		tv.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, size);
+	}
+	if(color === null) {
+		tv.setTextColor(Color.WHITE);
+	}else {
+		tv.setTextColor(color);
+	}
+	if(hasShadow) {
+		if(shadowColor !== null) {
+			tv.setShadowLayer(1/0xffffffff, DIP*1.3, DIP*1.3, shadowColor);
+		}else {
+			tv.setShadowLayer(1/0xffffffff, DIP*1.3, DIP*1.3, Color.DKGRAY);
+		}
+	}
+	if(padding !== null) {
+		tv.setPadding(padding[0], padding[1], padding[2], padding[3]);
+	}
+	var tv_p;
+	if(width !== null && height !== null) {
+		tv_p = new c.r.LayoutParams(width, height);
+	}else {
+		tv_p = new c.r.LayoutParams(c.w, c.w);
+	}
+	if(margins !== null) {
+		tv_p.setMargins(margins[0], margins[1], margins[2], margins[3]);
+	}
+	tv.setLayoutParams(tv_p);
+	return tv;
+}
+
+function mcButton(str, size, hasShadow, color, shadowColor, width, height, padding, margins, onTouchFunction, onClickFunction, onLongClickFunction) {
+	
 }
 
 
@@ -1284,6 +1353,23 @@ function randomId() {
 
 
 
+function coordinatify(type, value) {
+	switch(type) {
+		case 0:
+		return parseInt(Math.floor(value));
+		case 1:
+		if(value < 0x00) {
+			return 0x00;
+		}else if(value > 0xff) {
+			return 0xff;
+		} 
+		default:
+		return value;
+	}
+}
+
+
+
 /**
  * Vector3
  *
@@ -1815,7 +1901,11 @@ var EditType = {
 	FILL: 0,
 	CLEAN: 1,
 	REPLACE: 2,
-	WALL: 3
+	WALL: 3,
+	SPHERE: 4,
+	HEMISPHERE: 5,
+	CIRCLE: 6,
+	SEMICIRCLE: 7
 }
 
 var ContentType = {
@@ -1831,7 +1921,8 @@ var MenuType = {
 	INFO: 3,
 	QUICK: 4,
 	HELP: 5,
-	SETTING: 6
+	SETTING: 6,
+	CIRCULAR: 7
 }
 
 function WorldEditScript(setting) {
@@ -1852,11 +1943,12 @@ function WorldEditScript(setting) {
 	}
 	this.setting = null;
 	this.defaultSetting = {
+		ButtonX: c.ww - (DIP*0x30),
+		ButtonY: c.wh - (DIP*0x30),
+		ButtonVis: true,
+		Whitelist: [],
 		WorkType: WorkType.SYNCHRONIZATION,
-		buttonX: c.ww - (DIP*0x30),
-		buttonY: c.wh - (DIP*0x30),
-		buttonVis: true,
-		whitelist: []
+		HollowCircular: false
 	}
 	this.editorGroup = new EditorGroup(this);
 	this.button = null;
@@ -1869,8 +1961,9 @@ function WorldEditScript(setting) {
 	this.blockImagesData = [];
 	this.asynceBuffer = [];
 	this._selectMenuVis = false;
-	this._asynceWorkTick = 0;
 	this._onMove = false;
+	this._onWork = false;
+	this._workTick = 200;
 }
 
 WorldEditScript.prototype = {
@@ -1886,8 +1979,7 @@ WorldEditScript.prototype = {
 	loadSetting: function() {
 		if(this.settingFile.exists()) {
 			this.setting = loadJSON(this.settingFile);
-			if(this.setting === false || this.setting.toString() !== "[object Object]") {
-				print(this.setting.toString());
+			if(this.setting === false || this.setting === null || this.setting === undefined || this.setting.toString() !== "[object Object]") {
 				toast("MSG SETTING FILE CRASH");
 				this.settingFile.delete();
 				this.saveSetting();
@@ -1942,7 +2034,7 @@ WorldEditScript.prototype = {
 					this.buildButton();
 				}
 				uiThread(function() {try {
-					that.button.showAtLocation(c.d, Gravity.LEFT|Gravity.TOP, that.get("buttonX"), that.get("buttonY"));
+					that.button.showAtLocation(c.d, Gravity.LEFT|Gravity.TOP, that.get("ButtonX"), that.get("ButtonY"));
 					that.buttonVis = true;
 				}catch(e) {
 					showError(e, WarnType.CRITICAL);
@@ -2029,8 +2121,8 @@ WorldEditScript.prototype = {
 					var x = event.getRawX() - that.absX + that.viewX;
 					var y = event.getRawY() - that.absY + that.viewY;
 					that.button.update(x, y, that.width, that.height);
-					that.set("buttonX", x);
-					that.set("buttonY", y);
+					that.set("ButtonX", x);
+					that.set("ButtonY", y);
 					that.saveSetting();
 				}
 				break;
@@ -2109,28 +2201,13 @@ WorldEditScript.prototype = {
 		
 		
 		this.menus[MenuType.MAIN] = new WES_Menu(this, "World Edit Script");
+		
+		
 	
 		this.menus[MenuType.EDIT] = new WES_Menu(this, "WorldEdit");
 		this.menus[MenuType.MAIN].addMenu(ContentType.REDIRECT_MENU, "WorldEdit", this.menus[MenuType.EDIT]);
-	
-		this.menus[MenuType.TOOL] = new WES_Menu(this, "Tool");
-		this.menus[MenuType.MAIN].addMenu(ContentType.REDIRECT_MENU, "Tool", this.menus[MenuType.TOOL]);
-	
-		this.menus[MenuType.INFO] = new WES_Menu(this, "Info Panel");
-		this.menus[MenuType.MAIN].addMenu(ContentType.REDIRECT_MENU, "Info Panel", this.menus[MenuType.INFO]);
-	
-		this.menus[MenuType.QUICK] = new WES_Menu(this, "Quick Bar");
-		this.menus[MenuType.MAIN].addMenu(ContentType.REDIRECT_MENU, "Quick Bar", this.menus[MenuType.QUICK]);
-	
-		this.menus[MenuType.HELP] = new WES_Menu(this, "Help");
-		this.menus[MenuType.MAIN].addMenu(ContentType.REDIRECT_MENU, "Help", this.menus[MenuType.HELP]);
-	
-		this.menus[MenuType.SETTING] = new WES_Menu(this, "Setting");
-		this.menus[MenuType.MAIN].addMenu(ContentType.REDIRECT_MENU, "Setting", this.menus[MenuType.SETTING]);
-	
-	
-	
-		this.menus[MenuType.EDIT].addMenu(ContentType.FUNCTION, "Give selection tool", function() {
+		
+			this.menus[MenuType.EDIT].addMenu(ContentType.FUNCTION, "Give selection tool", function() {
 			Entity.setCarriedItem(Player.getEntity(), 271, 1, 0);
 			toasts("MSG GIVE TOOL");
 		});
@@ -2162,17 +2239,29 @@ WorldEditScript.prototype = {
 		});
 		
 		this.menus[MenuType.EDIT].addMenu(ContentType.FUNCTION, "Set Block1", function() {
-			WES_BlockSelect(that, "Set Block1...", "Confirm", function(id, data) {
+			var editor = that.editorGroup.get(Player.getName(Player.getEntity()));
+			if(editor === false) {
+				toasts("MSG ERROR CANT FIND PLAYER");
+				return;
+			}
+			var t = new WES_BlockSelect(that, "Set Block1...", "Confirm", function(id, data) {
 				editor.setBlock1(new Block(id, data));
 				msg("MSG SET BLOCK1", editor.getOwner());
 			}, "Cancel", function() {});
+			t.setVisible(true);
 		});
 		
 		this.menus[MenuType.EDIT].addMenu(ContentType.FUNCTION, "Set Block2", function() {
-			WES_BlockSelect(that, "Set Block2...", "Confirm", function(id, data) {
+			var editor = that.editorGroup.get(Player.getName(Player.getEntity()));
+			if(editor === false) {
+				toasts("MSG ERROR CANT FIND PLAYER");
+				return;
+			}
+			var t = new WES_BlockSelect(that, "Set Block2...", "Confirm", function(id, data) {
 				editor.setBlock2(new Block(id, data));
 				msg("MSG SET BLOCK2", editor.getOwner());
 			}, "Cancel", function() {});
+			t.setVisible(true);
 		});
 	
 		this.menus[MenuType.EDIT].addMenu(ContentType.FUNCTION, "Fill", function() {
@@ -2183,17 +2272,107 @@ WorldEditScript.prototype = {
 			}
 			editor.run(EditType.FILL);
 		});
+		
+		this.menus[MenuType.EDIT].addMenu(ContentType.FUNCTION, "Clean", function() {
+			var editor = that.editorGroup.get(Player.getName(Player.getEntity()));
+			if(editor === false) {
+				toasts("MSG ERROR CANT FIND PLAYER");
+				return;
+			}
+			editor.run(EditType.CLEAN);
+		});
+		
+		this.menus[MenuType.EDIT].addMenu(ContentType.FUNCTION, "Replace", function() {
+			var editor = that.editorGroup.get(Player.getName(Player.getEntity()));
+			if(editor === false) {
+				toasts("MSG ERROR CANT FIND PLAYER");
+				return;
+			}
+			editor.run(EditType.REPLACE);
+		});
+		
+		this.menus[MenuType.EDIT].addMenu(ContentType.FUNCTION, "Wall", function() {
+			var editor = that.editorGroup.get(Player.getName(Player.getEntity()));
+			if(editor === false) {
+				toasts("MSG ERROR CANT FIND PLAYER");
+				return;
+			}
+			editor.run(EditType.WALL);
+		});
+		
+		this.menus[MenuType.CIRCULAR] = new WES_Menu(this, "Circular");
+		this.menus[MenuType.EDIT].addMenu(ContentType.REDIRECT_MENU, "Circular", this.menus[MenuType.CIRCULAR]);
+		
+		this.menus[MenuType.CIRCULAR].addMenu(ContentType.TOGGLE, "HollowCircular", function(bool) {
+			if(bool === true) {
+				that.set("HollowCircular", true);
+				that.saveSetting();
+				return "HollowCircular";
+			}else if(bool === false) {
+				that.set("HollowCircular", false);
+				that.saveSetting();
+				return "HollowCircular";
+			}else {
+				return that.get("HollowCircular")
+			}
+		});
+		
+		this.menus[MenuType.CIRCULAR].addMenu(ContentType.FUNCTION, "Sphere", function() {
+			var editor = that.editorGroup.get(Player.getName(Player.getEntity()));
+			if(editor === false) {
+				toasts("MSG ERROR CANT FIND PLAYER");
+				return;
+			}
+			editor.run(EditType.SPHERE);
+		});
+		
+		this.menus[MenuType.CIRCULAR].addMenu(ContentType.FUNCTION, "Hemi Sphere", function() {
+			var editor = that.editorGroup.get(Player.getName(Player.getEntity()));
+			if(editor === false) {
+				toasts("MSG ERROR CANT FIND PLAYER");
+				return;
+			}
+			editor.run(EditType.HEMI_SPHERE);
+		});
+		
+		
+		
 	
+		this.menus[MenuType.TOOL] = new WES_Menu(this, "Tool");
+		this.menus[MenuType.MAIN].addMenu(ContentType.REDIRECT_MENU, "Tool", this.menus[MenuType.TOOL]);
+		
+		
+		
 	
+		this.menus[MenuType.INFO] = new WES_Menu(this, "Info Panel");
+		this.menus[MenuType.MAIN].addMenu(ContentType.REDIRECT_MENU, "Info Panel", this.menus[MenuType.INFO]);
+		
+		
+		
 	
+		this.menus[MenuType.QUICK] = new WES_Menu(this, "Quick Bar");
+		this.menus[MenuType.MAIN].addMenu(ContentType.REDIRECT_MENU, "Quick Bar", this.menus[MenuType.QUICK]);
+		
+		
+		
+	
+		this.menus[MenuType.HELP] = new WES_Menu(this, "Help");
+		this.menus[MenuType.MAIN].addMenu(ContentType.REDIRECT_MENU, "Help", this.menus[MenuType.HELP]);
+		
+		
+		
+	
+		this.menus[MenuType.SETTING] = new WES_Menu(this, "Setting");
+		this.menus[MenuType.MAIN].addMenu(ContentType.REDIRECT_MENU, "Setting", this.menus[MenuType.SETTING]);
+		
 		this.menus[MenuType.SETTING].addMenu(ContentType.TOGGLE, "Show Button", function(bool) {
 			if(bool === true) {
-				that.set("buttonVis", true);
+				that.set("ButtonVis", true);
 				that.setButtonVisible(true);
 				that.saveSetting();
 				return "Show Button"
 			}else if(bool === false) {
-				that.set("buttonVis", false);
+				that.set("ButtonVis", false);
 				that.setButtonVisible(false);
 				that.saveSetting();
 				return "Show Button"
@@ -2215,7 +2394,20 @@ WorldEditScript.prototype = {
 				return that.get("WorkType") == WorkType.SYNCHRONIZATION;
 			}
 		});
-	
+		
+		this.menus[MenuType.SETTING].addMenu(ContentType.TOGGLE, "HollowCircular", function(bool) {
+			if(bool === true) {
+				that.set("HollowCircular", true);
+				that.saveSetting();
+				return "HollowCircular";
+			}else if(bool === false) {
+				that.set("HollowCircular", false);
+				that.saveSetting();
+				return "HollowCircular";
+			}else {
+				return that.get("HollowCircular")
+			}
+		});
 	
 	
 		this.menus[MenuType.MAIN].addMenu(ContentType.FUNCTION, "TEST", function() {
@@ -2237,6 +2429,40 @@ WorldEditScript.prototype = {
 			showError(e, WarnType.WARNING);
 		}});
 	}
+}
+
+
+
+function WES_Toast(str, type, duration, color) {
+	if(duration === undefined || duration === null) duration = 3000;
+	if(color === undefined || color === null) color = Color.WHITE;
+	var layout = mcpeText(DIP*12, str);
+	layout.setGravity(Gravity.CENTER);
+	layout.setPadding(DIP*4, DIP*4, DIP*4, DIP*4);
+	layout.setTextColor(color);
+	switch(type) {
+		case 1:
+		layout.setBackgroundDrawable(Assets.toastWarning.ninePatch());
+		break;
+		case 2:
+		layout.setBackgroundDrawable(Assets.toastCritical.ninePatch());
+		break;
+		case 0:
+		default:
+		layout.setBackgroundDrawable(Assets.toastNormal.ninePatch());
+		break;
+	}
+	var wd = new PopupWindow(layout, c.w, c.w, false);
+	uiThread(function() { try{
+		wd.showAtLocation(c.d, Gravity.CENTER|Gravity.BOTTOM, 0, DIP*0x40);
+		new Handler().postDelayed(new java.lang.Runnable({run: function() {try {
+			wd.dismiss();
+		}catch(e) {
+			print(e);
+		}}}), duration);
+	}catch(e) {
+		print(e);
+	}});
 }
 
 
@@ -2345,7 +2571,7 @@ EditorGroup.prototype = {
 	},
 	
 	init: function() {
-		this.whitelist = this._parent.get("whitelist");
+		this.whitelist = this._parent.get("Whitelist");
 	},
 	
 	get: function(name) {
@@ -2379,13 +2605,13 @@ EditorGroup.prototype = {
 				return e;
 			}
 		}
-		this.editors.push(new Editor(name));
+		this.editors.push(new Editor(this._parent, name));
 		return this.editors.length - 1;
 	},
 	
 	setWhitelist: function(name) {
 		this.whitelist.push(name);
-		this._parent.set("whitelist", this.whitelist);
+		this._parent.set("Whitelist", this.whitelist);
 		this._parent.saveSetting();
 	},
 	
@@ -2395,14 +2621,15 @@ EditorGroup.prototype = {
 		for(var e = 0; e < this.whitelist.length; e++) {
 			if(this.whitelist[e].toLowerCase() === name.toLowerCase()) {
 				this.whitelist.splice(e, 1);
-				this._parent.set("whitelist", this.whitelist);
+				this._parent.set("Whitelist", this.whitelist);
 				this._parent.saveSetting();
 			}
 		}
 	}
 }
 
-function Editor(owner) {
+function Editor(parent, owner) {
+	this._parent = parent;
 	this.owner = owner;
 	this.pos1 = null;
 	this.pos2 = null;
@@ -2465,6 +2692,7 @@ Editor.prototype = {
 	},
 	
 	run: function(type) {
+		var that = this;
 		switch(type) {
 			
 			case EditType.FILL:
@@ -2481,7 +2709,7 @@ Editor.prototype = {
 				return;
 			}
 			if(!(this.block1 instanceof Block)) {
-				msg("TODO PLEASE SET BLOCK", player);
+				msg("TODO PLEASE SET BLOCK1", player);
 				return;
 			}
 			
@@ -2502,7 +2730,7 @@ Editor.prototype = {
 			var id = this.block1.id;
 			var data = this.block1.data;
 			
-			if(this._parent.setting.WorkType === WorkType.SYNCHRONIZATION) {
+			if(this._parent.get('WorkType') === WorkType.SYNCHRONIZATION) {
 				thread(function() {try {
 					for(var y = sy; y <= ey; y++) {
 					for(var z = sz; z <= ez; z++) {
@@ -2536,19 +2764,549 @@ Editor.prototype = {
 			
 			
 			case EditType.CLEAN:
+			var player = this.getOwner();
+			if(player === false) {
+				msg("MSG ERROR CANT FIND PLAYER: " + this.owner);
+			}
+			if(!(this.pos1 instanceof Vector3)) {
+				msg("TODO PLEASE SET POS1", player);
+				return;
+			}
+			if(!(this.pos2 instanceof Vector3)) {
+				msg("TODO PLEASE SET POS2", player);
+				return;
+			}
 			
+			var x1 = this.pos1.x;
+			var y1 = this.pos1.y;
+			var z1 = this.pos1.z;
+			var x2 = this.pos2.x;
+			var y2 = this.pos2.y;
+			var z2 = this.pos2.z;
+			
+			var sx = (x1 < x2) ? x1 : x2;
+			var sy = (y1 < y2) ? y1 : y2;
+			var sz = (z1 < z2) ? z1 : z2;
+			var ex = (x1 > x2) ? x1 : x2;
+			var ey = (y1 > y2) ? y1 : y2;
+			var ez = (z1 > z2) ? z1 : z2;
+			
+			if(this._parent.get('WorkType') === WorkType.SYNCHRONIZATION) {
+				thread(function() {try {
+					for(var y = ey; y >= sy; y--) {
+					for(var z = sz; z <= ez; z++) {
+					for(var x = sx; x <= ex; x++) {
+						Level.setTile(x, y, z, 0, 0);
+						sleep(1);
+					}
+					}
+					}
+				}catch(e) {
+					showError(e, WarnType.WARNING);
+				}}).start();
+			}else if(this._parent.setting.WorkType === WorkType.ASYNCHRONOUS) {
+				thread(function() {try {
+					for(var y = ey; y >= sy; y--) {
+					for(var z = sz; z <= ez; z++) {
+					for(var x = sx; x <= ex; x++) {
+						that._parent.asynceBuffer.push([x, y, z, 0, 0]);
+						sleep(1);
+					}
+					}
+					}
+				}catch(e) {
+					showError(e, WarnType.WARNING);
+				}}).start();
+			}else {
+				throw new Error("Unknown WorkType: " + this._parent.setting.WorkType);
+			}
 			break;
 			
 			
 			
 			case EditType.REPLACE:
+			var player = this.getOwner();
+			if(player === false) {
+				msg("MSG ERROR CANT FIND PLAYER: " + this.owner);
+			}
+			if(!(this.pos1 instanceof Vector3)) {
+				msg("TODO PLEASE SET POS1", player);
+				return;
+			}
+			if(!(this.pos2 instanceof Vector3)) {
+				msg("TODO PLEASE SET POS2", player);
+				return;
+			}
+			if(!(this.block1 instanceof Block)) {
+				msg("TODO PLEASE SET BLOCK1", player);
+				return;
+			}
+			if(!(this.block2 instanceof Block)) {
+				msg("TODO PLEASE SET BLOCK2", player);
+				return;
+			}
 			
+			var x1 = this.pos1.x;
+			var y1 = this.pos1.y;
+			var z1 = this.pos1.z;
+			var x2 = this.pos2.x;
+			var y2 = this.pos2.y;
+			var z2 = this.pos2.z;
+			
+			var sx = (x1 < x2) ? x1 : x2;
+			var sy = (y1 < y2) ? y1 : y2;
+			var sz = (z1 < z2) ? z1 : z2;
+			var ex = (x1 > x2) ? x1 : x2;
+			var ey = (y1 > y2) ? y1 : y2;
+			var ez = (z1 > z2) ? z1 : z2;
+			
+			var id1 = this.block1.id;
+			var data1 = this.block1.data;
+			var id2 = this.block2.id;
+			var data2 = this.block2.data;
+			
+			if(this._parent.get('WorkType') === WorkType.SYNCHRONIZATION) {
+				thread(function() {try {
+					for(var y = sy; y <= ey; y++) {
+					for(var z = sz; z <= ez; z++) {
+					for(var x = sx; x <= ex; x++) {
+						if(Level.getTile(x, y, z) == id1 && Level.getData(x, y, z) == data1) {
+							Level.setTile(x, y, z, id2, data2);
+							sleep(1);
+						}
+					}
+					}
+					}
+				}catch(e) {
+					showError(e, WarnType.WARNING);
+				}}).start();
+			}else if(this._parent.setting.WorkType === WorkType.ASYNCHRONOUS) {
+				thread(function() {try {
+					for(var y = sy; y <= ey; y++) {
+					for(var z = sz; z <= ez; z++) {
+					for(var x = sx; x <= ex; x++) {
+						if(Level.getTile(x, y, z) == id1 && Level.getData(x, y, z) == data1) {
+							that._parent.asynceBuffer.push([x, y, z, id2, data2]);
+							sleep(1);
+						}
+					}
+					}
+					}
+				}catch(e) {
+					showError(e, WarnType.WARNING);
+				}}).start();
+			}else {
+				throw new Error("Unknown WorkType: " + this._parent.setting.WorkType);
+			}
 			break;
 			
 			
 			
 			case EditType.WALL:
+			var player = this.getOwner();
+			if(player === false) {
+				msg("MSG ERROR CANT FIND PLAYER: " + this.owner);
+			}
+			if(!(this.pos1 instanceof Vector3)) {
+				msg("TODO PLEASE SET POS1", player);
+				return;
+			}
+			if(!(this.pos2 instanceof Vector3)) {
+				msg("TODO PLEASE SET POS2", player);
+				return;
+			}
+			if(!(this.block1 instanceof Block)) {
+				msg("TODO PLEASE SET BLOCK1", player);
+				return;
+			}
 			
+			var x1 = this.pos1.x;
+			var y1 = this.pos1.y;
+			var z1 = this.pos1.z;
+			var x2 = this.pos2.x;
+			var y2 = this.pos2.y;
+			var z2 = this.pos2.z;
+			
+			var sx = (x1 < x2) ? x1 : x2;
+			var sy = (y1 < y2) ? y1 : y2;
+			var sz = (z1 < z2) ? z1 : z2;
+			var ex = (x1 > x2) ? x1 : x2;
+			var ey = (y1 > y2) ? y1 : y2;
+			var ez = (z1 > z2) ? z1 : z2;
+			
+			var id = this.block1.id;
+			var data = this.block1.data;
+			
+			if(this._parent.get('WorkType') === WorkType.SYNCHRONIZATION) {
+				thread(function() {try {
+					for(var x = sx; true; x = ex) {
+					for(var y = sy; y <= ey; y++) {
+					for(var z = sz; z <= ez; z++) {
+						Level.setTile(x, y, z, id, data);
+						sleep(1);
+					}
+					}
+					if(x === ex) break;
+					}
+					for(var z = sz; true; z = ez) {
+					for(var y = sy; y <= ey; y++) {
+					for(var x = sx; x <= ex; x++) {
+						Level.setTile(x, y, z, id, data);
+						sleep(1);
+					}
+					}
+					if(z === ez) break;
+					}
+				}catch(e) {
+					showError(e, WarnType.WARNING);
+				}}).start();
+			}else if(this._parent.setting.WorkType === WorkType.ASYNCHRONOUS) {
+				thread(function() {try {
+					for(var x = sx; true; x = ex) {
+					for(var y = sy; y <= ey; y++) {
+					for(var z = sz; z <= ez; z++) {
+						that._parent.asynceBuffer.push([x, y, z, id, data]);
+						sleep(1);
+					}
+					}
+					if(x === ex) break;
+					}
+					for(var z = sz; true; z = ez) {
+					for(var y = sy; y <= ey; y++) {
+					for(var x = sx; x <= ex; x++) {
+						that._parent.asynceBuffer.push([x, y, z, id, data]);
+						sleep(1);
+					}
+					}
+					if(z === ez) break;
+					}
+				}catch(e) {
+					showError(e, WarnType.WARNING);
+				}}).start();
+			}else {
+				throw new Error("Unknown WorkType: " + this._parent.setting.WorkType);
+			}
+			break;
+			
+			
+			
+			case EditType.SPHERE:
+			var player = this.getOwner();
+			if(player === false) {
+				msg("MSG ERROR CANT FIND PLAYER: " + this.owner);
+			}
+			if(!(this.pos1 instanceof Vector3)) {
+				msg("TODO PLEASE SET POS1", player);
+				return;
+			}
+			if(!(this.block1 instanceof Block)) {
+				msg("TODO PLEASE SET BLOCK1", player);
+				return;
+			}
+			
+			var type = this._parent.get("HollowCircular");
+			
+			var cx = this.pos1.x;
+			var cy = this.pos1.y;
+			var cz = this.pos1.z;
+			
+			var id = this.block1.id;
+			var data = this.block1.data;
+			
+			var np = new NumberPicker(ctx);
+			np.setMinValue(0x01);
+			np.setMaxValue(0xff);
+			
+			var dl = new WES_Dialog("Radius...", 0, np, "Generate", function() {try {
+				var radi = np.getValue();
+				if(that._parent.get('WorkType') === WorkType.SYNCHRONIZATION) {
+					thread(function() {try {
+						for(var y = -(radi+1); y <= (radi+1); y++) {
+						for(var z = -(radi+1); z <= (radi+1); z++) {
+						for(var x = -(radi+1); x <= (radi+1); x++) {
+							if(type) {
+								if(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2) < Math.pow(radi, 2) && Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2) >= (Math.pow(radi-1, 2))) {
+									Level.setTile(cx + x, cy + y, cz + z, id, data);
+									sleep(1);
+								}
+							}else {
+								if(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2) < Math.pow(radi, 2)) {
+									Level.setTile(cx + x, cy + y, cz + z, id, data);
+									sleep(1);
+								}
+							}
+						}
+						}
+						}
+					}catch(e) {
+						showError(e, WarnType.WARNING);
+					}}).start();
+				}else if(that._parent.setting.WorkType === WorkType.ASYNCHRONOUS) {
+					thread(function() {try {
+						for(var y = -(radi+1); y <= (radi+1); y++) {
+						for(var z = -(radi+1); z <= (radi+1); z++) {
+						for(var x = -(radi+1); x <= (radi+1); x++) {
+							if(type) {
+								if(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2) < Math.pow(radi, 2) && Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2) >= (Math.pow(radi-1, 2))) {
+									that._parent.asynceBuffer.push([cx + x, cy + y, cz + z, id, data]);
+									sleep(1);
+								}
+							}else {
+								if(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2) < Math.pow(radi, 2)) {
+									that._parent.asynceBuffer.push([cx + x, cy + y, cz + z, id, data]);
+									sleep(1);
+								}
+							}
+						}
+						}
+						}
+					}catch(e) {
+						showError(e, WarnType.WARNING);
+					}}).start();
+				}else {
+					throw new Error("Unknown WorkType: " + this._parent.setting.WorkType);
+				}
+				this.setVisible(false);
+			}catch(e) {
+				showError(e, WarnType.WARNING);
+			}}, "Cancel", function() {this.setVisible(false)}, true);
+			
+			dl.setVisible(true);
+			break;
+			
+			
+			
+			case EditType.HEMI_SPHERE:
+			var player = this.getOwner();
+			if(player === false) {
+				msg("MSG ERROR CANT FIND PLAYER: " + this.owner);
+			}
+			if(!(this.pos1 instanceof Vector3)) {
+				msg("TODO PLEASE SET POS1", player);
+				return;
+			}
+			if(!(this.block1 instanceof Block)) {
+				msg("TODO PLEASE SET BLOCK1", player);
+				return;
+			}
+			
+			var type = this._parent.get("HollowCircular");
+			
+			var cx = this.pos1.x;
+			var cy = this.pos1.y;
+			var cz = this.pos1.z;
+			
+			var id = this.block1.id;
+			var data = this.block1.data;
+			
+			var radi = null;
+			
+			var np = new NumberPicker(ctx);
+			np.setMinValue(0x01);
+			np.setMaxValue(0xff);
+			
+			var direction = null;
+			
+			var lo = new c.l(ctx);
+			lo.setOrientation(c.l.VERTICAL);
+			var xp = mcpeText(DIP*0x10, "X+", true);
+			xp.setBackgroundDrawable(Assets.boxNormal.ninePatch());
+			xp.setGravity(Gravity.CENTER);
+			xp.setPadding(DIP*0x08, DIP*0x08, DIP*0x08, DIP*0x08);
+			xp.setOnClickListener(View.OnClickListener({onClick: function(view, event) {try {
+				direction = "X+";
+				WES_Toast("MSG SET X+");
+			}catch(e) {
+				showError(e, WarnType.WARNING);
+			}}}));
+			lo.addView(xp);
+			var xm = mcpeText(DIP*0x10, "X-", true);
+			xm.setBackgroundDrawable(Assets.boxNormal.ninePatch());
+			xm.setGravity(Gravity.CENTER);
+			xm.setPadding(DIP*0x08, DIP*0x08, DIP*0x08, DIP*0x08);
+			xm.setOnClickListener(View.OnClickListener({onClick: function(view, event) {try {
+				direction = "X-";
+				WES_Toast("MSG SET X-");
+			}catch(e) {
+				showError(e, WarnType.WARNING);
+			}}}));
+			lo.addView(xm);
+			var yp = mcpeText(DIP*0x10, "Y+", true);
+			yp.setBackgroundDrawable(Assets.boxNormal.ninePatch());
+			yp.setGravity(Gravity.CENTER);
+			yp.setPadding(DIP*0x08, DIP*0x08, DIP*0x08, DIP*0x08);
+			yp.setOnClickListener(View.OnClickListener({onClick: function(view, event) {try {
+				direction = "Y+";
+				WES_Toast("MSG SET Y+");
+			}catch(e) {
+				showError(e, WarnType.WARNING);
+			}}}));
+			lo.addView(yp);
+			var ym = mcpeText(DIP*0x10, "Y-", true);
+			ym.setBackgroundDrawable(Assets.boxNormal.ninePatch());
+			ym.setGravity(Gravity.CENTER);
+			ym.setPadding(DIP*0x08, DIP*0x08, DIP*0x08, DIP*0x08);
+			ym.setOnClickListener(View.OnClickListener({onClick: function(view, event) {try {
+				direction = "Y-";
+				WES_Toast("MSG SET Y-");
+			}catch(e) {
+				showError(e, WarnType.WARNING);
+			}}}));
+			lo.addView(ym);
+			var zp = mcpeText(DIP*0x10, "Z+", true);
+			zp.setBackgroundDrawable(Assets.boxNormal.ninePatch());
+			zp.setGravity(Gravity.CENTER);
+			zp.setPadding(DIP*0x08, DIP*0x08, DIP*0x08, DIP*0x08);
+			zp.setOnClickListener(View.OnClickListener({onClick: function(view, event) {try {
+				direction = "Z+";
+				WES_Toast("MSG SET Z+");
+			}catch(e) {
+				showError(e, WarnType.WARNING);
+			}}}));
+			lo.addView(zp);
+			var zm = mcpeText(DIP*0x10, "Z-", true);
+			zm.setBackgroundDrawable(Assets.boxNormal.ninePatch());
+			zm.setGravity(Gravity.CENTER);
+			zm.setPadding(DIP*0x08, DIP*0x08, DIP*0x08, DIP*0x08);
+			zm.setOnClickListener(View.OnClickListener({onClick: function(view, event) {try {
+				direction = "Z-";
+				WES_Toast("MSG SET Z-");
+			}catch(e) {
+				showError(e, WarnType.WARNING);
+			}}}));
+			lo.addView(zm);
+			
+			var dl2 = new WES_Dialog("Direction...", 0, lo, "Generate", function() {try {
+				switch(direction) {
+					case "X+":
+					var xpa = true;
+					var xma = false;
+					var ypa = true;
+					var yma = true;
+					var zpa = true;
+					var zma = true;
+					break;
+					case "X-":
+					var xpa = false;
+					var xma = true;
+					var ypa = true;
+					var yma = true;
+					var zpa = true;
+					var zma = true;
+					break;
+					case "Y+":
+					var xpa = true;
+					var xma = true;
+					var ypa = true;
+					var yma = false;
+					var zpa = true;
+					var zma = true;
+					break;
+					case "Y-":
+					var xpa = true;
+					var xma = true;
+					var ypa = false;
+					var yma = true;
+					var zpa = true;
+					var zma = true;
+					break;
+					case "Z+":
+					var xpa = true;
+					var xma = true;
+					var ypa = true;
+					var yma = true;
+					var zpa = true;
+					var zma = false;
+					break;
+					case "Z-":
+					var xpa = true;
+					var xma = true;
+					var ypa = true;
+					var yma = true;
+					var zpa = false;
+					var zma = true;
+					break;
+					default:
+					msg("MSG PLEASE SET DIRECTION", Player.getEntity());
+					return false;
+				}
+				if(that._parent.get('WorkType') === WorkType.SYNCHRONIZATION) {
+					thread(function() {try {
+						clientMessage(xpa+" "+xma+" "+ypa+" "+yma+" "+zpa+" "+zma);
+						for(var y = -(radi+1); y <= (radi+1); y++) {
+							clientMessage("y" + (!ypa && y > 0) + " " + (!yma && y < 0));
+							if(!ypa && y > 0) continue;
+							if(!yma && y < 0) continue;
+						for(var z = -(radi+1); z <= (radi+1); z++) {
+							if(!zpa && z > 0) continue;
+							if(!zma && z < 0) continue;
+						for(var x = -(radi+1); x <= (radi+1); x++) {
+							if(!xpa && x > 0) continue;
+							if(!xma && x < 0) continue;
+							if(type) {
+								if(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2) < Math.pow(radi, 2) && Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2) >= (Math.pow(radi-1, 2))) {
+									Level.setTile(cx + x, cy + y, cz + z, id, data);
+									sleep(1);
+								}
+							}else {
+								if(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2) < Math.pow(radi, 2)) {
+									Level.setTile(cx + x, cy + y, cz + z, id, data);
+									sleep(1);
+								}
+							}
+						}
+						}
+						}
+					}catch(e) {
+						showError(e, WarnType.WARNING);
+					}}).start();
+				}else if(that._parent.setting.WorkType === WorkType.ASYNCHRONOUS) {
+					thread(function() {try {
+						for(var y = -(radi+1); y <= (radi+1); y++) {
+							if(!ypa && y > 0) continue;
+							if(!yma && y < 0) continue;
+						for(var z = -(radi+1); z <= (radi+1); z++) {
+							if(!zpa && z > 0) continue;
+							if(!zma && z < 0) continue;
+						for(var x = -(radi+1); x <= (radi+1); x++) {
+							if(!xpa && x > 0) continue;
+							if(!xma && x < 0) continue;
+							if(type) {
+								if(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2) < Math.pow(radi, 2) && Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2) >= (Math.pow(radi-1, 2))) {
+									that._parent.asynceBuffer.push([cx + x, cy + y, cz + z, id, data]);
+									sleep(1);
+								}
+							}else {
+								if(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2) < Math.pow(radi, 2)) {
+									that._parent.asynceBuffer.push([cx + x, cy + y, cz + z, id, data]);
+									sleep(1);
+								}
+							}
+						}
+						}
+						}
+					}catch(e) {
+						showError(e, WarnType.WARNING);
+					}}).start();
+				}else {
+					throw new Error("Unknown WorkType: " + this._parent.setting.WorkType);
+				}
+				this.setVisible(false);
+			}catch(e) {
+				showError(e, WarnType.WARNING);
+			}}, "Cancel", function() {this.setVisible(false)}, false);
+			
+			var dl = new WES_Dialog("Radius...", 0, np, "Next", function() {try {
+				radi = np.getValue();
+				dl2.setVisible(true);
+				this.setVisible(false);
+			}catch(e) {
+				showError(e, WarnType.WARNING);
+			}}, "Cancel", function() {this.setVisible(false)}, true);
+			
+			
+			
+			dl.setVisible(true);
 			break;
 			
 			
@@ -2712,6 +3470,198 @@ WES_Menu.prototype = {
 }
 
 
+//do not use "new"
+function WES_Button(size, name, type, width, height, padding, margins, onClickFunction) {
+	var btn = mcpeText(size, name, true);
+	if(width !== null && height !== null) {
+		var btn_p = c.l.LayoutParams(width, height);
+	}else {
+		var btn_p = c.l.LayoutParams(
+	}
+	btn.setGravity(Gravity.CENTER);
+	if(padding !=== null) {
+		btn.setPadding(padding[0], padding[0], padding[0], padding[0]);
+	}else {
+		btn.setPadding(DIP*0x08, DIP*0x08, DIP*0x08, DIP*0x08);
+	}
+	btn.setOnClickListener(View.OnClickListener({onClick: function(view, event) {try {
+		onClickFunction(view, event);
+	}catch(e) {
+		showError(e, WarnType.WARNING);
+	}}}));
+	switch(type) {
+		case 1:
+		btn.setBackgroundDrawable(Assets.boxWarning.ninePatch());
+		break;
+		case 2:
+		btn.setBackgroundDrawable(Assets.boxCritical.ninePatch());
+		break;
+		case 0:
+		default:
+		btn.setBackgroundDrawable(Assets.boxNormal.ninePatch());
+		break;
+	}
+	return btn;
+}
+
+
+
+function WES_Dialog(name, type, layout, confirmTxt, confirmFunc, cancelTxt, cancelFunc, focus) {
+	this.vis = false;
+	this.name = name;
+	this.type = type;
+	this.confirmTxt = confirmTxt;
+	this.confirmFunc = confirmFunc;
+	this.cancelTxt = cancelTxt;
+	this.cancelFunc = cancelFunc;
+	this.focus = focus;
+	this.childLayout = layout === undefined ? null : layout;
+	this.wd = null;
+}
+
+WES_Dialog.prototype = {
+	
+	isVisible: function() {
+		return this.vis;
+	},
+	
+	setVisible: function(bool) {
+		var that = this;
+		if(bool) {
+			if(!(this.vis)) {
+				if(this.wd === null) {
+					this.build();
+				}
+				uiThread(function() {try {
+					that.wd.showAtLocation(c.d, Gravity.CENTER, 0, 0);
+					that.vis = true;
+				}catch(e) {
+					showError(e, WarnType.WARNING);
+				}});
+			}
+		}else {
+			if(this.vis) {
+				uiThread(function() {try {
+					that.wd.dismiss();
+					that.vis = false;
+				}catch(e) {
+					showError(e, WarnType.WARNING);
+				}});
+			}
+		}
+	},
+	
+	build: function() {
+		
+		var that = this;
+		
+		this.layout = new c.r(ctx);
+		this.layout_d = new GradientDrawable();
+		this.layout_d.setColor(Color.argb(0x55, 0, 0, 0));
+		this.layout_d.setCornerRadius(DIP*5);
+		this.layout.setBackgroundDrawable(this.layout_d);
+		this.title = new c.r(ctx);
+		this.title.setId(randomId());
+		this.title_p = new c.r.LayoutParams(c.m, DIP*0x30);
+		this.title_p.addRule(c.r.ALIGN_PARENT_TOP);
+		this.title.setLayoutParams(this.title_p);
+		this.t_text = mcpeText(DIP*0x10, this.name, true);
+		this.t_text_p = new c.r.LayoutParams(c.w, c.w);
+		this.t_text_p.addRule(c.r.CENTER_IN_PARENT);
+		this.t_text.setLayoutParams(this.t_text_p);
+		this.t_text.setGravity(Gravity.CENTER);
+		this.title.addView(this.t_text);
+	
+		this.t_confirm = mcpeText(DIP*0x0a, this.confirmTxt, true);
+		this.t_confirm.setGravity(Gravity.CENTER);
+		this.t_confirm.setPadding(DIP*0x06, DIP*0x02, DIP*0x06, DIP*0x02);
+		this.t_confirm_p = new c.r.LayoutParams(c.w, DIP*0x1c);
+		this.t_confirm_p.setMargins(DIP*0x0a, DIP*0x0a, DIP*0x0a, DIP*0x0a);
+		this.t_confirm_p.addRule(c.r.ALIGN_PARENT_RIGHT);
+		this.t_confirm.setLayoutParams(this.t_confirm_p);
+		this.t_confirm.setOnClickListener(View.OnClickListener({onClick: function(view, event) {try {
+			that.confirm();
+		}catch(e) {
+			showError(e);
+		}}}));
+		this.title.addView(this.t_confirm);
+	
+	 	this.t_cancel = mcpeText(DIP*0x0a, this.cancelTxt, true);
+		this.t_cancel.setGravity(Gravity.CENTER);
+		this.t_cancel.setPadding(DIP*0x06, DIP*0x02, DIP*0x06, DIP*0x02);
+		this.t_cancel_p = new c.r.LayoutParams(c.w, DIP*0x1c);
+		this.t_cancel_p.setMargins(DIP*0x0a, DIP*0x0a, DIP*0x0a, DIP*0x0a);
+		this.t_cancel_p.addRule(c.r.ALIGN_PARENT_LEFT);
+		this.t_cancel.setLayoutParams(this.t_cancel_p);
+		this.t_cancel.setOnClickListener(View.OnClickListener({onClick: function(view, event) {try {
+			that.cancel();
+		}catch(e) {
+			showError(e);
+		}}}));
+		this.title.addView(this.t_cancel);
+	
+		switch(this.type) {
+			case 1:
+			this.title.setBackgroundDrawable(Assets.boxWarning.ninePatch());
+			this.t_confirm.setBackgroundDrawable(Assets.boxWarning.ninePatch());
+			this.t_cancel.setBackgroundDrawable(Assets.boxWarning.ninePatch());
+			break;
+			case 2:
+			this.title.setBackgroundDrawable(Assets.boxCritical.ninePatch());
+			this.t_confirm.setBackgroundDrawable(Assets.boxCritical.ninePatch());
+			this.t_cancel.setBackgroundDrawable(Assets.boxCritical.ninePatch());
+			break;
+			case 0:
+			default:
+			this.title.setBackgroundDrawable(Assets.boxNormal.ninePatch());
+			this.t_confirm.setBackgroundDrawable(Assets.boxNormal.ninePatch());
+			this.t_cancel.setBackgroundDrawable(Assets.boxNormal.ninePatch());
+		}
+		this.layout.addView(this.title);
+		
+		this.scroll = new ScrollView(ctx);
+		this.scroll_p = new c.r.LayoutParams(c.m, c.w);
+		this.scroll_p.setMargins(DIP*0x08, DIP*0X04, DIP*0X08, DIP*0X08);
+		//뷰의 자식에게 자동으로 사이즈를 맞추게 한 설정을 부모(화면 전체)사이즈로 강제로 맞춰서 나를 한참이나 *먹인 앞으로 절대 사용하지 말아야 할 메소드
+		//this.scroll_p.addRule(c.r.ALIGN_PARENT_BOTTOM);
+		this.scroll_p.addRule(c.r.BELOW, this.title.getId());
+		this.scroll.setLayoutParams(this.scroll_p);
+		this.scroll.addView(this.childLayout);
+		this.layout.addView(this.scroll);
+		
+		this.wd = new PopupWindow(this.layout, c.w, c.w, this.focus);
+	},
+	
+	confirm: function() {
+		try {
+			return this.confirmFunc();
+		}catch(e) {
+			msg("ERROR NO CONFRIM FUNCTION", Player.getEntity());
+			return false;
+		}
+	},
+	
+	cancel: function() {
+		try {
+			return this.cancelFunc();
+		}catch(e) {
+			msg("ERROR NO CANCEL FUNCTION", Player.getEntity());
+			return false;
+		}
+	},
+	
+	setLayout: function(view) {
+		this.childView = view;
+		uiThread(function() {try {
+			this.scroll.removeAllView();
+			this.scroll.addView(view);
+		}catch(e) {
+			showError(e, WarnType.WARNING);
+		}});
+	}
+}
+
+
 
 function WES_BlockSelect(script, name, confirmTxt, confirmFunc, cancelTxt, cancelFunc) {
 	var that = this;
@@ -2794,11 +3744,11 @@ function WES_BlockSelect(script, name, confirmTxt, confirmFunc, cancelTxt, cance
 	if(FILE_FONT.exists()) {
 		this.direct_id.setTypeface(android.graphics.Typeface.createFromFile(FILE_FONT));
 	}
-	this.direct_id_p = new c.l.LayoutParams((c.ww - (DIP*0x18 + DIP*0x80))/2, c.m);
+	this.direct_id_p = new c.l.LayoutParams((c.ww - (DIP*0x20 + DIP*0x80))/2, c.m);
 	this.direct_id.setLayoutParams(this.direct_id_p);
 	this.direct.addView(this.direct_id);
 	
-	 	this.direct_dataTv = new mcpeText(DIP*0x10, "Damage:");
+ 	this.direct_dataTv = new mcpeText(DIP*0x10, "Damage:");
 	this.direct_dataTv.setGravity(Gravity.CENTER);
 	this.direct_dataTv_p = new c.l.LayoutParams(DIP*0x60, c.m);
 	this.direct_dataTv.setLayoutParams(this.direct_dataTv_p);
@@ -2813,7 +3763,7 @@ function WES_BlockSelect(script, name, confirmTxt, confirmFunc, cancelTxt, cance
 	if(FILE_FONT.exists()) {
 		this.direct_data.setTypeface(android.graphics.Typeface.createFromFile(FILE_FONT));
 	}
-	this.direct_data_p = new c.l.LayoutParams((c.ww - (DIP*0x18 + DIP*0x80))/2, c.m);
+	this.direct_data_p = new c.l.LayoutParams((c.ww - (DIP*0x20 + DIP*0x80))/2, c.m);
 	this.direct_data.setLayoutParams(this.direct_data_p);
 	this.direct.addView(this.direct_data);
 	
@@ -2887,7 +3837,7 @@ WES_BlockSelect.prototype = {
 		var id = this.direct_id.getText() + "";
 		var data = this.direct_data.getText() + "";
 		if(id == "") {
-			toast("TODO NO SELECT");
+			WES_Toast("블럭을 선택하거나 아이디, 데이터를 입력해 주세요", 1);
 			return false;
 		}
 		if(data == "") {
@@ -2908,61 +3858,73 @@ WES_BlockSelect.prototype = {
 function newLevel(str) {
 	onMap = true;
 	main.loadSetting();
-	if(main.get("buttonVis")) {
+	if(main.get("ButtonVis")) {
 		main.setButtonVisible(true);
 	}else {
-		clientMessage("MSG not vis mode");
+		WES_Toast("버튼이 보이지 않게 설정 되어 있습니다", 1);
 	}
 }
 
 function leaveGame() {
-	onMap = false;
-	main.saveSetting();
-	main.setButtonVisible(false);
-	if(main.currentMenu !== null) {
-		main.setManuVisible(false);
-		main.currentMenu = null;
-	}
+	thread(function() {try {
+		onMap = false;
+		main.saveSetting();
+		main.setButtonVisible(false);
+		if(main.currentMenu !== null) {
+			main.setMenuVisible(false);
+			main.currentMenu = null;
+		}
+	}catch(e) {
+		showError(e, WarnType.WARNING);
+	}}).start();
 }
 
 function modTick() {
-	/*if(wes.synceBuffer.length > 0) {
-		wes.onWork = true;
-		try{
-			var w = wes.synceBuffer.shift();
+	if(main.asynceBuffer.length > 0) {
+		main._onWork = true;
+		try {
+			var w = main.asynceBuffer.shift();
 			Level.setTile(w[0], w[1], w[2], w[3], w[4]);
 		}catch(e) {
 			showError(e);
 		}
-		if(++wes.workTick >= 200) {
-			wes.workTick = 0;
-			msg("TODO NOW WORKING... LEFT: " + wes.synceBuffer.length);
+		if(++main._workTick >= 200) {
+			main._workTick = 0;
+			msg("MSG NOW WORKING... LEFT: " + main.asynceBuffer.length);
 		}
 	}else {
-		if(wes.onWork) {
-			wes.onWork = false;
-			wes.workTick = 200;
-			msg("TODO JOB FINISH");
+		if(main._onWork) {
+			main._onWork = false;
+			main._workTick = 200;
+			msg("MSG JOB FINISH");
 		}
-	}*/
+	}
 }
 
 function useItem(x, y, z, itemId, blockId, side) {
 	if(Player.getCarriedItem() === 271) {
 		preventDefault();
 		highlightBlock(x, y, z);
-		var index = getEditorIndex(Player.getName(Player.getEntity()));
-		//wes.editor[index].setPos1(new Vector3(x, y, z));
-		toast("TODO POS1 SET");
+		var editor = main.editorGroup.get(Player.getName(Player.getEntity()));
+		if(editor === false) {
+			WES_Toast('MSG ERROR CANT FIND PLAYER', 2);
+			return;
+		}
+		editor.setPos1(new Vector3(x, y, z));
+		WES_Toast("MSG POS1 SET");
 	}
 }
 
 function startDestroyBlock(x, y, z, side) {
 	if(Player.getCarriedItem() === 271) {
 		highlightBlock(x, y, z);
-		var index = getEditorIndex(Player.getName(Player.getEntity()));
-		//wes.editor[index].setPos2(new Vector3(x, y, z));
-		toast("TODO POS2 SET");
+		var editor = main.editorGroup.get(Player.getName(Player.getEntity()));
+		if(editor === false) {
+			WES_Toast('MSG ERROR CANT FIND PLAYER', 2);
+			return;
+		}
+		editor.setPos2(new Vector3(x, y, z));
+		WES_Toast("MSG POS2 SET");
 	}
 }
 
@@ -3407,3 +4369,25 @@ function reloadBlockImages(that) {thread(function() {try {
 }catch(e) {
 	showError(e, WarnType.CRITICAL);
 }}).start()}
+
+function stringToCode(str) {
+	var chars = str + "";
+	var code = "";
+	for(var e = 0; e < chars.length; e++) {
+		code += chars.charCodeAt(e).toString(35) + "z";
+	}
+	return code + "E";
+}
+
+function codeToString(code) {
+	var t = code.split(String.fromCharCode(122));
+	var str = "";
+	for(var e = 0; e < t.length-1; e++) {
+		var c = String.fromCharCode(parseInt(t[e], 35));
+		if(t == "E") {
+			break;
+		}
+		str += t;
+	}
+	return str;
+}
