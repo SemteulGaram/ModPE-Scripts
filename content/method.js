@@ -55,6 +55,7 @@ var Short = java.lang.Short;
 var File = java.io.File;
 var Context = android.content.Context;
 var Activity = android.app.Activity;
+var Handler = android.os.Handler
 var Thread = java.lang.Thread;
 var Runnable = java.lang.Runnable;
 var Process = android.os.Process;
@@ -75,7 +76,9 @@ var ImageButton = android.widget.ImageButton;
 var EditText = android.widget.EditText;
 var ProgressBar = android.widget.ProgressBar;
 var SeekBar = android.widget.SeekBar;
+var NumberPicker = android.widget.NumberPicker;
 var PopupWindow = android.widget.PopupWindow;
+var Drawable = android.graphics.drawable;
 var StateListDrawable = android.graphics.drawable.StateListDrawable;
 var GradientDrawable = android.graphics.drawable.GradientDrawable;
 var BitmapDrawable = android.graphics.drawable.BitmapDrawable;
@@ -104,6 +107,19 @@ c.r = RelativeLayout;
 c.l = LinearLayout;
 c.p = android.util.TypedValue.COMPLEX_UNIT_PX;
 c.s = net.zhuoweizhang.mcpelauncher.ScriptManager;
+c.ww = ctx.getWindowManager().getDefaultDisplay().getWidth();
+c.wh = ctx.getWindowManager().getDefaultDisplay().getHeight();
+c.d = ctx.getWindow().getDecorView();
+
+
+
+function NinePatchAssetCreator(pixel, width, height, scale, left, top, right, bottom) {
+	this.pixel = pixel;
+	this.rawBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+	this.rawBitmap.setPixels(this.pixel, 0, width, 0, 0, width, height);
+	this.scaleBitmap = Bitmap.createScaledBitmap(this.rawBitmap, width*scale, height*scale, false);
+	this.ninePatch = function() {return ninePatch1(this.scaleBitmap, (top*(scale-1))+1, (left*(scale-1))+1, bottom*scale, right*scale)}
+}
 
 
 
@@ -197,270 +213,123 @@ Assets.textView_raw.setPixels(Assets.textView_pixel, 0, 6, 0, 0, 6, 6);
 Assets.textView = Bitmap.createScaledBitmap(Assets.textView_raw, PIXEL*6, PIXEL*6, false);
 Assets.textView_9 = function() {return ninePatch1(Assets.textView, PIXEL*3, PIXEL*3, PIXEL*4, PIXEL*4)}
 
-function mcpeText(size, text, shadow) {
+Assets.bg32 = Bitmap.createScaledBitmap(BitmapFactory.decodeStream(ModPE.openInputStreamFromTexturePack("images/gui/bg32.png")), PIXEL*64, PIXEL*64, false);
+
+
+
+function mcText(str, size, hasShadow, color, shadowColor, width, height, padding, margins) {
 	var tv = new TextView(ctx);
 	tv.setTransformationMethod(null);
 	tv.setLayerType(android.view.View.LAYER_TYPE_SOFTWARE, null);
-	if(shadow) {
-		tv.setShadowLayer(1/0xffffffff, DIP*1.3, DIP*1.3, Color.DKGRAY);
-	}
-	tv.setTextColor(Color.WHITE);
-	tv.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, DIP*size);
 	if(FILE_FONT.exists()) {
 		tv.setTypeface(android.graphics.Typeface.createFromFile(FILE_FONT));
 	};
-	tv.setPadding(0, 0, 0, 0);
-	tv.setText(text);
+	if(str !== null && str !== undefined) {
+		tv.setText((str + ""));
+	}
+	if(size !== null && size !== undefined) {
+		tv.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, size);
+	}else {
+		tv.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, DIP*0x10);
+	}
+	if(color !== null && color !== undefined) {
+		tv.setTextColor(color);
+	}else {
+		tv.setTextColor(Color.WHITE);
+	}
+	if(hasShadow) {
+		if(shadowColor !== null && shadowColor !== undefined) {
+			tv.setShadowLayer(1/0xffffffff, DIP*1.3, DIP*1.3, shadowColor);
+		}else {
+			tv.setShadowLayer(1/0xffffffff, DIP*1.3, DIP*1.3, Color.DKGRAY);
+		}
+	}
+	if(padding !== null && padding !== undefined) {
+		tv.setPadding(padding[0], padding[1], padding[2], padding[3]);
+	}
+	var tv_p;
+	if(width !== null && height !== null && width !== undefined && height !== undefined) {
+		tv_p = new c.l.LayoutParams(width, height);
+	}else {
+		tv_p = new c.l.LayoutParams(c.w, c.w);
+	}
+	if(margins !== null && margins !== undefined) {
+		tv_p.setMargins(margins[0], margins[1], margins[2], margins[3]);
+	}
+	tv.setLayoutParams(tv_p);
 	return tv;
 }
 
-function mcpeButton(size, text) {
+function mcButton(str, size, hasShadow, color, shadowColor, width, height, padding, margins, background, onTouchFunction, onClickFunction, onLongClickFunction) {
 	var btn = new Button(ctx);
 	btn.setTransformationMethod(null);
-	btn.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
-	btn.setPadding(DIP*8, DIP*8, DIP*8, DIP*8);
-	btn.setText(text);
-	btn.setTextColor(Color.WHITE);
-	btn.setTextSize(c.p, size);
-	btn.setShadowLayer(1/0xffffffff, DIP*1.3, DIP*1.3, Color.DKGRAY);
+	btn.setLayerType(android.view.View.LAYER_TYPE_SOFTWARE, null);
 	if(FILE_FONT.exists()) {
 		btn.setTypeface(android.graphics.Typeface.createFromFile(FILE_FONT));
+	};
+	if(str !== null && str !== undefined) {
+		btn.setText((str + ""));
 	}
-	btn.setBackgroundDrawable(Assets.button_9());
-	
-	btn.setOnTouchListener(View.OnTouchListener({onTouch: function(view, event) {try {
-		switch(event.action) {
-			case MotionEvent.ACTION_DOWN:
-			view.setBackgroundDrawable(Assets.buttonClick_9());
-			view.setTextColor(Color.parseColor("#ffff50"));
-			view.setPadding(DIP*8, DIP*12, DIP*8, DIP*8);
-			break;
-			case MotionEvent.ACTION_CANCEL:
-			case MotionEvent.ACTION_UP:
-			view.setBackgroundDrawable(Assets.button_9());
-			view.setTextColor(Color.WHITE);
-			view.setPadding(DIP*8, DIP*8, DIP*8, DIP*8);
-			break;
+	if(size !== null && size !== undefined) {
+		btn.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, size);
+	}else {
+		btn.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, DIP*0x10);
+	}
+	if(color !== null && color !== undefined) {
+		btn.setTextColor(color);
+	}else {
+		btn.setTextColor(Color.WHITE);
+	}
+	if(hasShadow) {
+		if(shadowColor !== null && shadowColor !== undefined) {
+			btn.setShadowLayer(1/0xffffffff, DIP*1.3, DIP*1.3, shadowColor);
+		}else {
+			btn.setShadowLayer(1/0xffffffff, DIP*1.3, DIP*1.3, Color.DKGRAY);
 		}
-		return false;
-	}catch(e) {
-		showError(e);
-		return false;
-	}}}));
-	
+	}
+	if(padding !== null && padding !== undefined) {
+		btn.setPadding(padding[0], padding[1], padding[2], padding[3]);
+	}
+	var btn_p;
+	if(width !== null && height !== null && width !== undefined && height !== undefined) {
+		btn_p = new c.l.LayoutParams(width, height);
+	}else {
+		btn_p = new c.l.LayoutParams(c.w, c.w);
+	}
+	if(margins !== null && margins !== undefined) {
+		btn_p.setMargins(margins[0], margins[1], margins[2], margins[3]);
+	}
+	btn.setLayoutParams(btn_p);
+	if(background !== null && background !== undefined) {
+		btn.setBackgroundDrawable(background);
+	}else {
+		//btn.setBackgroundDrawable(Assets.button_9());
+	}
+	if(onTouchFunction !== null && onTouchFunction !== undefined) {
+		btn.setOnTouchListener(View.OnTouchListener({onTouch: function(view, event) {try {
+			return onTouchFunction(view, event);
+		}catch(e) {
+			showError(e, WarnType.WARNING);
+			return false;
+		}}}));
+	}
+	if(onClickFunction !== null && onClickFunction !== undefined) {
+		btn.setOnClickListener(View.OnClickListener({onClick: function(view, event) {try {
+			onClickFunction(view, event);
+		}catch(e) {
+			showError(e, WarnType.WARNING);
+		}}}));
+	}
+	if(onLongClickFunction !== null && onLongClickFunction !== undefined) {
+		btn.setOnLongClickListener(View.OnLongClickListener({onLongClick: function(view, event) {try {
+			return onLongClickFunction(view, event);
+		}catch(e) {
+			showError(e, WarnType.WARNING);
+			return false;
+		}}}));
+	}
 	return btn;
 }
-
-function mcpeDialog(title, layout, btnName, btnFunc, btn2Name, btn2Func) {
-	var l = new c.r(ctx);
-	l.setId(randomId());
-	l.setBackgroundDrawable(Assets.background_9());
-	
-	var t = new c.r(ctx);
-	t.setId(randomId());
-	t.setBackgroundDrawable(Assets.title_9());
-	t.setPadding(DIP*8, DIP*8, DIP*8, DIP*14);
-	var t_p = new c.r.LayoutParams(c.m, c.w);
-	t_p.addRule(c.r.ALIGN_PARENT_TOP, l.getId());
-	t.setLayoutParams(t_p);
-	
-	var tt = mcpeText(DIP*16, title, true);
-	var tt_p = new c.r.LayoutParams(c.w, c.w);
-	tt_p.addRule(c.r.CENTER_IN_PARENT, t.getId());
-	tt.setLayoutParams(tt_p);
-	t.addView(tt);
-	
-	var tb = mcpeButton(DIP*16, btn2Name);
-	var tb_p = new c.r.LayoutParams(DIP*70, DIP*34);
-	tb_p.setMargins(0, 0, 0, 0);
-	tb_p.addRule(c.r.ALIGN_PARENT_LEFT, t.getId());
-	tb_p.addRule(c.r.ALIGN_PARENT_TOP, t.getId());
-	tb.setLayoutParams(tb_p);
-	t.addView(tb);
-	
-	var ta = mcpeButton(DIP*16, btnName);
-	var ta_p = new c.r.LayoutParams(DIP*70, DIP*34);
-	ta_p.setMargins(0, 0, 0, 0);
-	ta_p.addRule(c.r.ALIGN_PARENT_RIGHT, t.getId());
-	ta_p.addRule(c.r.ALIGN_PARENT_TOP, t.getId());
-	ta.setLayoutParams(ta_p);
-	t.addView(ta);
-	
-	var ct = new ScrollView(ctx);
-	var ct_p = new c.r.LayoutParams(c.m, c.m);
-	ct_p.setMargins(DIP*8, 0, DIP*8, DIP*8);
-	ct_p.addRule(c.r.BELOW, t.getId());
-	ct.setLayoutParams(ct_p);
-	ct.addView(layout);
-	
-	l.addView(t);
-	l.addView(ct);
-	
-	var w = new PopupWindow(l, DIP*300, DIP*240, false);
-	
-	uiThread(function() {try {
-		w.showAtLocation(ctx.getWindow().getDecorView(), Gravity.CENTER, 0, 0);
-		tb.setOnClickListener(View.OnClickListener({onClick: function(view, event) {try {
-		w.dismiss();
-		btn2Func();
-	}catch(e) {
-		showError(e);
-	}}}));
-	
-	ta.setOnClickListener(View.OnClickListener({onClick: function(view, event) {try {
-		w.dismiss();
-		btnFunc();
-	}catch(e) {
-		showError(e);
-	}}}));
-	
-	}catch(e) {
-		showError(e);
-	}});
-}
-
-/*
-var r = android.graphics.Color.parseColor("#ff0000");
-var y = android.graphics.Color.parseColor("#ffff00");
-var w = android.graphics.Color.parseColor("#ffffff");
-var mcpeVisPixel = [
-0,0,0,0,0,0,0,
-0,r,r,r,r,r,0,
-0,r,r,r,r,r,0,
-0,r,r,r,r,r,0,
-0,0,0,0,0,0,0,
-0,y,y,y,y,y,0,
-0,y,y,y,y,y,0,
-0,y,y,y,y,y,0,
-0,0,0,0,0,0,0,
-0,y,y,y,y,y,0,
-0,y,y,y,y,y,0,
-0,y,y,y,y,y,0,
-0,0,0,0,0,0,0,
-0,w,w,w,w,w,0,
-0,w,w,w,w,w,0,
-0,w,w,w,w,w,0,
-0,0,0,0,0,0,0,
-0,w,w,w,w,w,0,
-0,w,w,w,w,w,0,
-0,w,w,w,w,w,0,
-0,0,0,0,0,0,0,
-0,w,w,w,w,w,0,
-0,w,w,w,w,w,0,
-0,w,w,w,w,w,0,
-0,0,0,0,0,0,0,
-0,w,w,w,w,w,0,
-0,w,w,w,w,w,0,
-0,w,w,w,w,w,0,
-0,0,0,0,0,0,0,
-0,w,w,w,w,w,0,
-0,w,w,w,w,w,0,
-0,w,w,w,w,w,0,
-0,0,0,0,0,0,0,
-0,w,w,w,w,w,0,
-0,w,w,w,w,w,0,
-0,w,w,w,w,w,0,
-0,0,0,0,0,0,0,
-0,w,w,w,w,w,0,
-0,w,w,w,w,w,0,
-0,w,w,w,w,w,0,
-0,0,0,0,0,0,0
-];
-var mcpeVisRaw = android.graphics.Bitmap.createBitmap(7, 41, android.graphics.Bitmap.Config.ARGB_8888);
-mcpeVisRaw.setPixels(mcpeVisPixel, 0, 7, 0, 0, 7, 41);
-var mcpeVis = android.graphics.Bitmap.createScaledBitmap(mcpeVisRaw, PIXEL*7, PIXEL*41, false);
-var mcpeVis9 = function() {return ninePatch1(mcpeVis, PIXEL*0, PIXEL*0, PIXEL*7, PIXEL*41)}
-
-var w = android.graphics.Color.parseColor("#ffffff");
-var mcpeH_VisPixel = [
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,
-0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,
-0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,w,w,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-];
-var mcpeH_VisRaw = android.graphics.Bitmap.createBitmap(37, 4, android.graphics.Bitmap.Config.ARGB_8888);
-mcpeH_VisRaw.setPixels(mcpeH_VisPixel, 0, 37, 0, 0, 37, 4);
-var mcpeH_Vis = android.graphics.Bitmap.createScaledBitmap(mcpeH_VisRaw, PIXEL*37, PIXEL*4, false);
-var mcpeH_Vis9 = function() {return ninePatch1(mcpeH_Vis, PIXEL*0, PIXEL*0, PIXEL*37, PIXEL*4)}
-var mcpeH_VisArray = [];
-for(var e = 0; e < 12; e++) {
-	mcpeH_VisArray.push(android.graphics.Bitmap.createScaledBitmap(android.graphics.Bitmap.createBitmap(mcpeH_VisRaw, 0, 0, 4 + 3*e, 4), PIXEL*(24 + 18*e), PIXEL*24, false));
-}
-var mcpeH_VisNull = android.graphics.Bitmap.createScaledBitmap(android.graphics.Bitmap.createBitmap(mcpeH_VisRaw, 0, 0, 1, 4), PIXEL*6, PIXEL*24, false);
-
-var A = android.graphics.Color.parseColor("#d4cdc8");
-var B = android.graphics.Color.parseColor("#bcb1aa");
-var C = android.graphics.Color.parseColor("#868686");
-var D = android.graphics.Color.parseColor("#28272a");
-var E = android.graphics.Color.parseColor("#28272a");
-var F = android.graphics.Color.parseColor("#8a7b76");
-var G = android.graphics.Color.parseColor("#e9e5e1");
-var H = android.graphics.Color.parseColor("#3a3a3a");
-
-
-var mcpeBtnBG_EMPTY = [
-B,A,A,A,A,A,A,A,A,A,A,A,A,A,A,A,A,C,
-B,B,A,A,A,A,A,A,A,A,A,A,A,A,A,A,C,D,
-B,B,F,F,F,F,F,F,F,F,F,F,F,F,F,F,D,D,
-B,B,F,F,F,F,F,F,F,F,F,F,F,F,F,F,D,D,
-B,B,F,F,F,F,F,F,F,F,F,F,F,F,F,F,D,D,
-B,B,F,F,F,F,F,F,F,F,F,F,F,F,F,F,D,D,
-B,B,F,F,F,F,F,F,F,F,F,F,F,F,F,F,D,D,
-B,B,F,F,F,F,F,F,F,F,F,F,F,F,F,F,D,D,
-B,B,F,F,F,F,F,F,F,F,F,F,F,F,F,F,D,D,
-B,B,F,F,F,F,F,F,F,F,F,F,F,F,F,F,D,D,
-B,B,F,F,F,F,F,F,F,F,F,F,F,F,F,F,D,D,
-B,B,F,F,F,F,F,F,F,F,F,F,F,F,F,F,D,D,
-B,B,F,F,F,F,F,F,F,F,F,F,F,F,F,F,D,D,
-B,B,F,F,F,F,F,F,F,F,F,F,F,F,F,F,D,D,
-B,B,F,F,F,F,F,F,F,F,F,F,F,F,F,F,D,D,
-B,B,F,F,F,F,F,F,F,F,F,F,F,F,F,F,D,D,
-B,C,E,E,E,E,E,E,E,E,E,E,E,E,E,E,D,D,
-C,E,E,E,E,E,E,E,E,E,E,E,E,E,E,E,E,D
-]
-
-[
-B,A,A,A,A,A,A,A,A,A,A,A,A,A,A,A,A,C,
-B,B,A,A,A,A,A,A,A,A,A,A,A,A,A,A,C,D,
-B,B,F,F,F,F,F,F,F,F,F,F,F,F,F,F,D,D,
-B,B,F,F,F,F,G,F,F,F,F,F,F,F,F,F,D,D,
-B,B,F,F,F,F,G,G,F,F,F,F,F,F,F,F,D,D,
-B,B,F,F,F,F,G,G,G,F,F,F,F,F,F,F,D,D,
-B,B,F,F,F,F,G,G,G,G,F,F,F,F,F,F,D,D,
-B,B,F,F,F,F,G,G,G,G,G,F,F,F,F,F,D,D,
-B,B,F,F,F,F,G,G,G,G,G,G,F,F,F,F,D,D,
-B,B,F,F,F,F,G,G,G,G,G,G,H,F,F,F,D,D,
-B,B,F,F,F,F,G,G,G,G,G,H,H,F,F,F,D,D,
-B,B,F,F,F,F,G,G,G,G,H,H,F,F,F,F,D,D,
-B,B,F,F,F,F,G,G,G,H,H,F,F,F,F,F,D,D,
-B,B,F,F,F,F,G,G,H,H,F,F,F,F,F,F,D,D,
-B,B,F,F,F,F,G,H,H,F,F,F,F,F,F,F,D,D,
-B,B,F,F,F,F,F,H,F,F,F,F,F,F,F,F,D,D,
-B,C,E,E,E,E,E,E,E,E,E,E,E,E,E,E,D,D,
-C,E,E,E,E,E,E,E,E,E,E,E,E,E,E,E,E,D
-]
-
-[
-B,A,A,A,A,A,A,A,A,A,A,A,A,A,A,A,A,C,
-B,B,A,A,A,A,A,A,A,A,A,A,A,A,A,A,C,D,
-B,B,F,F,F,F,F,F,F,F,F,F,F,F,F,F,D,D,
-B,B,F,F,F,F,F,F,F,F,F,G,F,F,F,F,D,D,
-B,B,F,F,F,F,F,F,F,F,G,G,H,F,F,F,D,D,
-B,B,F,F,F,F,F,F,F,G,G,G,H,F,F,F,D,D,
-B,B,F,F,F,F,F,F,G,G,G,G,H,F,F,F,D,D,
-B,B,F,F,F,F,F,G,G,G,G,G,H,F,F,F,D,D,
-B,B,F,F,F,F,G,G,G,G,G,G,H,F,F,F,D,D,
-B,B,F,F,F,F,G,G,G,G,G,G,H,F,F,F,D,D,
-B,B,F,F,F,F,F,G,G,G,G,G,H,F,F,F,D,D,
-B,B,F,F,F,F,F,F,G,G,G,G,H,F,F,F,D,D,
-B,B,F,F,F,F,F,F,F,G,G,G,H,F,F,F,D,D,
-B,B,F,F,F,F,F,F,F,F,G,G,H,F,F,F,D,D,
-B,B,F,F,F,F,F,F,F,F,F,G,H,F,F,F,D,D,
-B,B,F,F,F,F,F,F,F,F,F,F,H,F,F,F,D,D,
-B,C,E,E,E,E,E,E,E,E,E,E,E,E,E,E,D,D,
-C,E,E,E,E,E,E,E,E,E,E,E,E,E,E,E,E,D
-]*/
 
 
 
@@ -857,13 +726,13 @@ function margeArray(arr1, arr2, margeType, width1, height1, width2, height2, fil
 }
 
 /**
- * Location(x, y, z) to Vector(yaw, pitch)
+ * Vector(x, y, z) to Side(yaw, pitch)
  *
  * @since 2015-01
  * @author ToonRaOn
  */
 
-function locToYaw(x, y, z) {
+function vectorToYaw(x, y, z) {
 	var apil = Math.sqrt(Math.pow(x, 2)+Math.pow(z, 2));
 	var apisinHorizontal = x/apil;
 	var apicosHorizontal = z/apil;
@@ -885,45 +754,32 @@ function locToYaw(x, y, z) {
 	else if(apisinHorizontal == -1) alpha = 270;
 	else if(apisinHorizontal == 0 && apicosHorizontal == 1 && apitanHorizontal == 0) null;
 	return alpha;
-};
+}
 
-function locToPitch(x, y, z) {
+function vectorToPitch(x, y, z) {
 	return -1 * Math.atan(y / Math.sqrt(Math.pow(x, 2)+Math.pow(z, 2))) * 180 / Math.PI;
-};
+}
 
 
 
 /**
- * Entity range
+ * Side(yaw, pitch) to Vector(x, y, z)
  *
  * @since 2015-01
  * @author CodeInside
  */
 
-function rangeEnt(a, b) {
-	return Math.sqrt(Math.pow(Entity.getX(a) - Entity.getX(b), 2) + Math.pow(Entity.getY(a) - Entity.getY(b), 2) + Math.pow(Entity.getZ(a) - Entity.getZ(b), 2));
-};
-
-
-
-/**
- * Vector(yaw, pitch) to Location(x, y, z)
- *
- * @since 2015-01
- * @author CodeInside
- */
-
-function vectorToX(y, p) {
+function sideToX(y, p) {
 	return (-1 * Math.sin(y / 180 * Math.PI) * Math.cos(p / 180 * Math.PI));
-};
+}
 
-function vectorToY(y, p) {
+function sideToY(y, p) {
 	return (Math.sin(-p / 180 * Math.PI));
-};
+}
 
-function vectorToZ(y, p) {
+function sideToZ(y, p) {
 	return (Math.cos(y / 180 * Math.PI) * Math.cos(p / 180 * Math.PI));
-};
+}
 
 
 
@@ -936,15 +792,56 @@ function vectorToZ(y, p) {
 
 function absX(x, y, z) {
 	return x / Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2));
-};
+}
 
 function absY(x, y, z) {
 	return y / Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2));
-};
+}
 
 function absZ(x, y, z) {
 	return z / Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2));
-};
+}
+
+
+
+/**
+ * save/load JSON
+ *
+ * @since 2015-09
+ * @author CodeInside
+ */
+
+function loadJSON(file) {
+	try{
+		var fileInputStream = new java.io.FileInputStream(file);
+	}catch(e) {
+		return false;
+	}
+	var inputStreamReader = new java.io.InputStreamReader(fileInputStream);
+	var bufferedReader = new java.io.BufferedReader(inputStreamReader);
+	try {
+		var r = JSON.parse(bufferedReader.readLine());
+	}catch(e) {
+		var r = false;
+	}
+	fileInputStream.close();
+	inputStreamReader.close();
+	bufferedReader.close();
+	return r;
+}
+
+function saveJSON(file, array) {
+	try {
+		var fileOutputStream = new java.io.FileOutputStream(file);
+		var outputStreamWriter = new java.io.OutputStreamWriter(fileOutputStream);
+		outputStreamWriter.write(JSON.stringify(array));
+		outputStreamWriter.close();
+		fileOutputStream.close();
+	}catch(e) {
+		return false;
+	}
+	return true;
+}
 
 
 
@@ -1129,6 +1026,16 @@ PlayerExtra.getOnlinePlayers = function() {
 	return list;
 }
 
+PlayerExtra.getPlayer = function(name) {
+	var list = EntityExtra.getAll();
+	for(var e = 0; e < list.length; e++) {
+		if(Player.isPlayer(list[e]) && Player.getName(list[e]).toLowerCase() === name.toLowerCase()) {
+			return list[e];
+		}
+	}
+	return false;
+}
+
 PlayerExtra.getNearPlayers = function() {
 	var a = EntityExtra.getAll();
 	var f = [];
@@ -1147,6 +1054,90 @@ PlayerExtra.getNearPlayers = function() {
 		r.splice(i, 1);
 	}
 	return n;
+}
+
+
+
+/**
+ * NumberToString
+ *
+ * @since 2015-09
+ * @author CodeInside
+ */
+ 
+function numberToString(number) {
+	number = number + "";
+	try{
+		var t = number.split(".");
+		var r1 = t[0].split("");
+		var r2 = t[1];
+	}catch(e) {
+		var r1 = number.split("");
+		var r2 = undefined;
+	}
+	var r3 = "";
+	while(r1.length > 0) {
+		if(r1.length > 3) {
+			r3 = r1.pop() + r3;
+			r3 = r1.pop() + r3;
+			r3 = "," + r1.pop() + r3;
+		}else {
+			r3 = r1.pop() + r3;
+		}
+	}
+	if(r2 === undefined) {
+		return r3;
+	}else {
+		return r3 + "." + r2;
+	}
+}
+
+
+
+/**
+ * DataSizeToString
+ *
+ * @since 2015-09
+ * @author CodeInside
+ */
+ 
+function dataSizeToString(size) {
+	if(size < 1000) {
+		return size + "B";
+	}else if(size < 1024000) {
+		return parseInt(Math.round(size*100/1024), 10)/100 + "KB";
+	}else if(size < 1048576000) {
+		return parseInt(Math.round(size*100/1048576), 10)/100 + "MB";
+	}else if(size < 1073741824000) {
+		return parseInt(Math.round(size*100/1073741824), 10)/100 + "GB";
+	}else if(size < 1099511627776000) {
+		return parseInt(Math.round(size*100/1099511627776), 10)/100 + "TB";
+	}else {
+		return numberToString(parseInt(Math.round(size*100/(1099511627776*1024)), 10)/100) + "PB";
+	}
+}
+
+
+
+function randomId() {
+	return parseInt(Math.floor(Math.random() * 0xffffff));
+}
+
+
+
+function coordinatify(type, value) {
+	switch(type) {
+		case 0:
+		return parseInt(Math.floor(value));
+		case 1:
+		if(value < 0x00) {
+			return 0x00;
+		}else if(value > 0xff) {
+			return 0xff;
+		} 
+		default:
+		return value;
+	}
 }
 
 
