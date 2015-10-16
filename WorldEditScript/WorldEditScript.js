@@ -16,8 +16,8 @@
 
 const CLASS_NAME = "WorldEditScript";
 //Season . Release Number . Commits 
-const VERSION = "0.1.3";
-const VERSION_CODE = 103;
+const VERSION = "0.1.4";
+const VERSION_CODE = 104;
 
 var TAG = "[" + "WES" + " " + VERSION + "] ";
 
@@ -1026,7 +1026,7 @@ function margeArray(arr1, arr2, margeType, width1, height1, width2, height2, fil
 
 
 /**
- * Vecto(x, y, z) to Side(yaw, pitch)
+ * Vector(x, y, z) to Side(yaw, pitch)
  *
  * @since 2015-01
  * @author ToonRaOn
@@ -2271,6 +2271,7 @@ function WorldEditScript(setting) {
 	this.currentMenu = null;
 	this.blockImages = null;
 	this.blockImagesData = [];
+	this.blockImageWork = false;
 	this.asynceBuffer = [];
 	this._selectMenuVis = false;
 	this._onMove = false;
@@ -2559,6 +2560,10 @@ WorldEditScript.prototype = {
 				WES_Toast("플레이어를 찾을 수 없습니다");
 				return;
 			}
+			if(that.blockImageWork) {
+				WES_Toast("이미지 빌드중입니다\n잠시만 기다리세요", 2, 5000);
+				return;
+			}
 			var t = new WES_BlockSelect(that, "블럭1 지정...", "선택", function(id, data) {
 				editor.setBlock1(new Block(id, data));
 				WES_Toast("블럭1 지정됨 " + id + ":" + data);
@@ -2570,6 +2575,10 @@ WorldEditScript.prototype = {
 			var editor = that.editorGroup.get(Player.getName(Player.getEntity()));
 			if(editor === false) {
 				WES_Toast("플레이어를 찾을 수 없습니다");
+				return;
+			}
+			if(that.blockImageWork) {
+				WES_Toast("이미지 빌드중입니다\n잠시만 기다리세요", 2, 5000);
 				return;
 			}
 			var t = new WES_BlockSelect(that, "블럭2 지정...", "확인", function(id, data) {
@@ -5572,6 +5581,7 @@ function getBlockSelectLayout(that, key) {
 
 function loadBlockImages(that) {thread(function() {try {
 	var loading = new CustomProgressBar(3, blockData.length);
+	that._parent.blockImageWork = true;
 	
 	var max = Math.floor((c.ww - DIP*0x18)/(DIP*0x40));
 	var current = 0;
@@ -5606,13 +5616,16 @@ function loadBlockImages(that) {thread(function() {try {
 		showError(e);
 	}});
 	loading.close();
+	that._parent.blockImageWork = false;
 }catch(e) {
 	showError(e);
+	loading.close();
+	that._parent.blockImageWork = false;
 }}).start();
 }
 
 function reloadBlockImages(that) {thread(function() {try {
-	var loading = new CustomProgressBar(3, that._parent.blockImagesData.length);
+	//var loading = new CustomProgressBar(3, that._parent.blockImagesData.length);
 	uiThread(function() {try {
 	for(var e = 0; e < that._parent.blockImagesData.length; e++) {
 			that._parent.blockImagesData[e][2].setOnClickListener(View.OnClickListener({onClick: function(view, event) {try {
@@ -5622,12 +5635,10 @@ function reloadBlockImages(that) {thread(function() {try {
 			}catch(e) {
 				toast("Please wait...");
 			}}}));
-		loading.setProgress(e+1);
 	}
 	}catch(e) {
 		showError(e, WarnType.WARNING);
 	}});
-	loading.close();
 }catch(e) {
 	showError(e, WarnType.CRITICAL);
 }}).start()}
