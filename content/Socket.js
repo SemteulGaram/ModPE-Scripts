@@ -88,11 +88,11 @@ function selectLevelHook() {
 }
 function newLevel(str) {
 	log.w("newLevel#"+str);
-	sac.setType(1);
+	svpe.setType(1);
 }
 function leaveGame() {
 	log.w("leaveGame#");
-	sac.setType(0);
+	svpe.setType(0);
 }
 function modTick() {
 	ModPE.showTipMessage("Test On Running");
