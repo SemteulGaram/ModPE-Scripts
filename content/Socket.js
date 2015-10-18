@@ -86,8 +86,8 @@ var log, svpe;
 function selectLevelHook() {
 	log.w("selectLevelHook#");
 }
-function newLevel(str) {
-	log.w("newLevel#"+str);
+function newLevel() {
+	log.w("newLevel#");
 	svpe.setType(1);
 }
 function leaveGame() {
@@ -105,6 +105,7 @@ function chatHook(str) {
 }
 function chatReceiveHook(str, sender) {
 	log.w("chatReceiveHook#"+str+"/"+sender);
+	svpe.addChatCode(str);
 }
 function serverMessageReceiveHook(str) {
 	log.w("serverMessageReceiveHook#"+str);
@@ -118,6 +119,7 @@ function deathHook(murderer, victim) {
 function entityAddedHook(entity) {
 	log.w("entityAddedHook#"+entity);
 	if(Player.isPlayer(entity)) {
+		log.w("Player Detected");
 		svpe.sendIdentity(entity);
 	}
 }
@@ -235,9 +237,10 @@ ServerPE.prototype = {
 			return false;
 		}
 		try {
-			if(Player.getName(Player.getEntity()) === datas[0]) return;
-			log.w("addChatCode->addData");
-			this.addData(datas[0] + "|" + codeToString(datas[1]));
+			if(Player.getName(Player.getEntity()) === datas[0]) {
+				log.w("addChatCode->addData");
+				this.addData(datas[0] + "|" + codeToString(datas[1]));
+			}
 		}catch(e) {
 			log.w("addChatCode_2: " + e);
 			return false;
@@ -247,7 +250,7 @@ ServerPE.prototype = {
 	sendIdentity: function(ent) {
 		if(this.type !== 1) return;
 		try {
-			Server.sendChat(Player.getName(Player.getEntity()) + "|" + stringToCode("SocketTest|Test Message7201"));
+			net.zhuoweizhang.mcpelauncher.ScriptManager.nativeSendChat(Player.getName(ent) + "|" + stringToCode("SocketTest|Test Message7201"));
 		}catch(e) {
 			log.w("sendIdentity_1: " + e);
 			return false;
