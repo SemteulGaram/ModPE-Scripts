@@ -15,8 +15,8 @@
  */
 
 const className = "Uriel";
-const VERSION = "0.0.1";
-const VERSION_CODE = 100;
+const VERSION = "0.2";
+const VERSION_CODE = 101;
 
 var TAG = "[" + className + " " + VERSION + "] ";
 
@@ -37,6 +37,9 @@ if(!(FILE_MAIN_DIR.exists())) {
 }
 var DIP = PIXEL;
 var randomId = parseInt(Math.floor(Math.random()*0xffffff));
+function randomId2() {
+	return parseInt(Math.floor(Math.random()*0xffffff));
+}
 
 
 
@@ -381,13 +384,13 @@ function CustomProgressBar(type, max, text) {
 		uiThread(function() {try {
 			that.window.showAtLocation(c.d, Gravity.CENTER, 0, 0);
 		}catch(e) {
-			showError(e, WarnType.WARNING);
+			showError(e);
 		}});
 		break;
 		
 		case 1:
 		this.bar = new ProgressBar(ctx);
-		this.bar.setLayoutParams(new LayoutParams(DIP*0x30, DIP*0x30));
+		this.bar.setLayoutParams(new c.l.LayoutParams(DIP*0x30, DIP*0x30));
 		this.layout = new c.l(ctx);
 		this.layout.setBackgroundColor(Color.argb(0x55, 0, 0, 0));
 		this.layout.addView(this.bar);
@@ -396,7 +399,7 @@ function CustomProgressBar(type, max, text) {
 		uiThread(function() {try {
 			that.window.showAtLocation(c.d, Gravity.CENTER, 0, 0);
 		}catch(e) {
-			showError(e, WarnType.WARNING);
+			showError(e);
 		}});
 		break;
 		
@@ -408,7 +411,7 @@ function CustomProgressBar(type, max, text) {
 		uiThread(function() {try {
 			that.window.showAtLocation(c.d, Gravity.BOTTOM, 0, 0);
 		}catch(e) {
-			showError(e, WarnType.WARNING);
+			showError(e);
 		}});
 		break;
 		
@@ -425,7 +428,7 @@ function CustomProgressBar(type, max, text) {
 		uiThread(function() {try {
 			that.window.showAtLocation(c.d, Gravity.BOTTOM, 0, 0);
 		}catch(e) {
-			showError(e, WarnType.WARNING);
+			showError(e);
 		}});
 		break;
 		
@@ -445,7 +448,7 @@ function CustomProgressBar(type, max, text) {
 		uiThread(function() {try {
 			that.window.showAtLocation(c.d, Gravity.BOTTOM, 0, 0);
 		}catch(e) {
-			showError(e, WarnType.WARNING);
+			showError(e);
 		}});
 		break;
 		
@@ -465,7 +468,7 @@ function CustomProgressBar(type, max, text) {
 		
 		this.e_text = mcButton("Hide", null, true, null, null, null, null, null, null, null, null, function(view, event) {
 			that.close();
-			WES_Toast("작업 도중 다른 작업을 하면 에딧에 실패할 수도 있습니다", 2, 8000);
+			toast("Don't turn off Minecraft while Backup...");
 		}, null);
 		this.exit = new PopupWindow(this.e_text, c.w, c.w, false);
 		
@@ -473,7 +476,7 @@ function CustomProgressBar(type, max, text) {
 			that.window.showAtLocation(c.d, Gravity.BOTTOM, 0, 0);
 			that.exit.showAtLocation(c.d, Gravity.BOTTOM | Gravity.RIGHT, 0, 0);
 		}catch(e) {
-			showError(e, WarnType.WARNING);
+			showError(e);
 		}});
 		break;
 		
@@ -499,7 +502,7 @@ function CustomProgressBar(type, max, text) {
 		
 		this.e_text = mcButton("Hide", null, true, null, null, null, null, null, null, null, null, function(view, event) {
 			that.close();
-			WES_Toast("작업 도중 다른 작업을 하면 에딧에 실패할 수도 있습니다", 2, 8000);
+			toast("Don't turn off Minecraft while Backup...");
 		}, null);
 		this.exit = new PopupWindow(this.e_text, c.w, c.w, false);
 		
@@ -507,7 +510,7 @@ function CustomProgressBar(type, max, text) {
 			that.window.showAtLocation(c.d, Gravity.TOP, 0, 0);
 			that.exit.showAtLocation(c.d, Gravity.BOTTOM | Gravity.RIGHT, 0, 0);
 		}catch(e) {
-			showError(e, WarnType.WARNING);
+			showError(e);
 		}});
 		break;
 	}
@@ -571,7 +574,7 @@ function Uriel(setting) {
 		this.settingFile = new File(setting);
 	}
 	this.setting = null;
-	this.defaultBackupDir = FILE_SD_CARD + "/games/com.mojang/minecraftWorldsBackup";
+	this.defaultBackupDir = FILE_SD_CARD + "/games/com.mojang/minecraftWorldBackups";
 	this.defaultSetting = {
 		ButtonX: DIP*0x80,
 		ButtonY: 0,
@@ -585,14 +588,14 @@ function Uriel(setting) {
 	this._onMove = false;
 }
 
-ParallelWorld.prototype = {
+Uriel.prototype = {
 	
 	toString: function() {
-		return "[ParalleWorld " + VERSION + "]";
+		return "[Uriel " + VERSION + "]";
 	},
 	
 	init: function() {
-		
+		this.getDir();
 	},
 	
 	loadSetting: function() {
@@ -604,7 +607,6 @@ ParallelWorld.prototype = {
 				this.saveSetting();
 			}
 		}else {
-			toast("첫 부팅을 환영합니다...\n설정파일을 생성중입니다");
 			this.saveSetting();
 		}
 	},
@@ -675,6 +677,14 @@ ParallelWorld.prototype = {
 		}
 	},
 	
+	getDir: function() {
+		var file = new File(this.get("BackupDir"));
+		if(!file.exists()) {
+			file.mkdirs();
+		}
+		return file;
+	},
+	
 	isMenuVisible: function() {
 		return this.menuVis;
 	},
@@ -686,6 +696,7 @@ ParallelWorld.prototype = {
 				if(this.menu === null) {
 					this.buildMenu();
 				}
+				this.setMenu(Menus.main);
 				uiThread(function() {try {
 					that.menu.showAtLocation(c.d, Gravity.RIGHT|Gravity.TOP, 0, 0);
 					that.menuVis = true;
@@ -713,7 +724,15 @@ ParallelWorld.prototype = {
 		var that = this;
 		var load = new CustomProgressBar(0, 0);
 		var btn = new ImageButton(ctx);
-		btn.setImageBitmap(Assets.launch1.scaleBitmap);
+		var mcFolder = new File(FILE_SD_CARD, "games/com.mojang");
+		var total = mcFolder.getTotalSpace();
+		var free = mcFolder.getFreeSpace();
+		var sc = (free/total < 0.05);
+		if(sc) {
+			btn.setImageBitmap(Assets.launch3.scaleBitmap);
+		}else {
+			btn.setImageBitmap(Assets.launch1.scaleBitmap);
+		}
 		btn.setOnTouchListener(View.OnTouchListener({onTouch: function(view, event) {try {
 			switch(event.action) {
 				case MotionEvent.ACTION_DOWN:
@@ -785,14 +804,8 @@ ParallelWorld.prototype = {
 		lo2.setLayoutParams(lo2_p);
 		lo2.setBackgroundColor(Assets.mainColor);
 		
-		var sl = new ScrollView(ctx);
-		sl.setId(randomId+2);
-		var sl_p = new c.r.LayoutParams(c.m, c.m);
-		sl_p.addRule(c.r.BELOW, lo2.getId());
-		sl.setLayoutParams(sl_p);
-		
 		var back = mcButton("Back", null, false, Assets.mainColor, null, null, null, [DIP*0x08, DIP*0x08, DIP*0x08, DIP*0x08], null, null, null, function(view, event) {
-			that.setMenuVisible(false);
+			that.menuClose();
 		}, null);
 		var back_p = new c.r.LayoutParams(c.w, c.w);
 		back_p.addRule(c.r.ALIGN_PARENT_LEFT);
@@ -808,27 +821,50 @@ ParallelWorld.prototype = {
 		
 		lo2.addView(title);
 		
+		var sl = new ScrollView(ctx);
+		sl.setId(randomId+2);
+		var sl_p = new c.r.LayoutParams(c.m, c.m);
+		sl_p.addRule(c.r.BELOW, lo2.getId());
+		sl.setLayoutParams(sl_p);
+		
 		lo.addView(lo2);
 		lo.addView(sl);
 		
+		this.menuTitle = title;
+		this.menuLayout = sl;
 		this.menu = new PopupWindow(lo, c.ww, c.wh, true);
 	},
 	
 	setMenu: function(menu) {
+		var that = this;
 		if(menu instanceof Menu) {
 			this.currentMenu = menu;
-			this.menuLayout.removeAllViews();
-			this.menuLayout.addView(this.currentMenu.getLayout());
+			uiThread(function() {try {
+				that.menuTitle.setText(that.currentMenu.name);
+				that.menuLayout.removeAllViews();
+				that.menuLayout.addView(that.currentMenu.getLayout());
+			}catch(e) {
+				showError(e);
+			}});
 		}else {
 			this.currentMenu = null;
 			this.setMenuVisible(false);
+		}
+	},
+	
+	menuClose: function() {
+		if(this.currentMenu.getParent() === null) {
+			this.setMenuVisible(false);
+		}else {
+			this.setMenu(this.currentMenu.getParent());
 		}
 	}
 }
 
 
 
-function Menu(name) {
+function Menu(parent, name) {
+	this._parent = parent;
 	this.name = name;
 	this.parent = null;
 	this.layout = null;
@@ -863,17 +899,188 @@ Menu.prototype = {
 
 
 
-function World(folder) {
-	
+function WorldDir(folder) {
+	this.folder = folder;
+	this.maps = [];
+	this.refresh();
 }
 
-World.prototype = {
+WorldDir.prototype = {
 	
+	refresh: function() {
+		this.maps = [];
+		var mapFolders = this.folder.listFiles();
+		for(var e = 0; e < mapFolders.length; e++) {
+			var levelName = new File(mapFolders[e], "levelname.txt");
+			if(levelName.exists()) {
+				this.maps.push([readLine(levelName), mapFolders[e]]);
+			}
+		}
+	},
+	
+	getLayout: function() {
+		var that = this;
+		var lo = new c.l(ctx);
+		lo.setOrientation(c.l.VERTICAL);
+		
+		thread(function() {try {
+			for(var e = 0; e < that.maps.length; e++) {
+				var worldName = that.maps[e][0];
+				var worldFile = that.maps[e][1];
+				
+				var name = mcText(worldName, DIP*16);
+				name.setId(randomId2());
+				var name_p = new c.r.LayoutParams(c.w, c.w);
+				name_p.addRule(c.r.ALIGN_PARENT_TOP);
+				name_p.addRule(c.r.ALIGN_PARENT_LEFT);
+				name_p.setMargins(DIP*8, DIP*8, 0, 0);
+				name.setLayoutParams(name_p);
+				
+				var size = mcText(dataSizeToString(getDirSize(worldFile)), DIP*12, false, Color.GRAY);
+				var size_p = new c.r.LayoutParams(c.w, c.w);
+				size_p.addRule(c.r.BELOW, name.getId());
+				size_p.addRule(c.r.ALIGN_PARENT_LEFT);
+				size_p.setMargins(DIP*8, DIP*8, 0, 0);
+				size.setLayoutParams(size_p);
+				
+				var backup = new mcButton("Backup", DIP*10, false, Color.WHITE, null, null, null, null, null, null, null, function(view, event) {
+					Backup(view.getTag()[0], view.getTag()[1]);
+				}, null);
+				backup.setTag([worldName, worldFile]);
+				backup.setBackgroundColor(Assets.mainColor);
+				var backup_p = new c.r.LayoutParams(c.w, c.w);
+				backup_p.setMargins(0, DIP*8, DIP*8, DIP*8);
+				backup_p.addRule(c.r.ALIGN_PARENT_RIGHT);
+				backup.setLayoutParams(backup_p);
+				
+				var lo2 = new c.r(ctx);
+				var lo2_p = new c.l.LayoutParams(c.m, DIP*48);
+				lo2_p.setMargins(0, 0, 0, DIP*4);
+				lo2.setLayoutParams(lo2_p);
+				
+				var wait = true;
+				
+				uiThread(function() {try {
+					lo2.addView(name);
+					lo2.addView(size);
+					lo2.addView(backup);
+					lo.addView(lo2);
+					wait = false;
+				}catch(e) {
+					showError(e);
+				}});
+				while(wait) sleep(1);
+			}
+		}catch(e) {
+			showError(e);
+		}}).start();
+		
+		return lo;
+	}
+}
+
+
+
+function BackupDir(folder) {
+	this.folder = folder;
+	this.maps = [];
+	this.refresh();
+}
+
+BackupDir.prototype = {
+	
+	refresh: function() {
+		this.maps = [];
+		var mapFolders = this.folder.listFiles();
+		for(var e = 0; e < mapFolders.length; e++) {
+			if(mapFolders[e].isDirectory()) {
+				this.maps.push([mapFolders[e].getName(), mapFolders[e]]);
+			}
+		}
+	}
 }
 
 
 
 var main = new Uriel(FILE_MAIN_DATA);
+main.init();
+
+thread(function() {try {
+	if(!FILE_FONT.exists()) {
+		toast("Download resource...");
+		if(!downloadFile(FILE_FONT, "https://www.dropbox.com/s/y1o46b2jkbxwl3o/minecraft.ttf?dl=1", null)) {
+			toast("Connection error");
+		}
+	}
+	leaveGame();
+}catch(e) {
+	showError(e);
+}}).start();
+
+var Menus = {
+	main: new Menu(main, main.NAME),
+	backup: new Menu(main, "Backup"),
+	restore: new Menu(main, "Restore")
+}
+
+Menus.backup.setParent(Menus.main);
+Menus.restore.setParent(Menus.main);
+
+Menus.main.build = function() {
+	var that = this;
+	
+	var lo3 = new c.l(ctx);
+	lo3.setOrientation(c.l.VERTICAL);
+	lo3.setGravity(Gravity.CENTER);
+	
+	var mcFolder = new File(FILE_SD_CARD, "games/com.mojang");
+	var total = mcFolder.getTotalSpace();
+	var free = mcFolder.getFreeSpace();
+	var len = getDirSize(mcFolder);
+	
+	var graph = getStorageSpaceGraph(mcFolder, c.ww - DIP*80, DIP*40, Color.parseColor("#777777"), Color.parseColor("#22ff44"), Color.parseColor("#119944"));
+	var graph_p = new c.l.LayoutParams(c.w, c.w);
+	graph_p.setMargins(0, DIP*8, 0, 0);
+	graph.setLayoutParams(graph_p);
+	
+	lo3.addView(graph);
+	
+	lo3.addView(mcText("Total: " + dataSizeToString(total) + "     Used: " + dataSizeToString(total-free) + "     Free: " + dataSizeToString(free) + "     Minecraft: " + dataSizeToString(len), DIP*10, false, null, null, null, null, null, [0, DIP*4, 0, DIP*4]));
+	
+	var lo4 = new c.l(ctx);
+	lo4.setOrientation(c.l.HORIZONTAL);
+	lo4.setGravity(Gravity.CENTER);
+	var lo4_p = new c.l.LayoutParams(c.m, c.w);
+	lo4_p.setMargins(0, DIP*16, 0, DIP*16);
+	lo4.setLayoutParams(lo4_p);
+	
+	var backup = new mcButton("Backup", DIP*12, false, Color.WHITE, null, DIP*96, DIP*32, null, [DIP*8, 0, DIP*8, 0], null, null, function(view, event) {
+		that._parent.setMenu(Menus.backup);
+	}, null);
+	backup.setBackgroundColor(Assets.mainColor);
+	
+	lo4.addView(backup);
+	
+	var restore = new mcButton("Restore", DIP*12, false, Color.WHITE, null, DIP*96, DIP*32, null, [DIP*8, 0, DIP*8, 0], null, null, function(view, event) {
+		that._parent.setMenu(Menus.restore);
+	}, null);
+	restore.setBackgroundColor(Assets.mainColor);
+	
+	lo4.addView(restore);
+	
+	lo3.addView(lo4);
+	
+	this.layout = lo3;
+}
+
+Menus.backup.build = function() {
+	var t = new WorldDir(new File(FILE_SD_CARD, "games/com.mojang/minecraftWorlds"));
+	this.layout = t.getLayout();
+}
+
+Menus.restore.build = function() {
+	this.layout = mcText("Coming soon...");
+}
 
 
 
@@ -884,7 +1091,10 @@ function newLevel() {
 function leaveGame() {
 	main.setButtonVisible(true);
 }
-leaveGame();
+
+function chatReceiveHook(str, sender) {
+	main.setButtonVisible(false);
+}
 
 
 /**
@@ -936,7 +1146,7 @@ function zip(input, output){
 	function getFiles(dir){
 		try{
 			if(dir.isFile()) {
-				fileList.push(dir);
+				fileList.push(dir.getAbsolutePath());
 				return;
 			}
 			var files = dir.listFiles();
@@ -950,14 +1160,14 @@ function zip(input, output){
 	};
 	
 	//모든 파일을 등록
-	getEveryFiles(inputPath);
+	getFiles(inputPath);
 	
 	//압축 개시
 	var fos = new java.io.FileOutputStream(outputPath);
 	var zos = new java.util.zip.ZipOutputStream(fos);
 	for(var e in fileList){
 		//파일의 절대경로로부터 상대경로를 구해서 ZipEntry생성
-		var ze = new java.util.zip.ZipEntry(fileList[e].substring(inputPath.getAbsolutePath().length()+1, fileList[e].length()));
+		var ze = new java.util.zip.ZipEntry(fileList[e].substring(inputPath.getAbsolutePath().length()+1, fileList[e].getAbsolutePath().length()));
 		//ZipOutputStream의 새로운 Entry의 경로 등록
 		zos.putNextEntry(ze);
 		var fis = new java.io.FileInputStream(fileList[e]);
@@ -1033,4 +1243,255 @@ function unZip(input, output) {
   }
   zip.close();
   return 1;
+}
+
+
+
+/**
+ * Download file
+ *
+ * @since 2015-01
+ * @author CodeInside
+ * 
+ * @param <File> path
+ * @param <String> url
+ * @param <ProgressBar|Null> progressBar
+ */
+
+function downloadFile(path, url, progressBar) {
+	try{
+		var tempApiUrl = new java.net.URL(url);
+		var tempApiUrlConn = tempApiUrl.openConnection();
+		tempApiUrlConn.connect();
+		var tempBis = new java.io.BufferedInputStream(tempApiUrl.openStream());
+		if(progressBar !== null) {
+			progressBar.setMax(tempApiUrlConn.getContentLength());
+		}
+		var tempFos = new java.io.FileOutputStream(path);
+		var tempData = java.lang.reflect.Array.newInstance(java.lang.Byte.TYPE, 1024);
+		var tempTotal = 0, tempCount;
+		while ((tempCount = tempBis.read(tempData)) != -1) {
+			tempFos.write(tempData, 0, tempCount);
+			tempTotal += tempCount;
+			if(progressBar !== null) {
+				progressBar.setProgress(tempTotal);
+			}
+		}
+		tempFos.flush();
+		tempFos.close();
+		tempBis.close();
+		return true;
+	}catch(e){
+		return false;
+	}
+}
+
+
+
+function Backup(name, file) {
+	var dl = new AlertDialog.Builder(ctx);
+	dl.setTitle("Backup...");
+	var et = new EditText(ctx);
+	et.setText(name + "_" + getDate());
+	dl.setView(et);
+	dl.setNegativeButton("Cancel", null);
+	dl.setPositiveButton("Backup", new android.content.DialogInterface.OnClickListener({onClick: function() {try {
+		var zipFile = new File(main.get("BackupDir") + "/" + name + "/" + et.getText() + ".zip");
+		zipFile.getParentFile().mkdirs();
+		thread(function() {try {
+			var load = new CustomProgressBar(5, 0, "'" + name + "' backup...");
+			if(zip(file, zipFile) !== 1) {
+				toast("Fail to zip...");
+			}else {
+				toast("Backup success");
+			}
+			load.close();
+		}catch(e) {
+			showError(e);
+		}}).start();
+	}catch(e) {
+		showError(e);
+	}}}));
+	uiThread(function() {try {
+		dl.create().show();
+	}catch(e) {
+		showError(e);
+	}});
+}
+
+function Restore(file) {
+	var name = file.getName();
+	var pattern = /.\_\d{2,2}\-\d{2,2}\-\d{2,2}\-\d{2,2}\-\d{2,2}\-\d{2,2}\.zip/;
+	if(pattern.test(name)) {
+		name = name.substring(0, name.length-21);
+	}
+	var worldFolder = new File(FILE_SD_CARD + "/games/com.mojang/minecraftWorlds/" + name);
+	var num = 1;
+	while(worldFolder.exists()) {
+		worldFolder = new File(FILE_SD_CARD + "/games/com.mojang/minecraftWorlds/" + name + "(" + (++num) + ")");
+	}
+	var dl = new AlertDialog.Builder(ctx);
+	dl.setTitle("Restore...");
+	var tv = mcText("The previous map won't deleted.\n\nAre you sure?");
+	dl.setView(tv);
+	dl.setNegativeButton("Cancel", null);
+	dl.setPositiveButton("Restore", new android.content.DialogInterface.OnClickListener({onClick: function() {try {
+		thread(function() {try {
+			var load = new CustomProgressBar(5, 0, "'" + name + "' restore...");
+			if(unZip(file, worldFolder) !== 1) {
+				toast("Fail to unZip...");
+			}else {
+				toasts("Restore success");
+				toasts("Minecraft is going to restart when window close");
+			}
+			load.close();
+		}catch(e) {
+			showError(e);
+		}}).start();
+	}catch(e) {
+		showError(e);
+	}}}));
+	uiThread(function() {try {
+		dl.create().show();
+	}catch(e) {
+		showError(e);
+	}});
+}
+
+
+
+function getStorageSpaceGraph(path, width, height, colorBg, color1, color2) {
+	var total = path.getTotalSpace();
+	var free = path.getFreeSpace();
+	var len = getDirSize(path);
+	var gp1_r = (total-free)/total;
+	var gp2_r = (total-(free+len))/total;
+	
+	var lo = new c.r(ctx);
+	
+	var bg = new ImageView(ctx);
+	bg.setBackgroundColor(colorBg);;
+	bg.setLayoutParams(new c.l.LayoutParams(width, height));
+	
+	var gp1 = new ImageView(ctx);
+	gp1.setBackgroundColor(color1);;
+	gp1.setLayoutParams(new c.l.LayoutParams(width*gp1_r, height));
+	
+	var gp2 = new ImageView(ctx);
+	gp2.setBackgroundColor(color2);;
+	gp2.setLayoutParams(new c.l.LayoutParams(width*gp2_r, height));
+	
+	lo.addView(bg);
+	lo.addView(gp1);
+	lo.addView(gp2);
+	
+	return lo;
+}
+
+function getDirSize(path) {
+	if(path.isDirectory()) {
+		var files = path.listFiles();
+		var size = 0;
+		for(var e = 0; e < files.length; e++) {
+			size += getDirSize(files[e]);
+		}
+		return size;
+	}else {
+		return path.length();
+	}
+}
+
+function readLine(file) {
+	try{
+		var fileInputStream = new java.io.FileInputStream(file);
+	}catch(e) {
+		return false;
+	}
+	var inputStreamReader = new java.io.InputStreamReader(fileInputStream);
+	var bufferedReader = new java.io.BufferedReader(inputStreamReader);
+	try {
+		var r = bufferedReader.readLine();
+	}catch(e) {
+		var r = false;
+	}
+	fileInputStream.close();
+	inputStreamReader.close();
+	bufferedReader.close();
+	return r;
+}
+
+/**
+ * NumberToString
+ *
+ * @since 2015-09
+ * @author CodeInside
+ */
+ 
+function numberToString(number) {
+	number = number + "";
+	try{
+		var t = number.split(".");
+		var r1 = t[0].split("");
+		var r2 = t[1];
+	}catch(e) {
+		var r1 = number.split("");
+		var r2 = undefined;
+	}
+	var r3 = "";
+	while(r1.length > 0) {
+		if(r1.length > 3) {
+			r3 = r1.pop() + r3;
+			r3 = r1.pop() + r3;
+			r3 = "," + r1.pop() + r3;
+		}else {
+			r3 = r1.pop() + r3;
+		}
+	}
+	if(r2 === undefined) {
+		return r3;
+	}else {
+		return r3 + "." + r2;
+	}
+}
+
+
+
+/**
+ * DataSizeToString
+ *
+ * @since 2015-09
+ * @author CodeInside
+ */
+ 
+function dataSizeToString(size) {
+	if(size < 1000) {
+		return size + "B";
+	}else if(size < 1024000) {
+		return parseInt(Math.round(size*100/1024), 10)/100 + "KB";
+	}else if(size < 1048576000) {
+		return parseInt(Math.round(size*100/1048576), 10)/100 + "MB";
+	}else if(size < 1073741824000) {
+		return parseInt(Math.round(size*100/1073741824), 10)/100 + "GB";
+	}else if(size < 1099511627776000) {
+		return parseInt(Math.round(size*100/1099511627776), 10)/100 + "TB";
+	}else {
+		return numberToString(parseInt(Math.round(size*100/(1099511627776*1024)), 10)/100) + "PB";
+	}
+}
+
+function getDate() {
+	var gc = GregorianCalendar;
+	var cal = new gc();
+	var year = cal.get(gc.YEAR);
+	var month = cal.get(gc.MONTH)+1;
+	var day = cal.get(gc.DAY_OF_MONTH);
+	var hour = cal.get(gc.HOUR_OF_DAY);
+	var min = cal.get(gc.MINUTE);
+	var sec = cal.get(gc.SECOND);
+	if(month < 10) month = "0" + month;
+	if(day < 10) day = "0" + day;
+	if(hour < 10) hour = "0" + hour;
+	if(min < 10) min = "0" + min;
+	if(sec < 10) sec = "0" + sec;
+	return year+"-"+month+"-"+day+"-"+hour+"-"+min+"-"+sec;
 }
