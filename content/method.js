@@ -95,37 +95,37 @@ var PopupWindow = android.widget.PopupWindow;
 var ctx = com.mojang.minecraftpe.MainActivity.currentMainActivity.get();
 
 //단축변수
-var c = {};
-c.mp = ViewGroup.LayoutParams.MATCH_PARENT;
-c.wc = ViewGroup.LayoutParams.WRAP_CONTENT;
-c.ai = java.lang.reflect.Array.newInstance;
-c.rl = RelativeLayout;
-c.ll = LinearLayout;
-c.tp = TypedValue.COMPLEX_UNIT_PX;
-c.sm = net.zhuoweizhang.mcpelauncher.ScriptManager;
-c.ww = ctx.getScreenWidth();//ctx.getWindowManager().getDefaultDisplay().getWidth();
-c.wh = ctx.getScreenHeight();//ctx.getWindowManager().getDefaultDisplay().getHeight();
-c.dv = ctx.getWindow().getDecorView();
-c.px = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 1, ctx.getResources().getDisplayMetrics());
+var sg = {};
+sg.mp = ViewGroup.LayoutParams.MATCH_PARENT;
+sg.wc = ViewGroup.LayoutParams.WRAP_CONTENT;
+sg.ai = java.lang.reflect.Array.newInstance;
+sg.rl = RelativeLayout;
+sg.ll = LinearLayout;
+sg.tp = TypedValue.COMPLEX_UNIT_PX;
+sg.sm = net.zhuoweizhang.mcpelauncher.ScriptManager;
+sg.ww = ctx.getScreenWidth();//ctx.getWindowManager().getDefaultDisplay().getWidth();
+sg.wh = ctx.getScreenHeight();//ctx.getWindowManager().getDefaultDisplay().getHeight();
+sg.dv = ctx.getWindow().getDecorView();
+sg.px = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 1, ctx.getResources().getDisplayMetrics());
 
 
 
 /**
  * Error report
  *
+ * @author SemteulGaram
  * @since 2015-04
- * @author CodeInside
  *
- * @param {error} e
+ * @param {Error} e
  */
 
 function showError(e) {
 	if(Level.getWorldName() === null) {
 		ctx.runOnUiThread(new java.lang.Runnable({ run: function(){
-	android.widget.Toast.makeText(ctx, "[" + NAME + " ERROR LINE: " + e.lineNumber + "]" + "\n" + e, android.widget.Toast.LENGTH_LONG).show();
+	android.widget.Toast.makeText(ctx, "[" + NAME + " ERROR LINE: " + e.lineNumber + "]" + "\n" + e.message, android.widget.Toast.LENGTH_LONG).show();
 		}}));
 	}else {
-		var t = (e + "").split(" ");
+		var t = (e.message + "").split(" ");
 		var c = "";
 		var temp = "";
 		for(var l = 0; l < t.length; l++) {
@@ -142,23 +142,33 @@ function showError(e) {
 
 
 
-var sFiles = {}
-sFiles.sdcard = Environment.getExternalStorageDirectory();
-sFiles.mcpe = new File(sFiles.sdcard, "games/com.mojang");
-sFiles.world = new File(sFiles.mcpe, "minecraftWorlds");
-sFiles.mod = new File(sFiles.mcpe, "minecraftpe/mods");
-sFiles.font = new File(sFiles.mod, "minecraft.ttf");
-sFiles.script = new File(sFiles.mod, NAME);
-sFiles.setting = new File(sFiles.script, "setting.json");
-sFiles.test = new File(sFiles.script, "log.txt");
-sFiles.noMedia = new File(sFiles.script, ".nomedia");
-sFiles.map = function() {return new File(mfiles.map, Level.getWorldDir())};
-sFiles.mapMod = function() {return new File(sFiles.map, Level.getWorldDir() + "/mods")}
-sFiles.mapSetting = function() {return new File(sFiles.map, Level.getWorldDir() + "/mods/" + NAME + ".json")}
+var sgFiles = {}
+sgFiles.sdcard = Environment.getExternalStorageDirectory();
+sgFiles.mcpe = new File(sgFiles.sdcard, "games/com.mojang");
+sgFiles.world = new File(sgFiles.mcpe, "minecraftWorlds");
+sgFiles.mod = new File(sgFiles.mcpe, "minecraftpe/mods");
+sgFiles.font = new File(sgFiles.mod, "minecraft.ttf");
+sgFiles.script = new File(sgFiles.mod, NAME);
+sgFiles.setting = new File(sgFiles.script, "setting.json");
+sgFiles.test = new File(sgFiles.script, "log.txt");
+sgFiles.noMedia = new File(sgFiles.script, ".nomedia");
+sgFiles.map = function() {return new File(mfiles.map, Level.getWorldDir())};
+sgFiles.mapMod = function() {return new File(sgFiles.map, Level.getWorldDir() + "/mods")}
+sgFiles.mapSetting = function() {return new File(sgFiles.map, Level.getWorldDir() + "/mods/" + NAME + ".json")}
 
 
 
-var sAssets = {
+var sgColors = {
+	main: Color.parseColor("#348893"),
+	mainBr: Color.parseColor("#3cbca4"),
+	mainDk: Color.parseColor("#31878b"),
+	warning: Color.parseColor("#ffab00"),
+	critical: Color.parseColor("#ab0000")
+}
+
+
+
+var sgAssets = {
 	
 	customAssetCreator: function(pixel, width, height, scale, scaleType, left, top, right, bottom) {
 		if (!(this instanceof arguments.callee)) return new arguments.callee(pixel, width, height, scale, left, top, right, bottom);
@@ -217,7 +227,9 @@ function thread(fc) {
 
 
 /**
- * sUtils
+ * SemteulGaram Utils
+ * 
+ * sgUtils
  * ㄴ io
  *   ㄴ copyFile √
  *   ㄴ setTexture √
@@ -237,6 +249,7 @@ function thread(fc) {
  *   ㄴ dataSizeToString √
  * ㄴ math
  *   ㄴ randomId
+ *   ㄴ leftOver
  * ㄴ vector
  *   ㄴ DerectionToVector √
  *   ㄴ VectorToDirection
@@ -244,6 +257,7 @@ function thread(fc) {
  * ㄴ gui
  *   ㄴ mcText √
  *   ㄴ mcButton √
+ *   ㄴ customToast
  * ㄴ net
  *   ㄴ download √
  *   ㄴ loadScriptServerData √
@@ -260,105 +274,114 @@ function thread(fc) {
  *   ㄴ screenBrightness √
  * (√: Need test)
  */
-var sUtils =  {
+var sgUtils =  {
 	
 	toString: function() {
-		return "[Semteul Utils]";
+		return "[object sgUtils]";
 	},
 	
 	data: {}//Pointer storage
-	//sUtils.data["progress"] = value;
+	//sgUtils.data["progress"] = value;
 }
 
-sUtils.io = {
+sgUtils.io = {
 	
 	toString: function() {
-		return "[Semteul Utils - I/O]";
+		return "[object sgUtils - I/O]";
 	},
 	
 	/**
 	 * Copy file
 	 * 
-	 * @param <FIle|String|InputStream> input
-	 * @param <File|String>	output
-	 * @return <Boolean> success
+	 * @author SemteulGaram
+	 * @since 2015-11-13
+	 * 
+	 * @param {(File|String|InputStream)} input
+	 * @param {(File|String)} output
+	 * @param {boolean} mkDir
+	 * @param getMax - sgUtils.data pointer
+	 * @param getProgress - sgUtils.data pointer
+	 * @return {true} success
 	 */
-	copyFile: function(input, output, getMax, gerProgress) {
-		try {
-			if(input instanceof String) {
-				input = new FileInputStream(new File(input));
-			}else if(input instanceof File) {
-				input = new FileInputStream(input);
-			}else if(!(input instanceof InputStream)) {
-				throw new Error("Illegal argument type");
+	copyFile: function(input, output, mkDir, getMax, gerProgress) {
+		if(input instanceof String) {
+			input = new File(input);
+			if(!input.exists()) {
+				throw new Error("File not exists: " + file.getPath());
 			}
-			
-			if(output instanceof String) {
-				output = new File(output);
-			}else if(!(output instanceof File)) {
-				throw new Error("Illegal argument type");
+			input = new FileInputStream(input);
+		}else if(input instanceof File) {
+			if(!input.exists()) {
+				throw new Error("File not exists: " + file.getPath());
 			}
-			
-			if(!input.exists()) return false;
-			output.getParentFile().mkdirs();
-		
-			var bis = new BufferdInputStream(input);
-			var fos = new FileOutputStream(output)
-			var bos = new BufferdOutputStream(fos);
-			var buffer = new c.ai(Byte.TYPE, 4096);
-			if(getMax !== null && getMax !== undefined) {
-				sUtils.data[getMax] = input.available();
-			}
-			if(getProgress !== null && getProgress !== undefined) {
-				sUtils.data[gerProgress] = 0;
-			}
-			var len;
-			while((len = bis.read(buffer)) != null) {
-				bos.write(buffer, 0, len);
-			 if(getProgress !== null && getProgress !== undefined) {
-					sUtils.data[getProgress] += content;
-				}
-			}
-			input.close();
-			fos.close();
-			bis.close();
-			bos.close();
-			return true;
-		}catch(e) {
-			return false;
+			input = new FileInputStream(input);
+		}else if(!(input instanceof InputStream)) {
+			throw new Error("Illegal argument type");
 		}
+		
+		if(output instanceof String) {
+			output = new File(output);
+		}else if(!(output instanceof File)) {
+			throw new Error("Illegal argument type");
+		}
+		
+		if(mkDir) {
+			output.getParentFile().mkdirs();
+		}
+	
+		var bis = new BufferdInputStream(input);
+		var fos = new FileOutputStream(output)
+		var bos = new BufferdOutputStream(fos);
+		var buffer = new sg.ai(Byte.TYPE, 4096);
+		if(getMax !== null && getMax !== undefined) {
+			sgUtils.data[getMax] = input.available();
+		}
+		if(getProgress !== null && getProgress !== undefined) {
+			sgUtils.data[getProgress] = 0;
+		}
+		var len;
+		while((len = bis.read(buffer)) != null) {
+			bos.write(buffer, 0, len);
+		 if(getProgress !== null && getProgress !== undefined) {
+				sgUtils.data[getProgress] += content;
+			}
+		}
+		input.close();
+		fos.close();
+		bis.close();
+		bos.close();
+		return true;
 	},
 	
 	/**
-	 * Set texture
+	 * Set texture (Android)
 	 *
-	 * @author Semteul
+	 * @author SemteulGaram
 	 * @since 2015-04
 	 *
 	 * @param {File} prototypeFile
-	 * @param {String} innerPath
+	 * @param {string} innerPath - ex."images/mob/steve.png"
+	 * @return {boolean} success
 	 */
 	setTexture: function(prototypeFile, innerPath){
-		try{
-			var bl = new File(sFiles.sdCard, "Android/data/net.zhuoweizhang.mcpelauncher");
-			var blPro = new File(sFiles.sdCard, "Android/data/net.zhuoweizhang.mcpelauncher.pro");
-			var ex = false;
-			if(bl.exists()) {
-				var dir = new File(bl, "files/textures/images/" + innerPath);
-				dir.getParentFile().mkdirs(); 
-				if(this.copyFile(prototypeFile, dir)) ex = true;
-			}
-			if(blPro.exists()) {
-				var dir = new File(blPro, "files/textures/images/" + innerPath);
-				dir.getParentFile().mkdirs(); 
-				if(this.copyFile(prototypeFile, dir)) ex = true;
-			}
-			if(!ex) {
-				toastL(prototypeFile.getName() + " can't find blocklauncher dir'");
-			}
-		}catch(e){
-			toastL(prototypeFile.getName() + " is not exists");
+		var bl = new File(sgFiles.sdCard, "Android/data/net.zhuoweizhang.mcpelauncher");
+		var blPro = new File(sgFiles.sdCard, "Android/data/net.zhuoweizhang.mcpelauncher.pro");
+		var ex = false;
+		if(bl.exists()) {
+			var dir = new File(bl, "files/textures/" + innerPath);
+			dir.getParentFile().mkdirs(); 
+			try {
+				ex = this.copyFile(prototypeFile, dir, false);
+			}catch(e) {}
 		}
+		if(blPro.exists()) {
+			var dir = new File(blPro, "files/textures/" + innerPath);
+			dir.getParentFile().mkdirs(); 
+			try {
+				ex = this.copyFile(prototypeFile, dir, false);
+			}catch(e) {}
+		}
+		return ex;
 	},
 	
 	/**
@@ -367,8 +390,8 @@ sUtils.io = {
 	 * @author Semteul
 	 * @since 2015-10-25
 	 * 
-	 * @param <File|String|InputStream> file
-	 * @return <String[]> lines
+	 * @param {(File|string|InputStream)} file
+	 * @return {string[]} lines
 	 */
 	readFile: function(file) {
 		if(file instanceof String) {
@@ -400,19 +423,19 @@ sUtils.io = {
 	 * @author Semteul
 	 * @since 2015-10-25
 	 * 
-	 * @param <File|String> file
-	 * @param <String[]|string> value
-	 * @param <Boolean> create
-	 * @return <Boolean> success
+	 * @param {(File|string)} file
+	 * @param {(string[]|string)} value
+	 * @param {boolean} mkDir
+	 * @return {boolean} success
 	 */
-	writeFile: function(file, value, create) {
+	writeFile: function(file, value, mkDir) {
 		if(file instanceof String) {
 			file = new File(file);
 		}else if(!(file instanceof File)) {
 			throw new Error("Illegal argument type");
 		}
 		
-		if((!file.exists()) && create) {
+		if((!file.exists()) && mkDir) {
 			file.getParentFile().mkdirs();
 			file.createNewFile();
 		}else if(!file.exists()) {
@@ -440,13 +463,13 @@ sUtils.io = {
 	},
 	
 	/**
-	 * Save JSON
+	 * Load JSON
 	 *
-	 * @author CodeInside
+	 * @author SemteulGaram
 	 * @since 2015-09
 	 * 
-	 * @param <File|String|InputStream> file
-	 * @return <Object>
+	 * @param {(File|string|InputStream)} file
+	 * @return {Object} value
 	 */
 	loadJSON: function(file) {
 		var obj = this.readFile(file);
@@ -457,33 +480,31 @@ sUtils.io = {
 	/**
 	 * Save JSON
 	 *
-	 * @author CodeInside
+	 * @author SemteulGaram
 	 * @since 2015-09
 	 * 
-	 * @param <File|String|InputStream> file
-	 * @param <Object> obj
-	 * @return <Boolean> success
+	 * @param {(File|string|InputStream)} file
+	 * @param {Object} obj
+	 * @return {boolean} success
 	 */
 	saveJSON: function(file, obj) {
 		return this.writeFile(file, JSON.stringify(obj));
 	},
 
-
-
 	/**
 	 * Load Article
 	 *
-	 * @author Semteul
+	 * @author SemteulGaram
 	 * @since 2015-02
 	 *
-	 * @param <File|String|InputStream> file
-	 * @param <String> article
-	 * @return <String> value
+	 * @param {(File|string|InputStream)} file
+	 * @param {string} article
+	 * @return {string} value
 	 */
 	loadArticle: function(file, article) {
 		var values = this.readFile(file);
 		if(!(values instanceof Array)) {
-			throw new Error("Values isn't instance of Array");
+			throw new Error("[sgUtils - I/O - readFile]'s return value isn't instance of Array");
 		}
 		for(var e = 0; e < values.length; e++) {
 			var value = values[e].split("|");
@@ -497,18 +518,18 @@ sUtils.io = {
 	/**
 	 * Save Article
 	 *
-	 * @author Semteul
+	 * @author SemteulGaram
 	 * @since 2015-02
 	 *
-	 * @param <File|String|InputStream> file
-	 * @param <String> article
-	 * @param <String> value
-	 * @return <Boolean> success
+	 * @param {File|string|InputStream} file
+	 * @param {string} article
+	 * @param {string} value
+	 * @return {boolean} success
 	 */
 	saveArticle: function(file, article, value) {
 		var values = this.readFile(file);
 		if(!(values instanceof Array)) {
-			throw new Error("Values isn't instance of Array");
+			throw new Error("[sgUtils - I/O - readFile]'s return value isn't instance of Array");
 		}
 		var index = -1;
 		for(var e = 0; e < values.length; e++) {
@@ -524,104 +545,110 @@ sUtils.io = {
 		}
 		return this.writeFile(file, values);
 	},
-
-
-/**
- * load/save Minecraft Setting
- *
- * @since 2015-04
- * @author CodeInside
- */
-
-/*
-function saveSetting(article, value) {
-	var fileInputStream = new java.io.FileInputStream(new java.io.File(android.os.Environment.getExternalStorageDirectory() + "/games/com.mojang/minecraftpe/options.txt"));
-	var inputStreamReader = new java.io.InputStreamReader(fileInputStream);
-	var bufferedReader = new java.io.BufferedReader(inputStreamReader);
-	var tempRead, tempReadString;
-	var tempSaved = "";
-	while((tempRead = bufferedReader.readLine()) != null){
-		tempReadString = tempRead.toString();
-		if(tempReadString.split(":")[0] == article)
-			continue;
-		tempSaved += tempReadString + "\n";
-	}
-	fileInputStream.close();
-	inputStreamReader.close();
-	bufferedReader.close();
-	var fileOutputStream = new java.io.FileOutputStream(new java.io.File(android.os.Environment.getExternalStorageDirectory() + "/games/com.mojang/minecraftpe/options.txt"));
-	var outputStreamWriter = new java.io.OutputStreamWriter(fileOutputStream);
-	outputStreamWriter.write(tempSaved + article + ":" + value);
-	outputStreamWriter.close();
-	fileOutputStream.close();
-	//this is not work
-	net.zhuoweizhang.mcpelauncher.ScriptManager.requestGraphicsReset();
-}
-
-function loadSetting(article) {
-	var fileInputStream = new java.io.FileInputStream(new java.io.File(android.os.Environment.getExternalStorageDirectory() + "/games/com.mojang/minecraftpe/options.txt"));
-	var inputStreamReader = new java.io.InputStreamReader(fileInputStream);
-	var bufferedReader = new java.io.BufferedReader(inputStreamReader);
-	var tempRead, tempReadString;
-
-	while((tempRead = bufferedReader.readLine()) != null){
-		tempReadString = tempRead.toString();
-		if(tempReadString.split(":")[0] == article){
-			fileInputStream.close();
-			inputStreamReader.close();
-			bufferedReader.close();
-			return tempReadString.split(":")[1];
+	
+	/**
+	 * load Minecraft Setting
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-11-13
+	 *
+	 * @param {string} article
+	 * @return {string} value
+	 */
+	loadMcpeSetting: function(article) {
+		article += "";
+		var file = new File(sgFiles.mcpe, "minecraftpe/options.txt");
+		if(!file.exists()) {
+			throw new Error("MCPE setting file isn't exists");
 		}
+		var values = this.readFile(file);
+		var value = [];
+		for(var e = 0; e < values.length; e++) {
+			value = values[e].split(":");
+			if(value[0] === article) {
+				return value[1];
+			}
+		}
+		return null;
+	},
+
+	/**
+	 * Save Minecraft Setting
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-11-13
+	 *
+	 * @param {string} article
+	 * @param {string} value
+	 * @return {true} success
+	 */
+	saveMcpeSetting: function(article, value) {
+		article += "";
+		value += "";
+		var file = new File(sgFiles.mcpe, "minecraftpe/options.txt");
+		if(!file.exists()) {
+			throw new Error("MCPE setting file isn't exists");
+		}
+		var values = this.readFile(file);
+		var value = [];
+		var index = -1;
+		for(e = 0; e < values.length; e++) {
+			value = values[e].split(":");
+			if(value[0] === article) {
+				index = e;
+				break;
+			}
+		}
+		if(index === -1) {
+			values.push(article + ":" + value);
+		}else {
+			values[index] = article + ":" + value;
+		}
+		this.writeFile(file, values, false);
+		try {
+			sg.sm.requestGraphicsReset();
+		}catch(e) {};
+		return true;
 	}
-	fileInputStream.close();
-	inputStreamReader.close();
-	bufferedReader.close();
-	return null;
-}
-*/
 }
 	
 	
 	
-sUtils.convert = {
+sgUtils.convert = {
 	
 	toString: function() {
-		return "[Semteul Utils - Convert]";
+		return "[object sgUtils - Convert]";
 	},
 	
 	/**
 	 * Split line
 	 * 
-	 * @author Semteul
+	 * @author SemteulGaram
 	 * @since 2015-10-24
 	 * 
-	 * @param <String> content
-	 * @return <String>
+	 * @param {string} cutter
+	 * @param {string} content
+	 * @return {string}
 	 */
-	splitLine: function(content){
-		var lines = content.split("|"); 
-		var str = "";
-		for(var e = 0; e < lines.length; e++){
-			str += lines[e]+"\n";
-		}
-		return str;
+	splitLine: function(cutter, content){
+		return content.split(cutter).join(String.fromCharCode(10));
 	},
 	
 	/**
 	 * Marge Array
 	 *
-	 * @author Semteul
+	 * @author SemteulGaram
 	 * @since 2015-06
 	 *
-	 * @param (Array) arr1
-	 * @param (Array) arr2
-	 * @param (Int) margeType <0: Horizontal, 1: Vertical>
-	 * @param (Int) width1
-	 * @param (Int) height1
-	 * @param (Int) width2
-	 * @param (Int) height2
-	 * @param (...) fillBlank
-	 * @return (Array) 
+	 * @param {*[]} arr1
+	 * @param {*[]} arr2
+	 * @param {int} margeType - 0: Horizontal, 1: Vertical
+	 * @param {int} width1
+	 * @param {int} height1
+	 * @param {int} width2
+	 * @param {int} height2
+	 * @param {*} fillBlank - null: extend array
+	 * @return {*[]} margedArray 
 	 */
 	margeArray: function(arr1, arr2, margeType, width1, height1, width2, height2, fillBlank) {
 		var arr = [];
@@ -694,14 +721,14 @@ sUtils.convert = {
 	/**
 	 * View Side
 	 *
-	 * @author Semteul
+	 * @author SemteulGaram
 	 * @since 2015-04
 	 * 
-	 * @param <Float> yaw
-	 * @return <String>
+	 * @param {float} yaw
+	 * @return {string} direction
 	 */
 	viewSide: function(yaw) {
-		var temp = yaw % 360;
+		var temp = sgUtils.math.leftOver(yaw, 0, 360);
 		if((temp >= 0 && temp < 11.25) || (temp >= 348.75 && temp < 360))
 			return "북(Z+)";
 		else if(temp >= 11.25 && temp < 33.75)
@@ -741,11 +768,14 @@ sUtils.convert = {
 	/**
 	 * NumberToString
 	 *
-	 * @author Senteul
+	 * @author SenteulGaram
 	 * @since 2015-09
+	 * 
+	 * @param number
+	 * @return {string}
 	 */
 	numberToString: function(number) {
-		number = number + "";
+		number += "";
 		try{
 			var t = number.split(".");
 			var r1 = t[0].split("");
@@ -774,8 +804,11 @@ sUtils.convert = {
 	/**
 	 * DataSizeToString
 	 *
-	 * @author Semteul
+	 * @author SemteulGaram
 	 * @since 2015-09
+	 * 
+	 * @param size
+	 * @return {string}
 	 */
  dataSizeToString: function(size) {
 		if(size < 1000) {
@@ -796,65 +829,65 @@ sUtils.convert = {
 	
 	
 	
-sUtils.math = {
+sgUtils.math = {
 	
 	toString: function() {
-		return "[Semteul Utils - Math]";
+		return "[object sgUtils - Math]";
 	},
 	
 	/**
 	 * Random Id
 	 *
-	 * @author Semteul
+	 * @author SemteulGaram
 	 * @since 2015-10-27
 	 *
-	 * @param <undefined|Int> _repeat (Do not touch)
-	 * @return <Int> randomId
+	 * @param {(undefined|...int)} _repeat - don't touch
+	 * @return {int} randomId
 	 */
 	randomId: function(_repeat) {
 		if(_repeat === undefined) {
 			_repeat = 0;
 		}
 		var num = parseInt(Math.floor(Math.random() * 0xffffff));
-		if(sUtils.data._randomId === undefined) {
-			sUtils.data._randomId = [];
+		if(sgUtils.data._randomId === undefined) {
+			sgUtils.data._randomId = [];
 		}
-		if(sUtils.data._randomId.indexOf(num) !== -1) {
+		if(sgUtils.data._randomId.indexOf(num) !== -1) {
 			if(_repeat > 10) {
 				throw new Error("Can't make a randomId: " + num);
 			}
 			return this.randomId(++_repeat);
 		}
-		sUtils.data._randomId.push(num);
+		sgUtils.data._randomId.push(num);
 		return num;
 	},
 	
-		/**
+	/**
 	 * Left Over
 	 *
-	 * @author Semteul
+	 * @author SemteulGaram
 	 * @since 2015-10-31
 	 *
-	 * @param <Number> value
-	 * @param <Number> min
-	 * @param <Number> max
-	 * @return <Number>
+	 * @param value
+	 * @param min
+	 * @param max
+	 * @return number
 	 */
 	leftOver: function(value, min, max) {
-		var range = (max + 1) - min;
-		if(range < 1) throw new Error("'(max + 1) - min' must over then 1");
+		var range = max - min;
+		if(range < 1) throw new Error("'max - min' must over then 1");
 		while(value < min) value += range;
-		while(value > max) value -= range;
+		while(value >= max) value -= range;
 		return value;
 	}
 }
 	
 	
 	
-sUtils.vector = {
+sgUtils.vector = {
 	
 	toString: function() {
-		return "[Semteul Utils - Vector]";
+		return "[object sgUtils - Vector]";
 	},
 	
 	/**
@@ -863,6 +896,11 @@ sUtils.vector = {
 	 * @author ToonRaOn(툰라온)
 	 * @since 2015-01
 	 * @from NaverCafe :::MCPE KOREA:::
+	 *
+	 * @param {double} x
+	 * @param {double} y
+	 * @param {double} z
+	 * @return {float[]} direction - [yaw, pitch]
 	 */
 	vectorToDirection: function(x, y, z) {
 		var lenH = Math.sqrt(Math.pow(x, 2)+Math.pow(z, 2));
@@ -894,12 +932,12 @@ sUtils.vector = {
 	/**
 	 * Direction(yaw, pitch) to Absolute range Vector(x, y, z)
 	 *
-	 * @author Semteul
+	 * @author SemteulGaram
 	 * @since 2015-01
 	 * 
-	 * @param <Float> yaw
-	 * @param <Float> pitch
-	 * @return <Double[3]> Vector3
+	 * @param {float} yaw
+	 * @param {float} pitch
+	 * @return {double[]} vector3 - [x, y, z]
 	 */
 	directionToVector: function(yaw, pitch) {
 		var x = -1*Math.sin(yaw/180*Math.PI)*Math.cos(pitch/180*Math.PI);
@@ -911,13 +949,13 @@ sUtils.vector = {
 	/**
 	 * Absolute range x, y, z
 	 *
-	 * @author Semteul
+	 * @author SemteulGaram
 	 * @since 2015-01
 	 * 
-	 * @param <Double> x
-	 * @param <Double> y
-	 * @param <Double> z
-	 * @return <Double[3]> Vector3
+	 * @param {double} x
+	 * @param {double} y
+	 * @param {double} z
+	 * @return {double[]} vector3 - [x, y, z]
 	 */
 	absoluteRange: function(x, y, z) {
 		var rx = x/Math.sqrt(Math.pow(x, 2)+Math.pow(y, 2)+Math.pow(z, 2));
@@ -929,36 +967,36 @@ sUtils.vector = {
 	
 	
 	
-sUtils.gui = {
+sgUtils.gui = {
 	
 	toString: function() {
-		return "[Semteul Utils - GUI]";
+		return "[object sgUtils - GUI]";
 	},
 	
 	/**
-	 * mcText
+	 * mcFastText
 	 * 마인크래프트 스타일의 텍스트뷰를 생성합니다
 	 * 
-	 * @author Semteul
+	 * @author SemteulGaram
 	 * @since 2015-10-24
 	 *
-	 * @param {String} str
-	 * @param {Int|Float|null} size
-	 * @param {Boolean|null} hasShadow
+	 * @param {string|null} str
+	 * @param {number|null} size
+	 * @param {boolean|null} hasShadow
 	 * @param {Color|null} color
 	 * @param {Color|null} shadowColor
-	 * @param {Int|Float|null} width
-	 * @param {Int|Float|null} height
+	 * @param {number|null} width
+	 * @param {number|null} height
 	 * @param {Array|null} padding
 	 * @param {Array|null} margins
 	 * @return {TextView}
 	 */
-	mcText: function(str, size, hasShadow, color, shadowColor, width, height, padding, margins) {
+	mcFastText: function(str, size, hasShadow, color, shadowColor, width, height, padding, margins) {
 		var tv = new TextView(ctx);
 		tv.setTransformationMethod(null);
-		tv.setLayerType(android.view.View.LAYER_TYPE_SOFTWARE, null);
-		if(sFiles.font.exists()) {
-			tv.setTypeface(android.graphics.Typeface.createFromFile(sFiles.font));
+		tv.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+		if(sgFiles.font.exists()) {
+			tv.setTypeface(android.graphics.Typeface.createFromFile(sgFiles.font));
 		};
 		if(str !== null && str !== undefined) {
 			tv.setText((str + ""));
@@ -966,16 +1004,16 @@ sUtils.gui = {
 		if(size !== null && size !== undefined) {
 			tv.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, size);
 		}else {
-			tv.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, c.px*0x10);
+			tv.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, sg.px*0x10);
 		}
 		if(color !== null && color !== undefined) {
 			tv.setTextColor(color);
 		}
 		if(hasShadow) {
 			if(shadowColor !== null && shadowColor !== undefined) {
-				tv.setShadowLayer(1/0xffffffff, c.px*1.3, c.px*1.3, shadowColor);
+				tv.setShadowLayer(1/0xffffffff, sg.px*1.3, sg.px*1.3, shadowColor);
 			}else {
-				tv.setShadowLayer(1/0xffffffff, c.px*1.3, c.px*1.3, Color.DKGRAY);
+				tv.setShadowLayer(1/0xffffffff, sg.px*1.3, sg.px*1.3, Color.DKGRAY);
 			}
 		}
 		if(padding !== null && padding !== undefined) {
@@ -983,9 +1021,9 @@ sUtils.gui = {
 		}
 		var tv_p;
 		if(width !== null && height !== null && width !== undefined && height !== undefined) {
-			tv_p = new c.ll.LayoutParams(width, height);
+			tv_p = new sg.ll.LayoutParams(width, height);
 		}else {
-			tv_p = new c.ll.LayoutParams(c.wc, c.wc);
+			tv_p = new sg.ll.LayoutParams(sg.wc, sg.wc);
 		}
 		if(margins !== null && margins !== undefined) {
 			tv_p.setMargins(margins[0], margins[1], margins[2], margins[3]);
@@ -995,32 +1033,32 @@ sUtils.gui = {
 	},
 	
 	/**
-	 * mcButton
+	 * mcFastButton
 	 * 마인크래프트 스타일의 버튼을 생성합니다
 	 * 
-	 * @author Semteul
+	 * @author SemteulGaram
 	 * @since 2015-10-24
 	 *
-	 * @param {String} str
-	 * @param {Int|Float|null} size
-	 * @param {Boolean|null} hasShadow
+	 * @param {string} str
+	 * @param {number|null} size
+	 * @param {boolean|null} hasShadow
 	 * @param {Color|null} color
 	 * @param {Color|null} shadowColor
-	 * @param {Int|Float|null} width
-	 * @param {Int|Float|null} height
+	 * @param {number|null} width
+	 * @param {number|null} height
 	 * @param {Array|null} padding
 	 * @param {Array|null} margins
 	 * @param {Drawable|null} background
-	 * @param {function(view, event){return Boolean}|null} onTouchFunction
-	 * @param {function(view, event)|null} onClickFunction
-	 * @param {function(view, event){return Boolean}|null} onLongClickFunction
+	 * @param {function|null} onTouchFunction - ex.function(view, event){return Boolean}
+	 * @param {function|null} onClickFunction - function(view, event)
+	 * @param {function|null} onLongClickFunction - function(view, event){return Boolean}
 	 * @return {Button}
 	 */
-	mcButton: function(str, size, hasShadow, color, shadowColor, width, height, padding, margins, background, onTouchFunction, onClickFunction, onLongClickFunction) {
+	mcFastButton: function(str, size, hasShadow, color, shadowColor, width, height, padding, margins, background, onTouchFunction, onClickFunction, onLongClickFunction) {
 		var btn = new Button(ctx);
 		btn.setTransformationMethod(null);	btn.setLayerType(android.view.View.LAYER_TYPE_SOFTWARE, null);
-		if(sFiles.font.exists()) {
-			btn.setTypeface(android.graphics.Typeface.createFromFile(sFiles.font));
+		if(sgFiles.font.exists()) {
+			btn.setTypeface(android.graphics.Typeface.createFromFile(sgFiles.font));
 		};
 		if(str !== null && str !== undefined) {
 			btn.setText((str + ""));
@@ -1028,16 +1066,16 @@ sUtils.gui = {
 		if(size !== null && size !== undefined) {
 			btn.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, size);
 		}else {
-			btn.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, c.px*0x10);
+			btn.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, sg.px*0x10);
 		}
 		if(color !== null && color !== undefined) {
 			btn.setTextColor(color);
 		}
 		if(hasShadow) {
 			if(shadowColor !== null && shadowColor !== undefined) {
-				btn.setShadowLayer(1/0xffffffff, c.px*1.3, c.px*1.3, shadowColor);
+				btn.setShadowLayer(1/0xffffffff, sg.px*1.3, sg.px*1.3, shadowColor);
 			}else {
-					btn.setShadowLayer(1/0xffffffff, c.px*1.3, c.px*1.3, Color.DKGRAY);
+					btn.setShadowLayer(1/0xffffffff, sg.px*1.3, sg.px*1.3, Color.DKGRAY);
 			}
 		}
 		if(padding !== null && padding !== undefined) {
@@ -1045,9 +1083,9 @@ sUtils.gui = {
 		}
 		var btn_p;
 		if(width !== null && height !== null && width !== undefined && height !== undefined) {
-			btn_p = new c.ll.LayoutParams(width, height);
+			btn_p = new sg.ll.LayoutParams(width, height);
 		}else {
-			btn_p = new c.ll.LayoutParams(c.wc, c.wc);
+			btn_p = new sg.ll.LayoutParams(sg.wc, sg.wc);
 		}
 		if(margins !== null && margins !== undefined) {
 			btn_p.setMargins(margins[0], margins[1], margins[2], margins[3]);
@@ -1082,28 +1120,102 @@ sUtils.gui = {
 			}}}));
 		}
 		return btn;
+	},
+	
+	/**
+	 * Custom Toast
+	 * 
+	 * @author SemteulGaram
+	 * @since 2015-11-13
+	 * 
+	 * @param {string} text
+	 * @param {(Drawable|null)} drawable
+	 * @param {(long|null)} duration
+	 * @param {(boolean|null)} isImportant
+	 * @param {(number|null)} size
+	 = @param {(Color|null)} textColor
+	 */
+	customToast: function(text, drawable, duration, isImportent, size, textColor) {
+		if(sgUtils.data._toast === undefined) {
+			sgUtils.data._toast = [];
+		}
+		if(!duration) {
+			duration = 3000;
+		}
+		var tv = sgUtils.gui.mcFastText(text, size, false, textColor, null, null, null, [sg.px*8, sg.px*8, sg.px*8, sg.px*8]);
+		if(drawable !== null && drawable !== undefined) {
+			tv.setBackgroundDrawable(drawable);
+		}
+		var wd = new PopupWindow(tv, sg.wc, sg.wc, false);
+		if(sgUtils.data._toast.length > 0 && !sgUtils.data._toast[0][2]) {
+			var owd = sgUtils.data._toast[0][0];
+			sgUtils.data._toast = [];
+			uiThread(function() {try {
+				if(owd.isShowing()) {
+					owd.dismiss();
+				}
+			}catch(err) {}});
+		}else {
+			for(var e = 0; e < sgUtils.data._toast.length; e++) {
+				if(!sgUtils.data._toast[e][2]) {
+					sgUtils.data._toast.splice(e--, 1);
+				}
+			}
+		}
+		sgUtils.data._toast.push([wd, duration, isImportent, sgUtils.math.randomId()]);
+		if(sgUtils.data._toast.length === 1) {
+			this._customToastActivity();
+		}
+	},
+	
+	_customToastActivity: function() {
+		var that = this;
+		if(sgUtils.data._toast.length === 0) {
+			return;
+		}
+		uiThread(function() {try {
+			var cwd = sgUtils.data._toast[0][0];
+			var cid = sgUtils.data._toast[0][3];
+			cwd.showAtLocation(sg.dv, Gravity.CENTER|Gravity.BOTTOM, 0, sg.px*80);
+			new Handler().postDelayed(new Runnable({run: function() {try {
+				if(sgUtils.data._toast.length === 0) {
+					return;
+				}
+				if(cid === sgUtils.data._toast[0][3]) {
+					sgUtils.data._toast.splice(0, 1);
+				}
+				if(cwd.isShowing()) {
+					cwd.dismiss();
+				}
+				that._customToastActivity();
+			}catch(err) {
+				showError(err);
+			}}}), sgUtils.data._toast[0][1]);
+		}catch(err) {
+			showError(err);
+		}});
 	}
 }
 	
 	
 	
-sUtils.net = {
+sgUtils.net = {
 	
 	toString: function() {
-		return "[Semteul Utils - Net]";
+		return "[sgUtils - Net]";
 	},
 	
 	/**
 	 * Download file
 	 *
-	 * @author Semteul
+	 * @author SemteulGaram
 	 * @since 2015-01
 	 * 
-	 * @param <File> path
-	 * @param <String> url
-	 * @param <sUtils.data pointer|null> getMax
-	 * @param <sUtils.data pointer|null> getProgress
-	 * @return <Boolean> success
+	 * @param {File} path
+	 * @param {string} url
+	 * @param getMax - sgUtils.data pointer
+	 * @param getProgress - sgUtils.data pointer
+	 * @return {boolean} success
 	 */
 	download: function(path, url, getMax, getProgress) {
 		try{
@@ -1112,16 +1224,16 @@ sUtils.net = {
 			urlConnect.connect();
 			var bis = new BufferedInputStream(url.openStream());
 			if(getMax !== null || getMax !== undefined) {
-				sUtils.data[getMax] = urlConnect.getContentLength();
+				sgUtils.data[getMax] = urlConnect.getContentLength();
 			}
 			var fos = new FileOutputStream(path);
-			var buffer = c.ai(Byte.TYPE, 1024);
+			var buffer = sg.ai(Byte.TYPE, 1024);
 			var count = 0, content;
 			while ((content = bis.read(buffer)) != -1) {
 				fos.write(buffer, 0, content);
 				count += parseInt(content);
 				if(getProgress !== null || getProgress !== undefined) {
-					sUtils.data[getProgress] = count;
+					sgUtils.data[getProgress] = count;
 				}
 			}
 			fos.flush();
@@ -1136,28 +1248,28 @@ sUtils.net = {
 	/**
 	 * Script server data
 	 *
-	 * @author Semteul
+	 * @author SemteulGaram
 	 * @since 2015-01
 	 * 
 	 * =>loadScriptServerData
-	 * @param <String> url
-	 * @param <sUtils.data pointer|null> pointer
-	 * @return <Boolean> success
+	 * @param {string} url
+	 * @param savePointer - sgUtils.data pointer
+	 * @return {boolean} success
 	 * 
 	 * =>ReadContent
-	 * @param <sUtils.data pointer|null> pointer
-	 * @param <String> article
-	 * @return <String|null>
+	 * @param savePointer - sgUtils.data pointer
+	 * @param {string} article
+	 * @return {string|null}
 	 */
-	loadScriptServerData: function(updateServerUrl, pointer) {
+	loadScriptServerData: function(updateServerUrl, savePointer) {
 		try{
 			var url = new URL(updateServerUrl);
 			var netStream = url.openStream();
 			var br = new BufferedReader(new InputStreamReader(netStream));
-			sUtils.data[pointer] = [];
+			sgUtils.data[pointer] = [];
 			var content;
 			while ((content = br.readLine()) != null) {
-				sUtil.data[pointer].push(content);
+				sUtil.data[savePointer].push(content);
 			}
 			br.close();
 			return true;
@@ -1166,12 +1278,12 @@ sUtils.net = {
 		}
 	},
 
-	readContent: function(pointer, article){
-		var data = sUtils.data[pointer];
+	readContent: function(savePointer, article){
+		var data = sgUtils.data[savePointer];
 		var content;
 		for(var e = 0; e < data.length; e++){
 			if(data[e].split(":")[0] == article) {
-				return data[e].subString(data[e].strPos(":"), data[e].length);
+				return data[e].subString(data[e].strPos(":")+1, data[e].length);
 			}
 		}
 		return null;
@@ -1180,15 +1292,14 @@ sUtils.net = {
 
 
 
-sUtils.modPE = {
+sgUtils.modPE = {
 	
 	toString: function() {
-		return "[Semteul Utils - ModPE]";
+		return "[object sgUtils - ModPE]";
 	},
 	
 	broadcast: function(str){
-		c.sm.nativeSendChat(str);
-		//clientMessage("<" + Player.getName(Player.getEntity()) + "> " + str);
+		sg.sm.nativeSendChat(str);
 	},
 	
 	entityExtra: {
@@ -1206,7 +1317,7 @@ sUtils.modPE = {
 		},
 		
 		findEnt: function(uniqId) {
-			var list = sUtils.modPE.entityExtra.getAll();
+			var list = sgUtils.modPE.entityExtra.getAll();
 			for(var e = 0; e < list.length; e++) {
 				if(uniqId === Entity.getUniqueId(list[e])) {
 					return list[e];
@@ -1221,7 +1332,7 @@ sUtils.modPE = {
 		}},
 		
 		getNearEntitys: function(x, y, z) {
-			var a = sUtils.modPE.entityExtra.getAll();
+			var a = sgUtils.modPE.entityExtra.getAll();
 			var r = [];
 			var n = [];
 			for(var e = 0; e < a.length; e++) {
@@ -1238,7 +1349,7 @@ sUtils.modPE = {
 	
 	playerExtra: {
 		getOnlinePlayers: function() {
-			var entitys = sUtils.modPE.entityExtra.getAll();
+			var entitys = sgUtils.modPE.entityExtra.getAll();
 			var list = [];
 			for(var e = 0; e < entitys.length; e++) {
 				if(Player.isPlayer(entitys[e])) {
@@ -1249,9 +1360,9 @@ sUtils.modPE = {
 		},
 		
 		isOnline: function(player) {
-			var list = sUtils.modPE.entityExtra.getAll();
+			var list = sgUtils.modPE.entityExtra.getAll();
 			for(var e = 0; e < list.length; e++) {
-				if(Player.isPlayer(list[e]) && sUtils.modPE.entityExtra.isEqual(list[e], player)) {
+				if(Player.isPlayer(list[e]) && sgUtils.modPE.entityExtra.isEqual(list[e], player)) {
 					return true;
 				}
 			}
@@ -1259,7 +1370,7 @@ sUtils.modPE = {
 		},
 		
 		getNearPlayers: function(x, y, z) {
-			var a = sUtils.modPE.entityExtra.getAll();
+			var a = sgUtils.modPE.entityExtra.getAll();
 			var f = [];
 			var r = [];
 			var n = [];
@@ -1282,10 +1393,10 @@ sUtils.modPE = {
 
 
 
-sUtils.android = {
+sgUtils.android = {
 	
 	toString: function() {
-		return "[Semteul Utils - Android]";
+		return "[object sgUtils - Android]";
 	},
 	
 	/**
@@ -1411,9 +1522,9 @@ sUtils.android = {
 		//int[]
 		this.formattedVizData;
 		//byte[]
-		this.rawNullData = new c.ai(Byte.TYPE, 0);
+		this.rawNullData = new sg.ai(Byte.TYPE, 0);
 		//int[]
-		this.formattedNullData = new c.ai(Int.type, 0);
+		this.formattedNullData = new sg.ai(Int.type, 0);
 		//Visualizer
 		this.visualizer;
 		//int
@@ -1432,7 +1543,7 @@ sUtils.android = {
 			if (size > VL.range[1]) {
 				size = VL.range[1];
 			}
-			that.rawVizData = c.ai(Byte.TYPE, size);
+			that.rawVizData = sg.ai(Byte.TYPE, size);
 			that.formattedVizData = new Array(size);
 			that.visualizer = null;
 			try {
@@ -1611,14 +1722,14 @@ sUtils.android = {
 		controler.setVolume(v[0]*vol, v[1]*vol);
 		controler.prepare();
 		controler.start();
-		if(sUtils.data._bgs === null) {
-			sUtils.data._bgs = [];
+		if(sgUtils.data._bgs === null) {
+			sgUtils.data._bgs = [];
 		}
-		sUtils.data._bgs.push({x: x, y: y, z: z, ent: ent, ct: controler, file: file, session: controler.getAudioSessionId(), vol: vol, range: range, airResistance: airResistance, loop: loop, stopFunc: stopFunc});
-		if(sUtils.data._bgsThread === undefined || !sUtils.data._bgsThread.isAlive()) {
-			sUtils.data._bgsThread = new thread(function() {try {
+		sgUtils.data._bgs.push({x: x, y: y, z: z, ent: ent, ct: controler, file: file, session: controler.getAudioSessionId(), vol: vol, range: range, airResistance: airResistance, loop: loop, stopFunc: stopFunc});
+		if(sgUtils.data._bgsThread === undefined || !sgUtils.data._bgsThread.isAlive()) {
+			sgUtils.data._bgsThread = new thread(function() {try {
 				while(true) {
-					sUtils.android._bgsManager();
+					sgUtils.android._bgsManager();
 					sleep(50);
 				}
 			}catch(e) {
@@ -1631,28 +1742,28 @@ sUtils.android = {
 	
 	//Private method
 	_bgsManager: function() {try {
-		for(var e = 0; e < sUtils.data._bgs.length; e++) {
-			if(!sUtils.data._bgs[e].ct.isPlaying()) {
-				sUtils.data._bgs[e].ct.release();
-				sUtils.data._bgs.splice(e, 1);
+		for(var e = 0; e < sgUtils.data._bgs.length; e++) {
+			if(!sgUtils.data._bgs[e].ct.isPlaying()) {
+				sgUtils.data._bgs[e].ct.release();
+				sgUtils.data._bgs.splice(e, 1);
 				continue;
 			}
-			if(sUtils.data._bgs[e].stopFunc !== null && sUtils.data._bgs[e].stopFunc(e)) {
-				sUtils.data._bgs[e].ct.stop();
-				sUtils.data._bgs[e].ct.release();
-				sUtils.data._bgs.splice(e, 1);
+			if(sgUtils.data._bgs[e].stopFunc !== null && sgUtils.data._bgs[e].stopFunc(e)) {
+				sgUtils.data._bgs[e].ct.stop();
+				sgUtils.data._bgs[e].ct.release();
+				sgUtils.data._bgs.splice(e, 1);
 				continue;
 			}
-			if(sUtils.data._bgs[e].ent !== null && Entity.getHealth(sUtils.data._bgs[e].ent) <= 0) {
-				sUtils.data._bgs[e].ent = null;
+			if(sgUtils.data._bgs[e].ent !== null && Entity.getHealth(sgUtils.data._bgs[e].ent) <= 0) {
+				sgUtils.data._bgs[e].ent = null;
 			}
-			if(sUtils.data._bgs[e].ent !== null) {
-				sUtils.data._bgs[e].x = Entity.getX(sUtils.data._bgs[e].ent);
-				sUtils.data._bgs[e].y = Entity.getY(sUtils.data._bgs[e].ent);
-				sUtils.data._bgs[e].z = Entity.getZ(sUtils.data._bgs[e].ent);
+			if(sgUtils.data._bgs[e].ent !== null) {
+				sgUtils.data._bgs[e].x = Entity.getX(sgUtils.data._bgs[e].ent);
+				sgUtils.data._bgs[e].y = Entity.getY(sgUtils.data._bgs[e].ent);
+				sgUtils.data._bgs[e].z = Entity.getZ(sgUtils.data._bgs[e].ent);
 			}
-			var v = sUtils.android._bgsMeasure(sUtils.data._bgs[e].x, sUtils.data._bgs[e].y, sUtils.data._bgs[e].z, sUtils.data._bgs[e].range, sUtils.data._bgs[e].airResistance);
-			sUtils.data._bgs[e].ct.setVolume(v[0]*sUtils.data._bgs[e].vol, v[1]*sUtils.data._bgs[e].vol);
+			var v = sgUtils.android._bgsMeasure(sgUtils.data._bgs[e].x, sgUtils.data._bgs[e].y, sgUtils.data._bgs[e].z, sgUtils.data._bgs[e].range, sgUtils.data._bgs[e].airResistance);
+			sgUtils.data._bgs[e].ct.setVolume(v[0]*sgUtils.data._bgs[e].vol, v[1]*sgUtils.data._bgs[e].vol);
 		}
 	}catch(e) {
 		showError(e);
@@ -1698,13 +1809,13 @@ sUtils.android = {
 	_bgsMeasure: function(x, y, z, range, airResistance) {
 		var distance = Math.sqrt(Math.pow(Player.getY() - y, 2) + Math.pow(Player.getX() - x, 2) + Math.pow(Player.getZ() - z, 2));
 		if(distance < range) {
-			return [sUtils.android._stereoL(x, y, z, 3 * (range/distance)), sUtils.android.stereoR(x, y, z, 3 * (range/distance))];
+			return [sgUtils.android._stereoL(x, y, z, 3 * (range/distance)), sgUtils.android.stereoR(x, y, z, 3 * (range/distance))];
 		}else {
 			if(Math.sqrt(distance - range) * airResistance > 1.2) {
 				return [0, 0];
 			}
-			var l = sUtils.android._stereoL(x, y, z, 3) - (Math.sqrt(distance - range) * airResistance);
-			var r = sUtils.android._stereoR(x, y, z, 3) - (Math.sqrt(distance - range) * airResistance);
+			var l = sgUtils.android._stereoL(x, y, z, 3) - (Math.sqrt(distance - range) * airResistance);
+			var r = sgUtils.android._stereoR(x, y, z, 3) - (Math.sqrt(distance - range) * airResistance);
 			if(l < 0) {
 				l = 0;
 			}
@@ -1726,47 +1837,47 @@ sUtils.android = {
 	 * (-1: unlimited)
 	 */
 	vibrator: function(pattern, repeat) {
-		if(sUtils.data._vib === undefined) {
-			sUtils.data._vib = ctx.getSystemService(Context.VIBRATOR_SERVICE);
+		if(sgUtils.data._vib === undefined) {
+			sgUtils.data._vib = ctx.getSystemService(Context.VIBRATOR_SERVICE);
 		}
-		sUtils.data._vib.cancel();
+		sgUtils.data._vib.cancel();
 		if(repeat === undefined) {
 			repeat = 1;
 		}
 		if(pattern === null || pattern === undefined) {
-			sUtils.data._vibThread = null;
-			sUtils.data._vibThreadId = null;
+			sgUtils.data._vibThread = null;
+			sgUtils.data._vibThreadId = null;
 			return;
 		}else if(typeof pattern === "number") {
 			if(repeat === -1) {
-				var id = sUtils.math.randomId();
-				sUtils.data._vibThreadId = id;
-				sUtils.data._vibThread = thread(function() {try {
+				var id = sgUtils.math.randomId();
+				sgUtils.data._vibThreadId = id;
+				sgUtils.data._vibThread = thread(function() {try {
 					while(true) {
-						if(sUtils.data._vibThreadId !== id) {
+						if(sgUtils.data._vibThreadId !== id) {
 							return;
 						}
-						sUtils.data._vib.vibrate(0xffff);
+						sgUtils.data._vib.vibrate(0xffff);
 						sleep(0xffff);
 					}
 				}catch(e) {
 					showError(e);
 				}});
-				sUtils.data._vibThread.start();
+				sgUtils.data._vibThread.start();
 			}else {
-				sUtils.data._vib.vibrate(pattern*repeat);
+				sgUtils.data._vib.vibrate(pattern*repeat);
 			}
 		}else if(pattern instanceof Array) {
-			var id = sUtils.math.randomId();
-			sUtils.data._vibThreadId = id;
-			sUtils.data._vibThread = thread(function() {try {
+			var id = sgUtils.math.randomId();
+			sgUtils.data._vibThreadId = id;
+			sgUtils.data._vibThread = thread(function() {try {
 				while(repeat-- !== 0) {
 					for(var e = 0; e < pattern.length; e++) {
-						if(sUtils.data._vibThreadId !== id) {
+						if(sgUtils.data._vibThreadId !== id) {
 							return;
 						}
 						if((e % 2) === 1) {
-							sUtils.data._vib.vibrate(pattern[e]);
+							sgUtils.data._vib.vibrate(pattern[e]);
 						}
 						sleep(pattern[e]);
 					}
@@ -1774,7 +1885,7 @@ sUtils.android = {
 			}catch(e) {
 				showError(e);
 			}});
-			sUtils.data._vibThread.start();
+			sgUtils.data._vibThread.start();
 		}else {
 			throw new Error("Illegal vibrator pattern type");
 		}
@@ -1851,59 +1962,59 @@ sUtils.android = {
 
 
 function loadMcpeAssets() {try {
-	sAssets.mcpeCPC = ctx.createPackageContext("com.mojang.minecraftpe", Context.CONTEXT_IGNORE_SECURITY);
-	sAssets.nativeAssets = sAssets.mcpeCPC.getAssets();
+	sgAssets.mcpeCPC = ctx.createPackageContext("com.mojang.minecraftpe", Context.CONTEXT_IGNORE_SECURITY);
+	sgAssets.nativeAssets = sgAssets.mcpeCPC.getAssets();
 	try {
-		sAssets.SS = ModPE.openInputStreamFromTexturePack("images/gui/spritesheet.png");
-		sAssets.TG = ModPE.openInputStreamFromTexturePack("images/gui/touchgui.png");
+		sgAssets.SS = ModPE.openInputStreamFromTexturePack("images/gui/spritesheet.png");
+		sgAssets.TG = ModPE.openInputStreamFromTexturePack("images/gui/touchgui.png");
 	}catch(e) {
 		print("Resource load fail");
-		sAssets.SS = sAssets.nativeAssets.open("images/gui/spritesheet.png");
-		sAssets.TG = sAssets.nativeAssets.open("images/gui/touchgui.png");
+		sgAssets.SS = sgAssets.nativeAssets.open("images/gui/spritesheet.png");
+		sgAssets.TG = sgAssets.nativeAssets.open("images/gui/touchgui.png");
 	}
-	sAssets.SS_BF = BitmapFactory.decodeStream(sAssets.SS);
-	sAssets.TG_BF = BitmapFactory.decodeStream(sAssets.TG);
+	sgAssets.SS_BF = BitmapFactory.decodeStream(sgAssets.SS);
+	sgAssets.TG_BF = BitmapFactory.decodeStream(sgAssets.TG);
 	
-	sAssets.fullBg = sAssets.bitmapAssetCreator(sAssets.SS_BF, 0, 0, 16, 16, c.px*2, false, 5, 5, 12, 12);
+	sgAssets.fullBg = sgAssets.bitmapAssetCreator(sgAssets.SS_BF, 0, 0, 16, 16, sg.px*2, false, 5, 5, 12, 12);
 	
-	sAssets.bg = sAssets.bitmapAssetCreator(sAssets.SS_BF, 34, 43, 14, 14, c.px*2, false, 4, 4, 11, 11);
+	sgAssets.bg = sgAssets.bitmapAssetCreator(sgAssets.SS_BF, 34, 43, 14, 14, sg.px*2, false, 4, 4, 11, 11);
 	
-	sAssets.title_l = new sAssets.bitmapAssetCreator(sAssets.TG_BF, 150, 26, 2, 25, c.px*2, false);
-	sAssets.title_c = new sAssets.bitmapAssetCreator(sAssets.TG_BF, 153, 26, 8, 25, c.px*2, false);
-	sAssets.title_r = new sAssets.bitmapAssetCreator(sAssets.TG_BF, 162, 26, 2, 25, c.px*2, false);
-	sAssets.title_b = new sAssets.bitmapAssetCreator(sAssets.TG_BF, 153, 52, 8, 3, c.px*2, false);
-	sAssets.title_la = new c.ai(Int.TYPE, 50);
-	sAssets.title_ca = new c.ai(Int.TYPE, 200);
-	sAssets.title_ra = new c.ai(Int.TYPE, 50);
-	sAssets.title_ba = new c.ai(Int.TYPE, 24);
-	sAssets.title_l.rawBitmap.getPixels(sAssets.title_la, 0, 2, 0, 0, 2, 25);
-	sAssets.title_c.rawBitmap.getPixels(sAssets.title_ca, 0, 8, 0, 0, 8, 25);
-	sAssets.title_r.rawBitmap.getPixels(sAssets.title_ra, 0, 2, 0, 0, 2, 25);
-	sAssets.title_b.rawBitmap.getPixels(sAssets.title_ba, 0, 3, 0, 0, 3, 25);
-	sAssets.title_p1 = sUtils.convert,margeArray(sAssets.title_l, sAssets.title_c, 0, 2, 25, 8, 25, null);
-	sAssets.title_p2 = sUtils.convert.margeArray(sAssets.title_p1, sAssets.title_r, 0, 10, 25, 2, 25, null);
-	sAssets.title_p3 = sUtils.convert.margeArray(sAssets.title_p2, sAssets.title_b, 1, 12, 25, 8, 3, null);
-	sAssets.title = new sAssets.customAssetCreator(sAssets.title_p3, 12, 28, c.px*2, false, 3, 3, 9, 22);
+	sgAssets.title_l = new sgAssets.bitmapAssetCreator(sgAssets.TG_BF, 150, 26, 2, 25, sg.px*2, false);
+	sgAssets.title_c = new sgAssets.bitmapAssetCreator(sgAssets.TG_BF, 153, 26, 8, 25, sg.px*2, false);
+	sgAssets.title_r = new sgAssets.bitmapAssetCreator(sgAssets.TG_BF, 162, 26, 2, 25, sg.px*2, false);
+	sgAssets.title_b = new sgAssets.bitmapAssetCreator(sgAssets.TG_BF, 153, 52, 8, 3, sg.px*2, false);
+	sgAssets.title_la = new sg.ai(Int.TYPE, 50);
+	sgAssets.title_ca = new sg.ai(Int.TYPE, 200);
+	sgAssets.title_ra = new sg.ai(Int.TYPE, 50);
+	sgAssets.title_ba = new sg.ai(Int.TYPE, 24);
+	sgAssets.title_l.rawBitmap.getPixels(sgAssets.title_la, 0, 2, 0, 0, 2, 25);
+	sgAssets.title_c.rawBitmap.getPixels(sgAssets.title_ca, 0, 8, 0, 0, 8, 25);
+	sgAssets.title_r.rawBitmap.getPixels(sgAssets.title_ra, 0, 2, 0, 0, 2, 25);
+	sgAssets.title_b.rawBitmap.getPixels(sgAssets.title_ba, 0, 3, 0, 0, 3, 25);
+	sgAssets.title_p1 = sgUtils.convert,margeArray(sgAssets.title_l, sgAssets.title_c, 0, 2, 25, 8, 25, null);
+	sgAssets.title_p2 = sgUtils.convert.margeArray(sgAssets.title_p1, sgAssets.title_r, 0, 10, 25, 2, 25, null);
+	sgAssets.title_p3 = sgUtils.convert.margeArray(sgAssets.title_p2, sgAssets.title_b, 1, 12, 25, 8, 3, null);
+	sgAssets.title = new sgAssets.customAssetCreator(sgAssets.title_p3, 12, 28, sg.px*2, false, 3, 3, 9, 22);
 	
-	sAssets.exit = new sAssets.bitmapAssetCreator(sAssets.SS_BF, 60, 0, 18, 18, c.px*2, false);
-	sAssets.exit_c = new sAssets.bitmapAssetCreator(sAssets.SS_BF, 78, 0, 18, 18, c.px*2, false);
+	sgAssets.exit = new sgAssets.bitmapAssetCreator(sgAssets.SS_BF, 60, 0, 18, 18, sg.px*2, false);
+	sgAssets.exit_c = new sgAssets.bitmapAssetCreator(sgAssets.SS_BF, 78, 0, 18, 18, sg.px*2, false);
 	
-	sAssets.button = new sAssets.bitmapAssetCreator(sAssets.SS_BF, 8, 32, 8, 8, c.px*2, false, 1, 2, 7, 6);
+	sgAssets.button = new sgAssets.bitmapAssetCreator(sgAssets.SS_BF, 8, 32, 8, 8, sg.px*2, false, 1, 2, 7, 6);
 	
-	sAssets.button_c = new sAssets.bitmapAssetCreator(sAssets.SS_BF, 0, 32, 8, 8, c.px*2, false, 1, 2, 7, 6);
+	sgAssets.button_c = new sgAssets.bitmapAssetCreator(sgAssets.SS_BF, 0, 32, 8, 8, sg.px*2, false, 1, 2, 7, 6);
 	
 	var p = Color.parseColor("#6b6163");
 	var o = Color.parseColor("#3a393a");
-	sAssets.textView = new sAssets.customAssetCreator([
+	sgAssets.textView = new sgAssets.customAssetCreator([
 	b,b,b,b,b,b,
 	b,b,b,b,b,b,
 	b,b,i,i,b,b,
 	b,b,i,i,b,b,
 	b,b,b,b,b,b,
 	b,b,b,b,b,b
-	], 6, 6, c.px*2, false, 3, 3, 4, 4);
+	], 6, 6, sg.px*2, false, 3, 3, 4, 4);
 	
-	sAssets.bg32 = Bitmap.createScaledBitmap(BitmapFactory.decodeStream(ModPE.openInputStreamFromTexturePack("images/gui/bg32.png")), c.px*64, c.px*64, false)
+	sgAssets.bg32 = Bitmap.createScaledBitmap(BitmapFactory.decodeStream(ModPE.openInputStreamFromTexturePack("images/gui/bg32.png")), sg.px*64, sg.px*64, false)
 }catch(e) {
 	showError(e);
 }}
@@ -2019,31 +2130,43 @@ function ttsIt(str, pitch, speed) {
 
 //TEST AREA
 
+thread(function() {try {
+	sleep(3000);
+	sgUtils.gui.customToast("Hello");
+	sleep(1000);
+	sgUtils.gui.customToast("World", null, null, true);
+	sleep(500);
+	sgUtils.gui.customToast(":p");
+}catch(err) {
+	showError(err);
+}}).start();
+
+/*
 var vt = null;
 function modTick() {
 	var yh = Player.getY();
 	if(yh > 60) {
 		if(vt !== 1) {
 			vt = 1;
-			sUtils.android.vibrator(1, -1);
+			sgUtils.android.vibrator(1, -1);
 		}
 	}else if(yh > 40) {
 		if(vt !== 2) {
 			vt = 2;
-			sUtils.android.vibrator([0, 80, 80], -1);
+			sgUtils.android.vibrator([0, 80, 80], -1);
 		}
 	}else if(yh > 20) {
 		if(vt !== 3) {
 			vt = 3;
-			sUtils.android.vibrator([0, 80, 80, 80, 760], -1);
+			sgUtils.android.vibrator([0, 80, 80, 80, 760], -1);
 		}
 	}else {
 		if(vt !== 4) {
 			vt = 4;
-			sUtils.android.vibrator([0, 80, 920], -1);
+			sgUtils.android.vibrator([0, 80, 920], -1);
 		}
 	}
-}
+}*/
 
 //==========
 
