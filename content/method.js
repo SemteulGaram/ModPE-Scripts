@@ -19,6 +19,8 @@ const VERSION = "0.1";
 const VERSION_CODE = 1;
 const TAG = "[Method 0.1]";
 
+
+
 var File = java.io.File;
 var BufferdInputStream = java.io.BufferedInputStream;
 var BufferdOutputStream = java.io.BufferedOutputstream;
@@ -233,10 +235,10 @@ function thread(fc) {
  * ㄴ io
  *   ㄴ copyFile √
  *   ㄴ setTexture √
- *   ㄴ readFile √
- *   ㄴ writeFile √
- *   ㄴ loadJSON √
- *   ㄴ saveJSON √
+ *   ㄴ readFile
+ *   ㄴ writeFile
+ *   ㄴ loadJSON
+ *   ㄴ saveJSON
  *   ㄴ loadArticle √
  *   ㄴ saveArticle √
  *   ㄴ loadMcpeSetting √
@@ -258,6 +260,7 @@ function thread(fc) {
  *   ㄴ mcText √
  *   ㄴ mcButton √
  *   ㄴ customToast
+ *   ㄴ customProgressBar
  * ㄴ net
  *   ㄴ download √
  *   ㄴ loadScriptServerData √
@@ -394,7 +397,7 @@ sgUtils.io = {
 	 * @return {string[]} lines
 	 */
 	readFile: function(file) {
-		if(file instanceof String) {
+		if(typeof file === "string") {
 			file = new FileInputStream(new File(file));
 		}else if(file instanceof File) {
 			file = new FileInputStream(file);
@@ -429,7 +432,7 @@ sgUtils.io = {
 	 * @return {boolean} success
 	 */
 	writeFile: function(file, value, mkDir) {
-		if(file instanceof String) {
+		if(typeof file === "string") {
 			file = new File(file);
 		}else if(!(file instanceof File)) {
 			throw new Error("Illegal argument type");
@@ -442,14 +445,14 @@ sgUtils.io = {
 			throw new Error("File not exists: " + file.getPath());
 		}
 		
-		if(value instanceof String) {
+		if(typeof value === "string") {
 			value = value.split(String.fromCharCode(10));
 		}
 		
 		var fos = new FileOutputStream(file);
 		var osw = new OutputStreamWriter(fos);
 		
-		while(value.length < 1) {
+		while(value.length > 0) {
 			osw.write(value.shift());
 			if(value.length > 0) {
 				osw.write(String.fromCharCode(10));
@@ -1135,7 +1138,7 @@ sgUtils.gui = {
 	 * @param {(number|null)} size
 	 = @param {(Color|null)} textColor
 	 */
-	customToast: function(text, drawable, duration, isImportent, size, textColor) {
+	toast: function(text, drawable, duration, isImportent, size, textColor) {
 		if(sgUtils.data._toast === undefined) {
 			sgUtils.data._toast = [];
 		}
@@ -1164,11 +1167,11 @@ sgUtils.gui = {
 		}
 		sgUtils.data._toast.push([wd, duration, isImportent, sgUtils.math.randomId()]);
 		if(sgUtils.data._toast.length === 1) {
-			this._customToastActivity();
+			this._toastActivity();
 		}
 	},
 	
-	_customToastActivity: function() {
+	_toastActivity: function() {
 		var that = this;
 		if(sgUtils.data._toast.length === 0) {
 			return;
@@ -1187,13 +1190,178 @@ sgUtils.gui = {
 				if(cwd.isShowing()) {
 					cwd.dismiss();
 				}
-				that._customToastActivity();
+				that._toastActivity();
 			}catch(err) {
 				showError(err);
 			}}}), sgUtils.data._toast[0][1]);
 		}catch(err) {
 			showError(err);
 		}});
+	},
+	
+	/**
+	 * Custom Progress Bar
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-11-14
+	 *
+	 * @param {int} type
+	 * @return {customProgressBar}
+	 */
+	progressBar: function(type) {
+		if (!(this instanceof arguments.callee)) return new arguments.callee(type);
+		var that = this;
+		this.progressBar = null;
+		this.textView = null;
+		this.rl = new sg.rl(ctx);
+		this.wd = null;
+		switch(type) {
+			//뒷 부분이 터치가능한 배경이 투명한 원형 프로그래스 바
+			case 0:
+			this.progressBar = new ProgressBar(ctx);
+			var pp = new sg.rl.LayoutParams(sg.px*40, sg.px*40);
+			pp.addRule(sg.rl.CENTER_IN_PARENT);
+			this.progressBar.setLayoutParams(pp);
+			this.rl.addView(this.progressBar);
+			this.wd = new PopupWindow(this.rl, sg.ww, sg.wh, false);
+			this.wd.setTouchable(false);
+			break;
+			//뒷 부분이 터치 불가능한 배경이 어두운 원형 프로그래스 바
+			case 1:
+			this.progressBar = new ProgressBar(ctx);
+			var pp = new sg.rl.LayoutParams(sg.px*30, sg.px*30);
+			pp.addRule(sg.rl.CENTER_IN_PARENT);
+			this.progressBar.setLayoutParams(pp);
+			this.rl.addView(this.progressBar);
+			this.rl.setBackgroundColor(Color.argb(0x88, 0, 0, 0));
+			this.wd = new PopupWindow(this.rl, sg.ww, sg.wh, true);
+			this.wd.setTouchable(true);
+			break;
+			//화면 하단의 초록색 가로 프로그래스바
+			case 2:
+			this.progressBar = new ProgressBar(ctx, null, android.R.attr.progressBarStyleHorizontal);
+			var f = new ClipDrawable(new ColorDrawable(Color.parseColor("#80ff80")), Gravity.LEFT, ClipDrawable.HORIZONTAL);
+			var b = new ColorDrawable(Color.parseColor("#808080"));
+			var draw = this.progressBar.getProgressDrawable();
+			draw.setDrawableByLayerId(android.R.id.progress, f);
+			draw.setDrawableByLayerId(android.R.id.background, b);
+			var pp = new sg.rl.LayoutParams(sg.ww, sg.px*4);
+			pp.addRule(sg.rl.ALIGN_PARENT_BOTTOM);
+			this.progressBar.setLayoutParams(pp);
+			this.rl.addView(this.progressBar);
+			this.wd = new PopupWindow(this.rl, sg.ww, sg.wh, false);
+			this.wd.setTouchable(false);
+			break;
+			//터치 불가능 어두운 배경에 화면 중앙에 위쪽 텍스트와 아래쪽 초록색 프로그래스바
+			case 3:
+			var ll = new sg.ll(ctx);
+			ll.setOrientation(sg.ll.VERTICAL);
+			ll.setGravity(Gravity.CENTER);
+			
+			this.textView = sgUtils.gui.mcFastText(this.text, null, false, Color.WHITE, null, null, null, null, [0, 0, 0, sg.px*20]);
+			ll.addView(this.textView);
+			this.progressBar = new ProgressBar(ctx, null, android.R.attr.progressBarStyleHorizontal);
+			var f = new ClipDrawable(new ColorDrawable(Color.parseColor("#80ff80")), Gravity.LEFT, ClipDrawable.HORIZONTAL);
+			var b = new ColorDrawable(Color.parseColor("#808080"));
+			var draw = this.progressBar.getProgressDrawable();
+			draw.setDrawableByLayerId(android.R.id.progress, f);
+			draw.setDrawableByLayerId(android.R.id.background, b);
+			var pp = new sg.ll.LayoutParams(sg.px*0x100, sg.px*4);
+			this.progressBar.setLayoutParams(pp);
+			ll.addView(this.progressBar);
+			var llp = new sg.rl.LayoutParams(sg.wc, sg.wc);
+			llp.addRule(sg.rl.CENTER_IN_PARENT);
+			ll.setLayoutParams(llp);
+			this.rl.addView(ll);
+			this.rl.setBackgroundColor(Color.argb(0x88, 0, 0, 0));
+			this.wd = new PopupWindow(this.rl, sg.ww, sg.wh, true);
+			this.wd.setTouchable(true);
+			break;
+			//터치 불가능 어두운 배경에 화면 중앙에 왼쪽 원형 프로그래스바 오른쪽 텍스트
+			case 4:
+			var ll = new sg.ll(ctx);
+			ll.setOrientation(sg.ll.HORIZONTAL);
+			ll.setGravity(Gravity.CENTER);
+			
+			this.progressBar = new ProgressBar(ctx);
+			var pp = new sg.ll.LayoutParams(sg.px*40, sg.px*40);
+			this.progressBar.setLayoutParams(pp);
+			ll.addView(this.progressBar);
+			this.textView = sgUtils.gui.mcFastText(this.text, null, false, Color.WHITE, null, null, null, null, [sg.px*20, 0, 0, 0]);
+			ll.addView(this.textView);
+			var llp = new sg.rl.LayoutParams(sg.wc, sg.wc);
+			llp.addRule(sg.rl.CENTER_IN_PARENT);
+			ll.setLayoutParams(llp);
+			this.rl.addView(ll);
+			this.rl.setBackgroundColor(Color.argb(0x88, 0, 0, 0));
+			this.wd = new PopupWindow(this.rl, sg.ww, sg.wh, true);
+			this.wd.setTouchable(true);
+			break;
+			default:
+			throw new Error("Undefined custom progress bar type: " + type);
+		}
+		
+		this.getText = function() {
+			if(this.textView === null) {
+				throw new Error("This type of custom progress bar don't support 'text' parameter");
+			}
+			return this.textView.getText() + "";
+		}
+		
+		this.getMax = function() {
+			if(this.progressBar === null) {
+				throw new Error("This type of custom progress bar don't support 'max' parameter");
+			}
+			return this.max;
+		}
+		
+		this.getProgress = function() {
+			if(this.progressBar === null) {
+				throw new Error("This type of custom progress bar don't support 'progress' parameter");
+			}
+			return this.progress;
+		}
+			
+		this.setText = function(text) {
+			if(this.textView === null) {
+				throw new Error("This type of custom progress bar don't support 'text' parameter");
+			}
+			this.textView.setText(text);
+		}
+		
+		this.setMax = function(max) {
+			if(this.progressBar === null) {
+				throw new Error("This type of custom progress bar don't support 'max' parameter");
+			}
+			this.progressBar.setMax(max);
+		}
+		
+		this.setProgress = function(progress) {
+			if(this.progressBar === null) {
+				throw new Error("This type of custom progress bar don't support 'progress' parameter");
+			}
+			this.progressBar.setProgress(progress);
+		}
+		
+		this.show = function() {
+			uiThread(function() {try {
+				if(!that.wd.isShowing()) {
+					that.wd.showAtLocation(sg.dv, Gravity.LEFT|Gravity.TOP, 0, 0);
+				}
+			}catch(err) {
+				showError(err);
+			}});
+		}
+		
+		this.close = function() {
+			uiThread(function() {try {
+				if(that.wd.isShowing()) {
+					that.wd.dismiss();
+				}
+			}catch(err) {
+				showError(err);
+			}});
+		}
 	}
 }
 	
