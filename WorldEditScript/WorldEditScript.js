@@ -14,35 +14,23 @@
  * limitations under the License.
  */
 
-const CLASS_NAME = "WorldEditScript";
+const NAME = "WorldEditScript";
 //Season . Release Number . Commits 
 const VERSION = "0.1.4";
 const VERSION_CODE = 104;
+const TAG = "[" + "WES" + " " + VERSION + "] ";
 
-var TAG = "[" + "WES" + " " + VERSION + "] ";
-
-var ctx = com.mojang.minecraftpe.MainActivity.currentMainActivity.get();
-var PIXEL = android.util.TypedValue.applyDimension(android.util.TypedValue.COMPLEX_UNIT_DIP, 1, ctx.getResources().getDisplayMetrics());
-var FILE_SD_CARD = android.os.Environment.getExternalStorageDirectory();
-var FILE_MOD_DIR = new java.io.File(FILE_SD_CARD, "games/com.mojang/minecraftpe/mods");
-var FILE_MAIN_DIR = new java.io.File(FILE_MOD_DIR, CLASS_NAME);
-var FILE_FONT = new java.io.File(FILE_MOD_DIR, "minecraft.ttf");
-var FILE_MAIN_DATA = new java.io.File(FILE_MAIN_DIR, "setting.json");
-var FILE_TEST_DATA = new java.io.File(FILE_MAIN_DIR, "lastLog.txt");
-var FILE_NO_MEDIA = new java.io.File(FILE_MAIN_DIR, ".nomedia");
-function FILE_MAP_DIR() {return new java.io.File(FILE_SD_CARD, "games/com.mojang/minecraftWorlds/" + Level.getWorldDir() + "/mods")}
-function FILE_MAP_DATA() {return new java.io.File(FILE_MAP_DIR(), CLASS_NAME + ".json")}
-if(!(FILE_MAIN_DIR.exists())) {
-	FILE_MAIN_DIR.mkdirs();
-	FILE_NO_MEDIA.createNewFile();
-}
-var DIP = PIXEL * loadData(FILE_MAIN_DATA, "DIPS");
-if(DIP == null || DIP == 0){
-	DIP = PIXEL;
-}
-var onMap = false;
-
-
+var File = java.io.File;
+var BufferdInputStream = java.io.BufferedInputStream;
+var BufferdOutputStream = java.io.BufferedOutputstream;
+var BufferedReader = java.io.BufferedReader;
+var BufferedWriter = java.io.BufferedWriter;
+var FileInputStream = java.io.FileInputStream;
+var FileOutputStream = java.io.FileOutputStream;
+var InputStream = java.io.InputStream;
+var OutputStream = java.io.OutputStream;
+var InputStreamReader = java.io.InputStreamReader;
+var OutputStreamWriter = java.io.OutputStreamWriter;
 
 var Byte = java.lang.Byte;
 var Int = java.lang.Integer;
@@ -51,32 +39,28 @@ var Double = java.lang.Double;
 var Boolean = java.lang.Boolean;
 var Long = java.lang.Long;
 var Short = java.lang.Short;
-var File = java.io.File;
-var Context = android.content.Context;
-var Activity = android.app.Activity;
-var Handler = android.os.Handler
 var Thread = java.lang.Thread;
 var Runnable = java.lang.Runnable;
-var Process = android.os.Process;
+
+var URL = java.net.URL;
+
+var ArrayList = java.util.ArrayList;
+var Calendar = java.util.Calendar;
+var GregorianCalendar = java.util.GregorianCalendar;
+
+var Activity = android.app.Activity;
 var AlertDialog = android.app.AlertDialog;
+var Context = android.content.Context;
+var MediaPlayer = android.media.MediaPlayer;
+var Environment = android.os.Environment;
+var Process = android.os.Process;
+var Handler = android.os.Handler;
 var View = android.view.View;
 var ViewGroup = android.view.ViewGroup;
 var MotionEvent = android.view.MotionEvent;
 var Gravity = android.view.Gravity;
-var FrameLayout = android.widget.FrameLayout;
-var RelativeLayout = android.widget.RelativeLayout;
-var LinearLayout = android.widget.LinearLayout;
-var ScrollView = android.widget.ScrollView;
-var HorizontalScrollView = android.widget.HorizontalScrollView;
-var TextView = android.widget.TextView;
-var Button = android.widget.Button;
-var ImageView = android.widget.ImageView;
-var ImageButton = android.widget.ImageButton;
-var EditText = android.widget.EditText;
-var ProgressBar = android.widget.ProgressBar;
-var SeekBar = android.widget.SeekBar;
-var NumberPicker = android.widget.NumberPicker;
-var PopupWindow = android.widget.PopupWindow;
+var TypedValue = android.util.TypedValue;
+
 var Drawable = android.graphics.drawable;
 var StateListDrawable = android.graphics.drawable.StateListDrawable;
 var GradientDrawable = android.graphics.drawable.GradientDrawable;
@@ -93,595 +77,111 @@ var Path = android.graphics.Path;
 var Shader = android.graphics.Shader;
 var Matrix = android.graphics.Matrix;
 var Typeface = android.graphics.Typeface;
-var ArrayList = java.util.ArrayList;
-var Calendar = java.util.Calendar;
-var GregorianCalendar = java.util.GregorianCalendar;
-var MediaPlayer = android.media.MediaPlayer;
 
-var c = {};
-c.m = ViewGroup.LayoutParams.MATCH_PARENT;
-c.w = ViewGroup.LayoutParams.WRAP_CONTENT;
-c.a = java.lang.reflect.Array.newInstance;
-c.r = RelativeLayout;
-c.l = LinearLayout;
-c.p = android.util.TypedValue.COMPLEX_UNIT_PX;
-c.s = net.zhuoweizhang.mcpelauncher.ScriptManager;
-c.ww = ctx.getWindowManager().getDefaultDisplay().getWidth();
-c.wh = ctx.getWindowManager().getDefaultDisplay().getHeight();
-c.d = ctx.getWindow().getDecorView();
+var FrameLayout = android.widget.FrameLayout;
+var RelativeLayout = android.widget.RelativeLayout;
+var LinearLayout = android.widget.LinearLayout;
+var ScrollView = android.widget.ScrollView;
+var HorizontalScrollView = android.widget.HorizontalScrollView;
+var TextView = android.widget.TextView;
+var Button = android.widget.Button;
+var ImageView = android.widget.ImageView;
+var ImageButton = android.widget.ImageButton;
+var EditText = android.widget.EditText;
+var ProgressBar = android.widget.ProgressBar;
+var SeekBar = android.widget.SeekBar;
+var NumberPicker = android.widget.NumberPicker;
+var PopupWindow = android.widget.PopupWindow;
 
+var ctx = com.mojang.minecraftpe.MainActivity.currentMainActivity.get();
 
-
-var ScriptColor = {
-	normal: Color.parseColor("#00bf00"),
-	normalLight: Color.parseColor("#59f900"),
-	normalDark: Color.parseColor("#009644"),
-	warning: Color.parseColor("#ceb950"),
-	warningLight: Color.parseColor("#efdf50"),
-	warningDark: Color.parseColor("#a08a50"),
-	critical: Color.parseColor("#e6858f"),
-	criticalLight: Color.parseColor("#f7b1b5"),
-	criticalDark: Color.parseColor("#ca7d7a"),
-	highlight: Color.parseColor("#00ff00")
-};
-
-
-function NinePatchAssetCreator(pixel, width, height, scale, left, top, right, bottom) {
-	this.pixel = pixel;
-	this.rawBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-	this.rawBitmap.setPixels(this.pixel, 0, width, 0, 0, width, height);
-	this.scaleBitmap = Bitmap.createScaledBitmap(this.rawBitmap, width*scale, height*scale, false);
-	this.ninePatch = function() {return ninePatch1(this.scaleBitmap, (top*(scale-1))+1, (left*(scale-1))+1, bottom*scale, right*scale)}
-}
-
-var Assets = {};
-//DO NOT USE(TEXTURE PACK MISSING)
-Assets.mcpeCPC = ctx.createPackageContext("com.mojang.minecraftpe", Context.CONTEXT_IGNORE_SECURITY);
-Assets.mcpe = Assets.mcpeCPC.getAssets();
-//spritesheet.png
-try{
-	Assets.mcpeSS = ModPE.openInputStreamFromTexturePack("images/gui/spritesheet.png");
-}catch(e) {
-	//old version
-	Assets.mcpeSS = mcpeAssets.open("images/gui/spritesheet.png");
-}
-Assets.mcpeSS_BF = BitmapFactory.decodeStream(Assets.mcpeSS);
-//touchgui.png
-try {
-	Assets.mcpeTG = ModPE.openInputStreamFromTexturePack("images/gui/touchgui.png");
-}catch(e) {
-	Assets.mcpeTG = mcpeAssets.open("images/gui/touchgui.png");
-}
-Assets.mcpeTG_BF = BitmapFactory.decodeStream(Assets.mcpeTG);
-
-Assets.fullBackground_raw = Bitmap.createBitmap(Assets.mcpeSS_BF, 0, 0, 16, 16);
-Assets.fullBackground = Bitmap.createScaledBitmap(Assets.fullBackground_raw, PIXEL*32, PIXEL*32, false);
-Assets.fullBackground_9 = function() {return ninePatch1(Assets.fullBackground, PIXEL*12, PIXEL*12, PIXEL*24, PIXEL*24)}
-
-Assets.background_raw = Bitmap.createBitmap(Assets.mcpeSS_BF, 34, 43, 14, 14);
-Assets.background = Bitmap.createScaledBitmap(Assets.background_raw, PIXEL*28, PIXEL*28, false);
-Assets.background_9 = function() {return ninePatch1(Assets.background, PIXEL*12, PIXEL*12, PIXEL*22, PIXEL*22)}
-
-Assets.title_left_raw = Bitmap.createBitmap(Assets.mcpeTG_BF, 150, 26, 2, 25);
-Assets.title_left_pixel = new c.a(Int.TYPE, 50);
-Assets.title_right_raw = Bitmap.createBitmap(Assets.mcpeTG_BF, 162, 26, 2, 25);
-Assets.title_right_pixel = new c.a(Int.TYPE, 50);
-Assets.title_center_raw = Bitmap.createBitmap(Assets.mcpeTG_BF, 153, 26, 8, 25);
-Assets.title_center_pixel = new c.a(Int.TYPE, 200);
-Assets.title_bottom_raw = Bitmap.createBitmap(Assets.mcpeTG_BF, 153, 52, 8, 3);
-Assets.title_bottom_pixel = new c.a(Int.TYPE, 24);
-Assets.title_left_raw.getPixels(Assets.title_left_pixel, 0, 2, 0, 0, 2, 25);
-Assets.title_right_raw.getPixels(Assets.title_right_pixel, 0, 2, 0, 0, 2, 25);
-Assets.title_center_raw.getPixels(Assets.title_center_pixel, 0, 8, 0, 0, 8, 25);
-Assets.title_bottom_raw.getPixels(Assets.title_bottom_pixel, 0, 8, 0, 0, 8, 3);
-Assets.title_pixel = margeArray(Assets.title_left_pixel, Assets.title_center_pixel, "HORIZONTAL", 2, 25, 8, 25, null);
-Assets.title_pixel = margeArray(Assets.title_pixel, Assets.title_right_pixel, "HORIZONTAL", 10, 25, 2, 25, null);
-Assets.title_pixel = margeArray(Assets.title_pixel, Assets.title_bottom_pixel, "VERTICAL", 12, 25, 8, 3, null);
-Assets.title_raw = Bitmap.createBitmap(12, 28, Bitmap.Config.ARGB_8888);
-Assets.title_raw.setPixels(Assets.title_pixel, 0, 12, 0, 0, 12, 28);
-Assets.title = Bitmap.createScaledBitmap(Assets.title_raw, PIXEL*24, PIXEL*56, false);
-Assets.title_9 = function() {
-	return ninePatch1(Assets.title, PIXEL*5, PIXEL*5, PIXEL*46, PIXEL*20);
-}
-
-Assets.exit_raw = Bitmap.createBitmap(Assets.mcpeSS_BF, 60, 0, 18, 18);
-Assets.exit = Bitmap.createScaledBitmap(Assets.exit_raw, 18*PIXEL, 18*PIXEL, false);
-Assets.exit_9 = function() {return ninePatch1(Assets.exit, PIXEL*6, PIXEL*6, PIXEL*30, PIXEL*30)}
-
-Assets.exitClick_raw = Bitmap.createBitmap(Assets.mcpeSS_BF, 78, 0, 18, 18);
-Assets.exitClick = Bitmap.createScaledBitmap(Assets.exitClick_raw, PIXEL*36, PIXEL*36, false);
-Assets.exitClick_9 = function() {return ninePatch1(Assets.exitClick, PIXEL*6, PIXEL*6, PIXEL*32, PIXEL*32)}
-
-Assets.button_raw = Bitmap.createBitmap(Assets.mcpeSS_BF,8,32,8,8);
-Assets.button = Bitmap.createScaledBitmap(Assets.button_raw, PIXEL*16, PIXEL*16, false);
-Assets.button_9 = function() {return ninePatch1(Assets.button, PIXEL*6, PIXEL*4, PIXEL*14, PIXEL*14)}
-
-Assets.buttonClick_raw = Bitmap.createBitmap(Assets.mcpeSS_BF,0,32,8,8);
-Assets.buttonClick = Bitmap.createScaledBitmap(Assets.buttonClick_raw, PIXEL*16, PIXEL*16, false);
-Assets.buttonClick_9 = function() {return ninePatch1(Assets.buttonClick, PIXEL*4, PIXEL*4, PIXEL*12, PIXEL*14)}
-
-Assets.miniButton_raw = Bitmap.createBitmap(Assets.mcpeSS_BF,8,33,8,7);
-Assets.miniButton = Bitmap.createScaledBitmap(Assets.miniButton_raw, PIXEL*16, PIXEL*14, false);
-Assets.miniButton_9 = function() {return ninePatch1(Assets.miniButton, PIXEL*2, PIXEL*2, PIXEL*12, PIXEL*14)}
-
-Assets.miniButtonClick_raw = Bitmap.createBitmap(Assets.mcpeSS_BF,0,32,8,7);
-Assets.miniButtonClick = Bitmap.createScaledBitmap(Assets.miniButtonClick_raw, PIXEL*16, PIXEL*14, false);
-Assets.miniButtonClick_9 = function() {return ninePatch1(Assets.miniButtonClick, PIXEL*4, PIXEL*4, PIXEL*12, PIXEL*12)}
-
-
-var b = Color.parseColor("#6b6163");
-var i = Color.parseColor("#3a393a");
-Assets.textView_pixel = [
-b,b,b,b,b,b,
-b,b,b,b,b,b,
-b,b,i,i,b,b,
-b,b,i,i,b,b,
-b,b,b,b,b,b,
-b,b,b,b,b,b
-];
-Assets.textView_raw = Bitmap.createBitmap(6, 6, Bitmap.Config.ARGB_8888);
-Assets.textView_raw.setPixels(Assets.textView_pixel, 0, 6, 0, 0, 6, 6);
-Assets.textView = Bitmap.createScaledBitmap(Assets.textView_raw, PIXEL*6, PIXEL*6, false);
-Assets.textView_9 = function() {return ninePatch1(Assets.textView, PIXEL*3, PIXEL*3, PIXEL*4, PIXEL*4)}
-
-var p = ScriptColor.normalLight;
-var o = ScriptColor.normal;
-var i = ScriptColor.normalDark;
-Assets.boxNormal = new NinePatchAssetCreator([
-p,p,p,p,p,o,
-p,p,p,p,o,i,
-p,p,o,o,i,i,
-p,p,o,o,i,i,
-p,o,i,i,i,i,
-o,i,i,i,i,i
-], 6, 6, PIXEL*2, 3, 3, 4, 4);
-
-var p = ScriptColor.warningLight;
-var o = ScriptColor.warning;
-var i = ScriptColor.warningDark;
-Assets.boxWarning = new NinePatchAssetCreator([
-p,p,p,p,p,o,
-p,p,p,p,o,i,
-p,p,o,o,i,i,
-p,p,o,o,i,i,
-p,o,i,i,i,i,
-o,i,i,i,i,i
-], 6, 6, PIXEL*2, 3, 3, 4, 4);
-
-var p = ScriptColor.criticalLight;
-var o = ScriptColor.critical;
-var i = ScriptColor.criticalDark;
-Assets.boxCritical = new NinePatchAssetCreator([
-p,p,p,p,p,o,
-p,p,p,p,o,i,
-p,p,o,o,i,i,
-p,p,o,o,i,i,
-p,o,i,i,i,i,
-o,i,i,i,i,i
-], 6, 6, PIXEL*2, 3, 3, 4, 4);
-
-var p = ScriptColor.normalLight;
-var o = ScriptColor.normal;
-var i = ScriptColor.normalDark;
-var u = Color.argb(0x55, 0, 0, 0);
-Assets.windowNormal = new NinePatchAssetCreator([
-p,p,p,p,p,p,p,p,o,
-p,o,o,o,o,o,o,o,i,
-p,o,o,o,o,o,o,o,i,
-p,o,o,i,i,o,o,o,i,
-p,o,o,i,u,p,o,o,i,
-p,o,o,o,p,p,o,o,i,
-p,o,o,o,o,o,o,o,i,
-p,o,o,o,o,o,o,o,i,
-o,i,i,i,i,i,i,i,i
-], 9, 9, PIXEL*4, 5, 5, 5, 5);
-
-var p = ScriptColor.warningLight;
-var o = ScriptColor.warning;
-var i = ScriptColor.warningDark;
-var u = Color.argb(0x55, 0, 0, 0);
-Assets.windowWarning = new NinePatchAssetCreator([
-p,p,p,p,p,p,p,p,o,
-p,o,o,o,o,o,o,o,i,
-p,o,o,o,o,o,o,o,i,
-p,o,o,i,i,o,o,o,i,
-p,o,o,i,u,p,o,o,i,
-p,o,o,o,p,p,o,o,i,
-p,o,o,o,o,o,o,o,i,
-p,o,o,o,o,o,o,o,i,
-o,i,i,i,i,i,i,i,i
-], 9, 9, PIXEL*4, 5, 5, 5, 5);
-
-var p = ScriptColor.criticalLight;
-var o = ScriptColor.critical;
-var i = ScriptColor.criticalDark;
-var u = Color.argb(0x55, 0, 0, 0);
-Assets.windowCritical = new NinePatchAssetCreator([
-p,p,p,p,p,p,p,p,o,
-p,o,o,o,o,o,o,o,i,
-p,o,o,o,o,o,o,o,i,
-p,o,o,i,i,o,o,o,i,
-p,o,o,i,u,p,o,o,i,
-p,o,o,o,p,p,o,o,i,
-p,o,o,o,o,o,o,o,i,
-p,o,o,o,o,o,o,o,i,
-o,i,i,i,i,i,i,i,i
-], 9, 9, PIXEL*4, 5, 5, 5, 5);
-
-var p = Color.WHITE;
-Assets.wesButton = new NinePatchAssetCreator([
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,p,p,0,0,0,
-], 8, 8, PIXEL*2, 4, 4, 5, 5);
-
-var p = Color.WHITE;
-var o = ScriptColor.highlight;
-Assets.wesButtonClick = new NinePatchAssetCreator([
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,
-0,0,0,o,o,0,0,0,
-0,0,0,p,p,0,0,0,
-], 8, 8, PIXEL*2, 4, 4, 5, 5);
-
-var p = ScriptColor.normal;
-var o = Color.argb(0x55, 0, 0, 0);
-Assets.toastNormal = new NinePatchAssetCreator([
-p,p,p,
-p,o,p,
-p,p,p
-], 3, 3, PIXEL*2, 2, 2, 2, 2);
-
-var p = ScriptColor.warning;
-Assets.toastWarning = new NinePatchAssetCreator([
-p,p,p,
-p,o,p,
-p,p,p
-], 3, 3, PIXEL*2, 2, 2, 2, 2);
-
-var p = ScriptColor.critical;
-Assets.toastCritical = new NinePatchAssetCreator([
-p,p,p,
-p,o,p,
-p,p,p
-], 3, 3, PIXEL*2, 2, 2, 2, 2);
-
-Assets.bg32 = Bitmap.createScaledBitmap(BitmapFactory.decodeStream(ModPE.openInputStreamFromTexturePack("images/gui/bg32.png")), PIXEL*64, PIXEL*64, false);
-
-
-
-function mcpeText(size, text, shadow) {
-	var tv = new TextView(ctx);
-	tv.setTransformationMethod(null);
-	tv.setLayerType(android.view.View.LAYER_TYPE_SOFTWARE, null);
-	if(shadow) {
-		tv.setShadowLayer(1/0xffffffff, DIP*1.3, DIP*1.3, Color.DKGRAY);
-	}
-	tv.setTextColor(Color.WHITE);
-	tv.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, size);
-	if(FILE_FONT.exists()) {
-		tv.setTypeface(android.graphics.Typeface.createFromFile(FILE_FONT));
-	};
-	tv.setPadding(0, 0, 0, 0);
-	tv.setText(text);
-	return tv;
-}
-
-function mcpeButton(size, text) {
-	var btn = new Button(ctx);
-	btn.setTransformationMethod(null);
-	btn.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
-	btn.setPadding(DIP*8, DIP*8, DIP*8, DIP*8);
-	btn.setText(text);
-	btn.setTextColor(Color.WHITE);
-	btn.setTextSize(c.p, size);
-	btn.setShadowLayer(1/0xffffffff, DIP*1.3, DIP*1.3, Color.DKGRAY);
-	if(FILE_FONT.exists()) {
-		btn.setTypeface(android.graphics.Typeface.createFromFile(FILE_FONT));
-	}
-	btn.setBackgroundDrawable(Assets.button_9());
-	
-	btn.setOnTouchListener(View.OnTouchListener({onTouch: function(view, event) {try {
-		switch(event.action) {
-			case MotionEvent.ACTION_DOWN:
-			view.setBackgroundDrawable(Assets.buttonClick_9());
-			view.setTextColor(Color.parseColor("#ffff50"));
-			view.setPadding(DIP*8, DIP*12, DIP*8, DIP*8);
-			break;
-			case MotionEvent.ACTION_CANCEL:
-			case MotionEvent.ACTION_UP:
-			view.setBackgroundDrawable(Assets.button_9());
-			view.setTextColor(Color.WHITE);
-			view.setPadding(DIP*8, DIP*8, DIP*8, DIP*8);
-			break;
-		}
-		return false;
-	}catch(e) {
-		showError(e);
-		return false;
-	}}}));
-	
-	return btn;
-}
-
-function mcpeDialog(title, layout, btnName, btnFunc, btn2Name, btn2Func) {
-	var l = new c.r(ctx);
-	l.setId(randomId());
-	l.setBackgroundDrawable(Assets.background_9());
-	
-	var t = new c.r(ctx);
-	t.setId(randomId());
-	t.setBackgroundDrawable(Assets.title_9());
-	t.setPadding(DIP*8, DIP*8, DIP*8, DIP*14);
-	var t_p = new c.r.LayoutParams(c.m, c.w);
-	t_p.addRule(c.r.ALIGN_PARENT_TOP, l.getId());
-	t.setLayoutParams(t_p);
-	
-	var tt = mcpeText(DIP*32, title, true);
-	var tt_p = new c.r.LayoutParams(c.w, c.w);
-	tt_p.addRule(c.r.CENTER_IN_PARENT, t.getId());
-	tt.setLayoutParams(tt_p);
-	t.addView(tt);
-	
-	var tb = mcpeButton(DIP*16, btn2Name);
-	var tb_p = new c.r.LayoutParams(DIP*70, DIP*34);
-	tb_p.setMargins(0, 0, 0, 0);
-	tb_p.addRule(c.r.ALIGN_PARENT_LEFT, t.getId());
-	tb_p.addRule(c.r.ALIGN_PARENT_TOP, t.getId());
-	tb.setLayoutParams(tb_p);
-	t.addView(tb);
-	
-	var ta = mcpeButton(DIP*16, btnName);
-	var ta_p = new c.r.LayoutParams(DIP*70, DIP*34);
-	ta_p.setMargins(0, 0, 0, 0);
-	ta_p.addRule(c.r.ALIGN_PARENT_RIGHT, t.getId());
-	ta_p.addRule(c.r.ALIGN_PARENT_TOP, t.getId());
-	ta.setLayoutParams(ta_p);
-	t.addView(ta);
-	
-	var ct = new ScrollView(ctx);
-	var ct_p = new c.r.LayoutParams(c.m, c.m);
-	ct_p.setMargins(DIP*8, 0, DIP*8, DIP*8);
-	ct_p.addRule(c.r.BELOW, t.getId());
-	ct.setLayoutParams(ct_p);
-	ct.addView(layout);
-	
-	l.addView(t);
-	l.addView(ct);
-	
-	var w = new PopupWindow(l, DIP*300, DIP*240, false);
-	
-	uiThread(function() {try {
-		w.showAtLocation(ctx.getWindow().getDecorView(), Gravity.CENTER, 0, 0);
-		tb.setOnClickListener(View.OnClickListener({onClick: function(view, event) {try {
-		w.dismiss();
-		btn2Func();
-	}catch(e) {
-		showError(e);
-	}}}));
-	
-	ta.setOnClickListener(View.OnClickListener({onClick: function(view, event) {try {
-		w.dismiss();
-		btnFunc();
-	}catch(e) {
-		showError(e);
-	}}}));
-	
-	}catch(e) {
-		showError(e);
-	}});
-}
-
-function mcText(str, size, hasShadow, color, shadowColor, width, height, padding, margins) {
-	var tv = new TextView(ctx);
-	tv.setTransformationMethod(null);
-	tv.setLayerType(android.view.View.LAYER_TYPE_SOFTWARE, null);
-	if(FILE_FONT.exists()) {
-		tv.setTypeface(android.graphics.Typeface.createFromFile(FILE_FONT));
-	};
-	if(str !== null && str !== undefined) {
-		tv.setText((str + ""));
-	}
-	if(size !== null && size !== undefined) {
-		tv.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, size);
-	}else {
-		tv.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, DIP*0x10);
-	}
-	if(color !== null && color !== undefined) {
-		tv.setTextColor(color);
-	}else {
-		tv.setTextColor(Color.WHITE);
-	}
-	if(hasShadow) {
-		if(shadowColor !== null && shadowColor !== undefined) {
-			tv.setShadowLayer(1/0xffffffff, DIP*1.3, DIP*1.3, shadowColor);
-		}else {
-			tv.setShadowLayer(1/0xffffffff, DIP*1.3, DIP*1.3, Color.DKGRAY);
-		}
-	}
-	if(padding !== null && padding !== undefined) {
-		tv.setPadding(padding[0], padding[1], padding[2], padding[3]);
-	}
-	var tv_p;
-	if(width !== null && height !== null && width !== undefined && height !== undefined) {
-		tv_p = new c.l.LayoutParams(width, height);
-	}else {
-		tv_p = new c.l.LayoutParams(c.w, c.w);
-	}
-	if(margins !== null && margins !== undefined) {
-		tv_p.setMargins(margins[0], margins[1], margins[2], margins[3]);
-	}
-	tv.setLayoutParams(tv_p);
-	return tv;
-}
-
-function mcButton(str, size, hasShadow, color, shadowColor, width, height, padding, margins, background, onTouchFunction, onClickFunction, onLongClickFunction) {
-	var btn = new Button(ctx);
-	btn.setTransformationMethod(null);
-	btn.setLayerType(android.view.View.LAYER_TYPE_SOFTWARE, null);
-	if(FILE_FONT.exists()) {
-		btn.setTypeface(android.graphics.Typeface.createFromFile(FILE_FONT));
-	};
-	if(str !== null && str !== undefined) {
-		btn.setText((str + ""));
-	}
-	if(size !== null && size !== undefined) {
-		btn.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, size);
-	}else {
-		btn.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, DIP*0x10);
-	}
-	if(color !== null && color !== undefined) {
-		btn.setTextColor(color);
-	}else {
-		btn.setTextColor(Color.WHITE);
-	}
-	if(hasShadow) {
-		if(shadowColor !== null && shadowColor !== undefined) {
-			btn.setShadowLayer(1/0xffffffff, DIP*1.3, DIP*1.3, shadowColor);
-		}else {
-			btn.setShadowLayer(1/0xffffffff, DIP*1.3, DIP*1.3, Color.DKGRAY);
-		}
-	}
-	if(padding !== null && padding !== undefined) {
-		btn.setPadding(padding[0], padding[1], padding[2], padding[3]);
-	}
-	var btn_p;
-	if(width !== null && height !== null && width !== undefined && height !== undefined) {
-		btn_p = new c.l.LayoutParams(width, height);
-	}else {
-		btn_p = new c.l.LayoutParams(c.w, c.w);
-	}
-	if(margins !== null && margins !== undefined) {
-		btn_p.setMargins(margins[0], margins[1], margins[2], margins[3]);
-	}
-	btn.setLayoutParams(btn_p);
-	if(background !== null && background !== undefined) {
-		btn.setBackgroundDrawable(background);
-	}else {
-		//btn.setBackgroundDrawable(Assets.mcpeBtn.ninePatch());
-	}
-	if(onTouchFunction !== null && onTouchFunction !== undefined) {
-		btn.setOnTouchListener(View.OnTouchListener({onTouch: function(view, event) {try {
-			return onTouchFunction(view, event);
-		}catch(e) {
-			showError(e, WarnType.WARNING);
-			return false;
-		}}}));
-	}
-	if(onClickFunction !== null && onClickFunction !== undefined) {
-		btn.setOnClickListener(View.OnClickListener({onClick: function(view, event) {try {
-			onClickFunction(view, event);
-		}catch(e) {
-			showError(e, WarnType.WARNING);
-		}}}));
-	}
-	if(onLongClickFunction !== null && onLongClickFunction !== undefined) {
-		btn.setOnLongClickListener(View.OnLongClickListener({onLongClick: function(view, event) {try {
-			return onLongClickFunction(view, event);
-		}catch(e) {
-			showError(e, WarnType.WARNING);
-			return false;
-		}}}));
-	}
-	return btn;
-}
+//단축변수
+var sg = {};
+sg.mp = ViewGroup.LayoutParams.MATCH_PARENT;
+sg.wc = ViewGroup.LayoutParams.WRAP_CONTENT;
+sg.ai = java.lang.reflect.Array.newInstance;
+sg.rl = RelativeLayout;
+sg.ll = LinearLayout;
+sg.tp = TypedValue.COMPLEX_UNIT_PX;
+sg.sm = net.zhuoweizhang.mcpelauncher.ScriptManager;
+sg.ww = ctx.getScreenWidth();//ctx.getWindowManager().getDefaultDisplay().getWidth();
+sg.wh = ctx.getScreenHeight();//ctx.getWindowManager().getDefaultDisplay().getHeight();
+sg.dv = ctx.getWindow().getDecorView();
+sg.px = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 1, ctx.getResources().getDisplayMetrics());
 
 
 
 /**
  * Error report
  *
+ * @author SemteulGaram
  * @since 2015-04
- * @author CodeInside
  *
- * @param {error} e
+ * @param {Error} e
  */
- 
-var WarnType = {
- 	RECOVERABLE: 0,
- 	WARNING: 1,
- 	CRITICAL: 2
-};
 
-function showError(e, type) {try {
-	switch(type) {
-		case WarnType.RECOVERABLE:
-		var typeStr = "<Recoverable>";
-		var typeColor = ChatColor.DARK_GRAY;
-		break;
-		case WarnType.WARNING:
-		var typeStr = "<Warning>";
-		var typeColor = ChatColor.RED;
-		break;
-		case WarnType.CRITICAL:
-		var typeStr = "<Critical>";
-		var typeColor = ChatColor.DARK_RED;
-		break;
-		case undefined:
-		var typeStr = "<Unknown>";
-		var typeColor = ChatColor.DARK_RED;
-		break;
-		default:
-		var typeStr = "[" + type + "]";
-		var typeColor = "";
-	}
-	
-	if(!(onMap)) {
+function showError(e) {
+	if(Level.getWorldName() === null) {
 		ctx.runOnUiThread(new java.lang.Runnable({ run: function(){
-	android.widget.Toast.makeText(ctx, typeStr + " [" + CLASS_NAME + " ERROR LINE: " + e.lineNumber + "]" + "\n" + e, android.widget.Toast.LENGTH_LONG).show();
+	android.widget.Toast.makeText(ctx, "[" + NAME + " ERROR LINE: " + e.lineNumber + "]" + "\n" + e.message, android.widget.Toast.LENGTH_LONG).show();
 		}}));
 	}else {
-		var t = (e + "").split(" ");
+		var t = (e.message + "").split(" ");
 		var c = "";
 		var temp = "";
 		for(var l = 0; l < t.length; l++) {
 			if(temp.split("").length > 30) {
-				c += ("\n" + typeColor);
+				c += ("\n" + ChatColor.DARK_RED);
 				temp = "";
 			}
 			c += t[l] + " ";
 			temp += t[l];
 		}
-		clientMessage(typeColor + typeStr + " [" + CLASS_NAME + " ERROR LINE: " + e.lineNumber + "]\n" + typeColor + c);
-	}
-}catch(e) {
-	print("FATAL ERROR " + e.lineNumber + "\n" + e);
-}};
-
-
-
-/**
- * debug
- *
- * @since 2014-12
- * @author CodeInside
- */
- 
-var debugging = false;
-function debug(str) {
-	if(debugging) {
-		if(Level.getWorldName() === null) {
-			 ctx.runOnUiThread(new java.lang.Runnable({ run: function(){
-		android.widget.Toast.makeText(ctx, "[Debug]\n" + str, android.widget.Toast.LENGTH_LONG).show();
-			}}));
-		}else {
-			clientMessage("[debug] " + str);
-		}
+		clientMessage(ChatColor.DARK_RED + "[" + NAME + " ERROR LINE: " + e.lineNumber + "]\n" + ChatColor.DARK_RED + c);
 	}
 }
 
 
 
-function toast(str) {
+var sgFiles = {}
+sgFiles.sdcard = Environment.getExternalStorageDirectory();
+sgFiles.mcpe = new File(sgFiles.sdcard, "games/com.mojang");
+sgFiles.world = new File(sgFiles.mcpe, "minecraftWorlds");
+sgFiles.mod = new File(sgFiles.mcpe, "minecraftpe/mods");
+sgFiles.font = new File(sgFiles.mod, "minecraft.ttf");
+sgFiles.script = new File(sgFiles.mod, NAME);
+sgFiles.setting = new File(sgFiles.script, "setting.json");
+sgFiles.test = new File(sgFiles.script, "log.txt");
+sgFiles.noMedia = new File(sgFiles.script, ".nomedia");
+sgFiles.map = function() {return new File(mfiles.map, Level.getWorldDir())};
+sgFiles.mapMod = function() {return new File(sgFiles.map, Level.getWorldDir() + "/mods")}
+sgFiles.mapSetting = function() {return new File(sgFiles.map, Level.getWorldDir() + "/mods/" + NAME + ".json")}
+
+
+
+var sgAssets = {
+	
+	customAssetCreator: function(pixel, width, height, scale, scaleType, left, top, right, bottom) {
+		if (!(this instanceof arguments.callee)) return new arguments.callee(pixel, width, height, scale, left, top, right, bottom);
+		
+		this.pixel = pixel;
+		this.rawBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+		this.rawBitmap.setPixels(this.pixel, 0, width, 0, 0, width, height);
+		this.scaleBitmap = Bitmap.createScaledBitmap(this.rawBitmap, width*scale, height*scale, scaleType);
+		this.ninePatch = function() {return ninePatch1(this.scaleBitmap, (top*(scale-1))+1, (left*(scale-1))+1, bottom*scale, right*scale)}
+	},
+	
+	bitmapAssetCreator: function(bitmap, xPos, yPos, xSize, ySize, scale, scaleType, left, top, right, bottom) {
+		if (!(this instanceof arguments.callee)) return new arguments.callee(bitmap, xPos, yPos, xSize, ySize, scale, scaleType, left, top, right, bottom);
+		this.rawBitmap = Bitmap.createBitmap(bitmap, xPos, yPos, xSize, ySize);
+		this.scaleBitmap = Bitmap.createScaledBitmap(this.raw, xSize*scale, ySize*scale, scaleType);
+		this.ninePatch = function() {return ninePatch1(this.scaleBitmap, (top*(scale-1))+1, (left*(scale-1))+1, bottom*scale, right*scale)}
+	}
+}
+
+
+
+function toastL(str) {
 	ctx.runOnUiThread(new java.lang.Runnable( {
 		run: function(){
 			try{
@@ -692,7 +192,7 @@ function toast(str) {
 	));
 }
 
-function toasts(str) {
+function toast(str) {
 	ctx.runOnUiThread(new java.lang.Runnable( {
 		run: function(){
 			try{
@@ -703,15 +203,6 @@ function toasts(str) {
 	));
 }
 
-function broadcast(str){
-	if(onMap) {
-		net.zhuoweizhang.mcpelauncher.ScriptManager.nativeSendChat(ChatColor.YELLOW + TAG + str);
-	}else {
-		toast(TAG + str);
-	}
-	//clientMessage(ChatColor.YELLOW + /*"<" + Player.getName(Player.getEntity()) + "> + "*/ TAG + str);
-}
-
 function sleep(int){
 	java.lang.Thread.sleep(int);
 }
@@ -719,143 +210,1873 @@ function sleep(int){
 function uiThread(fc) {
 	return ctx.runOnUiThread(new java.lang.Runnable({run: fc}))
 }
+
 function thread(fc) {
 	return new java.lang.Thread(new java.lang.Runnable( {run: fc}))
 }
 
 
 
-/**
- * Download file
- *
- * @since 2015-01
- * @author CodeInside
- * 
- * @param <File> path
- * @param <String> url
- * @param <ProgressBar|Null> progressBar
- */
+var sgUtils =  {
+	
+	toString: function() {
+		return "[object sgUtils]";
+	},
+	
+	data: {}//Pointer storage
+	//sgUtils.data["progress"] = value;
+}
 
-function downloadFile(path, url, progressBar) {
-	try{
-		var tempApiUrl = new java.net.URL(url);
-		var tempApiUrlConn = tempApiUrl.openConnection();
-		tempApiUrlConn.connect();
-		var tempBis = new java.io.BufferedInputStream(tempApiUrl.openStream());
-		if(progressBar !== null) {
-			progressBar.setMax(tempApiUrlConn.getContentLength());
+sgUtils.io = {
+	
+	toString: function() {
+		return "[object sgUtils - I/O]";
+	},
+	
+	/**
+	 * Copy file
+	 * 
+	 * @author SemteulGaram
+	 * @since 2015-11-13
+	 * 
+	 * @param {(File|String|InputStream)} input
+	 * @param {(File|String)} output
+	 * @param {boolean} mkDir
+	 * @param getMax - sgUtils.data pointer
+	 * @param getProgress - sgUtils.data pointer
+	 * @return {true} success
+	 */
+	copyFile: function(input, output, mkDir, getMax, gerProgress) {
+		if(input instanceof String) {
+			input = new File(input);
+			if(!input.exists()) {
+				throw new Error("File not exists: " + file.getPath());
+			}
+			input = new FileInputStream(input);
+		}else if(input instanceof File) {
+			if(!input.exists()) {
+				throw new Error("File not exists: " + file.getPath());
+			}
+			input = new FileInputStream(input);
+		}else if(!(input instanceof InputStream)) {
+			throw new Error("Illegal argument type");
 		}
-		var tempFos = new java.io.FileOutputStream(path);
-		var tempData = java.lang.reflect.Array.newInstance(java.lang.Byte.TYPE, 1024);
-		var tempTotal = 0, tempCount;
-		while ((tempCount = tempBis.read(tempData)) != -1) {
-			tempFos.write(tempData, 0, tempCount);
-			tempTotal += tempCount;
-			if(progressBar !== null) {
-				progressBar.setProgress(tempTotal);
+		
+		if(output instanceof String) {
+			output = new File(output);
+		}else if(!(output instanceof File)) {
+			throw new Error("Illegal argument type");
+		}
+		
+		if(mkDir) {
+			output.getParentFile().mkdirs();
+		}
+	
+		var bis = new BufferdInputStream(input);
+		var fos = new FileOutputStream(output)
+		var bos = new BufferdOutputStream(fos);
+		var buffer = new sg.ai(Byte.TYPE, 4096);
+		if(getMax !== null && getMax !== undefined) {
+			sgUtils.data[getMax] = input.available();
+		}
+		if(getProgress !== null && getProgress !== undefined) {
+			sgUtils.data[getProgress] = 0;
+		}
+		var len;
+		while((len = bis.read(buffer)) != null) {
+			bos.write(buffer, 0, len);
+		 if(getProgress !== null && getProgress !== undefined) {
+				sgUtils.data[getProgress] += content;
 			}
 		}
-		tempFos.flush();
-		tempFos.close();
-		tempBis.close();
+		input.close();
+		fos.close();
+		bis.close();
+		bos.close();
 		return true;
-	}catch(e){
-		return false;
+	},
+	
+	/**
+	 * Set texture (Android)
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-04
+	 *
+	 * @param {File} prototypeFile
+	 * @param {string} innerPath - ex."images/mob/steve.png"
+	 * @return {boolean} success
+	 */
+	setTexture: function(prototypeFile, innerPath){
+		var bl = new File(sgFiles.sdCard, "Android/data/net.zhuoweizhang.mcpelauncher");
+		var blPro = new File(sgFiles.sdCard, "Android/data/net.zhuoweizhang.mcpelauncher.pro");
+		var ex = false;
+		if(bl.exists()) {
+			var dir = new File(bl, "files/textures/" + innerPath);
+			dir.getParentFile().mkdirs(); 
+			try {
+				ex = this.copyFile(prototypeFile, dir, false);
+			}catch(e) {}
+		}
+		if(blPro.exists()) {
+			var dir = new File(blPro, "files/textures/" + innerPath);
+			dir.getParentFile().mkdirs(); 
+			try {
+				ex = this.copyFile(prototypeFile, dir, false);
+			}catch(e) {}
+		}
+		return ex;
+	},
+	
+	/**
+	 * Read file
+	 * 
+	 * @author Semteul
+	 * @since 2015-10-25
+	 * 
+	 * @param {(File|string|InputStream)} file
+	 * @return {string[]} lines
+	 */
+	readFile: function(file) {
+		if(typeof file === "string") {
+			file = new FileInputStream(new File(file));
+		}else if(file instanceof File) {
+			file = new FileInputStream(file);
+		}else if(!(file instanceof InputStream)) {
+			throw new Error("Illegal argument type");
+		}
+		
+		var isr = new InputStreamReader(file);
+		var br = new BufferedReader(isr);
+		var content = [], line;
+		
+		while((line = br.readLine()) !== null) {
+			content.push(line);
+		}
+		
+		br.close();
+		isr.close();
+		file.close();
+		
+		return content;
+	},
+	
+	/**
+	 * Write file
+	 * 
+	 * @author Semteul
+	 * @since 2015-10-25
+	 * 
+	 * @param {(File|string)} file
+	 * @param {(string[]|string)} value
+	 * @param {boolean} mkDir
+	 * @return {boolean} success
+	 */
+	writeFile: function(file, value, mkDir) {
+		if(typeof file === "string") {
+			file = new File(file);
+		}else if(!(file instanceof File)) {
+			throw new Error("Illegal argument type");
+		}
+		
+		if((!file.exists()) && mkDir) {
+			file.getParentFile().mkdirs();
+			file.createNewFile();
+		}else if(!file.exists()) {
+			throw new Error("File not exists: " + file.getPath());
+		}
+		
+		if(typeof value === "string") {
+			value = value.split(String.fromCharCode(10));
+		}
+		
+		var fos = new FileOutputStream(file);
+		var osw = new OutputStreamWriter(fos);
+		
+		while(value.length > 0) {
+			osw.write(value.shift());
+			if(value.length > 0) {
+				osw.write(String.fromCharCode(10));
+			}
+		}
+		
+		osw.close();
+		fos.close();
+		
+		return true;
+	},
+	
+	/**
+	 * Load JSON
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-09
+	 * 
+	 * @param {(File|string|InputStream)} file
+	 * @return {Object} value
+	 */
+	loadJSON: function(file) {
+		var obj = this.readFile(file);
+		obj.join(String.fromCharCode(10));
+		return JSON.parse(obj);
+	},
+
+	/**
+	 * Save JSON
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-09
+	 * 
+	 * @param {(File|string|InputStream)} file
+	 * @param {Object} obj
+	 * @return {boolean} success
+	 */
+	saveJSON: function(file, obj) {
+		return this.writeFile(file, JSON.stringify(obj));
+	},
+
+	/**
+	 * Load Article
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-02
+	 *
+	 * @param {(File|string|InputStream)} file
+	 * @param {string} article
+	 * @return {string} value
+	 */
+	loadArticle: function(file, article) {
+		var values = this.readFile(file);
+		if(!(values instanceof Array)) {
+			throw new Error("[sgUtils - I/O - readFile]'s return value isn't instance of Array");
+		}
+		for(var e = 0; e < values.length; e++) {
+			var value = values[e].split("|");
+			if(value[0] === article + "") {
+				return values[e].subString(values[e].strPos("|")+1, values[e].length);
+			}
+		}
+		return null;
+	},
+	
+	/**
+	 * Save Article
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-02
+	 *
+	 * @param {File|string|InputStream} file
+	 * @param {string} article
+	 * @param {string} value
+	 * @return {boolean} success
+	 */
+	saveArticle: function(file, article, value) {
+		var values = this.readFile(file);
+		if(!(values instanceof Array)) {
+			throw new Error("[sgUtils - I/O - readFile]'s return value isn't instance of Array");
+		}
+		var index = -1;
+		for(var e = 0; e < values.length; e++) {
+			var value = values[e].split("|");
+			if(value[0] === article + "") {
+				index = e;
+			}
+		}
+		if(index === -1) {
+			values.push(article + "|" + value);
+		}else {
+			values[index] = article + "|" + value;
+		}
+		return this.writeFile(file, values);
+	},
+	
+	/**
+	 * load Minecraft Setting
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-11-13
+	 *
+	 * @param {string} article
+	 * @return {string} value
+	 */
+	loadMcpeSetting: function(article) {
+		article += "";
+		var file = new File(sgFiles.mcpe, "minecraftpe/options.txt");
+		if(!file.exists()) {
+			throw new Error("MCPE setting file isn't exists");
+		}
+		var values = this.readFile(file);
+		var value = [];
+		for(var e = 0; e < values.length; e++) {
+			value = values[e].split(":");
+			if(value[0] === article) {
+				return value[1];
+			}
+		}
+		return null;
+	},
+
+	/**
+	 * Save Minecraft Setting
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-11-13
+	 *
+	 * @param {string} article
+	 * @param {string} value
+	 * @return {true} success
+	 */
+	saveMcpeSetting: function(article, value) {
+		article += "";
+		value += "";
+		var file = new File(sgFiles.mcpe, "minecraftpe/options.txt");
+		if(!file.exists()) {
+			throw new Error("MCPE setting file isn't exists");
+		}
+		var values = this.readFile(file);
+		var value = [];
+		var index = -1;
+		for(e = 0; e < values.length; e++) {
+			value = values[e].split(":");
+			if(value[0] === article) {
+				index = e;
+				break;
+			}
+		}
+		if(index === -1) {
+			values.push(article + ":" + value);
+		}else {
+			values[index] = article + ":" + value;
+		}
+		this.writeFile(file, values, false);
+		try {
+			sg.sm.requestGraphicsReset();
+		}catch(e) {};
+		return true;
+	}
+}
+	
+	
+	
+sgUtils.convert = {
+	
+	toString: function() {
+		return "[object sgUtils - Convert]";
+	},
+	
+	/**
+	 * Split line
+	 * 
+	 * @author SemteulGaram
+	 * @since 2015-10-24
+	 * 
+	 * @param {string} cutter
+	 * @param {string} content
+	 * @return {string}
+	 */
+	splitLine: function(cutter, content){
+		return content.split(cutter).join(String.fromCharCode(10));
+	},
+	
+	/**
+	 * Marge Array
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-06
+	 *
+	 * @param {*[]} arr1
+	 * @param {*[]} arr2
+	 * @param {int} margeType - 0: Horizontal, 1: Vertical
+	 * @param {int} width1
+	 * @param {int} height1
+	 * @param {int} width2
+	 * @param {int} height2
+	 * @param {*} fillBlank - null: extend array
+	 * @return {*[]} margedArray 
+	 */
+	margeArray: function(arr1, arr2, margeType, width1, height1, width2, height2, fillBlank) {
+		var arr = [];
+		switch(margeType) {
+			case 0:
+				var maxHeight = height1 >= height2 ? height1 : height2;
+				for(var e = 0; e < maxHeight; e++) {
+					if(e < height1) {
+						for(var f = 0; f < width1; f++) {
+							arr.push(arr1[(e*width1) + f]);
+						}
+					}else {
+						for(var f = 0; f < width1; f++) {
+							if(fillBlank === null) {
+								arr.push(arr1[(width1*(height1-1)) + f]);
+							}else {
+								arr.push(fillBlank);
+							}
+						}
+					}
+					if(e < height2) {
+						for(var f = 0; f < width2; f++) {
+							arr.push(arr2[(e*width2) + f]);
+						}
+					}else {
+						for(var f = 0; f < width2; f++) {
+							if(fillBlank === null) {
+								arr.push(arr2[(width2*(height2-1)) + f]);
+							}else {
+								arr.push(fillBlank);
+							}
+						}
+					}
+				}
+				break;
+			case 1:
+				var maxWidth = width1 >= width2 ? width1 : width2;
+				for(var e = 0; e < height1 + height2; e++) {
+					for(var f = 0; f < maxWidth; f++) {
+						if(e < height1) {
+							if(f < width1) {
+								arr.push(arr1[(e*width1) + f]);
+							}else {
+								if(fillBlank === null) {
+									arr.push(arr1[((e+1)*width1) - 1]);
+								}else {
+									arr.push(fillBlank);
+								}
+							}
+						}else {
+							if(f < width2) {
+								arr.push(arr2[((e-height1)*width2) + f]);
+							}else {
+								if(fillBlank === null) {
+									arr.push(arr2[((e-height1+1)*width2) - 1]);
+								}else {
+									arr.push(fillBlank);
+								}
+							}
+						}
+					}
+				}
+				break;
+			default:
+				throw new Error("Unknown margeType: " + margeType);
+		}
+		return arr;
+	},
+	
+	/**
+	 * View Side
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-04
+	 * 
+	 * @param {float} yaw
+	 * @return {string} direction
+	 */
+	viewSide: function(yaw) {
+		var temp = sgUtils.math.leftOver(yaw, 0, 360);
+		if((temp >= 0 && temp < 11.25) || (temp >= 348.75 && temp < 360))
+			return "북(Z+)";
+		else if(temp >= 11.25 && temp < 33.75)
+			return "북북동";
+		else if(temp >= 33.75 && temp < 56.25)
+			return "북동";
+		else if(temp >= 56.25 && temp < 78.75)
+			return "북동동";
+		else if(temp >= 78.75 && temp < 101.25)
+			return "동(-X)";
+		else if(temp >= 101.25 && temp < 123.75)
+			return "남동동";
+		else if(temp >= 123.75 && temp < 146.25)
+			return "남동";
+		else if(temp >= 146.25 && temp < 168.75)
+			return "남남동";
+		else if(temp >= 168.75 && temp < 191.25)
+			return "남(Z-)";
+		else if(temp >= 191.25 && temp < 213.75)
+			return "남남서";
+		else if(temp >= 213.75 && temp < 236.25)
+			return "남서";
+		else if(temp >= 236.25 && temp < 258.75)
+			return "남서서";
+		else if(temp >= 258.75 && temp < 281.25)
+			return "서(X+)";
+		else if(temp >= 281.25 && temp < 303.75)
+			return "북서서";
+		else if(temp >= 303.75 && temp < 326.25)
+			return "북서";
+		else if(temp >= 326.25 && temp < 348.75)
+			return "북북서";
+		else
+			return "NaY";
+	},
+	
+	/**
+	 * NumberToString
+	 *
+	 * @author SenteulGaram
+	 * @since 2015-09
+	 * 
+	 * @param number
+	 * @return {string}
+	 */
+	numberToString: function(number) {
+		number += "";
+		try{
+			var t = number.split(".");
+			var r1 = t[0].split("");
+			var r2 = t[1];
+		}catch(e) {
+			var r1 = number.split("");
+			var r2 = undefined;
+		}
+		var r3 = "";
+		while(r1.length > 0) {
+			if(r1.length > 3) {
+				r3 = r1.pop() + r3;
+				r3 = r1.pop() + r3;
+				r3 = "," + r1.pop() + r3;
+			}else {
+				r3 = r1.pop() + r3;
+			}
+		}
+		if(r2 === undefined) {
+			return r3;
+		}else {
+			return r3 + "." + r2;
+		}
+	},
+	
+	/**
+	 * DataSizeToString
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-09
+	 * 
+	 * @param size
+	 * @return {string}
+	 */
+ dataSizeToString: function(size) {
+		if(size < 1000) {
+			return size + "B";
+		}else if(size < 1024000) {
+			return parseInt(Math.round(size*100/1024), 10)/100 + "KB";
+		}else if(size < 1048576000) {
+			return parseInt(Math.round(size*100/1048576), 10)/100 + "MB";
+		}else if(size < 1073741824000) {
+			return parseInt(Math.round(size*100/1073741824), 10)/100 + "GB";
+		}else if(size < 1099511627776000) {
+			return parseInt(Math.round(size*100/1099511627776), 10)/100 + "TB";
+		}else {
+			return numberToString(parseInt(Math.round(size*100/(1099511627776*1024)), 10)/100) + "PB";
+		}
+	}
+}
+	
+	
+	
+sgUtils.math = {
+	
+	toString: function() {
+		return "[object sgUtils - Math]";
+	},
+	
+	/**
+	 * Random Id
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-10-27
+	 *
+	 * @param {(undefined|...int)} _repeat - don't touch
+	 * @return {int} randomId
+	 */
+	randomId: function(_repeat) {
+		if(_repeat === undefined) {
+			_repeat = 0;
+		}
+		var num = parseInt(Math.floor(Math.random() * 0xffffff));
+		if(sgUtils.data._randomId === undefined) {
+			sgUtils.data._randomId = [];
+		}
+		if(sgUtils.data._randomId.indexOf(num) !== -1) {
+			if(_repeat > 10) {
+				throw new Error("Can't make a randomId: " + num);
+			}
+			return this.randomId(++_repeat);
+		}
+		sgUtils.data._randomId.push(num);
+		return num;
+	},
+	
+	/**
+	 * Left Over
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-10-31
+	 *
+	 * @param value
+	 * @param min
+	 * @param max
+	 * @return number
+	 */
+	leftOver: function(value, min, max) {
+		var range = max - min;
+		if(range < 1) throw new Error("'max - min' must over then 1");
+		while(value < min) value += range;
+		while(value >= max) value -= range;
+		return value;
+	}
+}
+	
+	
+	
+sgUtils.vector = {
+	
+	toString: function() {
+		return "[object sgUtils - Vector]";
+	},
+	
+	/**
+	 * Vector(x, y, z) to Direction(yaw, pitch)
+	 *
+	 * @author ToonRaOn(툰라온)
+	 * @since 2015-01
+	 * @from NaverCafe :::MCPE KOREA:::
+	 *
+	 * @param {double} x
+	 * @param {double} y
+	 * @param {double} z
+	 * @return {float[]} direction - [yaw, pitch]
+	 */
+	vectorToDirection: function(x, y, z) {
+		var lenH = Math.sqrt(Math.pow(x, 2)+Math.pow(z, 2));
+		var sinH = x/lenH;
+		var cosH = z/lenH;
+		var tanH = x/z;
+		var acosH = Math.acos(z/lenH)*180/Math.PI;
+		var atanV = Math.atan(y/lenH);
+		var yaw = 0;
+		if(sinH > 0 && ((cosH > 0 && tanH > 0) || (cosH < 0 && tanH < 0))) {
+			yaw = 360 - acosH;
+		}else if(sinH < 0 && ((cosH < 0 && tanH > 0) || (cosH > 0 && tanH < 0))) {
+			yaw = acosH;
+		}else if(cosH === 1) {
+			yaw = 0;
+		}else if(sinH === 1) {
+			yaw = 90;
+		}else if(cosH === -1) {
+			yaw = 180;
+		}else if(sinH === -1) {
+			yaw = 270;
+		}else if(sinH === 0 && cosH === 1 && tanH === 0) {
+			yaw = 0;
+		}
+		var pitch = -1*Math.atan(y/Math.sqrt(Math.pow(x, 2)+Math.pow(z, 2)))*180/Math.PI;
+		return [yaw, pitch];
+	},
+	
+	/**
+	 * Direction(yaw, pitch) to Absolute range Vector(x, y, z)
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-01
+	 * 
+	 * @param {float} yaw
+	 * @param {float} pitch
+	 * @return {double[]} vector3 - [x, y, z]
+	 */
+	directionToVector: function(yaw, pitch) {
+		var x = -1*Math.sin(yaw/180*Math.PI)*Math.cos(pitch/180*Math.PI);
+		var y = Math.sin(-pitch/180*Math.PI);
+		var z = Math.cos(yaw/180*Math.PI)*Math.cos(pitch/180*Math.PI);
+		return [x, y, z];
+	},
+
+	/**
+	 * Absolute range x, y, z
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-01
+	 * 
+	 * @param {double} x
+	 * @param {double} y
+	 * @param {double} z
+	 * @return {double[]} vector3 - [x, y, z]
+	 */
+	absoluteRange: function(x, y, z) {
+		var rx = x/Math.sqrt(Math.pow(x, 2)+Math.pow(y, 2)+Math.pow(z, 2));
+		var ry = y/Math.sqrt(Math.pow(x, 2)+Math.pow(y, 2)+Math.pow(z, 2));
+		var rz = z/Math.sqrt(Math.pow(x, 2)+Math.pow(y, 2)+Math.pow(z, 2));
+		return [rx, ry, rz];
+	}
+}
+	
+	
+	
+sgUtils.gui = {
+	
+	toString: function() {
+		return "[object sgUtils - GUI]";
+	},
+	
+	/**
+	 * mcFastText
+	 * 마인크래프트 스타일의 텍스트뷰를 생성합니다
+	 * 
+	 * @author SemteulGaram
+	 * @since 2015-10-24
+	 *
+	 * @param {string|null} str
+	 * @param {number|null} size
+	 * @param {boolean|null} hasShadow
+	 * @param {Color|null} color
+	 * @param {Color|null} shadowColor
+	 * @param {number|null} width
+	 * @param {number|null} height
+	 * @param {Array|null} padding
+	 * @param {Array|null} margins
+	 * @return {TextView}
+	 */
+	mcFastText: function(str, size, hasShadow, color, shadowColor, width, height, padding, margins) {
+		var tv = new TextView(ctx);
+		tv.setTransformationMethod(null);
+		tv.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+		if(sgFiles.font.exists()) {
+			tv.setTypeface(android.graphics.Typeface.createFromFile(sgFiles.font));
+		};
+		if(str !== null && str !== undefined) {
+			tv.setText((str + ""));
+		}
+		if(size !== null && size !== undefined) {
+			tv.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, size);
+		}else {
+			tv.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, sg.px*0x10);
+		}
+		if(color !== null && color !== undefined) {
+			tv.setTextColor(color);
+		}
+		if(hasShadow) {
+			if(shadowColor !== null && shadowColor !== undefined) {
+				tv.setShadowLayer(1/0xffffffff, sg.px*1.3, sg.px*1.3, shadowColor);
+			}else {
+				tv.setShadowLayer(1/0xffffffff, sg.px*1.3, sg.px*1.3, Color.DKGRAY);
+			}
+		}
+		if(padding !== null && padding !== undefined) {
+			tv.setPadding(padding[0], padding[1], padding[2], padding[3]);
+		}
+		var tv_p;
+		if(width !== null && height !== null && width !== undefined && height !== undefined) {
+			tv_p = new sg.ll.LayoutParams(width, height);
+		}else {
+			tv_p = new sg.ll.LayoutParams(sg.wc, sg.wc);
+		}
+		if(margins !== null && margins !== undefined) {
+			tv_p.setMargins(margins[0], margins[1], margins[2], margins[3]);
+		}
+		tv.setLayoutParams(tv_p);
+		return tv;
+	},
+	
+	/**
+	 * mcFastButton
+	 * 마인크래프트 스타일의 버튼을 생성합니다
+	 * 
+	 * @author SemteulGaram
+	 * @since 2015-10-24
+	 *
+	 * @param {string} str
+	 * @param {number|null} size
+	 * @param {boolean|null} hasShadow
+	 * @param {Color|null} color
+	 * @param {Color|null} shadowColor
+	 * @param {number|null} width
+	 * @param {number|null} height
+	 * @param {Array|null} padding
+	 * @param {Array|null} margins
+	 * @param {Drawable|null} background
+	 * @param {function|null} onTouchFunction - ex.function(view, event){return Boolean}
+	 * @param {function|null} onClickFunction - function(view, event)
+	 * @param {function|null} onLongClickFunction - function(view, event){return Boolean}
+	 * @return {Button}
+	 */
+	mcFastButton: function(str, size, hasShadow, color, shadowColor, width, height, padding, margins, background, onTouchFunction, onClickFunction, onLongClickFunction) {
+		var btn = new Button(ctx);
+		btn.setTransformationMethod(null);	btn.setLayerType(android.view.View.LAYER_TYPE_SOFTWARE, null);
+		if(sgFiles.font.exists()) {
+			btn.setTypeface(android.graphics.Typeface.createFromFile(sgFiles.font));
+		};
+		if(str !== null && str !== undefined) {
+			btn.setText((str + ""));
+		}
+		if(size !== null && size !== undefined) {
+			btn.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, size);
+		}else {
+			btn.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, sg.px*0x10);
+		}
+		if(color !== null && color !== undefined) {
+			btn.setTextColor(color);
+		}
+		if(hasShadow) {
+			if(shadowColor !== null && shadowColor !== undefined) {
+				btn.setShadowLayer(1/0xffffffff, sg.px*1.3, sg.px*1.3, shadowColor);
+			}else {
+					btn.setShadowLayer(1/0xffffffff, sg.px*1.3, sg.px*1.3, Color.DKGRAY);
+			}
+		}
+		if(padding !== null && padding !== undefined) {
+			btn.setPadding(padding[0], padding[1], padding[2], padding[3]);
+		}
+		var btn_p;
+		if(width !== null && height !== null && width !== undefined && height !== undefined) {
+			btn_p = new sg.ll.LayoutParams(width, height);
+		}else {
+			btn_p = new sg.ll.LayoutParams(sg.wc, sg.wc);
+		}
+		if(margins !== null && margins !== undefined) {
+			btn_p.setMargins(margins[0], margins[1], margins[2], margins[3]);
+		}
+		btn.setLayoutParams(btn_p);
+		if(background !== null && background !== undefined) {
+			btn.setBackgroundDrawable(background);
+		}else {
+			//btn.setBackgroundDrawable(Assets.button_9());
+	}
+		if(onTouchFunction !== null && onTouchFunction !== undefined) {
+			btn.setOnTouchListener(View.OnTouchListener({onTouch: function(view, event) {try {
+				return onTouchFunction(view, event);
+			}catch(e) {
+				showError(e);
+				return false;
+			}}}));
+		}
+		if(onClickFunction !== null && onClickFunction !== undefined) {
+			btn.setOnClickListener(View.OnClickListener({onClick: function(view, event) {try {
+				onClickFunction(view, event);
+			}catch(e) {
+				showError(e);
+			}}}));
+		}
+		if(onLongClickFunction !== null && onLongClickFunction !== undefined) {
+					btn.setOnLongClickListener(View.OnLongClickListener({onLongClick: function(view, event) {try {
+				return onLongClickFunction(view, event);
+			}catch(e) {
+				showError(e);
+				return false;
+			}}}));
+		}
+		return btn;
+	},
+	
+	/**
+	 * Custom Toast
+	 * 
+	 * @author SemteulGaram
+	 * @since 2015-11-13
+	 * 
+	 * @param {string} text
+	 * @param {(Drawable|null)} drawable
+	 * @param {(long|null)} duration
+	 * @param {(boolean|null)} isImportant
+	 * @param {(number|null)} size
+	 = @param {(Color|null)} textColor
+	 */
+	toast: function(text, drawable, duration, isImportent, size, textColor) {
+		if(sgUtils.data._toast === undefined) {
+			sgUtils.data._toast = [];
+		}
+		if(!duration) {
+			duration = 3000;
+		}
+		var tv = sgUtils.gui.mcFastText(text, size, false, textColor, null, null, null, [sg.px*8, sg.px*8, sg.px*8, sg.px*8]);
+		if(drawable !== null && drawable !== undefined) {
+			tv.setBackgroundDrawable(drawable);
+		}
+		var wd = new PopupWindow(tv, sg.wc, sg.wc, false);
+		if(sgUtils.data._toast.length > 0 && !sgUtils.data._toast[0][2]) {
+			var owd = sgUtils.data._toast[0][0];
+			sgUtils.data._toast = [];
+			uiThread(function() {try {
+				if(owd.isShowing()) {
+					owd.dismiss();
+				}
+			}catch(err) {}});
+		}else {
+			for(var e = 0; e < sgUtils.data._toast.length; e++) {
+				if(!sgUtils.data._toast[e][2]) {
+					sgUtils.data._toast.splice(e--, 1);
+				}
+			}
+		}
+		sgUtils.data._toast.push([wd, duration, isImportent, sgUtils.math.randomId()]);
+		if(sgUtils.data._toast.length === 1) {
+			this._toastActivity();
+		}
+	},
+	
+	_toastActivity: function() {
+		var that = this;
+		if(sgUtils.data._toast.length === 0) {
+			return;
+		}
+		uiThread(function() {try {
+			var cwd = sgUtils.data._toast[0][0];
+			var cid = sgUtils.data._toast[0][3];
+			cwd.showAtLocation(sg.dv, Gravity.CENTER|Gravity.BOTTOM, 0, sg.px*80);
+			new Handler().postDelayed(new Runnable({run: function() {try {
+				if(sgUtils.data._toast.length === 0) {
+					return;
+				}
+				if(cid === sgUtils.data._toast[0][3]) {
+					sgUtils.data._toast.splice(0, 1);
+				}
+				if(cwd.isShowing()) {
+					cwd.dismiss();
+				}
+				that._toastActivity();
+			}catch(err) {
+				showError(err);
+			}}}), sgUtils.data._toast[0][1]);
+		}catch(err) {
+			showError(err);
+		}});
+	},
+	
+	/**
+	 * Custom Progress Bar
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-11-14
+	 *
+	 * @param {int} type
+	 * @return {customProgressBar}
+	 */
+	progressBar: function(type) {
+		if (!(this instanceof arguments.callee)) return new arguments.callee(type);
+		var that = this;
+		this.progressBar = null;
+		this.textView = null;
+		this.rl = new sg.rl(ctx);
+		this.wd = null;
+		switch(type) {
+			//뒷 부분이 터치가능한 배경이 투명한 원형 프로그래스 바
+			case 0:
+			this.progressBar = new ProgressBar(ctx);
+			var pp = new sg.rl.LayoutParams(sg.px*40, sg.px*40);
+			pp.addRule(sg.rl.CENTER_IN_PARENT);
+			this.progressBar.setLayoutParams(pp);
+			this.rl.addView(this.progressBar);
+			this.wd = new PopupWindow(this.rl, sg.ww, sg.wh, false);
+			this.wd.setTouchable(false);
+			break;
+			//뒷 부분이 터치 불가능한 배경이 어두운 원형 프로그래스 바
+			case 1:
+			this.progressBar = new ProgressBar(ctx);
+			var pp = new sg.rl.LayoutParams(sg.px*30, sg.px*30);
+			pp.addRule(sg.rl.CENTER_IN_PARENT);
+			this.progressBar.setLayoutParams(pp);
+			this.rl.addView(this.progressBar);
+			this.rl.setBackgroundColor(Color.argb(0x88, 0, 0, 0));
+			this.wd = new PopupWindow(this.rl, sg.ww, sg.wh, true);
+			this.wd.setTouchable(true);
+			break;
+			//화면 하단의 초록색 가로 프로그래스바
+			case 2:
+			this.progressBar = new ProgressBar(ctx, null, android.R.attr.progressBarStyleHorizontal);
+			var f = new ClipDrawable(new ColorDrawable(Color.parseColor("#80ff80")), Gravity.LEFT, ClipDrawable.HORIZONTAL);
+			var b = new ColorDrawable(Color.parseColor("#808080"));
+			var draw = this.progressBar.getProgressDrawable();
+			draw.setDrawableByLayerId(android.R.id.progress, f);
+			draw.setDrawableByLayerId(android.R.id.background, b);
+			var pp = new sg.rl.LayoutParams(sg.ww, sg.px*4);
+			pp.addRule(sg.rl.ALIGN_PARENT_BOTTOM);
+			this.progressBar.setLayoutParams(pp);
+			this.rl.addView(this.progressBar);
+			this.wd = new PopupWindow(this.rl, sg.ww, sg.wh, false);
+			this.wd.setTouchable(false);
+			break;
+			//터치 불가능 어두운 배경에 화면 중앙에 위쪽 텍스트와 아래쪽 초록색 프로그래스바
+			case 3:
+			var ll = new sg.ll(ctx);
+			ll.setOrientation(sg.ll.VERTICAL);
+			ll.setGravity(Gravity.CENTER);
+			
+			this.textView = sgUtils.gui.mcFastText(this.text, null, false, Color.WHITE, null, null, null, null, [0, 0, 0, sg.px*20]);
+			ll.addView(this.textView);
+			this.progressBar = new ProgressBar(ctx, null, android.R.attr.progressBarStyleHorizontal);
+			var f = new ClipDrawable(new ColorDrawable(Color.parseColor("#80ff80")), Gravity.LEFT, ClipDrawable.HORIZONTAL);
+			var b = new ColorDrawable(Color.parseColor("#808080"));
+			var draw = this.progressBar.getProgressDrawable();
+			draw.setDrawableByLayerId(android.R.id.progress, f);
+			draw.setDrawableByLayerId(android.R.id.background, b);
+			var pp = new sg.ll.LayoutParams(sg.px*0x100, sg.px*4);
+			this.progressBar.setLayoutParams(pp);
+			ll.addView(this.progressBar);
+			var llp = new sg.rl.LayoutParams(sg.wc, sg.wc);
+			llp.addRule(sg.rl.CENTER_IN_PARENT);
+			ll.setLayoutParams(llp);
+			this.rl.addView(ll);
+			this.rl.setBackgroundColor(Color.argb(0x88, 0, 0, 0));
+			this.wd = new PopupWindow(this.rl, sg.ww, sg.wh, true);
+			this.wd.setTouchable(true);
+			break;
+			//터치 불가능 어두운 배경에 화면 중앙에 왼쪽 원형 프로그래스바 오른쪽 텍스트
+			case 4:
+			var ll = new sg.ll(ctx);
+			ll.setOrientation(sg.ll.HORIZONTAL);
+			ll.setGravity(Gravity.CENTER);
+			
+			this.progressBar = new ProgressBar(ctx);
+			var pp = new sg.ll.LayoutParams(sg.px*40, sg.px*40);
+			this.progressBar.setLayoutParams(pp);
+			ll.addView(this.progressBar);
+			this.textView = sgUtils.gui.mcFastText(this.text, null, false, Color.WHITE, null, null, null, null, [sg.px*20, 0, 0, 0]);
+			ll.addView(this.textView);
+			var llp = new sg.rl.LayoutParams(sg.wc, sg.wc);
+			llp.addRule(sg.rl.CENTER_IN_PARENT);
+			ll.setLayoutParams(llp);
+			this.rl.addView(ll);
+			this.rl.setBackgroundColor(Color.argb(0x88, 0, 0, 0));
+			this.wd = new PopupWindow(this.rl, sg.ww, sg.wh, true);
+			this.wd.setTouchable(true);
+			break;
+			default:
+			throw new Error("Undefined custom progress bar type: " + type);
+		}
+		
+		this.getText = function() {
+			if(this.textView === null) {
+				throw new Error("This type of custom progress bar don't support 'text' parameter");
+			}
+			return this.textView.getText() + "";
+		}
+		
+		this.getMax = function() {
+			if(this.progressBar === null) {
+				throw new Error("This type of custom progress bar don't support 'max' parameter");
+			}
+			return this.max;
+		}
+		
+		this.getProgress = function() {
+			if(this.progressBar === null) {
+				throw new Error("This type of custom progress bar don't support 'progress' parameter");
+			}
+			return this.progress;
+		}
+			
+		this.setText = function(text) {
+			if(this.textView === null) {
+				throw new Error("This type of custom progress bar don't support 'text' parameter");
+			}
+			this.textView.setText(text);
+		}
+		
+		this.setMax = function(max) {
+			if(this.progressBar === null) {
+				throw new Error("This type of custom progress bar don't support 'max' parameter");
+			}
+			this.progressBar.setMax(max);
+		}
+		
+		this.setProgress = function(progress) {
+			if(this.progressBar === null) {
+				throw new Error("This type of custom progress bar don't support 'progress' parameter");
+			}
+			this.progressBar.setProgress(progress);
+		}
+		
+		this.show = function() {
+			uiThread(function() {try {
+				if(!that.wd.isShowing()) {
+					that.wd.showAtLocation(sg.dv, Gravity.LEFT|Gravity.TOP, 0, 0);
+				}
+			}catch(err) {
+				showError(err);
+			}});
+		}
+		
+		this.close = function() {
+			uiThread(function() {try {
+				if(that.wd.isShowing()) {
+					that.wd.dismiss();
+				}
+			}catch(err) {
+				showError(err);
+			}});
+		}
+	}
+}
+	
+	
+	
+sgUtils.net = {
+	
+	toString: function() {
+		return "[sgUtils - Net]";
+	},
+	
+	/**
+	 * Download file
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-01
+	 * 
+	 * @param {File} path
+	 * @param {string} url
+	 * @param getMax - sgUtils.data pointer
+	 * @param getProgress - sgUtils.data pointer
+	 * @return {boolean} success
+	 */
+	download: function(path, url, getMax, getProgress) {
+		try{
+			var url = new URL(url);
+			var urlConnect = url.openConnection();
+			urlConnect.connect();
+			var bis = new BufferedInputStream(url.openStream());
+			if(getMax !== null || getMax !== undefined) {
+				sgUtils.data[getMax] = urlConnect.getContentLength();
+			}
+			var fos = new FileOutputStream(path);
+			var buffer = sg.ai(Byte.TYPE, 1024);
+			var count = 0, content;
+			while ((content = bis.read(buffer)) != -1) {
+				fos.write(buffer, 0, content);
+				count += parseInt(content);
+				if(getProgress !== null || getProgress !== undefined) {
+					sgUtils.data[getProgress] = count;
+				}
+			}
+			fos.flush();
+			fos.close();
+			bis.close();
+			return true;
+		}catch(e){
+			return false;
+		}
+	},
+	
+	/**
+	 * Script server data
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-01
+	 * 
+	 * =>loadScriptServerData
+	 * @param {string} url
+	 * @param savePointer - sgUtils.data pointer
+	 * @return {boolean} success
+	 * 
+	 * =>ReadContent
+	 * @param savePointer - sgUtils.data pointer
+	 * @param {string} article
+	 * @return {string|null}
+	 */
+	loadScriptServerData: function(updateServerUrl, savePointer) {
+		try{
+			var url = new URL(updateServerUrl);
+			var netStream = url.openStream();
+			var br = new BufferedReader(new InputStreamReader(netStream));
+			sgUtils.data[pointer] = [];
+			var content;
+			while ((content = br.readLine()) != null) {
+				sUtil.data[savePointer].push(content);
+			}
+			br.close();
+			return true;
+		}catch(e) {
+			return false;
+		}
+	},
+
+	readContent: function(savePointer, article){
+		var data = sgUtils.data[savePointer];
+		var content;
+		for(var e = 0; e < data.length; e++){
+			if(data[e].split(":")[0] == article) {
+				return data[e].subString(data[e].strPos(":")+1, data[e].length);
+			}
+		}
+		return null;
 	}
 }
 
 
 
-function loadServerData(scriptInfoUrl){
-	try{
-		var bufferedReader = new java.io.BufferedReader(new java.io.InputStreamReader(java.net.URL(scriptInfoUrl).openStream()));
-		var scriptServerData = [];
-		var temp = "";
-		while ((temp = bufferedReader.readLine()) != null) {
-			scriptServerData.push(temp);;
+sgUtils.modPE = {
+	
+	toString: function() {
+		return "[object sgUtils - ModPE]";
+	},
+	
+	broadcast: function(str){
+		sg.sm.nativeSendChat(str);
+	},
+	
+	entityExtra: {
+		isEqual: function(obj1, obj2) {
+			return Entity.getUniqueId(obj1) === Entity.getUniqueId(obj2);
+		},
+		
+		getAll: function() {
+			var a = net.zhuoweizhang.mcpelauncher.ScriptManager.allentities;
+			var entities = new Array(a.size());
+			for(var n = 0; entities.length > n; n++){
+				entities[n] = a.get(n);
+			}
+			return entities;
+		},
+		
+		findEnt: function(uniqId) {
+			var list = sgUtils.modPE.entityExtra.getAll();
+			for(var e = 0; e < list.length; e++) {
+				if(uniqId === Entity.getUniqueId(list[e])) {
+					return list[e];
+				}
+			}
+		},
+		
+		getRange: function(obj1, obj2) {try {
+			return Math.sqrt(Math.pow(Entity.getX(obj1) - Entity.getX(obj2), 2) + Math.pow(Entity.getY(obj1) - Entity.getY(obj2), 2) + Math.pow(Entity.getZ(obj1) - Entity.getZ(obj2), 2));
+		}catch(e) {
+			return false;
+		}},
+		
+		getNearEntitys: function(x, y, z) {
+			var a = sgUtils.modPE.entityExtra.getAll();
+			var r = [];
+			var n = [];
+			for(var e = 0; e < a.length; e++) {
+				r.push(Math.sqrt(Math.pow(Entity.getX(a[e])-x, 2)+Math.pow(Entity.getY(a[e])-y, 2)+Math.pow(Entity.getZ(a[e])-z, 2)));
+			}
+			while(r.length > 0) {
+				var i = r.indexOf(Math.min.apply(null, r));
+				n.push(a[i]);
+				r.splice(i, 1);
+			}
+			return n;
 		}
-		bufferedReader.close();
-		return scriptServerData;
+	},
+	
+	playerExtra: {
+		getOnlinePlayers: function() {
+			var entitys = sgUtils.modPE.entityExtra.getAll();
+			var list = [];
+			for(var e = 0; e < entitys.length; e++) {
+				if(Player.isPlayer(entitys[e])) {
+					list.push(entitys[e]);
+				}
+			}
+			return list;
+		},
+		
+		isOnline: function(player) {
+			var list = sgUtils.modPE.entityExtra.getAll();
+			for(var e = 0; e < list.length; e++) {
+				if(Player.isPlayer(list[e]) && sgUtils.modPE.entityExtra.isEqual(list[e], player)) {
+					return true;
+				}
+			}
+			return false;
+		},
+		
+		getNearPlayers: function(x, y, z) {
+			var a = sgUtils.modPE.entityExtra.getAll();
+			var f = [];
+			var r = [];
+			var n = [];
+			for(var e = 0; e < a.length; e++) {
+				if(Player.isPlayer(a[e])) {
+					f.push(a[e]);
+					r.push(Math.sqrt(Math.pow(Entity.getX(a[e])-x, 2)+Math.pow(Entity.getY(a[e])-y, 2)+Math.pow(Entity.getZ(a[e])-z, 2)));
+				}
+			}
+			while(r.length > 0) {
+				var i = r.indexOf(Math.min.apply(null, r));
+				n.push(f[i]);
+				f.splice(i, 1);
+				r.splice(i, 1);
+			}
+			return n;
+		}
+	}
+}
+
+
+
+sgUtils.android = {
+	
+	toString: function() {
+		return "[object sgUtils - Android]";
+	},
+	
+	/**
+	 * Battery Checker
+  *
+  * @author Semteul
+  * @since 2015-04
+  */
+	battery: function() {
+		if(!(this instanceof arguments.callee)) return new arguments.callee();
+		var that = this;
+		this.ifilter = new android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED);
+		
+		this.isCharging = function() {
+			var batteryStatus = ctx.registerReceiver(null, that.ifilter);
+			var status = batteryStatus.getIntExtra(android.os.BatteryManager.EXTRA_STATUS, -1);
+			return status == android.os.BatteryManager.BATTERY_STATUS_CHARGING;
+		}
+
+		this.isFullCharging = function() {
+			var batteryStatus = ctx.registerReceiver(null, that.ifilter);
+			var status = batteryStatus.getIntExtra(android.os.BatteryManager.EXTRA_STATUS, -1);
+			return status == android.os.BatteryManager.BATTERY_STATUS_FULL;
+		}
+		
+		this.plugType = function() {
+			var batteryStatus = ctx.registerReceiver(null, that.ifilter);
+			var chargePlug = batteryStatus.getIntExtra(android.os.BatteryManager.EXTRA_PLUGGED, -1);
+			if(chargePlug == android.os.BatteryManager.BATTERY_PLUGGED_USB) {
+				return "USB"
+			}else if(chargePlug == android.os.BatteryManager.BATTERY_PLUGGED_AC) {
+				return "AC"
+			}else if(chargePlug == android.os.BatteryManager.BATTERY_PLUGGED_WIRELESS) {
+				return "WIRELESS"
+			}else {
+				return "UNKNOWN"
+			}
+		},
+
+		this.level = function() {
+			var batteryStatus = ctx.registerReceiver(null, that.ifilter);
+		var level = batteryStatus.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1);
+			var scale = batteryStatus.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, -1);
+			return Math.round(level / scale * 100);
+		},
+		
+		this.temp = function() {
+			var batteryStatus = ctx.registerReceiver(null, that.ifilter);
+			var temp = batteryStatus.getIntExtra(android.os.BatteryManager.EXTRA_TEMPERATURE, -1);
+			return parseInt(Math.round(temp)/10);
+		},
+		
+		this.volt = function() {
+			var batteryStatus = ctx.registerReceiver(null, that.ifilter);
+			var volt = batteryStatus.getIntExtra(android.os.BatteryManager.EXTRA_VOLTAGE, -1);
+			return volt / 1000;
+		},
+		
+		this.tec = function() {
+			var batteryStatus = ctx.registerReceiver(null, that.ifilter);
+			var tec = batteryStatus.getIntExtra(android.os.BatteryManager.EXTRA_TECHNOLOGY, -1);
+			return tec;
+		},
+		
+		this.health = function() {
+			var batteryStatus = ctx.registerReceiver(null, that.ifilter);
+			var health = batteryStatus.getIntExtra(android.os.BatteryManager. EXTRA_HEALTH, -1);
+			switch(health) {
+				case android.os.BatteryManager.BATTERY_HEALTH_GOOD:
+				return 0;//normal
+				break;
+				case android.os.BatteryManager.BATTERY_HEALTH_DEAD:
+				return 1;//battery life span is nearly end
+				break;
+			case android.os.BatteryManager.BATTERY_HEALTH_COLD:
+				return 2;//battery is too cold for work
+				break;
+				case android.os.BatteryManager.BATTERY_HEALTH_OVERHEAT:
+				return 3;//battery buning XD
+				break;
+				case android.os.BatteryManager.BATTERY_HEALTH_OVER_VOLTAGE:
+				return 4;//battery voltage is too high
+				break;
+				case android.os.BatteryManager.BATTERY_HEALTH_UNKNOWNLURE:
+				return 5;//unKnow!
+				break;
+				case android.os.BatteryManager.BATTERY_HEALTH_UNSPECIFIED_FAILURE:
+				return 6;//I don't know why fail but someting wrong.
+				break;
+				default:
+				return -1;//i can't read it maybe your phone API version is higher
+			}
+		}
+	},
+	
+	/*
+	 * Copyright (C) 2010 The Android Open Source Project
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      http://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+
+	//convert Java to Javascript by [Semteul]
+
+	visualizer: function() {
+		var that = this;
+		//int
+		this.TYPE_PCM = 0;
+		this.TYPE_FFT = 1;
+		//long
+		this.MAX_IDLE_TIME_MS = 3000;
+		//byte[]
+		this.rawVizData;
+		//int[]
+		this.formattedVizData;
+		//byte[]
+		this.rawNullData = new sg.ai(Byte.TYPE, 0);
+		//int[]
+		this.formattedNullData = new sg.ai(Int.type, 0);
+		//Visualizer
+		this.visualizer;
+		//int
+		this.type;
+		//long
+		this.lastValidCaptureTimeMs;
+		
+		this.range = new Array(2);
+		// type, size - @int
+		this.AudioCapture = function(type, size, session) {
+			that.Type = type;
+			that.range = android.media.audiofx.Visualizer.getCaptureSizeRange();
+		 	if(size < that.range[0]) {
+				size = that.range[0];
+			}
+			if (size > VL.range[1]) {
+				size = VL.range[1];
+			}
+			that.rawVizData = sg.ai(Byte.TYPE, size);
+			that.formattedVizData = new Array(size);
+			that.visualizer = null;
+			try {
+				that.visualizer = new android.media.audiofx.Visualizer(session);
+				if(that.visualizer != null) {
+					if(that.visualizer.getEnabled()) {
+						that.visualizer.setEnabled(false);
+					}
+					that.visualizer.setCaptureSize(that.rawVizData.length);
+				}
+			}catch(e) {
+				showError(e);
+			}
+		}
+		
+		this.start = function() {
+			if(that.visualizer != null) {
+				try {
+					if(!that.visualizer.getEnabled()) {
+						that.visualizer.setEnabled(true);
+						that.lastValidCaptureTimeMs = java.lang.System.currentTimeMillis();
+					}
+				}catch(e) {
+					showError(e);
+				}
+			}
+		}
+	
+		this.stop = function() {
+			if(that.visualizer != null) {
+				try {
+					if(that.visualizer.getEnabled()) {
+						that.visualizer.setEnabled(false);
+					}
+				}catch(e) {
+					showError(e);
+				}
+			}
+		}
+		
+		this.release = function() {
+			if(that.visualizer != null) {
+				that.visualizer.release();
+				that.visualizer = null;
+			}
+		}
+	
+		// return - @byte[]
+		this.getRawData = function() {
+			if(that.captureData()) {
+				return that.rawVizData;
+			}else {
+				return that.rawNullData;
+			}
+		}
+		
+		// num, den - @int
+		// return - @byte[]
+		this.getFormattedData = function(num, den) {
+			if(that.captureData()) {
+				if(that.type === that.TYPE_PCM) {
+					for(var i = 0; i < that.formattedVizData.length; i++) {
+						//convert from unsigned 8 bit to signed 16 bit
+						var tmp = (that.rawVizData[i] & 0xFF) - 128;
+						// apply scaling factor
+						that.formattedVizData[i] = (tmp*num)/den;
+					}
+				}else if(that.type === that.TYPE_FFT) {
+					for (var i = 0; i < that.formattedVizData.length; i++) {
+						// apply scaling factor
+						that.formattedVizData[i] = (that.rawVizData[i]*num)/den;
+					}
+				}else {
+					toast("Unknown AudioCapture Type");
+					return that.formattedNullData;
+				}
+				return that.formattedVizData;
+			} else {
+				return that.formattedNullData;
+			}
+		}
+		
+		// return - boolen
+		this.captureData = function() {
+			var status = android.media.audiofx.Visualizer.ERROR;
+			var result = true;
+			try {
+				if(that.visualizer != null) {
+					if(that.type === that.TYPE_PCM) {
+						status = that.visualizer.getWaveForm(that.rawVizData);
+					}else {
+						status = that.visualizer.getFft(that.rawVizData);
+					}
+				}
+			}catch(e) {
+				showError(e);
+			}finally {
+				if (status !== android.media.audiofx.Visualizer.SUCCESS) {
+					result = false;
+				}else {
+					// return idle state indication if silence lasts more than MAX_IDLE_TIME_MS
+					//byte
+					var nullValue = 0;
+					if (that.type === that.TYPE_PCM) {
+						nullValue = 0x80;
+					}
+					for(var i = 0; i < that.rawVizData.length; i++) {
+						if (that.rawVizData[i] !== nullValue) break;
+					}
+					if(i === that.rawVizData.length) {
+						if((java.lang.System.currentTimeMillis() - that.lastValidCaptureTimeMs) > that.MAX_IDLE_TIME_MS) {
+							result = false;
+						}
+					}else {
+						that.lastValidCaptureTimeMs = java.lang.System.currentTimeMillis();
+					}
+				}
+			}
+			return result;
+		}
+		
+		this.mAudioCapture = null;
+		this.mVisible = null;
+		
+		this.onVisibilityChanged = function(visible, type, size, audioSessionID) {
+			mVisible = visible;
+			if(visible) {
+				if(that.mAudioCapture === null) {
+					that.mAudioCapture = that.AudioCapture(type, size, audioSessionID);
+					that.mVisData = new Array(size);
+				}
+				that.start();
+			}else {
+				if(that.mAudioCapture !== null) {
+					that.stop();
+					that.release();
+					that.mAudioCapture = null;
+				}
+			}
+		}
+	},
+	
+	//ready
+	//vis.onVisibilityChanged(visible, type, size, android.media.MediaPlayer().getAudioSessionId());
+	
+	//capture
+	//vis.mVizData = vis.getFormattedData(1, 1);
+	
+	/**
+	 * Stereo BGS
+	 *
+	 * @author Semteul
+	 * @since 2015-06
+	 *
+	 * @param (Int|nill) x
+	 * @param (Int|null) y
+	 * @param (Int|null) z
+	 * @param (Object|null) ent
+	 * @param (File) file <music>
+	 * @param (Int) range <0~>
+	 * @param (Float) airResistanse <0~1>
+	 * @param (Float) vol <0~1>
+	 * @param (Boolean) loop
+	 * @param (Function|null) stopFunc
+	 */
+	bgs: function(x, y, z, ent, file, range, airResistance, vol, loop, stopFunc) {try {
+		var controler = android.media.MediaPlayer();
+		controler.setDataSource(file.getAbsolutePath());
+		controler.setLooping(loop);
+		if(ent !== null) {
+			x = Entity.getX(ent);
+			y = Entity.getY(ent);
+			z = Entity.getZ(ent);
+			}
+		var v = sUtis.android._bgsMeasure(x, y, z, range, airResistance);
+		controler.setVolume(v[0]*vol, v[1]*vol);
+		controler.prepare();
+		controler.start();
+		if(sgUtils.data._bgs === null) {
+			sgUtils.data._bgs = [];
+		}
+		sgUtils.data._bgs.push({x: x, y: y, z: z, ent: ent, ct: controler, file: file, session: controler.getAudioSessionId(), vol: vol, range: range, airResistance: airResistance, loop: loop, stopFunc: stopFunc});
+		if(sgUtils.data._bgsThread === undefined || !sgUtils.data._bgsThread.isAlive()) {
+			sgUtils.data._bgsThread = new thread(function() {try {
+				while(true) {
+					sgUtils.android._bgsManager();
+					sleep(50);
+				}
+			}catch(e) {
+				showError(e);
+			}}).start();
+		}
 	}catch(e) {
-		return false;
-	}
-};
-
-function checkServerData(data, article){
-	var temp = [];
-	var temp2 = [];
-	for each(var e in data){
-		temp.push(e.split(":")[0]);
-		temp2.push(e.split(":")[1]);
-	}
-	for(var e in temp){
-		if(temp[e] == article)
-			return temp2[e];
-	}
-	return null;
-};
-
-function splitLine(article){
-	var temp = checkServerData(article).split("¶"); 
-	var temp2 = ""; 
-	for(var e in temp){
-		temp2 += temp[e]+"\n"
-	}
-	return temp2
-};
-
-
-
-/**
- * Set texture
- *
- * @since 2015-04
- * @author CodeInside
- *
- * @param {File} prototypeFile
- * @param {string} innerPath
- */
- 
-function setTexture(prototypeFile, innerPath){
-	try{
-		var bl = new java.io.File(android.os.Environment.getExternalStorageDirectory(), "Android/data/net.zhuoweizhang.mcpelauncher");
-		var blPro = new java.io.File(android.os.Environment.getExternalStorageDirectory(), "Android/data/net.zhuoweizhang.mcpelauncher.pro");
-		var ex = false;
-		if(bl.exists()) {
-			var dir = new java.io.File(bl, "files/textures/images/" + innerPath);
-			dir.getParentFile().mkdirs(); 
-			var bis = new java.io.BufferedInputStream(new java.io.FileInputStream(prototypeFile));
-			var bos = new java.io.BufferedOutputStream(new java.io.FileOutputStream(dir));
-			var buffer = java.lang.reflect.Array.newInstance(java.lang.Byte.TYPE, 1024);
-			var count;
-			while((count = bis.read(buffer)) >= 0){
-				bos.write(buffer, 0, count);
+		showError(e);
+	}},
+	
+	//Private method
+	_bgsManager: function() {try {
+		for(var e = 0; e < sgUtils.data._bgs.length; e++) {
+			if(!sgUtils.data._bgs[e].ct.isPlaying()) {
+				sgUtils.data._bgs[e].ct.release();
+				sgUtils.data._bgs.splice(e, 1);
+				continue;
 			}
-			bis.close();
-			bos.close();
-			ex = true;
-		}
-		if(blPro.exists()) {
-			var dir = new java.io.File(blPro, "files/textures/images/" + innerPath);
-			dir.getParentFile().mkdirs(); 
-			var bis = new java.io.BufferedInputStream(new java.io.FileInputStream(prototypeFile));
-			var bos = new java.io.BufferedOutputStream(new java.io.FileOutputStream(dir));
-			var buffer = java.lang.reflect.Array.newInstance(java.lang.Byte.TYPE, 1024);
-			var count;
-			while((count = bis.read(buffer)) >= 0){
-				bos.write(buffer, 0, count);
+			if(sgUtils.data._bgs[e].stopFunc !== null && sgUtils.data._bgs[e].stopFunc(e)) {
+				sgUtils.data._bgs[e].ct.stop();
+				sgUtils.data._bgs[e].ct.release();
+				sgUtils.data._bgs.splice(e, 1);
+				continue;
 			}
-			bis.close();
-			bos.close();
-			ex = true;
+			if(sgUtils.data._bgs[e].ent !== null && Entity.getHealth(sgUtils.data._bgs[e].ent) <= 0) {
+				sgUtils.data._bgs[e].ent = null;
+			}
+			if(sgUtils.data._bgs[e].ent !== null) {
+				sgUtils.data._bgs[e].x = Entity.getX(sgUtils.data._bgs[e].ent);
+				sgUtils.data._bgs[e].y = Entity.getY(sgUtils.data._bgs[e].ent);
+				sgUtils.data._bgs[e].z = Entity.getZ(sgUtils.data._bgs[e].ent);
+			}
+			var v = sgUtils.android._bgsMeasure(sgUtils.data._bgs[e].x, sgUtils.data._bgs[e].y, sgUtils.data._bgs[e].z, sgUtils.data._bgs[e].range, sgUtils.data._bgs[e].airResistance);
+			sgUtils.data._bgs[e].ct.setVolume(v[0]*sgUtils.data._bgs[e].vol, v[1]*sgUtils.data._bgs[e].vol);
 		}
-		if(!ex) {
-			toast(TAG + prototypeFile.getName() + " can't find blocklauncher dir'");
+	}catch(e) {
+		showError(e);
+	}},
+	
+	//Private method
+	_stereoL: function(x, y, z, power) {
+		var e = locToYaw(Player.getX() - x, Player.getY() - y, Player.getZ() - z);
+		var t = e - Entity.getYaw(Player.getEntity()) + 180 - 10;
+		if(t > 0) {
+			t %= 360;
+		}else {
+			while(t < 0) {
+				t += 360;
+			}
 		}
-	}catch(e){
-		toasts(prototypeFile.getName() + " is not exists");
+		if(t >= 0 && t <= 180) {
+			return 1 - (Math.sin(t*Math.PI/180)/power);
+		}else {
+			return 1;
+		}
+	},
+	
+	//Private method
+	stereoR: function(x, y, z, power) {
+		var e = locToYaw(Player.getX() - x, Player.getY() - y, Player.getZ() - z);
+		var t = e - Entity.getYaw(Player.getEntity()) + 180 - 170;
+		if(t > 0) {
+			t %= 360;
+		}else {
+			while(t < 0) {
+				t += 360;
+			}
+		}
+		if(t >= 0 && t <= 180) {
+			return 1 - (Math.sin(t*Math.PI/180)/power);
+		}else {
+			return 1;
+		}
+	},
+	
+	//Private method
+	_bgsMeasure: function(x, y, z, range, airResistance) {
+		var distance = Math.sqrt(Math.pow(Player.getY() - y, 2) + Math.pow(Player.getX() - x, 2) + Math.pow(Player.getZ() - z, 2));
+		if(distance < range) {
+			return [sgUtils.android._stereoL(x, y, z, 3 * (range/distance)), sgUtils.android.stereoR(x, y, z, 3 * (range/distance))];
+		}else {
+			if(Math.sqrt(distance - range) * airResistance > 1.2) {
+				return [0, 0];
+			}
+			var l = sgUtils.android._stereoL(x, y, z, 3) - (Math.sqrt(distance - range) * airResistance);
+			var r = sgUtils.android._stereoR(x, y, z, 3) - (Math.sqrt(distance - range) * airResistance);
+			if(l < 0) {
+				l = 0;
+			}
+			if(r < 0) {
+				r = 0;
+			}
+			return [l, r];
+		}
+	},
+	
+	/**
+	 * Vibrator
+	 *
+	 * @author Semteul
+	 * @since 2015-10-29
+	 *
+	 * @param <Long|Array|null> pattern
+	 * @param <Int|null> repeat
+	 * (-1: unlimited)
+	 */
+	vibrator: function(pattern, repeat) {
+		if(sgUtils.data._vib === undefined) {
+			sgUtils.data._vib = ctx.getSystemService(Context.VIBRATOR_SERVICE);
+		}
+		sgUtils.data._vib.cancel();
+		if(repeat === undefined) {
+			repeat = 1;
+		}
+		if(pattern === null || pattern === undefined) {
+			sgUtils.data._vibThread = null;
+			sgUtils.data._vibThreadId = null;
+			return;
+		}else if(typeof pattern === "number") {
+			if(repeat === -1) {
+				var id = sgUtils.math.randomId();
+				sgUtils.data._vibThreadId = id;
+				sgUtils.data._vibThread = thread(function() {try {
+					while(true) {
+						if(sgUtils.data._vibThreadId !== id) {
+							return;
+						}
+						sgUtils.data._vib.vibrate(0xffff);
+						sleep(0xffff);
+					}
+				}catch(e) {
+					showError(e);
+				}});
+				sgUtils.data._vibThread.start();
+			}else {
+				sgUtils.data._vib.vibrate(pattern*repeat);
+			}
+		}else if(pattern instanceof Array) {
+			var id = sgUtils.math.randomId();
+			sgUtils.data._vibThreadId = id;
+			sgUtils.data._vibThread = thread(function() {try {
+				while(repeat-- !== 0) {
+					for(var e = 0; e < pattern.length; e++) {
+						if(sgUtils.data._vibThreadId !== id) {
+							return;
+						}
+						if((e % 2) === 1) {
+							sgUtils.data._vib.vibrate(pattern[e]);
+						}
+						sleep(pattern[e]);
+					}
+				}
+			}catch(e) {
+				showError(e);
+			}});
+			sgUtils.data._vibThread.start();
+		}else {
+			throw new Error("Illegal vibrator pattern type");
+		}
+	},
+	
+	/**
+	 * Screenshot
+	 *
+	 * @author Semteul
+	 * @since 2015-10-30
+	 *
+	 * @param <File> file
+	 * @param <View|undefined> view
+	 * (undefined = Full screen)
+	 */
+	//THIS METHOD ISN'T WORK ON FULL SCREEN
+	screenshot: function(file, view) {
+		if(view === undefined) {
+			view = ctx.getWindow().getDecorView();
+		}
+		view.setDrawingCacheEnabled(true);
+		//Bitmap
+		var drawingCache = view.getDrawingCache();
+		if(file.exists()) {
+			file["delete"]();//file.delete();
+		}
+		file.getParentFile().mkdirs();
+		file.createNewFile();
+		
+		var fos = new FileOutputStream(file);
+		drawingCache.compress(Bitmap.CompressFormat.PNG, 100, fos);
+		fos.close();
+		view.setDrawingCacheEnabled(false);
+	},
+	
+		/**
+	 * ScreenBitmap
+	 *
+	 * @author Semteul
+	 * @since 2015-10-30
+	 *
+	 * @param <View|undefined> view
+	 * (undefined = Full screen)
+	 * @return <Bitmap>
+	 */
+	//THIS METHOD ISN'T WORK ON FULL SCREEM
+	screenBitmap: function(view) {
+		if(view === undefined) {
+			view = ctx.getWindow().getDecorView();
+		}
+		view.setDrawingCacheEnabled(true);
+		//Bitmap
+		var drawingCache = Bitmap.createBitmap(view.getDrawingCache());
+		view.setDrawingCacheEnabled(false);
+		return drawingCache;
+	},
+	
+	/**
+	 * Screen brightness
+	 *
+	 * @author Semteul
+	 * @since 2015-10-30
+	 *
+	 * @param <Float> bright (0~1)
+	 */
+	screenBrightness: function(bright) {
+		var p = ctx.getWindow().getAttributes();
+		if(typeof p.screenBrightness === "number") {
+			p.screenBrightness = bright;
+			ctx.getWindow().setAttributes(p);
+		}
 	}
-};
+}
+
+
+
+var sgColors = {
+	main: Color.parseColor("#348893"),
+	mainBr: Color.parseColor("#3cbca4"),
+	mainDk: Color.parseColor("#31878b"),
+	warning: Color.parseColor("#ffab00"),
+	critical: Color.parseColor("#ab0000")
+}
 
 
 
@@ -939,506 +2160,56 @@ function ninePatch2(bitmap, top, left, bottom, right, width, height) {
 	return patch;
 }
 
-/**
- * Marge Array
- *
- * @since 2015-06
- * @author CodeInside
- *
- * @param (Array) arr1
- * @param (Array) arr2
- * @param (String) margeType <HORIZONTAL, VERTICAL>
- * @param (Int) width1
- * @param (Int) height1
- * @param (Int) width2
- * @param (Int) height2
- * @param (...) fillBlank
- * @return (Array) 
- */
-function margeArray(arr1, arr2, margeType, width1, height1, width2, height2, fillBlank) {
-	var arr = [];
-	switch(margeType) {
-		case "HORIZONTAL":
-			var maxHeight = height1 >= height2 ? height1 : height2;
-			for(var e = 0; e < maxHeight; e++) {
-				if(e < height1) {
-					for(var f = 0; f < width1; f++) {
-						arr.push(arr1[(e*width1) + f]);
-					}
-				}else {
-					for(var f = 0; f < width1; f++) {
-						if(fillBlank === null) {
-							arr.push(arr1[(width1*(height1-1)) + f]);
-						}else {
-							arr.push(fillBlank);
-						}
-					}
-				}
-				if(e < height2) {
-					for(var f = 0; f < width2; f++) {
-						arr.push(arr2[(e*width2) + f]);
-					}
-				}else {
-					for(var f = 0; f < width2; f++) {
-						if(fillBlank === null) {
-							arr.push(arr2[(width2*(height2-1)) + f]);
-						}else {
-							arr.push(fillBlank);
-						}
-					}
-				}
-			}
-			break;
-		case "VERTICAL":
-			var maxWidth = width1 >= width2 ? width1 : width2;
-			for(var e = 0; e < height1 + height2; e++) {
-				for(var f = 0; f < maxWidth; f++) {
-					if(e < height1) {
-						if(f < width1) {
-							arr.push(arr1[(e*width1) + f]);
-						}else {
-							if(fillBlank === null) {
-								arr.push(arr1[((e+1)*width1) - 1]);
-							}else {
-								arr.push(fillBlank);
-							}
-						}
-					}else {
-						if(f < width2) {
-							arr.push(arr2[((e-height1)*width2) + f]);
-						}else {
-							if(fillBlank === null) {
-								arr.push(arr2[((e-height1+1)*width2) - 1]);
-							}else {
-								arr.push(fillBlank);
-							}
-						}
-					}
-				}
-			}
-			break;
-		default:
-			print("Unknown margeType: " + margeType);
-	}
-	return arr;
-}
 
 
+var p = Color.WHITE;
+sgAssets.wesButton = new sgAssets.customAssetCreator([
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,p,p,0,0,0,
+], 8, 8, sg.px*2, false, 4, 4, 5, 5);
 
-/**
- * Vector(x, y, z) to Side(yaw, pitch)
- *
- * @since 2015-01
- * @author ToonRaOn
- */
+var p = Color.WHITE;
+var o = sgColors.mainBr;
+sgAssets.wesButtonClick = new sgAssets.customAssetCreator([
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,o,o,0,0,0,
+0,0,0,p,p,0,0,0,
+], 8, 8, sg.px*2, false, 4, 4, 5, 5);
 
-function vectorToYaw(x, y, z) {
-	var apil = Math.sqrt(Math.pow(x, 2)+Math.pow(z, 2));
-	var apisinHorizontal = x/apil;
-	var apicosHorizontal = z/apil;
-	var apitanHorizontal = x/z;
-	var apiacosHorizontal = Math.acos(z/apil)*180/Math.PI;
-	var apiatanVertical = Math.atan(y/apil);
-	var alpha = 0;
-	if(apisinHorizontal > 0 && apicosHorizontal > 0 && apitanHorizontal > 0)
-		alpha = 360 - apiacosHorizontal;
-	else if(apisinHorizontal > 0 && apicosHorizontal < 0 && apitanHorizontal < 0) 
-		alpha = 360 - apiacosHorizontal;
-	else if(apisinHorizontal < 0 && apicosHorizontal < 0 && apitanHorizontal > 0) 
-		alpha = apiacosHorizontal;
-	else if(apisinHorizontal < 0 && apicosHorizontal > 0 && apitanHorizontal < 0) 
-		alpha = apiacosHorizontal;
-	else if(apicosHorizontal == 1) alpha = 0;
-	else if(apisinHorizontal == 1) alpha = 90;
-	else if(apicosHorizontal == -1) alpha = 180;
-	else if(apisinHorizontal == -1) alpha = 270;
-	else if(apisinHorizontal == 0 && apicosHorizontal == 1 && apitanHorizontal == 0) null;
-	return alpha;
-}
+var p = sgColors.mainDk;
+var o = Color.argb(0x55, 0, 0, 0);
+sgAssets.toast = new sgAssets.customAssetCreator([
+p,p,p,
+p,o,p,
+p,p,p
+], 3, 3, sg.px*2, false, 2, 2, 2, 2);
 
-function vectorToPitch(x, y, z) {
-	return -1 * Math.atan(y / Math.sqrt(Math.pow(x, 2)+Math.pow(z, 2))) * 180 / Math.PI;
-}
+var p = sgColors.warning;
+sgAssets.toastWarning = new sgAssets.customAssetCreator([
+p,p,p,
+p,o,p,
+p,p,p
+], 3, 3, sg.px*2, false, 2, 2, 2, 2);
 
+var p = sgColors.critical;
+sgAssets.toastCritical = new sgAssets.customAssetCreator([
+p,p,p,
+p,o,p,
+p,p,p
+], 3, 3, sg.px*2, false, 2, 2, 2, 2);
 
-
-/**
- * Side(yaw, pitch) to Vector(x, y, z)
- *
- * @since 2015-01
- * @author CodeInside
- */
-
-function sideToX(y, p) {
-	return (-1 * Math.sin(y / 180 * Math.PI) * Math.cos(p / 180 * Math.PI));
-}
-
-function sideToY(y, p) {
-	return (Math.sin(-p / 180 * Math.PI));
-}
-
-function sideToZ(y, p) {
-	return (Math.cos(y / 180 * Math.PI) * Math.cos(p / 180 * Math.PI));
-}
-
-
-
-/**
- * Absolute range x, y, z
- *
- * @since 2015-01
- * @author CodeInside
- */
-
-function absX(x, y, z) {
-	return x / Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2));
-}
-
-function absY(x, y, z) {
-	return y / Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2));
-}
-
-function absZ(x, y, z) {
-	return z / Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2));
-}
-
-
-
-/**
- * save/load JSON
- *
- * @since 2015-09
- * @author CodeInside
- */
-
-function loadJSON(file) {
-	try{
-		var fileInputStream = new java.io.FileInputStream(file);
-	}catch(e) {
-		return false;
-	}
-	var inputStreamReader = new java.io.InputStreamReader(fileInputStream);
-	var bufferedReader = new java.io.BufferedReader(inputStreamReader);
-	try {
-		var r = JSON.parse(bufferedReader.readLine());
-	}catch(e) {
-		var r = false;
-	}
-	fileInputStream.close();
-	inputStreamReader.close();
-	bufferedReader.close();
-	return r;
-}
-
-function saveJSON(file, array) {
-	try {
-		var fileOutputStream = new java.io.FileOutputStream(file);
-		var outputStreamWriter = new java.io.OutputStreamWriter(fileOutputStream);
-		outputStreamWriter.write(JSON.stringify(array));
-		outputStreamWriter.close();
-		fileOutputStream.close();
-	}catch(e) {
-		return false;
-	}
-	return true;
-}
-
-
-
-/**
- * save/load Data
- *
- * @since 2015-02
- * @author CodeInside
- */
-
-function saveData(file, article, value) {
-	if(!file.exists()) {
-		file.createNewFile()
-	}
-	try{
-		var fileInputStream = new java.io.FileInputStream(file);
-	}catch(e) {
-		return false;
-	}
-	var inputStreamReader = new java.io.InputStreamReader(fileInputStream);
-	var bufferedReader = new java.io.BufferedReader(inputStreamReader);
-	var tempRead, tempReadString;
-	var tempSaved = "";
-	while((tempRead = bufferedReader.readLine()) != null){
-		tempReadString = tempRead.toString();
-		if(tempReadString.split("¶")[0] == article)
-			continue;
-		tempSaved += tempReadString + "\n";
-	}
-	fileInputStream.close();
-	inputStreamReader.close();
-	bufferedReader.close();
-	var fileOutputStream = new java.io.FileOutputStream(file);
-	var outputStreamWriter = new java.io.OutputStreamWriter(fileOutputStream);
-	outputStreamWriter.write(tempSaved + article + "¶" + value);
-	outputStreamWriter.close();
-	fileOutputStream.close();
-	return true;
-}
-
-function loadData(file, article) {
-	try{
-		var fileInputStream = new java.io.FileInputStream(file);
-	}catch(e) {
-		return false;
-	}
-	var inputStreamReader = new java.io.InputStreamReader(fileInputStream);
-	var bufferedReader = new java.io.BufferedReader(inputStreamReader);
-	var tempRead, tempReadString, str;
-	while((tempRead = bufferedReader.readLine()) != null){
-		tempString = tempRead + "";
-		if(tempString.split("¶")[0] == article){
-			str = tempString.split("¶")[1];
-			if(tempString.split("¶")[2] == "n") {
-				do {
-					tempRead = bufferedReader.readLine();
-					tempString = tempRead + "";
-					str += "\n" + tempString.split("¶")[0];
-				}while(tempString.split("¶")[1] == "n");
-			}
-			fileInputStream.close();
-			inputStreamReader.close();
-			bufferedReader.close();
-			return str;
-		}
-	}
-	fileInputStream.close();
-	inputStreamReader.close();
-	bufferedReader.close();
-	return null;
-}
-
-
-
-/**
- * load/save Minecraft Setting
- *
- * @since 2015-04
- * @author CodeInside
- */
-
-function saveSetting(article, value) {
-	var fileInputStream = new java.io.FileInputStream(new java.io.File(android.os.Environment.getExternalStorageDirectory() + "/games/com.mojang/minecraftpe/options.txt"));
-	var inputStreamReader = new java.io.InputStreamReader(fileInputStream);
-	var bufferedReader = new java.io.BufferedReader(inputStreamReader);
-	var tempRead, tempReadString;
-	var tempSaved = "";
-	while((tempRead = bufferedReader.readLine()) != null){
-		tempReadString = tempRead.toString();
-		if(tempReadString.split(":")[0] == article)
-			continue;
-		tempSaved += tempReadString + "\n";
-	}
-	fileInputStream.close();
-	inputStreamReader.close();
-	bufferedReader.close();
-	var fileOutputStream = new java.io.FileOutputStream(new java.io.File(android.os.Environment.getExternalStorageDirectory() + "/games/com.mojang/minecraftpe/options.txt"));
-	var outputStreamWriter = new java.io.OutputStreamWriter(fileOutputStream);
-	outputStreamWriter.write(tempSaved + article + ":" + value);
-	outputStreamWriter.close();
-	fileOutputStream.close();
-	//this is not work
-	net.zhuoweizhang.mcpelauncher.ScriptManager.requestGraphicsReset();
-}
-
-function loadSetting(article) {
-	var fileInputStream = new java.io.FileInputStream(new java.io.File(android.os.Environment.getExternalStorageDirectory() + "/games/com.mojang/minecraftpe/options.txt"));
-	var inputStreamReader = new java.io.InputStreamReader(fileInputStream);
-	var bufferedReader = new java.io.BufferedReader(inputStreamReader);
-	var tempRead, tempReadString;
-
-	while((tempRead = bufferedReader.readLine()) != null){
-		tempReadString = tempRead.toString();
-		if(tempReadString.split(":")[0] == article){
-			fileInputStream.close();
-			inputStreamReader.close();
-			bufferedReader.close();
-			return tempReadString.split(":")[1];
-		}
-	}
-	fileInputStream.close();
-	inputStreamReader.close();
-	bufferedReader.close();
-	return null;
-}
-
-
-
-var EntityExtra = {};
-
-EntityExtra.isEqual = function(obj1, obj2) {
-	return Entity.getUniqueId(obj1) === Entity.getUniqueId(obj2);
-}
-
-EntityExtra.findEnt = function(uniqId) {
-	var list = EntityExtra.getAll();
-	var max = list.length;
-	for(var e = 0; e < max; e++) {
-		if(uniqId === Entity.getUniqueId(list[e])) {
-			return list[e];
-		}
-	}
-}
-
-EntityExtra.getAll = function() {
-	var a = net.zhuoweizhang.mcpelauncher.ScriptManager.allentities;
-	var entities = new Array(a.size());
-		for(var n = 0; entities.length > n; n++){
-			entities[n] = a.get(n);
-		}
-		return entities;
-}
-
-EntityExtra.getRange = function(obj1, obj2) {try {
-	return Math.sqrt(Math.pow(Entity.getX(obj1) - Entity.getX(obj2), 2) + Math.pow(Entity.getY(obj1) - Entity.getY(obj2), 2) + Math.pow(Entity.getZ(obj1) - Entity.getZ(obj2), 2));
-}catch(e) {
-	return null;
-}};
-
-
-
-var PlayerExtra = {};
-
-PlayerExtra.isOnline = function(player) {
-	var list = EntityExtra.getAll();
-	for(var e = 0; e < list.length; e++) {
-		if(Player.isPlayer(list[e]) && EntityExtra.isEqual(list[e], player)) {
-			return true;
-		}
-	}
-	return false;
-}
-
-PlayerExtra.getOnlinePlayers = function() {
-	var entitys = EntityExtra.getAll();
-	var list = [];
-	for(var e = 0; e < entitys.length; e++) {
-		if(Player.isPlayer(entitys[e])) {
-			list.push(entitys[e]);
-		}
-	}
-	return list;
-}
-
-PlayerExtra.getPlayer = function(name) {
-	var list = EntityExtra.getAll();
-	for(var e = 0; e < list.length; e++) {
-		if(Player.isPlayer(list[e]) && Player.getName(list[e]).toLowerCase() === name.toLowerCase()) {
-			return list[e];
-		}
-	}
-	return false;
-}
-
-PlayerExtra.getNearPlayers = function() {
-	var a = EntityExtra.getAll();
-	var f = [];
-	var r = [];
-	var n = [];
-	for(var e = 0; e < a.length; e++) {
-		if(Player.isPlayer(a[e]) && !EntityFix.isEqual(a[e], Player.getEntity())) {
-			f.push(a[e]);
-			r.push(EntityExtra.getRange(a[e], Player.getEntity()));
-		}
-	}
-	while(r.length > 0) {
-		var i = r.indexOf(Math.min.apply(null, r));
-		n.push(f[i]);
-		f.splice(i, 1);
-		r.splice(i, 1);
-	}
-	return n;
-}
-
-
-
-/**
- * NumberToString
- *
- * @since 2015-09
- * @author CodeInside
- */
- 
-function numberToString(number) {
-	number = number + "";
-	try{
-		var t = number.split(".");
-		var r1 = t[0].split("");
-		var r2 = t[1];
-	}catch(e) {
-		var r1 = number.split("");
-		var r2 = undefined;
-	}
-	var r3 = "";
-	while(r1.length > 0) {
-		if(r1.length > 3) {
-			r3 = r1.pop() + r3;
-			r3 = r1.pop() + r3;
-			r3 = "," + r1.pop() + r3;
-		}else {
-			r3 = r1.pop() + r3;
-		}
-	}
-	if(r2 === undefined) {
-		return r3;
-	}else {
-		return r3 + "." + r2;
-	}
-}
-
-
-
-/**
- * DataSizeToString
- *
- * @since 2015-09
- * @author CodeInside
- */
- 
-function dataSizeToString(size) {
-	if(size < 1000) {
-		return size + "B";
-	}else if(size < 1024000) {
-		return parseInt(Math.round(size*100/1024), 10)/100 + "KB";
-	}else if(size < 1048576000) {
-		return parseInt(Math.round(size*100/1048576), 10)/100 + "MB";
-	}else if(size < 1073741824000) {
-		return parseInt(Math.round(size*100/1073741824), 10)/100 + "GB";
-	}else if(size < 1099511627776000) {
-		return parseInt(Math.round(size*100/1099511627776), 10)/100 + "TB";
-	}else {
-		return numberToString(parseInt(Math.round(size*100/(1099511627776*1024)), 10)/100) + "PB";
-	}
-}
-
-
-
-function randomId() {
-	return parseInt(Math.floor(Math.random() * 0xffffff));
-}
-
-
-
-function coordinatify(type, value) {
-	switch(type) {
-		case 0:
-		return parseInt(Math.floor(value));
-		case 1:
-		if(value < 0x00) {
-			return 0x00;
-		}else if(value > 0xff) {
-			return 0xff;
-		} 
-		default:
-		return value;
-	}
-}
+sgAssets.bg32 = Bitmap.createScaledBitmap(BitmapFactory.decodeStream(ModPE.openInputStreamFromTexturePack("images/gui/bg32.png")), sg.px*64, sg.px*64, false);
 
 
 
@@ -2198,6 +2969,115 @@ BlockImageLoader.init();
 //WORLD EDIT SCRIPT SIDE
 //======================
 
+function WorldEdit() {
+	if (!(this instanceof arguments.callee)) return new arguments.callee();
+	this.settingFile = sgFiles.setting;
+	this.defaultSetting = {
+		type: "ModPE_Script_WorldEdit",
+		btnX: 0,
+		btnY: Math.floor(sg.wh/5)
+	}
+	this.setting = null;
+}
+
+WorldEdit.prototype = {
+	
+	toString: function() {
+		return "[object WorldEdit]";
+	},
+	
+	init: function() {
+		this.loadSetting();
+	},
+	
+	loadSetting: function() {
+		if(!this.settingFile.exists()) {
+			this.saveSetting();
+			return;
+		}
+		this.setting = sgUtils.io.loadJSON(this.settingFile);
+		try {
+			if(this.setting.type !== "ModPE_Script_WorldEdit") {
+				throw new Error("");
+			}
+		}catch(err) {
+			this.settingFile.delete();
+			this.saveSetting();
+		}
+	},
+	
+	saveSetting: function() {
+		if(!this.settingFile.exists()) {
+			this.settingFile.getParentFile().mkdirs();
+			this.settingFile.createNewFile();
+			this.setting = this.defaultSetting;
+		}
+		if(!sgUtils.io.saveJSON(this.settingFile, this.setting)) {
+			we_toast("[ERROR] Can't save setting File", 2, 5000, true);
+		}
+	},
+	
+	get: function(article) {
+		if(this.setting === null) {
+			this.loadSetting();
+		}
+		var value = this.setting[article];
+		if(value === undefined) {
+			we_toast("[Warning] try to read undefined setting article: " + article, 1, 5000, true);
+			value = this.defaultSetting[article];
+		}
+		return value;
+	},
+	
+	set: function(article, value, save) {
+		if(this.setting === null) {
+			this.loadSetting();
+		}
+		if(this.setting[article] === undefined) {
+			we_toast("[Warning] try to save undefined setting article: " + article, 2, 5000, true);
+		}
+		this.setting[article] = value;
+		if(save) {
+			this.saveSetting();
+		}
+		return true;
+	}
+}
+
+
+
+function we_toast(txt, type, duration, isImportent, size, color) {
+	var drawableType;
+	switch(type) {
+		case 1:
+		drawableType = sgAssets.toastWarning.ninePatch();
+		break;
+		case 2:
+		drawableType = sgAssets.toastCritical.ninePatch();
+		break;
+		default:
+		drawableType = sgAssets.toast.ninePatch();
+	}
+	sgUtils.gui.toast(txt, drawableType, duration, isImportent, size, color);
+}
+
+
+
+var main = new WorldEdit();
+thread(function() {try {
+	var loading = new sgUtils.gui.progressBar(1);
+	loading.show();
+	main.init();
+	loading.close();
+}catch(err) {
+	showError(err);
+}}).start();
+
+
+
+//XXXXXX
+
+/*
 var WorkType = {
 	SYNCHRONIZATION: 0,
 	ASYNCHRONOUS: 1
@@ -2240,12 +3120,7 @@ var MenuType = {
 
 function WorldEditScript(setting) {
 	this.TYPE = "ModPE_Script";
-	this.NAME = "WorldEdit script";
-	this.CODE_NAME = "WorldEdit";
-	this.AUTHOR = "Semteul";
-	this.GROUP = "if(team);";
-	this.TAG = "[WES " + VERSION + "] ";
-	this.defaultSettingFile = new java.io.File(FILE_SD_CARD, "games/com.mojang/minecraftpe/mods/WorldEditScript/setting.json");
+	this.defaultSettingFile = new File(sgFiles.script, "setting.json");
 	if(setting instanceof File) {
 		this.settingFile = setting;
 	}else if(setting instanceof string) {
@@ -2282,7 +3157,7 @@ function WorldEditScript(setting) {
 WorldEditScript.prototype = {
 	
 	toString: function() {
-		return "[WorldEdit Object]";
+		return "[object WorldEditScript]";
 	},
 	
 	init: function() {
@@ -2739,6 +3614,42 @@ WorldEditScript.prototype = {
 		this.menus[MenuType.HELP] = new WES_Menu(this, "도움말");
 		this.menus[MenuType.MAIN].addMenu(ContentType.REDIRECT_MENU, "도움말", this.menus[MenuType.HELP]);
 		
+		this.menus[MenuType.HELP].addMenu(ContentType.FUNCTION, "에딧하는 방법", function() {
+			var doc = new WES_Document([
+			"s|이 도움말에서는 다양한 에딧의 방법을 다룹니다",
+			"s|채우기|" + DIP*0x18 + "|" + Color.YELLOW,
+			"i|" + FILE_MAIN_DIR + "/help1.img",
+			"s|채우고 싶은 영역의 두 꼭짓점을\n'위치1', '위치2'로 지정한 다음에 \n'블럭1'에 원하는 블럭을 선택하고 \n'채우기'를 선택하면 두 꼭짓점 사이의 공간이 해당 블럭으로 채워집니다\n----------",
+			"s|비우기|" + DIP*0x18 + "|" + Color.YELLOW,
+			"s|두 꼭짓점을 지정한 다음 '비우기'를 누르면\n해당 영역의 위쪽 부터 아래쪽으로 제거해 나갑니다\n물이나 모래등을 제거할때 효과적입니다\n----------",
+			"s|바꾸기|" + DIP*0x18 + "|" + Color.YELLOW,
+			"s|두 꼭짓점을 지정한 다음\n'블럭1'에다 바꿀 블럭을\n'블럭2'에다 바꾸고 싶은 블럭을 지정하고\n'바꾸기'를 누르면 해당 영역에 있는 블럭1들이 블럭2로 바뀝니다\n--------",
+			"s|벽 생성|" + DIP*0x18 + "|" + Color.YELLOW,
+			"i|" + FILE_MAIN_DIR + "/help2.img",
+			"s|두 꼭짓점 사이에 블럭1로 구성된 벽을 생성합니다\n--------",
+			"s|구 생성|" + DIP*0x18 + "|" + Color.YELLOW,
+			"i|" + FILE_MAIN_DIR + "/help3.img",
+			"s|'위치1'을 중심으로\n지정한 반지름 크기의 구를 생성합니다\n또한 '설정: 내부를 비우기'를 통해서 속이 빈 구를 생성할 수 있습니다\n--------",
+			"s|반구 생성|" + DIP*0x18 + "|" + Color.YELLOW,
+			"i|" + FILE_MAIN_DIR + "/help4.img",
+			"s|'위치1'을 중심으로\n지정한 반지름 크기와\n지정한 방향에 따라서 반구를 생성합니다\n또한 '설정: 내부를 비우기'를 통해서 속이 빈 반구를 생성할 수 있습니다\n--------",
+			"s|원 생성|" + DIP*0x18 + "|" + Color.YELLOW,
+			"i|" + FILE_MAIN_DIR + "/help5.img",
+			"s|'위치1'을 중심으로\n지정한 반지름 크기와\n지정한 방향의 원을 생성합니다\n또한 '설정: 내부를 비우기'를 통해서 속이 빈 원을 생성할 수 있습니다\n--------"
+			], false);
+			var dl = new WES_Dialog("기초적인 에딧 도움말", 0, doc.getLayout(), null, null, "닫기", function() {this.setVisible(false)}, true);
+			dl.setVisible(true);
+		});
+		
+		this.menus[MenuType.HELP].addMenu(ContentType.FUNCTION, "버전에 대해서...", function() {
+			var doc = new WES_Document([
+			"s|죄송합니다... 전 이 버전이 망했다고 생각해요... 처음부터 다시 만들생각입니다... (170,000자를 다시 쓸 생각하니 몸서리가...)",
+			"s|그러한 이유로 이 버전에 자세한 픽스나 자세한 설명은 하지 않을껍니다"
+			], false);
+			var dl = new WES_Dialog("기초적인 에딧 도움말", 0, doc.getLayout(), null, null, "닫기", function() {this.setVisible(false)}, true);
+			dl.setVisible(true);
+		});
+		
 		
 		
 	
@@ -2959,6 +3870,64 @@ WES_Document.prototype = {
 	
 	isBuild: function() {
 		this.isBuild;
+	}
+}
+
+
+
+function WES_InfoPanel(name, repeatDelay, func) {
+	this.name = name;
+	this.repeatDelay = repeatDelay;
+	this.delay = 0;
+	this.func = func;
+}
+
+WES_InfoPanel.prototype = {
+	
+	toString: function() {
+		return "[" + this.name + " InfoPanel]";
+	},
+	
+	run: function() {
+		if(--this.delay < 1) {
+			this.delay = this.repeatDelay;
+			this.func();
+		}
+	},
+	
+	forceRun: function() {
+		this.func();
+	}
+}
+
+
+
+function WES_TaskManager(name, delay) {
+	this.name = name;
+	this.thread = null;
+	this.delay = delay;
+	this.task = [];
+}
+
+WES_TaskManager.prototype = {
+	
+	toString: function() {
+		return "[" + this.name + " TaskManager]";
+	},
+	
+	check: function() {
+		var that = this;
+		if(!this.thread.isAlive()) {
+			this.thread = thread(function() {try {
+				while(that.task.length > 0) {
+					for(var e = 0; e < that.task.length; e++) {
+						that.task[e].run();
+					}
+				}
+			}catch(e) {
+				showError(e, WarnType.WARNING);
+			}}).start();
+		}
 	}
 }
 
@@ -4747,19 +5716,25 @@ WES_Dialog.prototype = {
 		switch(this.type) {
 			case 1:
 			this.title.setBackgroundDrawable(Assets.boxWarning.ninePatch());
-			this.t_confirm.setBackgroundDrawable(Assets.boxWarning.ninePatch());
-			this.t_cancel.setBackgroundDrawable(Assets.boxWarning.ninePatch());
+			if(this.confirmTxt !== null)
+				this.t_confirm.setBackgroundDrawable(Assets.boxWarning.ninePatch());
+			if(this.cancelTxt !== null)
+				this.t_cancel.setBackgroundDrawable(Assets.boxWarning.ninePatch());
 			break;
 			case 2:
 			this.title.setBackgroundDrawable(Assets.boxCritical.ninePatch());
-			this.t_confirm.setBackgroundDrawable(Assets.boxCritical.ninePatch());
-			this.t_cancel.setBackgroundDrawable(Assets.boxCritical.ninePatch());
+			if(this.confirmTxt !== null)
+				this.t_confirm.setBackgroundDrawable(Assets.boxCritical.ninePatch());
+			if(this.cancelTxt !== null)
+				this.t_cancel.setBackgroundDrawable(Assets.boxCritical.ninePatch());
 			break;
 			case 0:
 			default:
 			this.title.setBackgroundDrawable(Assets.boxNormal.ninePatch());
-			this.t_confirm.setBackgroundDrawable(Assets.boxNormal.ninePatch());
-			this.t_cancel.setBackgroundDrawable(Assets.boxNormal.ninePatch());
+			if(this.confirmTxt !== null)
+				this.t_confirm.setBackgroundDrawable(Assets.boxNormal.ninePatch());
+			if(this.cancelTxt !== null)
+				this.t_cancel.setBackgroundDrawable(Assets.boxNormal.ninePatch());
 		}
 		this.layout.addView(this.title);
 		
@@ -5075,6 +6050,28 @@ function startDestroyBlock(x, y, z, side) {
 function destroyBlock(x, y, z, side) {
 	if(Player.getCarriedItem() === 271) {
 		preventDefault();
+	}
+}
+
+function chatReceiveHook(str, sender) {
+	if(str.subString(0, 1) === "@") {
+		var cmd = str.subString(1, str.length).split(" ");
+		if(!main.editorGroup.isAllow(sender)) {
+			broadcast(sender + " 유저는 월드에딧 권한이 없습니다");
+			return;
+		}
+		var editor = main.editorGroup.get(sender);
+		var player = editor.getOwner();
+		switch(cmd[0]) {
+			case "pos1":
+			editor.setPos1(new Vector3(Entity.getX(player), Entity.getY(player), Entity.getZ(player)));
+			msg("위치1이 지정되었습니다", player);
+			break;
+			case "pos2":
+			editor.setPos2(new Vector3(Entity.getX(player), Entity.getY(player), Entity.getZ(player)));
+			msg("위치2이 지정되었습니다", player);
+			break;
+		}
 	}
 }
 
@@ -5663,4 +6660,4 @@ function codeToString(code) {
 		str += t;
 	}
 	return str;
-}
+}*/
