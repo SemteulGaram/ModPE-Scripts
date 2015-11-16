@@ -174,7 +174,7 @@ var sgAssets = {
 	bitmapAssetCreator: function(bitmap, xPos, yPos, xSize, ySize, scale, scaleType, left, top, right, bottom) {
 		if (!(this instanceof arguments.callee)) return new arguments.callee(bitmap, xPos, yPos, xSize, ySize, scale, scaleType, left, top, right, bottom);
 		this.rawBitmap = Bitmap.createBitmap(bitmap, xPos, yPos, xSize, ySize);
-		this.scaleBitmap = Bitmap.createScaledBitmap(this.raw, xSize*scale, ySize*scale, scaleType);
+		this.scaleBitmap = Bitmap.createScaledBitmap(this.rawBitmap, xSize*scale, ySize*scale, scaleType);
 		this.ninePatch = function() {return ninePatch1(this.scaleBitmap, (top*(scale-1))+1, (left*(scale-1))+1, bottom*scale, right*scale)}
 	}
 }
@@ -1153,8 +1153,82 @@ sgUtils.gui = {
 		var that = this;
 		this.progressBar = null;
 		this.textView = null;
+		this.thread = null;
 		this.rl = new sg.rl(ctx);
 		this.wd = null;
+		this.getText = function() {
+			if(this.textView === null) {
+				throw new Error("This type of custom progress bar don't support 'text' parameter");
+			}
+			return this.textView.getText() + "";
+		}
+		
+		this.getMax = function() {
+			if(this.progressBar === null) {
+				throw new Error("This type of custom progress bar don't support 'max' parameter");
+			}
+			return this.progressBar.getMax();
+		}
+		
+		this.getProgress = function() {
+			if(this.progressBar === null) {
+				throw new Error("This type of custom progress bar don't support 'progress' parameter");
+			}
+			return this.progressBar.getProgress();
+		}
+			
+		this.setText = function(text) {
+			if(this.textView === null) {
+				throw new Error("This type of custom progress bar don't support 'text' parameter");
+			}
+			this.textView.setText(text);
+		}
+		
+		this.setMax = function(max) {
+			if(this.progressBar === null) {
+				throw new Error("This type of custom progress bar don't support 'max' parameter");
+			}
+			uiThread(function() {try {
+				that.progressBar.setMax(max);
+			}catch(err) {
+				showError(err);
+			}});
+		}
+		
+		this.setProgress = function(progress) {
+			if(this.progressBar === null) {
+				throw new Error("This type of custom progress bar don't support 'progress' parameter");
+			}
+			uiThread(function() {try {
+				that.progressBar.setProgress(progress);
+			}catch(err) {
+				showError(err);
+			}});
+		}
+		
+		this.show = function() {
+			uiThread(function() {try {
+				if(!that.wd.isShowing()) {
+					that.wd.showAtLocation(sg.dv, Gravity.LEFT|Gravity.TOP, 0, 0);
+				}
+			}catch(err) {
+				showError(err);
+			}});
+			if(this.thread !== null) {
+				this.thread.start();
+			}
+		}
+		
+		this.close = function() {
+			uiThread(function() {try {
+				if(that.wd.isShowing()) {
+					that.wd.dismiss();
+				}
+			}catch(err) {
+				showError(err);
+			}});
+			this.thread = null;
+		}
 		switch(type) {
 			//뒷 부분이 터치가능한 배경이 투명한 원형 프로그래스 바
 			case 0:
@@ -1237,70 +1311,88 @@ sgUtils.gui = {
 			this.wd = new PopupWindow(this.rl, sg.ww, sg.wh, true);
 			this.wd.setTouchable(true);
 			break;
+			//마인크래프트 상단팝업식 프로그래스창
+			//(마인크래프트Assets 로드 필요)
+			case 5:
+			this.progressBar = new ProgressBar(ctx, null, android.R.attr.progressBarStyleHorizontal); //inVisible
+			this.progressBar.setMax(1);
+			this.progressBar.setProgress(0);
+			var ll = new sg.ll(ctx);
+			ll.setOrientation(sg.ll.HORIZONTAL);
+			ll.setGravity(Gravity.CENTER);
+			ll.setPadding(sg.px*16, sg.px*16, sg.px*16, sg.px*16);
+			if(sgAssets.bg !== undefined) {
+				ll.setBackgroundDrawable(sgAssets.bg.ninePatch());
+			}
+			var ll_p = new sg.rl.LayoutParams(sg.wc, sg.wc);
+			ll_p.addRule(sg.rl.CENTER_HORIZONTAL);
+			ll_p.addRule(sg.rl.ALIGN_PARENT_TOP);
+			ll.setLayoutParams(ll_p);
+			this.textView = sgUtils.gui.mcFastText("...", null, true, Color.WHITE);
+			this.lt = sgUtils.gui.mcFastText("/", null, true, Color.WHITE);
+			this._lt = "/";
+			ll.addView(this.textView);
+			ll.addView(this.lt);
+			this.rl.addView(ll);
+			this.wd = new PopupWindow(this.rl, sg.ww, sg.wh, false);
+			this.wd.setTouchable(false);
+			this.thread = new thread(function() {try {
+				while(that.progressBar.getMax() !== that.progressBar.getProgress() && that.thread !== null) {
+					uiThread(function() {try {
+						switch(that._lt) {
+							case "/":
+							that._lt = "-";
+							break;
+							case "-":
+							that._lt = "\\";
+							break;
+							case "\\":
+							that._lt = " | ";
+							break;
+							default:
+							that._lt = "/";
+						}
+						that.lt.setText(that._lt);
+					}catch(err) {
+						showError(err);
+					}});
+					sleep(100);
+				}
+				uiThread(function() {try {
+					that.lt.setText("");
+				}catch(err) {}});
+			}catch(err) {
+				showError(err);
+			}});
+			break;
+			//빈공간
+			case 6:
+			throw new Error(":P Custom ProgressBar type 6 isn't ready yet");
+			break;
+			//오른쪽 하단의 좌.텍스트창 우.프로그래스바
+			case 7:
+			var ll = new sg.ll(ctx);
+			ll.setOrientation(sg.ll.HORIZONTAL);
+			ll.setPadding(sg.px*8, sg.px*8, sg.px*8, sg.px*8);
+			ll.setGravity(Gravity.CENTER);
+			ll.setBackgroundColor(Color.argb(0x88, 0, 0, 0));
+			this.textView = sgUtils.gui.mcFastText("", null, false, Color.WHITE);
+			this.textView.setGravity(Gravity.CENTER);
+			this.progressBar = new ProgressBar(ctx);
+			var p_p = new sg.ll.LayoutParams(sg.px*40, sg.px*40);
+			this.progressBar.setLayoutParams(p_p);
+			ll.addView(this.textView);
+			ll.addView(this.progressBar);
+			var ll_p = new sg.rl.LayoutParams(sg.wc, sg.wc);
+			ll_p.addRule(sg.rl.ALIGN_PARENT_BOTTOM);
+			ll_p.addRule(sg.rl.ALIGN_PARENT_RIGHT);
+			ll.setLayoutParams(ll_p);
+			this.rl.addView(ll);
+			this.wd = new PopupWindow(this.rl, sg.ww, sg.wh, false);
+			this.wd.setTouchable(false);
+			break;
 			default:
 			throw new Error("Undefined custom progress bar type: " + type);
-		}
-		
-		this.getText = function() {
-			if(this.textView === null) {
-				throw new Error("This type of custom progress bar don't support 'text' parameter");
-			}
-			return this.textView.getText() + "";
-		}
-		
-		this.getMax = function() {
-			if(this.progressBar === null) {
-				throw new Error("This type of custom progress bar don't support 'max' parameter");
-			}
-			return this.max;
-		}
-		
-		this.getProgress = function() {
-			if(this.progressBar === null) {
-				throw new Error("This type of custom progress bar don't support 'progress' parameter");
-			}
-			return this.progress;
-		}
-			
-		this.setText = function(text) {
-			if(this.textView === null) {
-				throw new Error("This type of custom progress bar don't support 'text' parameter");
-			}
-			this.textView.setText(text);
-		}
-		
-		this.setMax = function(max) {
-			if(this.progressBar === null) {
-				throw new Error("This type of custom progress bar don't support 'max' parameter");
-			}
-			this.progressBar.setMax(max);
-		}
-		
-		this.setProgress = function(progress) {
-			if(this.progressBar === null) {
-				throw new Error("This type of custom progress bar don't support 'progress' parameter");
-			}
-			this.progressBar.setProgress(progress);
-		}
-		
-		this.show = function() {
-			uiThread(function() {try {
-				if(!that.wd.isShowing()) {
-					that.wd.showAtLocation(sg.dv, Gravity.LEFT|Gravity.TOP, 0, 0);
-				}
-			}catch(err) {
-				showError(err);
-			}});
-		}
-		
-		this.close = function() {
-			uiThread(function() {try {
-				if(that.wd.isShowing()) {
-					that.wd.dismiss();
-				}
-			}catch(err) {
-				showError(err);
-			}});
 		}
 	}
 }
@@ -2070,6 +2162,66 @@ sgUtils.android = {
 
 
 
+function loadMcpeAssets() {try {
+	sgAssets.mcpeCPC = ctx.createPackageContext("com.mojang.minecraftpe", Context.CONTEXT_IGNORE_SECURITY);
+	sgAssets.nativeAssets = sgAssets.mcpeCPC.getAssets();
+	try {
+		sgAssets.SS = ModPE.openInputStreamFromTexturePack("images/gui/spritesheet.png");
+		sgAssets.TG = ModPE.openInputStreamFromTexturePack("images/gui/touchgui.png");
+	}catch(e) {
+		print("Resource load fail");
+		sgAssets.SS = sgAssets.nativeAssets.open("images/gui/spritesheet.png");
+		sgAssets.TG = sgAssets.nativeAssets.open("images/gui/touchgui.png");
+	}
+	sgAssets.SS_BF = BitmapFactory.decodeStream(sgAssets.SS);
+	sgAssets.TG_BF = BitmapFactory.decodeStream(sgAssets.TG);
+	
+	sgAssets.fullBg = sgAssets.bitmapAssetCreator(sgAssets.SS_BF, 0, 0, 16, 16, sg.px*2, false, 5, 5, 12, 12);
+	
+	sgAssets.bg = sgAssets.bitmapAssetCreator(sgAssets.SS_BF, 34, 43, 14, 14, sg.px*2, false, 4, 4, 11, 11);
+	/*
+	sgAssets.title_l = new sgAssets.bitmapAssetCreator(sgAssets.TG_BF, 150, 26, 2, 25, sg.px*2, false);
+	sgAssets.title_c = new sgAssets.bitmapAssetCreator(sgAssets.TG_BF, 153, 26, 8, 25, sg.px*2, false);
+	sgAssets.title_r = new sgAssets.bitmapAssetCreator(sgAssets.TG_BF, 162, 26, 2, 25, sg.px*2, false);
+	sgAssets.title_b = new sgAssets.bitmapAssetCreator(sgAssets.TG_BF, 153, 52, 8, 3, sg.px*2, false);
+	sgAssets.title_la = new sg.ai(Int.TYPE, 50);
+	sgAssets.title_ca = new sg.ai(Int.TYPE, 200);
+	sgAssets.title_ra = new sg.ai(Int.TYPE, 50);
+	sgAssets.title_ba = new sg.ai(Int.TYPE, 24);
+	sgAssets.title_l.rawBitmap.getPixels(sgAssets.title_la, 0, 2, 0, 0, 2, 25);
+	sgAssets.title_c.rawBitmap.getPixels(sgAssets.title_ca, 0, 8, 0, 0, 8, 25);
+	sgAssets.title_r.rawBitmap.getPixels(sgAssets.title_ra, 0, 2, 0, 0, 2, 25);
+	sgAssets.title_b.rawBitmap.getPixels(sgAssets.title_ba, 0, 8, 0, 0, 8, 3);
+	sgAssets.title_p1 = sgUtils.convert.margeArray(sgAssets.title_l, sgAssets.title_c, 0, 2, 25, 8, 25, null);
+	sgAssets.title_p2 = sgUtils.convert.margeArray(sgAssets.title_p1, sgAssets.title_r, 0, 10, 25, 2, 25, null);
+	sgAssets.title_p3 = sgUtils.convert.margeArray(sgAssets.title_p2, sgAssets.title_b, 1, 12, 25, 8, 3, null);
+	sgAssets.title = new sgAssets.customAssetCreator(sgAssets.title_p3, 12, 28, sg.px*2, false, 3, 3, 9, 22);
+	*/
+	sgAssets.exit = new sgAssets.bitmapAssetCreator(sgAssets.SS_BF, 60, 0, 18, 18, sg.px*2, false);
+	sgAssets.exit_c = new sgAssets.bitmapAssetCreator(sgAssets.SS_BF, 78, 0, 18, 18, sg.px*2, false);
+	
+	sgAssets.button = new sgAssets.bitmapAssetCreator(sgAssets.SS_BF, 8, 32, 8, 8, sg.px*2, false, 1, 2, 7, 6);
+	
+	sgAssets.button_c = new sgAssets.bitmapAssetCreator(sgAssets.SS_BF, 0, 32, 8, 8, sg.px*2, false, 1, 2, 7, 6);
+	
+	var b = Color.parseColor("#6b6163");
+	var i = Color.parseColor("#3a393a");
+	sgAssets.textView = new sgAssets.customAssetCreator([
+	b,b,b,b,b,b,
+	b,b,b,b,b,b,
+	b,b,i,i,b,b,
+	b,b,i,i,b,b,
+	b,b,b,b,b,b,
+	b,b,b,b,b,b
+	], 6, 6, sg.px*2, false, 3, 3, 4, 4);
+	
+	sgAssets.bg32 = Bitmap.createScaledBitmap(BitmapFactory.decodeStream(ModPE.openInputStreamFromTexturePack("images/gui/bg32.png")), sg.px*64, sg.px*64, false)
+}catch(e) {
+	showError(e);
+}}
+
+
+
 var sgColors = {
 	main: Color.parseColor("#348893"),
 	mainBr: Color.parseColor("#3cbca4"),
@@ -2163,7 +2315,7 @@ function ninePatch2(bitmap, top, left, bottom, right, width, height) {
 
 
 var p = Color.WHITE;
-sgAssets.wesButton = new sgAssets.customAssetCreator([
+sgAssets.weButton = new sgAssets.customAssetCreator([
 0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,
@@ -2176,7 +2328,7 @@ sgAssets.wesButton = new sgAssets.customAssetCreator([
 
 var p = Color.WHITE;
 var o = sgColors.mainBr;
-sgAssets.wesButtonClick = new sgAssets.customAssetCreator([
+sgAssets.weButtonClick = new sgAssets.customAssetCreator([
 0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,
@@ -2186,6 +2338,15 @@ sgAssets.wesButtonClick = new sgAssets.customAssetCreator([
 0,0,0,o,o,0,0,0,
 0,0,0,p,p,0,0,0,
 ], 8, 8, sg.px*2, false, 4, 4, 5, 5);
+
+var p = sgColors.main;
+sgAssets.weExit = new sgAssets.customAssetCreator([
+p,0,0,0,p,
+0,p,0,p,0,
+0,0,p,0,0,
+0,p,0,p,0,
+p,0,0,0,p
+], 5, 5, sg.px*4, false);
 
 var p = sgColors.mainDk;
 var o = Color.argb(0x55, 0, 0, 0);
@@ -2210,318 +2371,6 @@ p,p,p
 ], 3, 3, sg.px*2, false, 2, 2, 2, 2);
 
 sgAssets.bg32 = Bitmap.createScaledBitmap(BitmapFactory.decodeStream(ModPE.openInputStreamFromTexturePack("images/gui/bg32.png")), sg.px*64, sg.px*64, false);
-
-
-
-/**
- * Vector3
- *
- * @since 2015-09
- * @author CodeInside
- */
-	
-function Vector3(x, y, z) {
-	this.x = x;
-	this.y = y;
-	this.z = z;
-}
-
-Vector3.prototype = {
-	
-	toString: function() {
-		return "[Vector3 " + this.x + ":" + this.y + ":" + this.z + "]";
-	},
-	
-	getX: function() {
-		return this.x;
-	},
-	
-	getY: function() {
-		return this.y;
-	},
-	
-	getZ: function() {
-		return this.z;
-	}
-}
-
-
-
-/**
- * Block
- *
- * @since 2015-09
- * @author CodeInside
- */
- 
-function Block(id, data, x, y, z) {
-	this.id = id;
-	this.data = data;
-	this.x = x;
-	this.y = y;
-	this.z = z;
-}
-
-Block.prototype = {
-	
-	toString: function() {
-		return "[Block " + this.id + ":" + this.data + "]";
-	},
-	
-	getId: function() {
-		return this.id;
-	},
-	
-	getData: function() {
-		return this.data;
-	},
-	
-	getX: function() {
-		return this.x;
-	},
-	
-	getY: function() {
-		return this.y;
-	},
-	
-	getZ: function() {
-		return this.z;
-	}
-}
-
-
-
-/**
- * Piece
- * 
- * @author CodeInside
- * @since 2015-10-12
- */
-function Piece(xSize, ySize, zSize, piece) {
-	this.xs = xSize;
-	this.ys = ySize;
-	this.zs = zSize;
-	this.piece = piece;
-	if((xSize*ySize*zSize) != piece.length) {
-		throw new Error("warning not match size " + (xSize*ySize*zSize) + "!=" + piece.length);
-	}
-}
-
-Piece.prototype = {
-	
-	toStrng: function() {
-		return "[Piece " + xSize + ":" + ySize + ":" + zSize + "]";
-	},
-	
-	getSizeX: function() {
-		return this.xs
-	},
-	
-	getSizeY: function() {
-		return this.ys
-	},
-	
-	getSizeZ: function() {
-		return this.zs
-	},
-	
-	getBlock: function(x, y, z) {
-		var index = (z*this.ys*this.xs) + (y*this.xs) + x;
-		if(index >= this.piece.length) {
-			throw new Error("Null pointer error(Not index: " + index + "/" + this.piece.length);
-		}
-		//clientMessage(x+"("+this.xs+") "+y+"("+this.ys+") "+z+"("+this.zs+") "+"="+index);
-		return this.piece[index];
-	},
-	
-	rotation: function(axis, rot) {
-		var buffer = [];
-		switch(axis) {
-			case "x":
-			switch(rot) {
-				case 1:
-				for(var y = this.ys-1; y >= 0; y--) {
-				for(var z = 0; z < this.zs; z++) {
-				for(var x = 0; x < this.xs; x++) {
-					var t = this.getBlock(x, y, z);
-					buffer.push(t);
-				}
-				}
-				}
-				var temp = this.ys;
-				this.ys = this.zs;
-				this.zs = temp;
-				this.piece = buffer;
-				break;
-				
-				case 2:
-				for(var z = this.zs-1; z >= 0; z--) {
-				for(var y = this.ys-1; y >= 0; y--) {
-				for(var x = 0; x < this.xs; x++) {
-					buffer.push(this.getBlock(x, y, z));
-				}
-				}
-				}
-				this.piece = buffer;
-				break;
-				
-				case 3:
-				for(var y = 0; y < this.ys; y++) {
-				for(var z = this.zs-1; z >= 0; z--) {
-				for(var x = 0; x < this.xs; x++) {
-					buffer.push(this.getBlock(x, y, z));
-				}
-				}
-				}
-				var temp = this.ys;
-				this.ys = this.zs;
-				this.zs = temp;
-				this.piece = buffer;
-				break;
-				
-				default:
-				throw new Error("Unknown rotation type: " + rot);
-			}
-			break;
-			
-			case "y":
-			switch(rot) {
-				case 1:
-				for(var x = 0; x < this.xs; x++) {
-				for(var y = 0; y < this.ys; y++) {
-				for(var z = this.zs-1; z >= 0; z--) {
-					buffer.push(this.getBlock(x, y, z));
-				}
-				}
-				}
-				var temp = this.xs;
-				this.xs = this.zs;
-				this.zs = temp;
-				this.piece = buffer;
-				break;
-				
-				case 2:
-				for(var z = this.zs-1; z >= 0; z--) {
-				for(var y = 0; y < this.ys; y++) {
-				for(var x = this.xs-1; x >= 0; x--) {
-					buffer.push(this.getBlock(x, y, z));
-				}
-				}
-				}
-				this.piece = buffer;
-				break;
-				
-				case 3:
-				for(var x = this.xs-1; x >= 0; x--) {
-				for(var y = 0; y < this.ys; y++) {
-				for(var z = 0; z < this.zs; z++) {
-					buffer.push(this.getBlock(x, y, z));
-				}
-				}
-				}
-				var temp = this.xs;
-				this.xs = this.zs;
-				this.zs = temp;
-				this.piece = buffer;
-				break;
-				
-				default:
-				throw new Error("Unknown rotation type: " + rot);
-			}
-			break;
-			
-			case "z":
-			switch(rot) {
-				case 1:
-				for(var z = 0; z < this.zs; z++) {
-				for(var x = 0; x < this.xs; x++) {
-				for(var y = this.ys-1; y >= 0; y--) {
-					buffer.push(this.getBlock(x, y, z));
-				}
-				}
-				}
-				var temp = this.xs;
-				this.xs = this.ys;
-				this.ys = temp;
-				this.piece = buffer;
-				break;
-				
-				case 2:
-				for(var z = 0; z < this.zs; z++) {
-				for(var y = this.ys-1; y >= 0; y--) {
-				for(var x = this.xs-1; x >= p; x--) {
-					buffer.push(this.getBlock(x, y, z));
-				}
-				}
-				}
-				this.piece = buffer;
-				break;
-				
-				case 3:
-				for(var z = 0; z < this.zs; z++) {
-				for(var x = this.xs-1; x >= 0; x--) {
-				for(var y = 0; y < this.ys; y++) {
-					buffer.push(this.getBlock(x, y, z));
-				}
-				}
-				}
-				var temp = this.xs;
-				this.xs = this.ys;
-				this.ys = temp;
-				this.piece = buffer;
-				break;
-				
-				default:
-				throw new Error("Unknown rotation type: " + rot);
-			}
-			break;
-			
-			default:
-			throw new Error("Axis must be instance of 'x', 'y', 'z'");
-		}
-	},
-	
-	flip: function(axis) {
-		var buffer = [];
-		switch(axis) {
-			case "x":
-			for(var z = 0; z < this.zs; z++) {
-			for(var y = 0; y < this.ys; y++) {
-			for(var x = this.xs-1; x >= 0; x--) {
-				buffer.push(this.getBlock(x, y, z));
-			}
-			}
-			}
-			this.piece = buffer;
-			break;
-			
-			case "y":
-			for(var z = 0; z < this.zs; z++) {
-			for(var y = this.ys-1; y >= 0; y--) {
-			for(var x = 0; x < this.xs; x++) {
-				buffer.push(this.getBlock(x, y, z));
-			}
-			}
-			}
-			this.piece = buffer;
-			break;
-			
-			case "z":
-			for(var z = this.zs-1; z >= 0; z--) {
-			for(var y = 0; y < this.ys; y++) {
-			for(var x = 0; x < this.xs; x++) {
-				buffer.push(this.getBlock(x, y, z));
-			}
-			}
-			}
-			this.piece = buffer;
-			break;
-			
-			default:
-			throw new Error("ERROR AXIS MUST BE INSTANCE OF 'x', 'y', 'z'");
-		}
-	}
-}
 
 
 
@@ -2965,19 +2814,466 @@ BlockImageLoader.init();
 
 
 
+function highlightBlocks(ary, id, data) {
+	if(id === undefined) {
+		id = 41;
+		data = 0;
+	}else if(data === undefined) {
+		data = 0;
+	}
+	this.backup = [];
+	for(var e = 0; e < ary.length; e++) {
+		var x = ary[e][0];
+		var y = ary[e][1];
+		var z = ary[e][2];
+		var oid = Level.getTile(x, y, z);
+		var odata = Level.getData(x, y, z);
+		if(oid === id && odata === data) {
+			continue;
+		}
+		this.backup.push([x, y, z, oid, odata]);
+		Level.setTile(x, y, z, id, data);
+	}
+}
+
+highlightBlocks.prototype = {
+	
+	close: function() {
+		for(var e = 0; e < this.backup.length; e++) {
+			Level.setTile(this.backup[e][0], this.backup[e][1], this.backup[e][2], this.backup[e][3], this.backup[e][4]);
+		}
+	}
+}
+
+function areaHighlight(x1, y1, z1, x2, y2, z2) {
+	var sx = x1 < x2 ? x1 : x2;
+	var sy = y1 < y2 ? y1 : y2;
+	var sz = z1 < z2 ? z1 : z2;
+	var ex = x1 > x2 ? x1 : x2;
+	var ey = y1 > y2 ? y1 : y2;
+	var ez = z1 > z2 ? z1 : z2;
+	
+	var blocks = [];
+	
+	blocks.push([sx, sy, sz]);
+	blocks.push([sx, sy, ez]);
+	blocks.push([sx, ey, sz]);
+	blocks.push([sx, ey, ez]);
+	blocks.push([ex, sy, sz]);
+	blocks.push([ex, sy, ez]);
+	blocks.push([ex, ey, sz]);
+	blocks.push([ex, ey, ez]);
+	if(sx !== ex) {
+		blocks.push([sx+1, sy, sz]);
+		blocks.push([sx+1, sy, ez]);
+		blocks.push([sx+1, ey, sz]);
+		blocks.push([sx+1, ey, ez]);
+		blocks.push([ex-1, sy, sz]);
+		blocks.push([ex-1, sy, ez]);
+		blocks.push([ex-1, ey, sz]);
+		blocks.push([ex-1, ey, ez]);
+	}
+	if(sy !== ey) {
+		blocks.push([sx, sy+1, sz]);
+		blocks.push([sx, sy+1, ez]);
+		blocks.push([sx, ey-1, sz]);
+		blocks.push([sx, ey-1, ez]);
+		blocks.push([ex, sy+1, sz]);
+		blocks.push([ex, sy+1, ez]);
+		blocks.push([ex, ey-1, sz]);
+		blocks.push([ex, ey-1, ez]);
+	}
+	if(sz !== ez) {
+		blocks.push([sx, sy, sz+1]);
+		blocks.push([sx, sy, ez-1]);
+		blocks.push([sx, ey, sz+1]);
+		blocks.push([sx, ey, ez-1]);
+		blocks.push([ex, sy, sz+1]);
+		blocks.push([ex, sy, ez-1]);
+		blocks.push([ex, ey, sz+1]);
+		blocks.push([ex, ey, ez-1]);
+	}
+	
+	return new highlightBlocks(blocks);
+}
+
+function highlightBlock(x, y, z) {
+	var temp = {
+		id: Level.getTile(x, y, z),
+		data: Level.getData(x, y, z)
+	}
+	
+	if(temp.id === 41) {
+		return;
+	}
+	
+	thread(function() {try {
+		Level.setTile(x, y, z, 41, 0);
+		sleep(1000);
+		Level.setTile(x, y, z, temp.id, temp.data);
+	}catch(e) {
+		showError(e);
+	}}).start();
+}
+
+
+
+function msg(str, target) {
+	if(target === undefined) {
+		broadcast(Chat.Color.YELLOW + str);
+	}else if(Player.getName(Player.getEntity()).toLowerCase() === target.toLowerCase()) {
+		we_toast(str);
+	}else {
+		broadcast("(" + ChatColor.AQUA + target + ChatColor.WHITE + ") " + ChatColor.YELLOW + str);
+	}
+}
+
+
+
+/**
+ * Vector3
+ *
+ * @since 2015-09
+ * @author CodeInside
+ */
+	
+function Vector3(x, y, z) {
+	this.x = x;
+	this.y = y;
+	this.z = z;
+}
+
+Vector3.prototype = {
+	
+	toString: function() {
+		return "[Vector3 " + this.x + ":" + this.y + ":" + this.z + "]";
+	},
+	
+	getX: function() {
+		return this.x;
+	},
+	
+	getY: function() {
+		return this.y;
+	},
+	
+	getZ: function() {
+		return this.z;
+	}
+}
+
+
+
+/**
+ * Block
+ *
+ * @since 2015-09
+ * @author CodeInside
+ */
+ 
+function Block(id, data, x, y, z) {
+	this.id = id;
+	this.data = data;
+	this.x = x;
+	this.y = y;
+	this.z = z;
+}
+
+Block.prototype = {
+	
+	toString: function() {
+		return "[Block " + this.id + ":" + this.data + "]";
+	},
+	
+	getId: function() {
+		return this.id;
+	},
+	
+	getData: function() {
+		return this.data;
+	},
+	
+	getX: function() {
+		return this.x;
+	},
+	
+	getY: function() {
+		return this.y;
+	},
+	
+	getZ: function() {
+		return this.z;
+	}
+}
+
+
+
+/**
+ * Piece
+ * 
+ * @author CodeInside
+ * @since 2015-10-12
+ */
+function Piece(xSize, ySize, zSize, piece) {
+	this.xs = xSize;
+	this.ys = ySize;
+	this.zs = zSize;
+	this.piece = piece;
+	if((xSize*ySize*zSize) != piece.length) {
+		throw new Error("warning not match size " + (xSize*ySize*zSize) + "!=" + piece.length);
+	}
+}
+
+Piece.prototype = {
+	
+	toStrng: function() {
+		return "[Piece " + xSize + ":" + ySize + ":" + zSize + "]";
+	},
+	
+	getSizeX: function() {
+		return this.xs
+	},
+	
+	getSizeY: function() {
+		return this.ys
+	},
+	
+	getSizeZ: function() {
+		return this.zs
+	},
+	
+	getBlock: function(x, y, z) {
+		var index = (z*this.ys*this.xs) + (y*this.xs) + x;
+		if(index >= this.piece.length) {
+			throw new Error("Null pointer error(Not index: " + index + "/" + this.piece.length);
+		}
+		return this.piece[index];
+	},
+	
+	rotation: function(axis, rot) {
+		var buffer = [];
+		switch(axis) {
+			case "x":
+			switch(rot) {
+				case 1:
+				for(var y = this.ys-1; y >= 0; y--) {
+				for(var z = 0; z < this.zs; z++) {
+				for(var x = 0; x < this.xs; x++) {
+					var t = this.getBlock(x, y, z);
+					buffer.push(t);
+				}
+				}
+				}
+				var temp = this.ys;
+				this.ys = this.zs;
+				this.zs = temp;
+				this.piece = buffer;
+				break;
+				
+				case 2:
+				for(var z = this.zs-1; z >= 0; z--) {
+				for(var y = this.ys-1; y >= 0; y--) {
+				for(var x = 0; x < this.xs; x++) {
+					buffer.push(this.getBlock(x, y, z));
+				}
+				}
+				}
+				this.piece = buffer;
+				break;
+				
+				case 3:
+				for(var y = 0; y < this.ys; y++) {
+				for(var z = this.zs-1; z >= 0; z--) {
+				for(var x = 0; x < this.xs; x++) {
+					buffer.push(this.getBlock(x, y, z));
+				}
+				}
+				}
+				var temp = this.ys;
+				this.ys = this.zs;
+				this.zs = temp;
+				this.piece = buffer;
+				break;
+				
+				default:
+				throw new Error("Unknown rotation type: " + rot);
+			}
+			break;
+			
+			case "y":
+			switch(rot) {
+				case 1:
+				for(var x = 0; x < this.xs; x++) {
+				for(var y = 0; y < this.ys; y++) {
+				for(var z = this.zs-1; z >= 0; z--) {
+					buffer.push(this.getBlock(x, y, z));
+				}
+				}
+				}
+				var temp = this.xs;
+				this.xs = this.zs;
+				this.zs = temp;
+				this.piece = buffer;
+				break;
+				
+				case 2:
+				for(var z = this.zs-1; z >= 0; z--) {
+				for(var y = 0; y < this.ys; y++) {
+				for(var x = this.xs-1; x >= 0; x--) {
+					buffer.push(this.getBlock(x, y, z));
+				}
+				}
+				}
+				this.piece = buffer;
+				break;
+				
+				case 3:
+				for(var x = this.xs-1; x >= 0; x--) {
+				for(var y = 0; y < this.ys; y++) {
+				for(var z = 0; z < this.zs; z++) {
+					buffer.push(this.getBlock(x, y, z));
+				}
+				}
+				}
+				var temp = this.xs;
+				this.xs = this.zs;
+				this.zs = temp;
+				this.piece = buffer;
+				break;
+				
+				default:
+				throw new Error("Unknown rotation type: " + rot);
+			}
+			break;
+			
+			case "z":
+			switch(rot) {
+				case 1:
+				for(var z = 0; z < this.zs; z++) {
+				for(var x = 0; x < this.xs; x++) {
+				for(var y = this.ys-1; y >= 0; y--) {
+					buffer.push(this.getBlock(x, y, z));
+				}
+				}
+				}
+				var temp = this.xs;
+				this.xs = this.ys;
+				this.ys = temp;
+				this.piece = buffer;
+				break;
+				
+				case 2:
+				for(var z = 0; z < this.zs; z++) {
+				for(var y = this.ys-1; y >= 0; y--) {
+				for(var x = this.xs-1; x >= p; x--) {
+					buffer.push(this.getBlock(x, y, z));
+				}
+				}
+				}
+				this.piece = buffer;
+				break;
+				
+				case 3:
+				for(var z = 0; z < this.zs; z++) {
+				for(var x = this.xs-1; x >= 0; x--) {
+				for(var y = 0; y < this.ys; y++) {
+					buffer.push(this.getBlock(x, y, z));
+				}
+				}
+				}
+				var temp = this.xs;
+				this.xs = this.ys;
+				this.ys = temp;
+				this.piece = buffer;
+				break;
+				
+				default:
+				throw new Error("Unknown rotation type: " + rot);
+			}
+			break;
+			
+			default:
+			throw new Error("Axis must be instance of 'x', 'y', 'z'");
+		}
+	},
+	
+	flip: function(axis) {
+		var buffer = [];
+		switch(axis) {
+			case "x":
+			for(var z = 0; z < this.zs; z++) {
+			for(var y = 0; y < this.ys; y++) {
+			for(var x = this.xs-1; x >= 0; x--) {
+				buffer.push(this.getBlock(x, y, z));
+			}
+			}
+			}
+			this.piece = buffer;
+			break;
+			
+			case "y":
+			for(var z = 0; z < this.zs; z++) {
+			for(var y = this.ys-1; y >= 0; y--) {
+			for(var x = 0; x < this.xs; x++) {
+				buffer.push(this.getBlock(x, y, z));
+			}
+			}
+			}
+			this.piece = buffer;
+			break;
+			
+			case "z":
+			for(var z = this.zs-1; z >= 0; z--) {
+			for(var y = 0; y < this.ys; y++) {
+			for(var x = 0; x < this.xs; x++) {
+				buffer.push(this.getBlock(x, y, z));
+			}
+			}
+			}
+			this.piece = buffer;
+			break;
+			
+			default:
+			throw new Error("ERROR AXIS MUST BE INSTANCE OF 'x', 'y', 'z'");
+		}
+	}
+}
+
+
+
 //======================
 //WORLD EDIT SCRIPT SIDE
 //======================
 
 function WorldEdit() {
 	if (!(this instanceof arguments.callee)) return new arguments.callee();
+	
+	this.contentType = {
+		REDIRECT_MENU: 0,
+		RUN_FUNCTION: 1,
+		TOGGLE: 2
+	}
+	
 	this.settingFile = sgFiles.setting;
 	this.defaultSetting = {
-		type: "ModPE_Script_WorldEdit",
-		btnX: 0,
-		btnY: Math.floor(sg.wh/5)
+		Type: "ModPE_Script_WorldEdit",
+		BtnX: 0,
+		BtnY: Math.floor(sg.wh/5),
+		BtnVis: 1,
+		MenuLoc: 0,
+		WhiteList: [],
+		HollowCircular: 0
 	}
 	this.setting = null;
+	this.button = null;
+	this.menu = null;
+	this.currentMenu = null;
+	this.mainMenu = null;
+	this.loadingLayout = null;
+	
+	this.readyInit = false;
+	
+	this.editorGroup = new we_editorGroup(this);
 }
 
 WorldEdit.prototype = {
@@ -2988,6 +3284,16 @@ WorldEdit.prototype = {
 	
 	init: function() {
 		this.loadSetting();
+		this.buildButton();
+		this.buildMenu();
+		this.loadingLayout = new sg.rl(ctx);
+		var pb = new ProgressBar(ctx);
+		var pb_p = new sg.rl.LayoutParams(sg.px*40, sg.px*40);
+		pb_p.addRule(sg.rl.CENTER_IN_PARENT);
+		pb.setLayoutParams(pb_p);
+		this.loadingLayout.addView(pb);
+		this.editorGroup.init();
+		this.readyInit = true;
 	},
 	
 	loadSetting: function() {
@@ -2997,7 +3303,7 @@ WorldEdit.prototype = {
 		}
 		this.setting = sgUtils.io.loadJSON(this.settingFile);
 		try {
-			if(this.setting.type !== "ModPE_Script_WorldEdit") {
+			if(this.setting.Type !== "ModPE_Script_WorldEdit") {
 				throw new Error("");
 			}
 		}catch(err) {
@@ -3041,6 +3347,288 @@ WorldEdit.prototype = {
 			this.saveSetting();
 		}
 		return true;
+	},
+	
+	getLocalEditor: function() {
+		return this.editorGroup.getEditor();
+	},
+	
+	isButtonVisible: function() {
+		if(this.button === null) {
+			return false;
+		}else {
+			return this.button.isShowing();
+		}
+	},
+	
+	buildButton: function() {
+		var that = this;
+		if(this.isButtonVisible()) {
+			this.setButtonVisible(false);
+		}
+		this.buttonI = new ImageButton(ctx);
+		this.buttonI.setPadding(sg.px*4, sg.px*4, sg.px*4, sg.px*4);
+		this.buttonI.setImageBitmap(BlockImageLoader.create(["piston_side", 0], ["piston_side", 0], ["piston_top_normal", 0], BlockTypes.CUBE, true));
+		this.buttonI.setBackgroundColor(0);
+		this.buttonI.setOnTouchListener(View.OnTouchListener({onTouch: function(view, event) {try {
+			switch(event.action) {
+				case MotionEvent.ACTION_DOWN:
+  	   that.relX = event.getX();
+				that.relY = event.getY();
+				that.absX = event.getRawX();
+				that.absY = event.getRawY();
+				that.viewX = that.absX - that.relX;
+				that.viewY = that.absY - that.relY;
+				that.width = that.button.getWidth();
+				that.height = that.button.getHeight();
+				that._onMove = false;
+				break;
+				case MotionEvent.ACTION_MOVE:
+				if(that._onMove) {
+					var x = event.getRawX() - that.absX + that.viewX;
+					var y = event.getRawY() - that.absY + that.viewY;
+					that.button.update(x, y, that.width, that.height);
+				}
+				break;
+				case MotionEvent.ACTION_UP:
+				if(that._onMove) {
+					that._onMove = false;
+					var x = event.getRawX() - that.absX + that.viewX;
+					var y = event.getRawY() - that.absY + that.viewY;
+					that.button.update(x, y, that.width, that.height);
+					that.set("BtnX", x);
+					that.set("BtnY", y, true);
+				}
+				break;
+			}
+		}catch(err) {
+			showError(err);
+		}
+		return false;
+		}}));
+		this.buttonI.setOnClickListener(View.OnClickListener({onClick: function(view, event) {try {
+				that.setMenuVisible(true);
+			}catch(err) {
+				showError(err);
+			}}}));
+		this.buttonI.setOnLongClickListener(View.OnLongClickListener({onLongClick: function(view, event) {try {
+			that._onMove = true;
+		}catch(err) {
+			showError(err);
+		}
+		return true;
+		}}));
+		this.button = new PopupWindow(this.buttonI, sg.wc, sg.wc, false);
+	},
+	
+	setButtonVisible: function(vis) {
+		var that = this;
+		if(this.button === null) {
+			this.buildButton();
+		}
+		uiThread(function() {try {
+			if(vis) {
+				if(!that.isButtonVisible()) {
+					that.button.showAtLocation(sg.dv, Gravity.LEFT|Gravity.TOP, that.get("BtnX"), that.get("BtnY"));
+				}
+			}else {
+				if(that.isButtonVisible()) {
+					that.button.dismiss();
+				}
+			}
+		}catch(err) {
+			showError(err);
+		}});
+	},
+	
+	isMenuVisible: function() {
+		if(this.menu === null) {
+			return false;
+		}else {
+			return this.menu.isShowing();
+		}
+	},
+	
+	buildMenu: function() {
+		var that = this;
+		//메뉴 최상위 레이아웃
+		this.m_rl = new sg.rl(ctx);
+		this.m_rl.setId(sgUtils.math.randomId());
+		//메뉴 제목 레이아웃
+		this.m_title = new sg.rl(ctx);
+		this.m_title.setId(sgUtils.math.randomId());
+		//메뉴 내용물 레이아웃
+		this.m_scroll = new ScrollView(ctx);
+		this.m_scroll.setId(sgUtils.math.randomId());
+		//제목 레이아웃 위치 설정
+		var m_title_p = new sg.rl.LayoutParams(sg.mp, sg.px*0x30);
+		m_title_p.addRule(sg.rl.ALIGN_PARENT_TOP);
+		this.m_title.setLayoutParams(m_title_p);
+		//내용물 레이아웃 위치 설정
+		var m_scroll_p = new sg.rl.LayoutParams(sg.mp, sg.mp);
+		m_scroll_p.addRule(sg.rl.BELOW, this.m_title.getId());
+		this.m_scroll.setLayoutParams(m_scroll_p);
+		//색 설정
+		this.m_rl.setBackgroundColor(Color.argb(0x55, 0, 0, 0));
+		this.m_title.setBackgroundColor(sgColors.main);
+		//제목 레이아웃 뒤로버튼
+		this.m_t_back = new ImageButton(ctx);
+		this.m_t_back.setId(sgUtils.math.randomId());
+		this.m_t_back.setImageBitmap(sgAssets.weExit.scaleBitmap);
+		var m_t_back_p = new sg.rl.LayoutParams(sg.px*0x30, sg.px*0x30);
+		m_t_back_p.addRule(sg.rl.ALIGN_PARENT_RIGHT);
+		this.m_t_back.setLayoutParams(m_t_back_p);
+		this.m_t_back.setBackgroundColor(Color.WHITE);
+		this.m_t_back.setOnClickListener(View.OnClickListener({onClick: function(event, view) {try {
+			that.backMenu();
+		}catch(err) {
+			showError(err);
+		}}}));
+		//제목 레이아웃 텍스트뷰
+		this.m_t_text = sgUtils.gui.mcFastText("---", sg.px*0x10, false, Color.WHITE);
+		this.m_t_text.setId(sgUtils.math.randomId());
+		this.m_t_text.setGravity(Gravity.CENTER);
+		var m_t_text_p = new sg.rl.LayoutParams(sg.mp, sg.mp);
+		m_t_text_p.addRule(sg.rl.LEFT_OF, this.m_t_back.getId());
+		this.m_t_text.setLayoutParams(m_t_text_p);
+		//메뉴 상속
+		this.m_title.addView(this.m_t_back);
+		this.m_title.addView(this.m_t_text);
+		this.m_rl.addView(this.m_title);
+		this.m_rl.addView(this.m_scroll);
+		//메뉴 팝업 윈도우
+		this.menu = new PopupWindow(this.m_rl, sg.px*0x100, sg.wh, false);
+		
+		//메뉴 내용물들 빌드
+		this.mainMenu = new we_menu("WorldEdit");
+		//메인 메뉴 내용물
+		var mm_edit = new we_menu("Edit");
+		var mm_tool =  new we_menu("Tool");
+		var mm_setting = new we_menu("Setting");
+		//에딧메뉴 내용물
+		var mme_circular = new we_menu("Circular");
+		
+		//메인메뉴 목록
+		this.mainMenu.addMenu(this.contentType.REDIRECT_MENU, "Edit", mm_edit);
+		this.mainMenu.addMenu(this.contentType.REDIRECT_MENU, "Tool", mm_tool);
+		this.mainMenu.addMenu(this.contentType.REDIRECT_MENU, "Setting", mm_setting);
+		//에딧메뉴 목록
+		mm_edit.addMenu(this.contentType.RUN_FUNCTION, "Fill", function() {
+			
+		});
+		mm_edit.addMenu(this.contentType.RUN_FUNCTION, "Clean", function() {
+			
+		});
+		mm_edit.addMenu(this.contentType.RUN_FUNCTION, "Replace", function() {
+			
+		});
+		mm_edit.addMenu(this.contentType.RUN_FUNCTION, "Wall", function() {
+			
+		});
+		mm_edit.addMenu(this.contentType.REDIRECT_MENU, "Circular", mme_circular);
+		//원형 에딧메뉴 목록
+		mme_circular.addMenu(this.contentType.TOGGLE, "Hollow Circular", function(bool) {
+			if(bool === undefined) {
+				return that.get("HollowCircular") == 1;
+			}else if(bool) {
+				that.set("HollowCircular", 1);
+			}else {
+				that.set("HollowCircular", 0);
+			}
+		});
+		//설정메뉴 목록
+		mm_setting.addMenu(this.contentType.TOGGLE, "Button Visible", function(bool) {
+			if(bool === undefined) {
+				return that.get("BtnVis") == 1;
+			}else if(bool) {
+				that.set("BtnVis", 1, true);
+			}else {
+				that.set("BtnVis", 0, true);
+			}
+		});
+		mm_setting.addMenu(this.contentType.RUN_FUNCTION, "Menu Location", function() {
+			switch(that.get("MenuLoc")) {
+				case 0:
+				that.set("MenuLoc", 1, true);
+				break;
+				case 1:
+				that.set("MenuLoc", 2, true);
+				break;
+				default:
+				that.set("MenuLoc", 0, true);
+			}
+			that.setMenuVisible(false);
+			that.setMenuVisible(true);
+		});
+		
+		//기본 메뉴로 전환
+		this.changeMenu(this.mainMenu);
+	},
+	
+	setMenuVisible: function(vis) {
+		var that = this;
+		if(this.menu === null) {
+			this.buildMenu();
+		}
+		//메뉴 정렬 위치
+		var grvs = parseInt(this.get("MenuLoc"));
+		var grv;
+		switch(grvs) {
+			case 1:
+			grv = Gravity.LEFT;
+			break;
+			case 2:
+			grv = Gravity.CENTER;
+			break;
+			case 0:
+			default:
+			grv = Gravity.RIGHT;
+		}
+		uiThread(function() {try {
+			if(vis) {
+				if(!that.isMenuVisible()) {
+					
+					that.menu.showAtLocation(sg.dv, grv, 0, 0);
+				}
+			}else {
+				if(that.isMenuVisible()) {
+					that.menu.dismiss();
+				}
+			}
+		}catch(err) {
+			showError(err);
+		}});
+	},
+	
+	changeMenu: function(menu) {
+		var that = this;
+		thread(function() {try {
+			that.currentMenu = menu;
+			uiThread(function() {try {
+				that.m_scroll.removeAllViews();
+				that.m_t_text.setText(menu.getName());
+				that.m_scroll.addView(that.loadingLayout);
+			}catch(err) {
+				showError(err);
+			}});
+			var layout = menu.getLayout();
+			uiThread(function() {try {
+				that.m_scroll.removeAllViews();
+				that.m_scroll.addView(layout);
+			}catch(err) {
+				showError(err);
+			}});
+		}catch(err) {
+			showError(err);
+		}}).start();
+	},
+	
+	backMenu: function() {
+		if(this.currentMenu.getParentMenu() === null) {
+			this.setMenuVisible(false);
+		}else {
+			this.changeMenu(this.currentMenu.getParentMenu());
+		}
 	}
 }
 
@@ -3063,15 +3651,301 @@ function we_toast(txt, type, duration, isImportent, size, color) {
 
 
 
+function we_menu(name) {
+	var that = this;
+	this.name = name;
+	this.menus = [];
+	this.parentMenu = null;
+}
+
+we_menu.prototype = {
+	
+	toString: function() {
+		return "['" + this.name + "' Menu]";
+	},
+	
+	isEqual: function(menu) {
+		if(menu instanceof we_menu) {
+			return this.name === menu.name;
+		}else {
+			return false;
+		}
+	},
+	
+	getParentMenu: function() {
+		return this.parentMenu;
+	},
+	
+	setParentMenu: function(menu) {
+		if(!(menu instanceof we_menu)) {
+			throw new TypeError("The parameter 'menu' is must instance of we_menu");
+		}
+		this.parentMenu = menu;
+	},
+	
+	getName: function() {
+		return this.name;
+	},
+	
+	getLayout: function() {
+		var that = this;
+		//반환할 레이아웃
+		var ll = new sg.ll(ctx);
+		ll.setOrientation(sg.ll.VERTICAL);
+		for(var e = 0; e < this.menus.length; e++) {
+			var con = this.menus[e];
+			//메뉴에 들어갈 버튼들 빌드
+			switch(con[0]) {
+				//REDIRECT_MENU
+				case 0:
+				var btn = sgUtils.gui.mcFastButton(con[1], sg.px*0x10, false, Color.WHITE, null, null, null, [sg.px*4, sg.px*8, sg.px*4, sg.px*8], null, sgAssets.weButton.ninePatch(), null, function(view) {try {
+					main.changeMenu(view.getTag());
+				}catch(err) {
+					showError(err);
+				}}, null);
+				break;
+				//RUN_FUNCTION
+				case 1:
+				var btn = sgUtils.gui.mcFastButton(con[1], sg.px*0x10, false, Color.WHITE, null, null, null, [sg.px*4, sg.px*8, sg.px*4, sg.px*8], null, sgAssets.weButton.ninePatch(), null, function(view) {try {
+					toast(view);
+					var func = view.getTag();
+					func();
+				}catch(err) {
+					showError(err);
+				}}, null);
+				break;
+				//TOGGLE
+				case 2:
+				//현재 토글의 상태 (true, false)
+				var btn = sgUtils.gui.mcFastButton(con[1], sg.px*0x10, false, Color.WHITE, null, null, null, [sg.px*4, sg.px*8, sg.px*4, sg.px*8], null, con[2] ? sgAssets.weButtonClick.ninePatch() : sgAssets.weButton.ninePatch(), null, function(view) {try {
+					var func = view.getTag();
+					if(func()) {
+						func(false);
+						view.setBackgroundDrawable(sgAssets.weButton.ninePatch());
+					}else {
+						func(true);
+						view.setBackgroundDrawable(sgAssets.weButtonClick.ninePatch());
+					}
+				}catch(err) {
+					showError(err);
+				}}, null);
+				break;
+			}
+			btn.setTag(con[2]);
+			var btn_p = new sg.ll.LayoutParams(sg.mp, sg.wc);
+			btn.setLayoutParams(btn_p);
+			ll.addView(btn);
+		}
+		return ll;
+	},
+	
+	addMenu: function(type, name, content) {
+		//부모 등록
+		if(type === 0) {
+			content.setParentMenu(this);
+		}
+		this.menus.push([type, name, content]);
+	}
+}
+
+
+
+function we_editorGroup(worldEdit) {
+	this._parent = worldEdit;
+	this.editors = [];
+}
+
+we_editorGroup.prototype = {
+	
+	toString: function() {
+		return "[object we_editorGroup]";
+	},
+	
+	init: function() {
+		
+	},
+	
+	isAllow: function(name) {
+		var lcName = name.toLowerCase();
+		var wl = this._parent.get("WhiteList");
+		var allow = false;
+		if(Player.getName(Player.getEntity()).toLowerCase() === lcName) {
+			allow = true;
+		}else {
+			for(var e = 0; e < wl.length; e++) {
+				if(wl[e].toLowerCase() === lcName) {
+					allow = true;
+					break;
+				}
+			}
+		}
+		return allow;
+	},
+	
+	getEditor: function(name) {
+		if(name === undefined) {
+			name = Player.getName(Player.getEntity());
+		}
+		if(!this.isAllow(name)) {
+			return false;
+		}
+		for(var e = 0; e < this.editors.length; e++) {
+			if(this.editors[e].isOwner(name)) {
+				return this.editors[e];
+			}
+		}
+		this.editors.push(new we_editor(this, name));
+		return this.editors[this.editors.length - 1];
+	}
+}
+
+
+
+function we_editor(editorGroup, name) {
+	this._parent = editorGroup;
+	this.owner = name;
+	this.pos1 = null;
+	this.pos2 = null;
+	this.backup = null;
+}
+
+we_editor.prototype = {
+	
+	toString: function() {
+		return "[object we_editor(" + this.owner + ")]";
+	},
+	
+	isOwner: function(name) {
+		return name.toLowerCase() === this.owner.toLowerCase();
+	},
+	
+	getOwner: function() {
+		return sgUtils.modPE.playerExtra.getPlayer(this.owner);
+	},
+	
+	getPos1: function() {
+		return this.pos1;
+	},
+	
+	getPos2: function() {
+		return this.pos2;
+	},
+	
+	getBackup: function() {
+		return this.backup;
+	},
+	
+	getBackupPos: function() {
+		return this.backupPos;
+	},
+	
+	setPos1: function(pos) {
+		if(!(pos instanceof Vector3)) {
+			throw new TypeError("Parameter 'pos' must instance of Vector3");
+		}
+		this.pos1 = pos;
+	},
+	
+	setPos2: function(pos) {
+		if(!(pos instanceof Vector3)) {
+			throw new TypeError("Parameter 'pos' must instance of Vector3");
+		}
+		this.pos2 = pos;
+	},
+	
+	setBackup: function(piece, pos) {
+		if(!(piece instanceof Piece)) {
+			throw new TypeError("Parameter 'piece' must instance of Piece");
+		}
+		if(!(pos instanceof Vector3)) {
+			throw new TypeError("Parameter 'pos' must instance of Vector3");
+		}
+		this.backup = piece;
+		this.backupPos = pos;
+	}
+}
+
+
+
 var main = new WorldEdit();
 thread(function() {try {
-	var loading = new sgUtils.gui.progressBar(1);
+	sleep(1000);
+	var loading = new sgUtils.gui.progressBar(7);
+	loading.setText("Load WorldEdit script...");
 	loading.show();
 	main.init();
 	loading.close();
 }catch(err) {
 	showError(err);
 }}).start();
+
+
+
+function newLevel() {
+	//맵 진입시 버튼 활성화
+	main.setButtonVisible(true);
+}
+
+function leaveGame() {
+	//맵 퇴장시 버튼과 메뉴 비활성화
+	main.setButtonVisible(false);
+	main.setMenuVisible(false);
+}
+
+function useItem(x, y, z, itemId, blockId, side) {
+	if(Player.getCarriedItem() === 271) {
+		preventDefault();
+		highlightBlock(x, y, z);
+		var editor = main.getLocalEditor();
+		if(editor === false) {
+			we_toast("플레이어를 찾을 수 없습니다\nError: sdb1", 2, 5000, true);
+			return;
+		}
+		editor.setPos1(new Vector3(x, y, z));
+		we_toast("위치1 지정됨\nx:" + x + " y:" + y + " z:" + z);
+	}
+}
+
+function startDestroyBlock(x, y, z, side) {
+	if(Player.getCarriedItem() === 271) {
+		highlightBlock(x, y, z);
+		var editor = main.getLocalEditor();
+		if(editor === false) {
+			we_toast("플레이어를 찾을 수 없습니다\nError: sdb1", 2, 5000, true);
+			return;
+		}
+		editor.setPos2(new Vector3(x, y, z));
+		we_toast("위치2 지정됨\nx:" + x + " y:" + y + " z:" + z);
+	}
+}
+
+function destroyBlock(x, y, z, side) {
+	if(Player.getCarriedItem() === 271) {
+		preventDefault();
+	}
+}
+
+function chatReceiveHook(str, sender) {
+	if(str.subString(0, 1) === "@") {
+		var cmd = str.subString(1, str.length).split(" ");
+		if(!main.editorGroup.isAllow(sender)) {
+			broadcast(sender + " 유저는 월드에딧 권한이 없습니다");
+			return;
+		}
+		var editor = main.editorGroup.get(sender);
+		var player = editor.getOwner();
+		switch(cmd[0]) {
+			case "pos1":
+			editor.setPos1(new Vector3(Entity.getX(player), Entity.getY(player), Entity.getZ(player)));
+			msg("위치1이 지정되었습니다", player);
+			break;
+			case "pos2":
+			editor.setPos2(new Vector3(Entity.getX(player), Entity.getY(player), Entity.getZ(player)));
+			msg("위치2이 지정되었습니다", player);
+			break;
+		}
+	}
+}
 
 
 
@@ -3759,48 +4633,6 @@ WorldEditScript.prototype = {
 }
 
 
-var _st_currentToast = {wd:{isShowing: function() {return false}}};
-function WES_Toast(str, type, duration, size, color) {
-	if (!(this instanceof arguments.callee )) return new arguments.callee(str, type, duration, size, color);
-	var that = this;
-	var wd = _st_currentToast.wd;
-	uiThread(function() {try {
-		if(wd.isShowing()) {
-			wd.dismiss();
-		}
-	}catch(e) {showError(e, WarnType.CRITICAL)}});
-	_st_currentToast = this;
-	if(duration === undefined || duration === null) duration = 3000;
-	if(color === undefined || color === null) color = Color.WHITE;
-	if(size === undefined || size === null) size = DIP*12;
-	var layout = mcText(str, size, false, color, null, null, null, [DIP*4, DIP*4, DIP*4, DIP*4], null);
-	layout.setGravity(Gravity.CENTER);
-	switch(type) {
-		case 1:
-		layout.setBackgroundDrawable(Assets.toastWarning.ninePatch());
-		break;
-		case 2:
-		layout.setBackgroundDrawable(Assets.toastCritical.ninePatch());
-		break;
-		case 0:
-		default:
-		layout.setBackgroundDrawable(Assets.toastNormal.ninePatch());
-		break;
-	}
-	this.wd = new PopupWindow(layout, c.w, c.w, false);
-	uiThread(function() { try{
-		that.wd.showAtLocation(c.d, Gravity.CENTER|Gravity.BOTTOM, 0, DIP*0x40);
-		new Handler().postDelayed(new java.lang.Runnable({run: function() {try {
-			if(that.wd.isShowing()) that.wd.dismiss();
-		}catch(e) {
-			print(e);
-		}}}), duration);
-	}catch(e) {
-		print(e);
-	}});
-}
-
-
 
 function WES_Document(strs, shadow) {
 	this.strs = strs;
@@ -3931,193 +4763,6 @@ WES_TaskManager.prototype = {
 	}
 }
 
-
-
-function CustomProgressBar(type, max, text) {
-	var that = this;
-	switch(type) {
-		
-		case 0:
-		this.bar = new ProgressBar(ctx);
-		this.window = new PopupWindow(this.bar, DIP*0x30, DIP*0x30, false);
-		this.window.setTouchable(false);
-		uiThread(function() {try {
-			that.window.showAtLocation(c.d, Gravity.CENTER, 0, 0);
-		}catch(e) {
-			showError(e, WarnType.WARNING);
-		}});
-		break;
-		
-		case 1:
-		this.bar = new ProgressBar(ctx);
-		this.bar.setLayoutParams(new LayoutParams(DIP*0x30, DIP*0x30));
-		this.layout = new c.l(ctx);
-		this.layout.setBackgroundColor(Color.argb(0x55, 0, 0, 0));
-		this.layout.addView(this.bar);
-		this.window = new PopupWindow(this.layout, c.ww, c.wh, false);
-		this.window.setTouchable(true);
-		uiThread(function() {try {
-			that.window.showAtLocation(c.d, Gravity.CENTER, 0, 0);
-		}catch(e) {
-			showError(e, WarnType.WARNING);
-		}});
-		break;
-		
-		case 2:
-		this.bar = new ProgressBar(ctx, null, android.R.attr.progressBarStyleHorizontal);
-		this.bar.setMax(max);
-		this.window = new PopupWindow(this.bar, c.m, c.w, false);
-		this.window.setTouchable(false);
-		uiThread(function() {try {
-			that.window.showAtLocation(c.d, Gravity.BOTTOM, 0, 0);
-		}catch(e) {
-			showError(e, WarnType.WARNING);
-		}});
-		break;
-		
-		case 3:
-		this.bar = new ProgressBar(ctx, null, android.R.attr.progressBarStyleHorizontal);
-		this.bar.setMax(max);
-		var f = new ClipDrawable(new ColorDrawable(Color.parseColor("#80ff80")), Gravity.LEFT, ClipDrawable.HORIZONTAL);
-		var b = new ColorDrawable(Color.parseColor("#808080"));
-		var draw = this.bar.getProgressDrawable();
-		draw.setDrawableByLayerId(android.R.id.progress, f);
-		draw.setDrawableByLayerId(android.R.id.background, b);
-		this.window = new PopupWindow(this.bar, c.m, DIP*0x04, false);
-		this.window.setTouchable(false);
-		uiThread(function() {try {
-			that.window.showAtLocation(c.d, Gravity.BOTTOM, 0, 0);
-		}catch(e) {
-			showError(e, WarnType.WARNING);
-		}});
-		break;
-		
-		case 4:
-		this.layout = new c.l(ctx);
-		this.layout.setOrientation(c.l.VERTICAL);
-		this.layout.setGravity(Gravity.CENTER);
-		this.layout.setBackgroundColor(Color.argb(0xaa, 0, 0, 0));
-		this.text = mcText(text, null, false, null, null, null, null, null, [0, DIP*0x10, 0, 0]);
-		this.bar = new ProgressBar(ctx);
-		var bar_p = new c.l.LayoutParams(DIP*0x30, DIP*0x30);
-		this.bar.setLayoutParams(bar_p);
-		this.layout.addView(this.bar);
-		this.layout.addView(this.text);
-		this.window = new PopupWindow(this.layout, c.ww, c.wh, true);
-		this.window.setTouchable(true);
-		uiThread(function() {try {
-			that.window.showAtLocation(c.d, Gravity.BOTTOM, 0, 0);
-		}catch(e) {
-			showError(e, WarnType.WARNING);
-		}});
-		break;
-		
-		case 5:
-		this.layout = new c.l(ctx);
-		this.layout.setOrientation(c.l.HORIZONTAL);
-		this.layout.setGravity(Gravity.CENTER);
-		this.layout.setBackgroundColor(Color.argb(0xaa, 0, 0, 0));
-		this.text = mcText(text, null, false, null, null, null, null, null, [DIP*0x10, 0, 0, 0]);
-		this.bar = new ProgressBar(ctx);
-		var bar_p = new c.l.LayoutParams(DIP*0x30, DIP*0x30);
-		this.bar.setLayoutParams(bar_p);
-		this.layout.addView(this.bar);
-		this.layout.addView(this.text);
-		this.window = new PopupWindow(this.layout, c.ww, c.wh, true);
-		this.window.setTouchable(true);
-		
-		this.e_text = mcButton("Hide", null, true, null, null, null, null, null, null, null, null, function(view, event) {
-			that.close();
-			WES_Toast("작업 도중 다른 작업을 하면 에딧에 실패할 수도 있습니다", 2, 8000);
-		}, null);
-		this.exit = new PopupWindow(this.e_text, c.w, c.w, false);
-		
-		uiThread(function() {try {
-			that.window.showAtLocation(c.d, Gravity.BOTTOM, 0, 0);
-			that.exit.showAtLocation(c.d, Gravity.BOTTOM | Gravity.RIGHT, 0, 0);
-		}catch(e) {
-			showError(e, WarnType.WARNING);
-		}});
-		break;
-		
-		case 6:
-		this.layout = new c.l(ctx);
-		this.layout.setOrientation(c.l.VERTICAL);
-		this.layout.setGravity(Gravity.CENTER);
-		this.layout.setBackgroundColor(Color.argb(0xaa, 0, 0, 0));
-		this.text = mcText(text, null, false, null, null, null, null, null, [0, 0, 0, DIP*0x10]);
-		this.bar = new ProgressBar(ctx, null, android.R.attr.progressBarStyleHorizontal);
-		this.bar.setMax(max);
-		var f = new ClipDrawable(new ColorDrawable(Color.parseColor("#80ff80")), Gravity.LEFT, ClipDrawable.HORIZONTAL);
-		var b = new ColorDrawable(Color.parseColor("#808080"));
-		var draw = this.bar.getProgressDrawable();
-		draw.setDrawableByLayerId(android.R.id.progress, f);
-		draw.setDrawableByLayerId(android.R.id.background, b);
-		var bar_p = new c.l.LayoutParams(DIP*0x100, DIP*0x04);
-		this.bar.setLayoutParams(bar_p);
-		this.layout.addView(this.text);
-		this.layout.addView(this.bar);
-		this.window = new PopupWindow(this.layout, c.ww, c.wh, true);
-		this.window.setTouchable(true);
-		
-		this.e_text = mcButton("Hide", null, true, null, null, null, null, null, null, null, null, function(view, event) {
-			that.close();
-			WES_Toast("작업 도중 다른 작업을 하면 에딧에 실패할 수도 있습니다", 2, 8000);
-		}, null);
-		this.exit = new PopupWindow(this.e_text, c.w, c.w, false);
-		
-		uiThread(function() {try {
-			that.window.showAtLocation(c.d, Gravity.TOP, 0, 0);
-			that.exit.showAtLocation(c.d, Gravity.BOTTOM | Gravity.RIGHT, 0, 0);
-		}catch(e) {
-			showError(e, WarnType.WARNING);
-		}});
-		break;
-	}
-}
-
-CustomProgressBar.prototype = {
-	
-	setMax: function(value) {
-		var that = this;
-		uiThread(function() {try {
-			that.bar.setMax(value);
-		}catch(e) {
-			showError(e, WarnType.RECOVERABLE);
-		}});
-	},
-	
-	setProgress: function(value) {
-		var that = this;
-		uiThread(function() {try {
-			that.bar.setProgress(value);
-		}catch(e) {
-			showError(e, WarnType.RECOVERABLE);
-		}});
-	},
-	
-	setText: function(text) {
-		var that = this;
-		uiThread(function() {try {
-			that.text.setText(text);
-		}catch(e) {
-			showError(e, WarnType.RECOVERABLE);
-		}});
-	},
-	
-	close: function() {
-		if(!(this.window.isShowing())) return false;
-		var that = this;
-		uiThread(function() {try {
-			that.window.dismiss();
-			if(that.exit !== undefined && that.exit.isShowing()) {
-				that.exit.dismiss();
-			}
-		}catch(e) {
-			showError(e, WarnType.WARNING);
-		}});
-	}
-}
 
 
 function EditorGroup(parent) {
