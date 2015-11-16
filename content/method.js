@@ -1213,8 +1213,82 @@ sgUtils.gui = {
 		var that = this;
 		this.progressBar = null;
 		this.textView = null;
+		this.thread = null;
 		this.rl = new sg.rl(ctx);
 		this.wd = null;
+		this.getText = function() {
+			if(this.textView === null) {
+				throw new Error("This type of custom progress bar don't support 'text' parameter");
+			}
+			return this.textView.getText() + "";
+		}
+		
+		this.getMax = function() {
+			if(this.progressBar === null) {
+				throw new Error("This type of custom progress bar don't support 'max' parameter");
+			}
+			return this.progressBar.getMax();
+		}
+		
+		this.getProgress = function() {
+			if(this.progressBar === null) {
+				throw new Error("This type of custom progress bar don't support 'progress' parameter");
+			}
+			return this.progressBar.getProgress();
+		}
+			
+		this.setText = function(text) {
+			if(this.textView === null) {
+				throw new Error("This type of custom progress bar don't support 'text' parameter");
+			}
+			this.textView.setText(text);
+		}
+		
+		this.setMax = function(max) {
+			if(this.progressBar === null) {
+				throw new Error("This type of custom progress bar don't support 'max' parameter");
+			}
+			uiThread(function() {try {
+				that.progressBar.setMax(max);
+			}catch(err) {
+				showError(err);
+			}});
+		}
+		
+		this.setProgress = function(progress) {
+			if(this.progressBar === null) {
+				throw new Error("This type of custom progress bar don't support 'progress' parameter");
+			}
+			uiThread(function() {try {
+				that.progressBar.setProgress(progress);
+			}catch(err) {
+				showError(err);
+			}});
+		}
+		
+		this.show = function() {
+			uiThread(function() {try {
+				if(!that.wd.isShowing()) {
+					that.wd.showAtLocation(sg.dv, Gravity.LEFT|Gravity.TOP, 0, 0);
+				}
+			}catch(err) {
+				showError(err);
+			}});
+			if(this.thread !== null) {
+				this.thread.start();
+			}
+		}
+		
+		this.close = function() {
+			uiThread(function() {try {
+				if(that.wd.isShowing()) {
+					that.wd.dismiss();
+				}
+			}catch(err) {
+				showError(err);
+			}});
+			this.thread = null;
+		}
 		switch(type) {
 			//뒷 부분이 터치가능한 배경이 투명한 원형 프로그래스 바
 			case 0:
@@ -1297,70 +1371,88 @@ sgUtils.gui = {
 			this.wd = new PopupWindow(this.rl, sg.ww, sg.wh, true);
 			this.wd.setTouchable(true);
 			break;
+			//마인크래프트 상단팝업식 프로그래스창
+			//(마인크래프트Assets 로드 필요)
+			case 5:
+			this.progressBar = new ProgressBar(ctx, null, android.R.attr.progressBarStyleHorizontal); //inVisible
+			this.progressBar.setMax(1);
+			this.progressBar.setProgress(0);
+			var ll = new sg.ll(ctx);
+			ll.setOrientation(sg.ll.HORIZONTAL);
+			ll.setGravity(Gravity.CENTER);
+			ll.setPadding(sg.px*16, sg.px*16, sg.px*16, sg.px*16);
+			if(sgAssets.bg !== undefined) {
+				ll.setBackgroundDrawable(sgAssets.bg.ninePatch());
+			}
+			var ll_p = new sg.rl.LayoutParams(sg.wc, sg.wc);
+			ll_p.addRule(sg.rl.CENTER_HORIZONTAL);
+			ll_p.addRule(sg.rl.ALIGN_PARENT_TOP);
+			ll.setLayoutParams(ll_p);
+			this.textView = sgUtils.gui.mcFastText("...", null, true, Color.WHITE);
+			this.lt = sgUtils.gui.mcFastText("/", null, true, Color.WHITE);
+			this._lt = "/";
+			ll.addView(this.textView);
+			ll.addView(this.lt);
+			this.rl.addView(ll);
+			this.wd = new PopupWindow(this.rl, sg.ww, sg.wh, false);
+			this.wd.setTouchable(false);
+			this.thread = new thread(function() {try {
+				while(that.progressBar.getMax() !== that.progressBar.getProgress() && that.thread !== null) {
+					uiThread(function() {try {
+						switch(that._lt) {
+							case "/":
+							that._lt = "-";
+							break;
+							case "-":
+							that._lt = "\\";
+							break;
+							case "\\":
+							that._lt = " | ";
+							break;
+							default:
+							that._lt = "/";
+						}
+						that.lt.setText(that._lt);
+					}catch(err) {
+						showError(err);
+					}});
+					sleep(100);
+				}
+				uiThread(function() {try {
+					that.lt.setText("");
+				}catch(err) {}});
+			}catch(err) {
+				showError(err);
+			}});
+			break;
+			//빈공간
+			case 6:
+			throw new Error(":P Custom ProgressBar type 6 isn't ready yet");
+			break;
+			//오른쪽 하단의 좌.텍스트창 우.프로그래스바
+			case 7:
+			var ll = new sg.ll(ctx);
+			ll.setOrientation(sg.ll.HORIZONTAL);
+			ll.setPadding(sg.px*8, sg.px*8, sg.px*8, sg.px*8);
+			ll.setGravity(Gravity.CENTER);
+			ll.setBackgroundColor(Color.argb(0x88, 0, 0, 0));
+			this.textView = sgUtils.gui.mcFastText("", null, false, Color.WHITE);
+			this.textView.setGravity(Gravity.CENTER);
+			this.progressBar = new ProgressBar(ctx);
+			var p_p = new sg.ll.LayoutParams(sg.px*40, sg.px*40);
+			this.progressBar.setLayoutParams(p_p);
+			ll.addView(this.textView);
+			ll.addView(this.progressBar);
+			var ll_p = new sg.rl.LayoutParams(sg.wc, sg.wc);
+			ll_p.addRule(sg.rl.ALIGN_PARENT_BOTTOM);
+			ll_p.addRule(sg.rl.ALIGN_PARENT_RIGHT);
+			ll.setLayoutParams(ll_p);
+			this.rl.addView(ll);
+			this.wd = new PopupWindow(this.rl, sg.ww, sg.wh, false);
+			this.wd.setTouchable(false);
+			break;
 			default:
 			throw new Error("Undefined custom progress bar type: " + type);
-		}
-		
-		this.getText = function() {
-			if(this.textView === null) {
-				throw new Error("This type of custom progress bar don't support 'text' parameter");
-			}
-			return this.textView.getText() + "";
-		}
-		
-		this.getMax = function() {
-			if(this.progressBar === null) {
-				throw new Error("This type of custom progress bar don't support 'max' parameter");
-			}
-			return this.max;
-		}
-		
-		this.getProgress = function() {
-			if(this.progressBar === null) {
-				throw new Error("This type of custom progress bar don't support 'progress' parameter");
-			}
-			return this.progress;
-		}
-			
-		this.setText = function(text) {
-			if(this.textView === null) {
-				throw new Error("This type of custom progress bar don't support 'text' parameter");
-			}
-			this.textView.setText(text);
-		}
-		
-		this.setMax = function(max) {
-			if(this.progressBar === null) {
-				throw new Error("This type of custom progress bar don't support 'max' parameter");
-			}
-			this.progressBar.setMax(max);
-		}
-		
-		this.setProgress = function(progress) {
-			if(this.progressBar === null) {
-				throw new Error("This type of custom progress bar don't support 'progress' parameter");
-			}
-			this.progressBar.setProgress(progress);
-		}
-		
-		this.show = function() {
-			uiThread(function() {try {
-				if(!that.wd.isShowing()) {
-					that.wd.showAtLocation(sg.dv, Gravity.LEFT|Gravity.TOP, 0, 0);
-				}
-			}catch(err) {
-				showError(err);
-			}});
-		}
-		
-		this.close = function() {
-			uiThread(function() {try {
-				if(that.wd.isShowing()) {
-					that.wd.dismiss();
-				}
-			}catch(err) {
-				showError(err);
-			}});
 		}
 	}
 }
