@@ -1146,10 +1146,12 @@ sgUtils.gui = {
 			duration = 3000;
 		}
 		var tv = sgUtils.gui.mcFastText(text, size, false, textColor, null, null, null, [sg.px*8, sg.px*8, sg.px*8, sg.px*8]);
+		tv.setGravity(Gravity.CENTER);
 		if(drawable !== null && drawable !== undefined) {
 			tv.setBackgroundDrawable(drawable);
 		}
 		var wd = new PopupWindow(tv, sg.wc, sg.wc, false);
+		wd.setTouchable(false);
 		if(sgUtils.data._toast.length > 0 && !sgUtils.data._toast[0][2]) {
 			var owd = sgUtils.data._toast[0][0];
 			sgUtils.data._toast = [];
