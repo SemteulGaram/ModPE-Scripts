@@ -1649,6 +1649,16 @@ sgUtils.modPE = {
 				r.splice(i, 1);
 			}
 			return n;
+		},
+		
+		getPlayer: function(name) {
+			var list = sgUtils.modPE.entityExtra.getAll();
+			for(var e = 0; e < list.length; e++) {
+				if(Player.isPlayer(list[e]) && sgUtils.modPE.entityExtra.isEqual(list[e], player)) {
+					return list[e];
+				}
+			}
+			return false;
 		}
 	}
 }
