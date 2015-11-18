@@ -4273,7 +4273,7 @@ we_editor.prototype = {
 		return sgUtils.modPE.playerExtra.getPlayer(this.owner);
 	},
 
-	getName: funciton() {
+	getName: function() {
 		return this.owner;
 	},
 
@@ -4350,7 +4350,7 @@ function we_edit(worldEdit, editor, editType, editDetail) {
 
 		//EditDetail: [FilledBlock]
 		case EditType.FILL:
-		var dlthread(function() {try{
+		var atv = thread(function() {try{
 
 		}catch(err) {
 			showError(err);
