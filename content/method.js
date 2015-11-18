@@ -173,17 +173,17 @@ var sgColors = {
 
 
 var sgAssets = {
-	
+
 	customAssetCreator: function(pixel, width, height, scale, scaleType, left, top, right, bottom) {
 		if (!(this instanceof arguments.callee)) return new arguments.callee(pixel, width, height, scale, left, top, right, bottom);
-		
+
 		this.pixel = pixel;
 		this.rawBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
 		this.rawBitmap.setPixels(this.pixel, 0, width, 0, 0, width, height);
 		this.scaleBitmap = Bitmap.createScaledBitmap(this.rawBitmap, width*scale, height*scale, scaleType);
 		this.ninePatch = function() {return ninePatch1(this.scaleBitmap, (top*(scale-1))+1, (left*(scale-1))+1, bottom*scale, right*scale)}
 	},
-	
+
 	bitmapAssetCreator: function(bitmap, xPos, yPos, xSize, ySize, scale, scaleType, left, top, right, bottom) {
 		if (!(this instanceof arguments.callee)) return new arguments.callee(bitmap, xPos, yPos, xSize, ySize, scale, scaleType, left, top, right, bottom);
 		this.rawBitmap = Bitmap.createBitmap(bitmap, xPos, yPos, xSize, ySize);
@@ -232,7 +232,7 @@ function thread(fc) {
 
 /**
  * SemteulGaram Utils
- * 
+ *
  * sgUtils
  * ㄴ io
  *   ㄴ copyFile √
@@ -280,27 +280,27 @@ function thread(fc) {
  * (√: Need test)
  */
 var sgUtils =  {
-	
+
 	toString: function() {
 		return "[object sgUtils]";
 	},
-	
+
 	data: {}//Pointer storage
 	//sgUtils.data["progress"] = value;
 }
 
 sgUtils.io = {
-	
+
 	toString: function() {
 		return "[object sgUtils - I/O]";
 	},
-	
+
 	/**
 	 * Copy file
-	 * 
+	 *
 	 * @author SemteulGaram
 	 * @since 2015-11-13
-	 * 
+	 *
 	 * @param {(File|String|InputStream)} input
 	 * @param {(File|String)} output
 	 * @param {boolean} mkDir
@@ -323,17 +323,17 @@ sgUtils.io = {
 		}else if(!(input instanceof InputStream)) {
 			throw new Error("Illegal argument type");
 		}
-		
+
 		if(output instanceof String) {
 			output = new File(output);
 		}else if(!(output instanceof File)) {
 			throw new Error("Illegal argument type");
 		}
-		
+
 		if(mkDir) {
 			output.getParentFile().mkdirs();
 		}
-	
+
 		var bis = new BufferdInputStream(input);
 		var fos = new FileOutputStream(output)
 		var bos = new BufferdOutputStream(fos);
@@ -357,7 +357,7 @@ sgUtils.io = {
 		bos.close();
 		return true;
 	},
-	
+
 	/**
 	 * Set texture (Android)
 	 *
@@ -374,27 +374,27 @@ sgUtils.io = {
 		var ex = false;
 		if(bl.exists()) {
 			var dir = new File(bl, "files/textures/" + innerPath);
-			dir.getParentFile().mkdirs(); 
+			dir.getParentFile().mkdirs();
 			try {
 				ex = this.copyFile(prototypeFile, dir, false);
 			}catch(e) {}
 		}
 		if(blPro.exists()) {
 			var dir = new File(blPro, "files/textures/" + innerPath);
-			dir.getParentFile().mkdirs(); 
+			dir.getParentFile().mkdirs();
 			try {
 				ex = this.copyFile(prototypeFile, dir, false);
 			}catch(e) {}
 		}
 		return ex;
 	},
-	
+
 	/**
 	 * Read file
-	 * 
+	 *
 	 * @author Semteul
 	 * @since 2015-10-25
-	 * 
+	 *
 	 * @param {(File|string|InputStream)} file
 	 * @return {string[]} lines
 	 */
@@ -406,28 +406,28 @@ sgUtils.io = {
 		}else if(!(file instanceof InputStream)) {
 			throw new Error("Illegal argument type");
 		}
-		
+
 		var isr = new InputStreamReader(file);
 		var br = new BufferedReader(isr);
 		var content = [], line;
-		
+
 		while((line = br.readLine()) !== null) {
 			content.push(line);
 		}
-		
+
 		br.close();
 		isr.close();
 		file.close();
-		
+
 		return content;
 	},
-	
+
 	/**
 	 * Write file
-	 * 
+	 *
 	 * @author Semteul
 	 * @since 2015-10-25
-	 * 
+	 *
 	 * @param {(File|string)} file
 	 * @param {(string[]|string)} value
 	 * @param {boolean} mkDir
@@ -439,40 +439,40 @@ sgUtils.io = {
 		}else if(!(file instanceof File)) {
 			throw new Error("Illegal argument type");
 		}
-		
+
 		if((!file.exists()) && mkDir) {
 			file.getParentFile().mkdirs();
 			file.createNewFile();
 		}else if(!file.exists()) {
 			throw new Error("File not exists: " + file.getPath());
 		}
-		
+
 		if(typeof value === "string") {
 			value = value.split(String.fromCharCode(10));
 		}
-		
+
 		var fos = new FileOutputStream(file);
 		var osw = new OutputStreamWriter(fos);
-		
+
 		while(value.length > 0) {
 			osw.write(value.shift());
 			if(value.length > 0) {
 				osw.write(String.fromCharCode(10));
 			}
 		}
-		
+
 		osw.close();
 		fos.close();
-		
+
 		return true;
 	},
-	
+
 	/**
 	 * Load JSON
 	 *
 	 * @author SemteulGaram
 	 * @since 2015-09
-	 * 
+	 *
 	 * @param {(File|string|InputStream)} file
 	 * @return {Object} value
 	 */
@@ -487,7 +487,7 @@ sgUtils.io = {
 	 *
 	 * @author SemteulGaram
 	 * @since 2015-09
-	 * 
+	 *
 	 * @param {(File|string|InputStream)} file
 	 * @param {Object} obj
 	 * @return {boolean} success
@@ -519,7 +519,7 @@ sgUtils.io = {
 		}
 		return null;
 	},
-	
+
 	/**
 	 * Save Article
 	 *
@@ -550,7 +550,7 @@ sgUtils.io = {
 		}
 		return this.writeFile(file, values);
 	},
-	
+
 	/**
 	 * load Minecraft Setting
 	 *
@@ -616,21 +616,21 @@ sgUtils.io = {
 		return true;
 	}
 }
-	
-	
-	
+
+
+
 sgUtils.convert = {
-	
+
 	toString: function() {
 		return "[object sgUtils - Convert]";
 	},
-	
+
 	/**
 	 * Split line
-	 * 
+	 *
 	 * @author SemteulGaram
 	 * @since 2015-10-24
-	 * 
+	 *
 	 * @param {string} cutter
 	 * @param {string} content
 	 * @return {string}
@@ -638,7 +638,7 @@ sgUtils.convert = {
 	splitLine: function(cutter, content){
 		return content.split(cutter).join(String.fromCharCode(10));
 	},
-	
+
 	/**
 	 * Marge Array
 	 *
@@ -653,7 +653,7 @@ sgUtils.convert = {
 	 * @param {int} width2
 	 * @param {int} height2
 	 * @param {*} fillBlank - null: extend array
-	 * @return {*[]} margedArray 
+	 * @return {*[]} margedArray
 	 */
 	margeArray: function(arr1, arr2, margeType, width1, height1, width2, height2, fillBlank) {
 		var arr = [];
@@ -722,13 +722,13 @@ sgUtils.convert = {
 		}
 		return arr;
 	},
-	
+
 	/**
 	 * View Side
 	 *
 	 * @author SemteulGaram
 	 * @since 2015-04
-	 * 
+	 *
 	 * @param {float} yaw
 	 * @return {string} direction
 	 */
@@ -769,13 +769,13 @@ sgUtils.convert = {
 		else
 			return "NaY";
 	},
-	
+
 	/**
 	 * NumberToString
 	 *
 	 * @author SenteulGaram
 	 * @since 2015-09
-	 * 
+	 *
 	 * @param number
 	 * @return {string}
 	 */
@@ -805,13 +805,13 @@ sgUtils.convert = {
 			return r3 + "." + r2;
 		}
 	},
-	
+
 	/**
 	 * DataSizeToString
 	 *
 	 * @author SemteulGaram
 	 * @since 2015-09
-	 * 
+	 *
 	 * @param size
 	 * @return {string}
 	 */
@@ -831,15 +831,15 @@ sgUtils.convert = {
 		}
 	}
 }
-	
-	
-	
+
+
+
 sgUtils.math = {
-	
+
 	toString: function() {
 		return "[object sgUtils - Math]";
 	},
-	
+
 	/**
 	 * Random Id
 	 *
@@ -866,7 +866,7 @@ sgUtils.math = {
 		sgUtils.data._randomId.push(num);
 		return num;
 	},
-	
+
 	/**
 	 * Left Over
 	 *
@@ -886,15 +886,15 @@ sgUtils.math = {
 		return value;
 	}
 }
-	
-	
-	
+
+
+
 sgUtils.vector = {
-	
+
 	toString: function() {
 		return "[object sgUtils - Vector]";
 	},
-	
+
 	/**
 	 * Vector(x, y, z) to Direction(yaw, pitch)
 	 *
@@ -933,13 +933,13 @@ sgUtils.vector = {
 		var pitch = -1*Math.atan(y/Math.sqrt(Math.pow(x, 2)+Math.pow(z, 2)))*180/Math.PI;
 		return [yaw, pitch];
 	},
-	
+
 	/**
 	 * Direction(yaw, pitch) to Absolute range Vector(x, y, z)
 	 *
 	 * @author SemteulGaram
 	 * @since 2015-01
-	 * 
+	 *
 	 * @param {float} yaw
 	 * @param {float} pitch
 	 * @return {double[]} vector3 - [x, y, z]
@@ -956,7 +956,7 @@ sgUtils.vector = {
 	 *
 	 * @author SemteulGaram
 	 * @since 2015-01
-	 * 
+	 *
 	 * @param {double} x
 	 * @param {double} y
 	 * @param {double} z
@@ -969,19 +969,19 @@ sgUtils.vector = {
 		return [rx, ry, rz];
 	}
 }
-	
-	
-	
+
+
+
 sgUtils.gui = {
-	
+
 	toString: function() {
 		return "[object sgUtils - GUI]";
 	},
-	
+
 	/**
 	 * mcFastText
 	 * 마인크래프트 스타일의 텍스트뷰를 생성합니다
-	 * 
+	 *
 	 * @author SemteulGaram
 	 * @since 2015-10-24
 	 *
@@ -1036,11 +1036,11 @@ sgUtils.gui = {
 		tv.setLayoutParams(tv_p);
 		return tv;
 	},
-	
+
 	/**
 	 * mcFastButton
 	 * 마인크래프트 스타일의 버튼을 생성합니다
-	 * 
+	 *
 	 * @author SemteulGaram
 	 * @since 2015-10-24
 	 *
@@ -1126,13 +1126,13 @@ sgUtils.gui = {
 		}
 		return btn;
 	},
-	
+
 	/**
 	 * Custom Toast
-	 * 
+	 *
 	 * @author SemteulGaram
 	 * @since 2015-11-13
-	 * 
+	 *
 	 * @param {string} text
 	 * @param {(Drawable|null)} drawable
 	 * @param {(long|null)} duration
@@ -1174,7 +1174,7 @@ sgUtils.gui = {
 			this._toastActivity();
 		}
 	},
-	
+
 	_toastActivity: function() {
 		var that = this;
 		if(sgUtils.data._toast.length === 0) {
@@ -1202,7 +1202,7 @@ sgUtils.gui = {
 			showError(err);
 		}});
 	},
-	
+
 	/**
 	 * Custom Progress Bar
 	 *
@@ -1226,28 +1226,32 @@ sgUtils.gui = {
 			}
 			return this.textView.getText() + "";
 		}
-		
+
 		this.getMax = function() {
 			if(this.progressBar === null) {
 				throw new Error("This type of custom progress bar don't support 'max' parameter");
 			}
 			return this.progressBar.getMax();
 		}
-		
+
 		this.getProgress = function() {
 			if(this.progressBar === null) {
 				throw new Error("This type of custom progress bar don't support 'progress' parameter");
 			}
 			return this.progressBar.getProgress();
 		}
-			
+
 		this.setText = function(text) {
 			if(this.textView === null) {
 				throw new Error("This type of custom progress bar don't support 'text' parameter");
 			}
-			this.textView.setText(text);
+			uiThread(function() {try {
+				that.textView.setText(text);
+			}catch(err) {
+				showError(err);
+			}});
 		}
-		
+
 		this.setMax = function(max) {
 			if(this.progressBar === null) {
 				throw new Error("This type of custom progress bar don't support 'max' parameter");
@@ -1258,7 +1262,7 @@ sgUtils.gui = {
 				showError(err);
 			}});
 		}
-		
+
 		this.setProgress = function(progress) {
 			if(this.progressBar === null) {
 				throw new Error("This type of custom progress bar don't support 'progress' parameter");
@@ -1269,7 +1273,7 @@ sgUtils.gui = {
 				showError(err);
 			}});
 		}
-		
+
 		this.show = function() {
 			uiThread(function() {try {
 				if(!that.wd.isShowing()) {
@@ -1282,7 +1286,7 @@ sgUtils.gui = {
 				this.thread.start();
 			}
 		}
-		
+
 		this.close = function() {
 			uiThread(function() {try {
 				if(that.wd.isShowing()) {
@@ -1335,7 +1339,7 @@ sgUtils.gui = {
 			var ll = new sg.ll(ctx);
 			ll.setOrientation(sg.ll.VERTICAL);
 			ll.setGravity(Gravity.CENTER);
-			
+
 			this.textView = sgUtils.gui.mcFastText(this.text, null, false, Color.WHITE, null, null, null, null, [0, 0, 0, sg.px*20]);
 			ll.addView(this.textView);
 			this.progressBar = new ProgressBar(ctx, null, android.R.attr.progressBarStyleHorizontal);
@@ -1360,7 +1364,7 @@ sgUtils.gui = {
 			var ll = new sg.ll(ctx);
 			ll.setOrientation(sg.ll.HORIZONTAL);
 			ll.setGravity(Gravity.CENTER);
-			
+
 			this.progressBar = new ProgressBar(ctx);
 			var pp = new sg.ll.LayoutParams(sg.px*40, sg.px*40);
 			this.progressBar.setLayoutParams(pp);
@@ -1460,21 +1464,21 @@ sgUtils.gui = {
 		}
 	}
 }
-	
-	
-	
+
+
+
 sgUtils.net = {
-	
+
 	toString: function() {
 		return "[sgUtils - Net]";
 	},
-	
+
 	/**
 	 * Download file
 	 *
 	 * @author SemteulGaram
 	 * @since 2015-01
-	 * 
+	 *
 	 * @param {File} path
 	 * @param {string} url
 	 * @param getMax - sgUtils.data pointer
@@ -1508,18 +1512,18 @@ sgUtils.net = {
 			return false;
 		}
 	},
-	
+
 	/**
 	 * Script server data
 	 *
 	 * @author SemteulGaram
 	 * @since 2015-01
-	 * 
+	 *
 	 * =>loadScriptServerData
 	 * @param {string} url
 	 * @param savePointer - sgUtils.data pointer
 	 * @return {boolean} success
-	 * 
+	 *
 	 * =>ReadContent
 	 * @param savePointer - sgUtils.data pointer
 	 * @param {string} article
@@ -1557,20 +1561,20 @@ sgUtils.net = {
 
 
 sgUtils.modPE = {
-	
+
 	toString: function() {
 		return "[object sgUtils - ModPE]";
 	},
-	
+
 	broadcast: function(str){
 		sg.sm.nativeSendChat(str);
 	},
-	
+
 	entityExtra: {
 		isEqual: function(obj1, obj2) {
 			return Entity.getUniqueId(obj1) === Entity.getUniqueId(obj2);
 		},
-		
+
 		getAll: function() {
 			var a = net.zhuoweizhang.mcpelauncher.ScriptManager.allentities;
 			var entities = new Array(a.size());
@@ -1579,7 +1583,7 @@ sgUtils.modPE = {
 			}
 			return entities;
 		},
-		
+
 		findEnt: function(uniqId) {
 			var list = sgUtils.modPE.entityExtra.getAll();
 			for(var e = 0; e < list.length; e++) {
@@ -1588,13 +1592,13 @@ sgUtils.modPE = {
 				}
 			}
 		},
-		
+
 		getRange: function(obj1, obj2) {try {
 			return Math.sqrt(Math.pow(Entity.getX(obj1) - Entity.getX(obj2), 2) + Math.pow(Entity.getY(obj1) - Entity.getY(obj2), 2) + Math.pow(Entity.getZ(obj1) - Entity.getZ(obj2), 2));
 		}catch(e) {
 			return false;
 		}},
-		
+
 		getNearEntitys: function(x, y, z) {
 			var a = sgUtils.modPE.entityExtra.getAll();
 			var r = [];
@@ -1610,7 +1614,7 @@ sgUtils.modPE = {
 			return n;
 		}
 	},
-	
+
 	playerExtra: {
 		getOnlinePlayers: function() {
 			var entitys = sgUtils.modPE.entityExtra.getAll();
@@ -1622,7 +1626,7 @@ sgUtils.modPE = {
 			}
 			return list;
 		},
-		
+
 		isOnline: function(player) {
 			var list = sgUtils.modPE.entityExtra.getAll();
 			for(var e = 0; e < list.length; e++) {
@@ -1632,7 +1636,7 @@ sgUtils.modPE = {
 			}
 			return false;
 		},
-		
+
 		getNearPlayers: function(x, y, z) {
 			var a = sgUtils.modPE.entityExtra.getAll();
 			var f = [];
@@ -1652,7 +1656,7 @@ sgUtils.modPE = {
 			}
 			return n;
 		},
-		
+
 		getPlayer: function(name) {
 			var list = sgUtils.modPE.entityExtra.getAll();
 			for(var e = 0; e < list.length; e++) {
@@ -1668,11 +1672,11 @@ sgUtils.modPE = {
 
 
 sgUtils.android = {
-	
+
 	toString: function() {
 		return "[object sgUtils - Android]";
 	},
-	
+
 	/**
 	 * Battery Checker
   *
@@ -1683,7 +1687,7 @@ sgUtils.android = {
 		if(!(this instanceof arguments.callee)) return new arguments.callee();
 		var that = this;
 		this.ifilter = new android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED);
-		
+
 		this.isCharging = function() {
 			var batteryStatus = ctx.registerReceiver(null, that.ifilter);
 			var status = batteryStatus.getIntExtra(android.os.BatteryManager.EXTRA_STATUS, -1);
@@ -1695,7 +1699,7 @@ sgUtils.android = {
 			var status = batteryStatus.getIntExtra(android.os.BatteryManager.EXTRA_STATUS, -1);
 			return status == android.os.BatteryManager.BATTERY_STATUS_FULL;
 		}
-		
+
 		this.plugType = function() {
 			var batteryStatus = ctx.registerReceiver(null, that.ifilter);
 			var chargePlug = batteryStatus.getIntExtra(android.os.BatteryManager.EXTRA_PLUGGED, -1);
@@ -1716,25 +1720,25 @@ sgUtils.android = {
 			var scale = batteryStatus.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, -1);
 			return Math.round(level / scale * 100);
 		},
-		
+
 		this.temp = function() {
 			var batteryStatus = ctx.registerReceiver(null, that.ifilter);
 			var temp = batteryStatus.getIntExtra(android.os.BatteryManager.EXTRA_TEMPERATURE, -1);
 			return parseInt(Math.round(temp)/10);
 		},
-		
+
 		this.volt = function() {
 			var batteryStatus = ctx.registerReceiver(null, that.ifilter);
 			var volt = batteryStatus.getIntExtra(android.os.BatteryManager.EXTRA_VOLTAGE, -1);
 			return volt / 1000;
 		},
-		
+
 		this.tec = function() {
 			var batteryStatus = ctx.registerReceiver(null, that.ifilter);
 			var tec = batteryStatus.getIntExtra(android.os.BatteryManager.EXTRA_TECHNOLOGY, -1);
 			return tec;
 		},
-		
+
 		this.health = function() {
 			var batteryStatus = ctx.registerReceiver(null, that.ifilter);
 			var health = batteryStatus.getIntExtra(android.os.BatteryManager. EXTRA_HEALTH, -1);
@@ -1765,7 +1769,7 @@ sgUtils.android = {
 			}
 		}
 	},
-	
+
 	/*
 	 * Copyright (C) 2010 The Android Open Source Project
 	 *
@@ -1805,7 +1809,7 @@ sgUtils.android = {
 		this.type;
 		//long
 		this.lastValidCaptureTimeMs;
-		
+
 		this.range = new Array(2);
 		// type, size - @int
 		this.AudioCapture = function(type, size, session) {
@@ -1832,7 +1836,7 @@ sgUtils.android = {
 				showError(e);
 			}
 		}
-		
+
 		this.start = function() {
 			if(that.visualizer != null) {
 				try {
@@ -1845,7 +1849,7 @@ sgUtils.android = {
 				}
 			}
 		}
-	
+
 		this.stop = function() {
 			if(that.visualizer != null) {
 				try {
@@ -1857,14 +1861,14 @@ sgUtils.android = {
 				}
 			}
 		}
-		
+
 		this.release = function() {
 			if(that.visualizer != null) {
 				that.visualizer.release();
 				that.visualizer = null;
 			}
 		}
-	
+
 		// return - @byte[]
 		this.getRawData = function() {
 			if(that.captureData()) {
@@ -1873,7 +1877,7 @@ sgUtils.android = {
 				return that.rawNullData;
 			}
 		}
-		
+
 		// num, den - @int
 		// return - @byte[]
 		this.getFormattedData = function(num, den) {
@@ -1899,7 +1903,7 @@ sgUtils.android = {
 				return that.formattedNullData;
 			}
 		}
-		
+
 		// return - boolen
 		this.captureData = function() {
 			var status = android.media.audiofx.Visualizer.ERROR;
@@ -1938,10 +1942,10 @@ sgUtils.android = {
 			}
 			return result;
 		}
-		
+
 		this.mAudioCapture = null;
 		this.mVisible = null;
-		
+
 		this.onVisibilityChanged = function(visible, type, size, audioSessionID) {
 			mVisible = visible;
 			if(visible) {
@@ -1959,13 +1963,13 @@ sgUtils.android = {
 			}
 		}
 	},
-	
+
 	//ready
 	//vis.onVisibilityChanged(visible, type, size, android.media.MediaPlayer().getAudioSessionId());
-	
+
 	//capture
 	//vis.mVizData = vis.getFormattedData(1, 1);
-	
+
 	/**
 	 * Stereo BGS
 	 *
@@ -2013,7 +2017,7 @@ sgUtils.android = {
 	}catch(e) {
 		showError(e);
 	}},
-	
+
 	//Private method
 	_bgsManager: function() {try {
 		for(var e = 0; e < sgUtils.data._bgs.length; e++) {
@@ -2042,7 +2046,7 @@ sgUtils.android = {
 	}catch(e) {
 		showError(e);
 	}},
-	
+
 	//Private method
 	_stereoL: function(x, y, z, power) {
 		var e = locToYaw(Player.getX() - x, Player.getY() - y, Player.getZ() - z);
@@ -2060,7 +2064,7 @@ sgUtils.android = {
 			return 1;
 		}
 	},
-	
+
 	//Private method
 	stereoR: function(x, y, z, power) {
 		var e = locToYaw(Player.getX() - x, Player.getY() - y, Player.getZ() - z);
@@ -2078,7 +2082,7 @@ sgUtils.android = {
 			return 1;
 		}
 	},
-	
+
 	//Private method
 	_bgsMeasure: function(x, y, z, range, airResistance) {
 		var distance = Math.sqrt(Math.pow(Player.getY() - y, 2) + Math.pow(Player.getX() - x, 2) + Math.pow(Player.getZ() - z, 2));
@@ -2099,7 +2103,7 @@ sgUtils.android = {
 			return [l, r];
 		}
 	},
-	
+
 	/**
 	 * Vibrator
 	 *
@@ -2164,7 +2168,7 @@ sgUtils.android = {
 			throw new Error("Illegal vibrator pattern type");
 		}
 	},
-	
+
 	/**
 	 * Screenshot
 	 *
@@ -2188,13 +2192,13 @@ sgUtils.android = {
 		}
 		file.getParentFile().mkdirs();
 		file.createNewFile();
-		
+
 		var fos = new FileOutputStream(file);
 		drawingCache.compress(Bitmap.CompressFormat.PNG, 100, fos);
 		fos.close();
 		view.setDrawingCacheEnabled(false);
 	},
-	
+
 		/**
 	 * ScreenBitmap
 	 *
@@ -2216,7 +2220,7 @@ sgUtils.android = {
 		view.setDrawingCacheEnabled(false);
 		return drawingCache;
 	},
-	
+
 	/**
 	 * Screen brightness
 	 *
@@ -2248,11 +2252,11 @@ function loadMcpeAssets() {try {
 	}
 	sgAssets.SS_BF = BitmapFactory.decodeStream(sgAssets.SS);
 	sgAssets.TG_BF = BitmapFactory.decodeStream(sgAssets.TG);
-	
+
 	sgAssets.fullBg = sgAssets.bitmapAssetCreator(sgAssets.SS_BF, 0, 0, 16, 16, sg.px*2, false, 5, 5, 12, 12);
-	
+
 	sgAssets.bg = sgAssets.bitmapAssetCreator(sgAssets.SS_BF, 34, 43, 14, 14, sg.px*2, false, 4, 4, 11, 11);
-	
+
 	sgAssets.title_l = new sgAssets.bitmapAssetCreator(sgAssets.TG_BF, 150, 26, 2, 25, sg.px*2, false);
 	sgAssets.title_c = new sgAssets.bitmapAssetCreator(sgAssets.TG_BF, 153, 26, 8, 25, sg.px*2, false);
 	sgAssets.title_r = new sgAssets.bitmapAssetCreator(sgAssets.TG_BF, 162, 26, 2, 25, sg.px*2, false);
@@ -2269,14 +2273,14 @@ function loadMcpeAssets() {try {
 	sgAssets.title_p2 = sgUtils.convert.margeArray(sgAssets.title_p1, sgAssets.title_r, 0, 10, 25, 2, 25, null);
 	sgAssets.title_p3 = sgUtils.convert.margeArray(sgAssets.title_p2, sgAssets.title_b, 1, 12, 25, 8, 3, null);
 	sgAssets.title = new sgAssets.customAssetCreator(sgAssets.title_p3, 12, 28, sg.px*2, false, 3, 3, 9, 22);
-	
+
 	sgAssets.exit = new sgAssets.bitmapAssetCreator(sgAssets.SS_BF, 60, 0, 18, 18, sg.px*2, false);
 	sgAssets.exit_c = new sgAssets.bitmapAssetCreator(sgAssets.SS_BF, 78, 0, 18, 18, sg.px*2, false);
-	
+
 	sgAssets.button = new sgAssets.bitmapAssetCreator(sgAssets.SS_BF, 8, 32, 8, 8, sg.px*2, false, 1, 2, 7, 6);
-	
+
 	sgAssets.button_c = new sgAssets.bitmapAssetCreator(sgAssets.SS_BF, 0, 32, 8, 8, sg.px*2, false, 1, 2, 7, 6);
-	
+
 	var p = Color.parseColor("#6b6163");
 	var o = Color.parseColor("#3a393a");
 	sgAssets.textView = new sgAssets.customAssetCreator([
@@ -2287,7 +2291,7 @@ function loadMcpeAssets() {try {
 	b,b,b,b,b,b,
 	b,b,b,b,b,b
 	], 6, 6, sg.px*2, false, 3, 3, 4, 4);
-	
+
 	sgAssets.bg32 = Bitmap.createScaledBitmap(BitmapFactory.decodeStream(ModPE.openInputStreamFromTexturePack("images/gui/bg32.png")), sg.px*64, sg.px*64, false)
 }catch(e) {
 	showError(e);
