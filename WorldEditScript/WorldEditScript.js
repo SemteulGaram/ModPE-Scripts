@@ -4350,11 +4350,24 @@ function we_edit(worldEdit, editor, editType, editDetail) {
 
 		//EditDetail: [FilledBlock]
 		case EditType.FILL:
+		var pos1 = editor.getPos1();
+		var pos2 = editor.getPos1();
+		if(pos1 === null || pos2 === null) {
+			msg("위치1, 2를 지정해 주세요", editor.getName());
+			return;
+		}
+		var sx = (pos1.x < pos2.x) ? pos1.getX() : pos2.getX();
 		var atv = thread(function() {try{
+			var blocks = [];
 
 		}catch(err) {
 			showError(err);
 		}});
+		if(editDetail === undefined) {
+
+		}else {
+			atv.start();
+		}
 		break;
 
 
