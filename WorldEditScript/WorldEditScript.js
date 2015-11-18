@@ -15,7 +15,7 @@
  */
 
 const NAME = "WorldEditScript";
-//Season . Release Number . Commits 
+//Season . Release Number . Commits
 const VERSION = "0.1.4";
 const VERSION_CODE = 104;
 const TAG = "[" + "WES" + " " + VERSION + "] ";
@@ -162,17 +162,17 @@ sgFiles.mapSetting = function() {return new File(sgFiles.map, Level.getWorldDir(
 
 
 var sgAssets = {
-	
+
 	customAssetCreator: function(pixel, width, height, scale, scaleType, left, top, right, bottom) {
 		if (!(this instanceof arguments.callee)) return new arguments.callee(pixel, width, height, scale, left, top, right, bottom);
-		
+
 		this.pixel = pixel;
 		this.rawBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
 		this.rawBitmap.setPixels(this.pixel, 0, width, 0, 0, width, height);
 		this.scaleBitmap = Bitmap.createScaledBitmap(this.rawBitmap, width*scale, height*scale, scaleType);
 		this.ninePatch = function() {return ninePatch1(this.scaleBitmap, (top*(scale-1))+1, (left*(scale-1))+1, bottom*scale, right*scale)}
 	},
-	
+
 	bitmapAssetCreator: function(bitmap, xPos, yPos, xSize, ySize, scale, scaleType, left, top, right, bottom) {
 		if (!(this instanceof arguments.callee)) return new arguments.callee(bitmap, xPos, yPos, xSize, ySize, scale, scaleType, left, top, right, bottom);
 		this.rawBitmap = Bitmap.createBitmap(bitmap, xPos, yPos, xSize, ySize);
@@ -220,27 +220,27 @@ function thread(fc) {
 
 
 var sgUtils =  {
-	
+
 	toString: function() {
 		return "[object sgUtils]";
 	},
-	
+
 	data: {}//Pointer storage
 	//sgUtils.data["progress"] = value;
 }
 
 sgUtils.io = {
-	
+
 	toString: function() {
 		return "[object sgUtils - I/O]";
 	},
-	
+
 	/**
 	 * Copy file
-	 * 
+	 *
 	 * @author SemteulGaram
 	 * @since 2015-11-13
-	 * 
+	 *
 	 * @param {(File|String|InputStream)} input
 	 * @param {(File|String)} output
 	 * @param {boolean} mkDir
@@ -263,17 +263,17 @@ sgUtils.io = {
 		}else if(!(input instanceof InputStream)) {
 			throw new Error("Illegal argument type");
 		}
-		
+
 		if(output instanceof String) {
 			output = new File(output);
 		}else if(!(output instanceof File)) {
 			throw new Error("Illegal argument type");
 		}
-		
+
 		if(mkDir) {
 			output.getParentFile().mkdirs();
 		}
-	
+
 		var bis = new BufferdInputStream(input);
 		var fos = new FileOutputStream(output)
 		var bos = new BufferdOutputStream(fos);
@@ -297,7 +297,7 @@ sgUtils.io = {
 		bos.close();
 		return true;
 	},
-	
+
 	/**
 	 * Set texture (Android)
 	 *
@@ -314,27 +314,27 @@ sgUtils.io = {
 		var ex = false;
 		if(bl.exists()) {
 			var dir = new File(bl, "files/textures/" + innerPath);
-			dir.getParentFile().mkdirs(); 
+			dir.getParentFile().mkdirs();
 			try {
 				ex = this.copyFile(prototypeFile, dir, false);
 			}catch(e) {}
 		}
 		if(blPro.exists()) {
 			var dir = new File(blPro, "files/textures/" + innerPath);
-			dir.getParentFile().mkdirs(); 
+			dir.getParentFile().mkdirs();
 			try {
 				ex = this.copyFile(prototypeFile, dir, false);
 			}catch(e) {}
 		}
 		return ex;
 	},
-	
+
 	/**
 	 * Read file
-	 * 
+	 *
 	 * @author Semteul
 	 * @since 2015-10-25
-	 * 
+	 *
 	 * @param {(File|string|InputStream)} file
 	 * @return {string[]} lines
 	 */
@@ -346,28 +346,28 @@ sgUtils.io = {
 		}else if(!(file instanceof InputStream)) {
 			throw new Error("Illegal argument type");
 		}
-		
+
 		var isr = new InputStreamReader(file);
 		var br = new BufferedReader(isr);
 		var content = [], line;
-		
+
 		while((line = br.readLine()) !== null) {
 			content.push(line);
 		}
-		
+
 		br.close();
 		isr.close();
 		file.close();
-		
+
 		return content;
 	},
-	
+
 	/**
 	 * Write file
-	 * 
+	 *
 	 * @author Semteul
 	 * @since 2015-10-25
-	 * 
+	 *
 	 * @param {(File|string)} file
 	 * @param {(string[]|string)} value
 	 * @param {boolean} mkDir
@@ -379,40 +379,40 @@ sgUtils.io = {
 		}else if(!(file instanceof File)) {
 			throw new Error("Illegal argument type");
 		}
-		
+
 		if((!file.exists()) && mkDir) {
 			file.getParentFile().mkdirs();
 			file.createNewFile();
 		}else if(!file.exists()) {
 			throw new Error("File not exists: " + file.getPath());
 		}
-		
+
 		if(typeof value === "string") {
 			value = value.split(String.fromCharCode(10));
 		}
-		
+
 		var fos = new FileOutputStream(file);
 		var osw = new OutputStreamWriter(fos);
-		
+
 		while(value.length > 0) {
 			osw.write(value.shift());
 			if(value.length > 0) {
 				osw.write(String.fromCharCode(10));
 			}
 		}
-		
+
 		osw.close();
 		fos.close();
-		
+
 		return true;
 	},
-	
+
 	/**
 	 * Load JSON
 	 *
 	 * @author SemteulGaram
 	 * @since 2015-09
-	 * 
+	 *
 	 * @param {(File|string|InputStream)} file
 	 * @return {Object} value
 	 */
@@ -427,7 +427,7 @@ sgUtils.io = {
 	 *
 	 * @author SemteulGaram
 	 * @since 2015-09
-	 * 
+	 *
 	 * @param {(File|string|InputStream)} file
 	 * @param {Object} obj
 	 * @return {boolean} success
@@ -459,7 +459,7 @@ sgUtils.io = {
 		}
 		return null;
 	},
-	
+
 	/**
 	 * Save Article
 	 *
@@ -490,7 +490,7 @@ sgUtils.io = {
 		}
 		return this.writeFile(file, values);
 	},
-	
+
 	/**
 	 * load Minecraft Setting
 	 *
@@ -556,21 +556,21 @@ sgUtils.io = {
 		return true;
 	}
 }
-	
-	
-	
+
+
+
 sgUtils.convert = {
-	
+
 	toString: function() {
 		return "[object sgUtils - Convert]";
 	},
-	
+
 	/**
 	 * Split line
-	 * 
+	 *
 	 * @author SemteulGaram
 	 * @since 2015-10-24
-	 * 
+	 *
 	 * @param {string} cutter
 	 * @param {string} content
 	 * @return {string}
@@ -578,7 +578,7 @@ sgUtils.convert = {
 	splitLine: function(cutter, content){
 		return content.split(cutter).join(String.fromCharCode(10));
 	},
-	
+
 	/**
 	 * Marge Array
 	 *
@@ -593,7 +593,7 @@ sgUtils.convert = {
 	 * @param {int} width2
 	 * @param {int} height2
 	 * @param {*} fillBlank - null: extend array
-	 * @return {*[]} margedArray 
+	 * @return {*[]} margedArray
 	 */
 	margeArray: function(arr1, arr2, margeType, width1, height1, width2, height2, fillBlank) {
 		var arr = [];
@@ -662,13 +662,13 @@ sgUtils.convert = {
 		}
 		return arr;
 	},
-	
+
 	/**
 	 * View Side
 	 *
 	 * @author SemteulGaram
 	 * @since 2015-04
-	 * 
+	 *
 	 * @param {float} yaw
 	 * @return {string} direction
 	 */
@@ -709,13 +709,13 @@ sgUtils.convert = {
 		else
 			return "NaY";
 	},
-	
+
 	/**
 	 * NumberToString
 	 *
 	 * @author SenteulGaram
 	 * @since 2015-09
-	 * 
+	 *
 	 * @param number
 	 * @return {string}
 	 */
@@ -745,13 +745,13 @@ sgUtils.convert = {
 			return r3 + "." + r2;
 		}
 	},
-	
+
 	/**
 	 * DataSizeToString
 	 *
 	 * @author SemteulGaram
 	 * @since 2015-09
-	 * 
+	 *
 	 * @param size
 	 * @return {string}
 	 */
@@ -771,15 +771,15 @@ sgUtils.convert = {
 		}
 	}
 }
-	
-	
-	
+
+
+
 sgUtils.math = {
-	
+
 	toString: function() {
 		return "[object sgUtils - Math]";
 	},
-	
+
 	/**
 	 * Random Id
 	 *
@@ -806,7 +806,7 @@ sgUtils.math = {
 		sgUtils.data._randomId.push(num);
 		return num;
 	},
-	
+
 	/**
 	 * Left Over
 	 *
@@ -826,15 +826,15 @@ sgUtils.math = {
 		return value;
 	}
 }
-	
-	
-	
+
+
+
 sgUtils.vector = {
-	
+
 	toString: function() {
 		return "[object sgUtils - Vector]";
 	},
-	
+
 	/**
 	 * Vector(x, y, z) to Direction(yaw, pitch)
 	 *
@@ -873,13 +873,13 @@ sgUtils.vector = {
 		var pitch = -1*Math.atan(y/Math.sqrt(Math.pow(x, 2)+Math.pow(z, 2)))*180/Math.PI;
 		return [yaw, pitch];
 	},
-	
+
 	/**
 	 * Direction(yaw, pitch) to Absolute range Vector(x, y, z)
 	 *
 	 * @author SemteulGaram
 	 * @since 2015-01
-	 * 
+	 *
 	 * @param {float} yaw
 	 * @param {float} pitch
 	 * @return {double[]} vector3 - [x, y, z]
@@ -896,7 +896,7 @@ sgUtils.vector = {
 	 *
 	 * @author SemteulGaram
 	 * @since 2015-01
-	 * 
+	 *
 	 * @param {double} x
 	 * @param {double} y
 	 * @param {double} z
@@ -909,19 +909,19 @@ sgUtils.vector = {
 		return [rx, ry, rz];
 	}
 }
-	
-	
-	
+
+
+
 sgUtils.gui = {
-	
+
 	toString: function() {
 		return "[object sgUtils - GUI]";
 	},
-	
+
 	/**
 	 * mcFastText
 	 * 마인크래프트 스타일의 텍스트뷰를 생성합니다
-	 * 
+	 *
 	 * @author SemteulGaram
 	 * @since 2015-10-24
 	 *
@@ -976,11 +976,11 @@ sgUtils.gui = {
 		tv.setLayoutParams(tv_p);
 		return tv;
 	},
-	
+
 	/**
 	 * mcFastButton
 	 * 마인크래프트 스타일의 버튼을 생성합니다
-	 * 
+	 *
 	 * @author SemteulGaram
 	 * @since 2015-10-24
 	 *
@@ -1066,13 +1066,13 @@ sgUtils.gui = {
 		}
 		return btn;
 	},
-	
+
 	/**
 	 * Custom Toast
-	 * 
+	 *
 	 * @author SemteulGaram
 	 * @since 2015-11-13
-	 * 
+	 *
 	 * @param {string} text
 	 * @param {(Drawable|null)} drawable
 	 * @param {(long|null)} duration
@@ -1114,7 +1114,7 @@ sgUtils.gui = {
 			this._toastActivity();
 		}
 	},
-	
+
 	_toastActivity: function() {
 		var that = this;
 		if(sgUtils.data._toast.length === 0) {
@@ -1142,7 +1142,7 @@ sgUtils.gui = {
 			showError(err);
 		}});
 	},
-	
+
 	/**
 	 * Custom Progress Bar
 	 *
@@ -1166,28 +1166,32 @@ sgUtils.gui = {
 			}
 			return this.textView.getText() + "";
 		}
-		
+
 		this.getMax = function() {
 			if(this.progressBar === null) {
 				throw new Error("This type of custom progress bar don't support 'max' parameter");
 			}
 			return this.progressBar.getMax();
 		}
-		
+
 		this.getProgress = function() {
 			if(this.progressBar === null) {
 				throw new Error("This type of custom progress bar don't support 'progress' parameter");
 			}
 			return this.progressBar.getProgress();
 		}
-			
+
 		this.setText = function(text) {
 			if(this.textView === null) {
 				throw new Error("This type of custom progress bar don't support 'text' parameter");
 			}
-			this.textView.setText(text);
+			uiThread(function() {try {
+				that.textView.setText(text);
+			}catch(err) {
+				showError(err);
+			}});
 		}
-		
+
 		this.setMax = function(max) {
 			if(this.progressBar === null) {
 				throw new Error("This type of custom progress bar don't support 'max' parameter");
@@ -1198,7 +1202,7 @@ sgUtils.gui = {
 				showError(err);
 			}});
 		}
-		
+
 		this.setProgress = function(progress) {
 			if(this.progressBar === null) {
 				throw new Error("This type of custom progress bar don't support 'progress' parameter");
@@ -1209,7 +1213,7 @@ sgUtils.gui = {
 				showError(err);
 			}});
 		}
-		
+
 		this.show = function() {
 			uiThread(function() {try {
 				if(!that.wd.isShowing()) {
@@ -1222,7 +1226,7 @@ sgUtils.gui = {
 				this.thread.start();
 			}
 		}
-		
+
 		this.close = function() {
 			uiThread(function() {try {
 				if(that.wd.isShowing()) {
@@ -1275,7 +1279,7 @@ sgUtils.gui = {
 			var ll = new sg.ll(ctx);
 			ll.setOrientation(sg.ll.VERTICAL);
 			ll.setGravity(Gravity.CENTER);
-			
+
 			this.textView = sgUtils.gui.mcFastText(this.text, null, false, Color.WHITE, null, null, null, null, [0, 0, 0, sg.px*20]);
 			ll.addView(this.textView);
 			this.progressBar = new ProgressBar(ctx, null, android.R.attr.progressBarStyleHorizontal);
@@ -1300,7 +1304,7 @@ sgUtils.gui = {
 			var ll = new sg.ll(ctx);
 			ll.setOrientation(sg.ll.HORIZONTAL);
 			ll.setGravity(Gravity.CENTER);
-			
+
 			this.progressBar = new ProgressBar(ctx);
 			var pp = new sg.ll.LayoutParams(sg.px*40, sg.px*40);
 			this.progressBar.setLayoutParams(pp);
@@ -1400,21 +1404,21 @@ sgUtils.gui = {
 		}
 	}
 }
-	
-	
-	
+
+
+
 sgUtils.net = {
-	
+
 	toString: function() {
 		return "[sgUtils - Net]";
 	},
-	
+
 	/**
 	 * Download file
 	 *
 	 * @author SemteulGaram
 	 * @since 2015-01
-	 * 
+	 *
 	 * @param {File} path
 	 * @param {string} url
 	 * @param getMax - sgUtils.data pointer
@@ -1448,18 +1452,18 @@ sgUtils.net = {
 			return false;
 		}
 	},
-	
+
 	/**
 	 * Script server data
 	 *
 	 * @author SemteulGaram
 	 * @since 2015-01
-	 * 
+	 *
 	 * =>loadScriptServerData
 	 * @param {string} url
 	 * @param savePointer - sgUtils.data pointer
 	 * @return {boolean} success
-	 * 
+	 *
 	 * =>ReadContent
 	 * @param savePointer - sgUtils.data pointer
 	 * @param {string} article
@@ -1497,20 +1501,20 @@ sgUtils.net = {
 
 
 sgUtils.modPE = {
-	
+
 	toString: function() {
 		return "[object sgUtils - ModPE]";
 	},
-	
+
 	broadcast: function(str){
 		sg.sm.nativeSendChat(str);
 	},
-	
+
 	entityExtra: {
 		isEqual: function(obj1, obj2) {
 			return Entity.getUniqueId(obj1) === Entity.getUniqueId(obj2);
 		},
-		
+
 		getAll: function() {
 			var a = net.zhuoweizhang.mcpelauncher.ScriptManager.allentities;
 			var entities = new Array(a.size());
@@ -1519,7 +1523,7 @@ sgUtils.modPE = {
 			}
 			return entities;
 		},
-		
+
 		findEnt: function(uniqId) {
 			var list = sgUtils.modPE.entityExtra.getAll();
 			for(var e = 0; e < list.length; e++) {
@@ -1528,13 +1532,13 @@ sgUtils.modPE = {
 				}
 			}
 		},
-		
+
 		getRange: function(obj1, obj2) {try {
 			return Math.sqrt(Math.pow(Entity.getX(obj1) - Entity.getX(obj2), 2) + Math.pow(Entity.getY(obj1) - Entity.getY(obj2), 2) + Math.pow(Entity.getZ(obj1) - Entity.getZ(obj2), 2));
 		}catch(e) {
 			return false;
 		}},
-		
+
 		getNearEntitys: function(x, y, z) {
 			var a = sgUtils.modPE.entityExtra.getAll();
 			var r = [];
@@ -1550,7 +1554,7 @@ sgUtils.modPE = {
 			return n;
 		}
 	},
-	
+
 	playerExtra: {
 		getOnlinePlayers: function() {
 			var entitys = sgUtils.modPE.entityExtra.getAll();
@@ -1562,7 +1566,7 @@ sgUtils.modPE = {
 			}
 			return list;
 		},
-		
+
 		isOnline: function(player) {
 			var list = sgUtils.modPE.entityExtra.getAll();
 			for(var e = 0; e < list.length; e++) {
@@ -1572,7 +1576,7 @@ sgUtils.modPE = {
 			}
 			return false;
 		},
-		
+
 		getNearPlayers: function(x, y, z) {
 			var a = sgUtils.modPE.entityExtra.getAll();
 			var f = [];
@@ -1592,9 +1596,9 @@ sgUtils.modPE = {
 			}
 			return n;
 		},
-		
+
 		getPlayer: function(name) {
-			var lname = name.toLowerCase()
+			var lname = name.toLowerCase();
 			var list = sgUtils.modPE.entityExtra.getAll();
 			for(var e = 0; e < list.length; e++) {
 				if(Player.isPlayer(list[e]) && Player.getName(list[e]).toLowerCase() === lname) {
@@ -1609,11 +1613,11 @@ sgUtils.modPE = {
 
 
 sgUtils.android = {
-	
+
 	toString: function() {
 		return "[object sgUtils - Android]";
 	},
-	
+
 	/**
 	 * Battery Checker
   *
@@ -1624,7 +1628,7 @@ sgUtils.android = {
 		if(!(this instanceof arguments.callee)) return new arguments.callee();
 		var that = this;
 		this.ifilter = new android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED);
-		
+
 		this.isCharging = function() {
 			var batteryStatus = ctx.registerReceiver(null, that.ifilter);
 			var status = batteryStatus.getIntExtra(android.os.BatteryManager.EXTRA_STATUS, -1);
@@ -1636,7 +1640,7 @@ sgUtils.android = {
 			var status = batteryStatus.getIntExtra(android.os.BatteryManager.EXTRA_STATUS, -1);
 			return status == android.os.BatteryManager.BATTERY_STATUS_FULL;
 		}
-		
+
 		this.plugType = function() {
 			var batteryStatus = ctx.registerReceiver(null, that.ifilter);
 			var chargePlug = batteryStatus.getIntExtra(android.os.BatteryManager.EXTRA_PLUGGED, -1);
@@ -1657,25 +1661,25 @@ sgUtils.android = {
 			var scale = batteryStatus.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, -1);
 			return Math.round(level / scale * 100);
 		},
-		
+
 		this.temp = function() {
 			var batteryStatus = ctx.registerReceiver(null, that.ifilter);
 			var temp = batteryStatus.getIntExtra(android.os.BatteryManager.EXTRA_TEMPERATURE, -1);
 			return parseInt(Math.round(temp)/10);
 		},
-		
+
 		this.volt = function() {
 			var batteryStatus = ctx.registerReceiver(null, that.ifilter);
 			var volt = batteryStatus.getIntExtra(android.os.BatteryManager.EXTRA_VOLTAGE, -1);
 			return volt / 1000;
 		},
-		
+
 		this.tec = function() {
 			var batteryStatus = ctx.registerReceiver(null, that.ifilter);
 			var tec = batteryStatus.getIntExtra(android.os.BatteryManager.EXTRA_TECHNOLOGY, -1);
 			return tec;
 		},
-		
+
 		this.health = function() {
 			var batteryStatus = ctx.registerReceiver(null, that.ifilter);
 			var health = batteryStatus.getIntExtra(android.os.BatteryManager. EXTRA_HEALTH, -1);
@@ -1706,7 +1710,7 @@ sgUtils.android = {
 			}
 		}
 	},
-	
+
 	/*
 	 * Copyright (C) 2010 The Android Open Source Project
 	 *
@@ -1746,7 +1750,7 @@ sgUtils.android = {
 		this.type;
 		//long
 		this.lastValidCaptureTimeMs;
-		
+
 		this.range = new Array(2);
 		// type, size - @int
 		this.AudioCapture = function(type, size, session) {
@@ -1773,7 +1777,7 @@ sgUtils.android = {
 				showError(e);
 			}
 		}
-		
+
 		this.start = function() {
 			if(that.visualizer != null) {
 				try {
@@ -1786,7 +1790,7 @@ sgUtils.android = {
 				}
 			}
 		}
-	
+
 		this.stop = function() {
 			if(that.visualizer != null) {
 				try {
@@ -1798,14 +1802,14 @@ sgUtils.android = {
 				}
 			}
 		}
-		
+
 		this.release = function() {
 			if(that.visualizer != null) {
 				that.visualizer.release();
 				that.visualizer = null;
 			}
 		}
-	
+
 		// return - @byte[]
 		this.getRawData = function() {
 			if(that.captureData()) {
@@ -1814,7 +1818,7 @@ sgUtils.android = {
 				return that.rawNullData;
 			}
 		}
-		
+
 		// num, den - @int
 		// return - @byte[]
 		this.getFormattedData = function(num, den) {
@@ -1840,7 +1844,7 @@ sgUtils.android = {
 				return that.formattedNullData;
 			}
 		}
-		
+
 		// return - boolen
 		this.captureData = function() {
 			var status = android.media.audiofx.Visualizer.ERROR;
@@ -1879,10 +1883,10 @@ sgUtils.android = {
 			}
 			return result;
 		}
-		
+
 		this.mAudioCapture = null;
 		this.mVisible = null;
-		
+
 		this.onVisibilityChanged = function(visible, type, size, audioSessionID) {
 			mVisible = visible;
 			if(visible) {
@@ -1900,13 +1904,13 @@ sgUtils.android = {
 			}
 		}
 	},
-	
+
 	//ready
 	//vis.onVisibilityChanged(visible, type, size, android.media.MediaPlayer().getAudioSessionId());
-	
+
 	//capture
 	//vis.mVizData = vis.getFormattedData(1, 1);
-	
+
 	/**
 	 * Stereo BGS
 	 *
@@ -1954,7 +1958,7 @@ sgUtils.android = {
 	}catch(e) {
 		showError(e);
 	}},
-	
+
 	//Private method
 	_bgsManager: function() {try {
 		for(var e = 0; e < sgUtils.data._bgs.length; e++) {
@@ -1983,7 +1987,7 @@ sgUtils.android = {
 	}catch(e) {
 		showError(e);
 	}},
-	
+
 	//Private method
 	_stereoL: function(x, y, z, power) {
 		var e = locToYaw(Player.getX() - x, Player.getY() - y, Player.getZ() - z);
@@ -2001,7 +2005,7 @@ sgUtils.android = {
 			return 1;
 		}
 	},
-	
+
 	//Private method
 	stereoR: function(x, y, z, power) {
 		var e = locToYaw(Player.getX() - x, Player.getY() - y, Player.getZ() - z);
@@ -2019,7 +2023,7 @@ sgUtils.android = {
 			return 1;
 		}
 	},
-	
+
 	//Private method
 	_bgsMeasure: function(x, y, z, range, airResistance) {
 		var distance = Math.sqrt(Math.pow(Player.getY() - y, 2) + Math.pow(Player.getX() - x, 2) + Math.pow(Player.getZ() - z, 2));
@@ -2040,7 +2044,7 @@ sgUtils.android = {
 			return [l, r];
 		}
 	},
-	
+
 	/**
 	 * Vibrator
 	 *
@@ -2105,7 +2109,7 @@ sgUtils.android = {
 			throw new Error("Illegal vibrator pattern type");
 		}
 	},
-	
+
 	/**
 	 * Screenshot
 	 *
@@ -2129,13 +2133,13 @@ sgUtils.android = {
 		}
 		file.getParentFile().mkdirs();
 		file.createNewFile();
-		
+
 		var fos = new FileOutputStream(file);
 		drawingCache.compress(Bitmap.CompressFormat.PNG, 100, fos);
 		fos.close();
 		view.setDrawingCacheEnabled(false);
 	},
-	
+
 		/**
 	 * ScreenBitmap
 	 *
@@ -2157,7 +2161,7 @@ sgUtils.android = {
 		view.setDrawingCacheEnabled(false);
 		return drawingCache;
 	},
-	
+
 	/**
 	 * Screen brightness
 	 *
@@ -2190,9 +2194,9 @@ function loadMcpeAssets() {try {
 	}
 	sgAssets.SS_BF = BitmapFactory.decodeStream(sgAssets.SS);
 	sgAssets.TG_BF = BitmapFactory.decodeStream(sgAssets.TG);
-	
+
 	sgAssets.fullBg = sgAssets.bitmapAssetCreator(sgAssets.SS_BF, 0, 0, 16, 16, sg.px*2, false, 5, 5, 12, 12);
-	
+
 	sgAssets.bg = sgAssets.bitmapAssetCreator(sgAssets.SS_BF, 34, 43, 14, 14, sg.px*2, false, 4, 4, 11, 11);
 	/*
 	sgAssets.title_l = new sgAssets.bitmapAssetCreator(sgAssets.TG_BF, 150, 26, 2, 25, sg.px*2, false);
@@ -2214,11 +2218,11 @@ function loadMcpeAssets() {try {
 	*/
 	sgAssets.exit = new sgAssets.bitmapAssetCreator(sgAssets.SS_BF, 60, 0, 18, 18, sg.px*2, false);
 	sgAssets.exit_c = new sgAssets.bitmapAssetCreator(sgAssets.SS_BF, 78, 0, 18, 18, sg.px*2, false);
-	
+
 	sgAssets.button = new sgAssets.bitmapAssetCreator(sgAssets.SS_BF, 8, 32, 8, 8, sg.px*2, false, 1, 2, 7, 6);
-	
+
 	sgAssets.button_c = new sgAssets.bitmapAssetCreator(sgAssets.SS_BF, 0, 32, 8, 8, sg.px*2, false, 1, 2, 7, 6);
-	
+
 	var b = Color.parseColor("#6b6163");
 	var i = Color.parseColor("#3a393a");
 	sgAssets.textView = new sgAssets.customAssetCreator([
@@ -2229,7 +2233,7 @@ function loadMcpeAssets() {try {
 	b,b,b,b,b,b,
 	b,b,b,b,b,b
 	], 6, 6, sg.px*2, false, 3, 3, 4, 4);
-	
+
 	sgAssets.bg32 = Bitmap.createScaledBitmap(BitmapFactory.decodeStream(ModPE.openInputStreamFromTexturePack("images/gui/bg32.png")), sg.px*64, sg.px*64, false)
 }catch(e) {
 	showError(e);
@@ -2428,15 +2432,15 @@ BlockImageLoader.META_MAPPED = null;
 BlockImageLoader.init = function(tga) {
     if(tga instanceof android.graphics.Bitmap)
         BlockImageLoader.TGA = tga;
-    
+
     if(BlockImageLoader.META == null)
         BlockImageLoader.META = eval(new java.lang.String(ModPE.getBytesFromTexturePack("images/terrain.meta"))+'');
-        
+
     if(BlockImageLoader.META_MAPPED == null)
         BlockImageLoader.META_MAPPED = BlockImageLoader.META.map(function(e) {
             return e.name;
         });
-        
+
     if(BlockImageLoader.TGA == null)
         BlockImageLoader.TGA = net.zhuoweizhang.mcpelauncher.texture.tga.TGALoader.load(ModPE.openInputStreamFromTexturePack("images/terrain-atlas.tga"), false);
 };
@@ -2461,7 +2465,7 @@ BlockImageLoader.getBlockBitmap = function(name, data) {
 
 /**
  * Make cube-shaped image with three images
- * 
+ *
  * @param {Array} left
  * @param {Array} right
  * @param {Array} top
@@ -2472,57 +2476,57 @@ BlockImageLoader.getBlockBitmap = function(name, data) {
 BlockImageLoader.create = function(left, right, top, renderType, hasNoShadow) {
     if(BlockImageLoader.TGA == null || BlockImageLoader.META == null)
         throw new Error("BlockImageLoader hasn't been initialized");
-    
+
     if(!Array.isArray(left) || !Array.isArray(right) || !Array.isArray(top))
         throw new Error("Illegal argument type");
-    
+
     var temp = android.graphics.Bitmap.createBitmap(51, 57, android.graphics.Bitmap.Config.ARGB_8888);
     left = BlockImageLoader.getBlockBitmap(left[0], left[1]);
     right = BlockImageLoader.getBlockBitmap(right[0], right[1]);
     top = BlockImageLoader.getBlockBitmap(top[0], top[1]);
-    
+
     switch(renderType) {
         case BlockTypes.CUBE:
             temp = BlockImageLoader.createCube(left, right, top, temp, hasNoShadow, 32);
             break;
-        
+
         case BlockTypes.STAIR:
             temp = BlockImageLoader.createStair(left, right, top, temp, hasNoShadow);
             break;
-        
+
         case BlockTypes.SLAB:
             temp = BlockImageLoader.createCube(left, right, top, temp, hasNoShadow, 16);
             break;
-        
+
         case BlockTypes.SNOW:
             temp = BlockImageLoader.createCube(left, right, top, temp, hasNoShadow, 4);
             break;
-        
+
         case BlockTypes.CARPET:
             temp = BlockImageLoader.createCube(left, right, top, temp, hasNoShadow, 2);
             break;
-        
+
         case BlockTypes.TRAPDOOR:
             temp = BlockImageLoader.createCube(left, right, top, temp, hasNoShadow, 6);
             break;
-            
+
         case BlockTypes.FENCE:
             temp = BlockImageLoader.createFence(left, right, top, temp, hasNoShadow);
             break;
-            
+
         case BlockTypes.PATHGRASS:
             temp = BlockImageLoader.createCube(left, right, top, temp, hasNoShadow, 30);
             break;
-            
+
         case BlockTypes.STONEWALL:
             temp = BlockImageLoader.createWall(left, right, top, temp, hasNoShadow);
             break;
-        
+
         default:
             temp = android.graphics.Bitmap.createScaledBitmap(left, 64, 64, false);
             break;
     }
-    
+
     return temp;
 };
 
@@ -2545,7 +2549,7 @@ BlockImageLoader.createCube = function(left, right, top, temp, hasNoShadow, heig
         mtrx.setPolyToPoly(mSrc, 0, mDst, 0, 4);
         return android.graphics.Bitmap.createBitmap(src, 0, 0, src.getWidth(), src.getHeight(), mtrx, false);
     };
-    
+
     var createCubeRight = function(src) {
         src = android.graphics.Bitmap.createBitmap(src, 0, 32-height, 32, height);
         src = android.graphics.Bitmap.createScaledBitmap(src, 26, height, false);
@@ -2555,7 +2559,7 @@ BlockImageLoader.createCube = function(left, right, top, temp, hasNoShadow, heig
         mtrx.setPolyToPoly(mSrc, 0, mDst, 0, 4);
         return android.graphics.Bitmap.createBitmap(src, 0, 0, src.getWidth(), src.getHeight(), mtrx, false);
     };
-    
+
     var createCubeTop = function(src) {
         var mSrc = [0, 0, 32, 0, 32, 32, 0, 32];
         var mDst = [0, 13.5, 25, 0, 51, 13.5, 25, 26];
@@ -2563,11 +2567,11 @@ BlockImageLoader.createCube = function(left, right, top, temp, hasNoShadow, heig
         mtrx.setPolyToPoly(mSrc, 0, mDst, 0, 4);
         return android.graphics.Bitmap.createBitmap(src, 0, 0, src.getWidth(), src.getHeight(), mtrx, false);
     };
-    
+
     left = createCubeLeft(left);
     right = createCubeRight(right);
     top = createCubeTop(top);
-    
+
     var canv = new android.graphics.Canvas(temp);
     var p = new android.graphics.Paint();
     if(hasNoShadow != false)
@@ -2597,7 +2601,7 @@ BlockImageLoader.createStair = function(left, right, top, temp, hasNoShadow) {
         mtrx.setPolyToPoly(src, 0, dst, 0, 4);
         return android.graphics.Bitmap.createBitmap(left, 0, 0, left.getWidth(), left.getHeight(), mtrx, false);
     };
-    
+
     var createRight = function(right) {
         right = android.graphics.Bitmap.createScaledBitmap(right, 26, 32, false);
         var first = android.graphics.Bitmap.createBitmap(right, 0, 0, 26, 16);
@@ -2606,13 +2610,13 @@ BlockImageLoader.createStair = function(left, right, top, temp, hasNoShadow) {
         var mtrx = new android.graphics.Matrix();
         mtrx.setPolyToPoly(src, 0, dst, 0, 4);
         first = android.graphics.Bitmap.createBitmap(first, 0, 0, first.getWidth(), first.getHeight(), mtrx, false);
-        
+
         var second = android.graphics.Bitmap.createBitmap(right, 0, 16, 26, 16);
         second = android.graphics.Bitmap.createBitmap(second, 0, 0, second.getWidth(), second.getHeight(), mtrx, false);
-        
+
         return [first, second];
     };
-    
+
     var createTop = function(top) {
         top = android.graphics.Bitmap.createScaledBitmap(top, 32, 32, false);
         var first = android.graphics.Bitmap.createBitmap(top, 0, 0, 32, 16);
@@ -2621,17 +2625,17 @@ BlockImageLoader.createStair = function(left, right, top, temp, hasNoShadow) {
         var mtrx = new android.graphics.Matrix();
         mtrx.setPolyToPoly(src, 0, dst, 0, 4);
         first = android.graphics.Bitmap.createBitmap(first, 0, 0, first.getWidth(), first.getHeight(), mtrx, false);
-        
+
         var second = android.graphics.Bitmap.createBitmap(top, 0, 16, 32, 16);
         second = android.graphics.Bitmap.createBitmap(second, 0, 0, second.getWidth(), second.getHeight(), mtrx, false);
-        
+
         return [first, second];
     };
-    
+
     left = createLeft(left);
     right = createRight(right);
     top = createTop(top);
-    
+
     var canvas = new android.graphics.Canvas(temp);
     var p = new android.graphics.Paint();
     if(hasNoShadow != false)
@@ -2643,7 +2647,7 @@ BlockImageLoader.createStair = function(left, right, top, temp, hasNoShadow) {
     canvas.drawBitmap(right[1], 25, temp.getHeight()-right[1].getHeight(), p);
     canvas.drawBitmap(top[0], 0, 0, null);
     canvas.drawBitmap(top[1], 13, 22, null);
-    
+
     return temp;
 };
 
@@ -2664,21 +2668,21 @@ BlockImageLoader.createFence = function(left, right, top, temp, hasNoShadow) {
         var mtrx = new android.graphics.Matrix();
         mtrx.setPolyToPoly(src, 0, dst, 0, 4);
         left = android.graphics.Bitmap.createBitmap(left, 0, 0, left.getWidth(), left.getHeight(), mtrx, false);
-        
+
         right = android.graphics.Bitmap.createBitmap(right, 12, 0, 8, 32);
         right = android.graphics.Bitmap.createScaledBitmap(right, 6, 32, false);
         src = [0, 0, 6, 0, 6, 32, 0, 32];
         dst = [0, 3, 6, 0, 6, 32, 0, 35];
         mtrx.setPolyToPoly(src, 0, dst, 0, 4);
         right = android.graphics.Bitmap.createBitmap(right, 0, 0, right.getWidth(), right.getHeight(), mtrx, false);
-        
+
         top = android.graphics.Bitmap.createBitmap(top, 12, 12, 8, 8);
         top = android.graphics.Bitmap.createScaledBitmap(top, 6, 6, false);
         src = [0, 0, 6, 0, 6, 6, 0, 5];
         dst = [0, 3, 6.5, 0, 12, 3, 3, 6.5];
         mtrx.setPolyToPoly(src, 0, dst, 0, 4);
         top = android.graphics.Bitmap.createBitmap(top, 0, 0, top.getWidth(), top.getHeight(), mtrx, false);
-        
+
         var temp = android.graphics.Bitmap.createBitmap(12, 38, android.graphics.Bitmap.Config.ARGB_8888);
         var canvas = new android.graphics.Canvas(temp);
         var p = android.graphics.Paint();
@@ -2689,10 +2693,10 @@ BlockImageLoader.createFence = function(left, right, top, temp, hasNoShadow) {
             p.setColorFilter(new android.graphics.PorterDuffColorFilter(android.graphics.Color.rgb(255-130, 255-130, 255-130), android.graphics.PorterDuff.Mode.MULTIPLY));
         canvas.drawBitmap(right, 6, 3, p);
         canvas.drawBitmap(top, 0, 0, null);
-        
+
         return temp;
     };
-    
+
     var createHorz = function(left, right, top, type) {
         left = android.graphics.Bitmap.createBitmap(left, 0, 2+type*16, 32, 4);
         var src = [0, 0, 32, 0, 32, 4, 0, 4];
@@ -2700,20 +2704,20 @@ BlockImageLoader.createFence = function(left, right, top, temp, hasNoShadow) {
         var mtrx = new android.graphics.Matrix();
         mtrx.setPolyToPoly(src, 0, dst, 0, 4);
         left = android.graphics.Bitmap.createBitmap(left, 0, 0, left.getWidth(), left.getHeight(), mtrx, false);
-        
+
         right = android.graphics.Bitmap.createBitmap(right, 15, 2+type*16, 3, 4);
         src = [0, 0, 3, 0, 3, 4, 0, 4];
         dst = [0, 2, 3, 0, 3, 4, 0, 6];
         mtrx.setPolyToPoly(src, 0, dst, 0, 4);
         right = android.graphics.Bitmap.createBitmap(right, 0, 0, right.getWidth(), right.getHeight(), mtrx, false);
-        
+
         top = android.graphics.Bitmap.createBitmap(top, 15, 0, 2, 32);
         top = android.graphics.Bitmap.createScaledBitmap(top, 2, 35, false);
         src = [0, 0, 2, 0, 2, 35, 0, 35];
         dst = [0, 2, 5, 0, 35, 15, 32, 17];
         mtrx.setPolyToPoly(src, 0, dst, 0, 4);
         top = android.graphics.Bitmap.createBitmap(top, 0, 0, top.getWidth(), top.getHeight(), mtrx, false);
-        
+
         var temp = android.graphics.Bitmap.createBitmap(35, 22, android.graphics.Bitmap.Config.ARGB_8888);
         var canvas = new android.graphics.Canvas(temp);
         var p = android.graphics.Paint();
@@ -2724,20 +2728,20 @@ BlockImageLoader.createFence = function(left, right, top, temp, hasNoShadow) {
             p.setColorFilter(new android.graphics.PorterDuffColorFilter(android.graphics.Color.rgb(255-130, 255-130, 255-130), android.graphics.PorterDuff.Mode.MULTIPLY));
         canvas.drawBitmap(right, 32, 16, p);
         canvas.drawBitmap(top, 0, 1, null);
-        
+
         return temp;
     };
-    
+
     var vert = createVert(left, right, top);
     var horz1 = createHorz(left, right, top, 0);
     var horz2 = createHorz(left, right, top, 1);
-    
+
     var canvas = new android.graphics.Canvas(temp);
     canvas.drawBitmap(vert, 10, 5, null);
     canvas.drawBitmap(vert, temp.getWidth()-vert.getWidth()-10, temp.getHeight()-vert.getHeight()-5, null);
     canvas.drawBitmap(horz1, 8, 6, null);
     canvas.drawBitmap(horz2, 8, 21, null);
-    
+
     return temp;
 };
 
@@ -2758,20 +2762,20 @@ BlockImageLoader.createWall = function(left, right, top, temp, hasNoShadow) {
         var mtrx = new android.graphics.Matrix();
         mtrx.setPolyToPoly(src, 0, dst, 0, 4);
         left = android.graphics.Bitmap.createBitmap(left, 0, 0, left.getWidth(), left.getHeight(), mtrx, false);
-        
+
         right = android.graphics.Bitmap.createScaledBitmap(right, 13, 32, false);
         src = [0, 0, 13, 0, 13, 32, 0, 32];
         dst = [0, 6, 13, 0, 13, 32, 0, 38];
         mtrx.setPolyToPoly(src, 0, dst, 0, 4);
         right = android.graphics.Bitmap.createBitmap(right, 0, 0, right.getWidth(), right.getHeight(), mtrx, false);
-        
+
         top = android.graphics.Bitmap.createBitmap(top, 8, 8, 16, 16);
         top = android.graphics.Bitmap.createScaledBitmap(top, 13, 13, false);
         src = [0, 0, 13, 0, 13, 13, 0, 13];
         dst = [0, 6.5, 13.5, 0, 26, 6.5, 13.5, 13];
         mtrx.setPolyToPoly(src, 0, dst, 0, 4);
         top = android.graphics.Bitmap.createBitmap(top, 0, 0, top.getWidth(), top.getHeight(), mtrx, false);
-        
+
         var temp = android.graphics.Bitmap.createBitmap(26, 44, android.graphics.Bitmap.Config.ARGB_8888);
         var canvas = new android.graphics.Canvas(temp);
         var p = new android.graphics.Paint();
@@ -2782,10 +2786,10 @@ BlockImageLoader.createWall = function(left, right, top, temp, hasNoShadow) {
             p.setColorFilter(new android.graphics.PorterDuffColorFilter(android.graphics.Color.rgb(255-130, 255-130, 255-130), android.graphics.PorterDuff.Mode.MULTIPLY));
         canvas.drawBitmap(right, 13, 6, p);
         canvas.drawBitmap(top, 0, 0, null);
-        
+
         return temp;
     };
-    
+
     var createHorzRight = function(right) {
         right = android.graphics.Bitmap.createBitmap(right, 8, 8, 16, 24);
         right = android.graphics.Bitmap.createScaledBitmap(right, 11, 24, false);
@@ -2794,10 +2798,10 @@ BlockImageLoader.createWall = function(left, right, top, temp, hasNoShadow) {
         var mtrx = new android.graphics.Matrix();
         mtrx.setPolyToPoly(src, 0, dst, 0, 4);
         right = android.graphics.Bitmap.createBitmap(right, 0, 0, right.getWidth(), right.getHeight(), mtrx, false);
-        
+
         return right;
     };
-    
+
     var createHorzTop = function(top) {
         top = android.graphics.Bitmap.createBitmap(top, 8, 0, 16, 32);
         var src = [0, 32, 0, 0, 16, 0, 16, 32];
@@ -2805,14 +2809,14 @@ BlockImageLoader.createWall = function(left, right, top, temp, hasNoShadow) {
         var mtrx = new android.graphics.Matrix();
         mtrx.setPolyToPoly(src, 0, dst, 0, 4);
         top = android.graphics.Bitmap.createBitmap(top, 0, 0, top.getWidth(), top.getHeight(), mtrx, false);
-        
+
         return top;
     };
-    
+
     var vert = createVert(left, right, top);
     var rightHorz = createHorzRight(right);
     var topHorz = createHorzTop(top);
-    
+
     var canvas = new android.graphics.Canvas(temp);
     var p = new android.graphics.Paint();
     canvas.drawBitmap(vert, temp.getWidth()-vert.getWidth(), 0, null);
@@ -2821,7 +2825,7 @@ BlockImageLoader.createWall = function(left, right, top, temp, hasNoShadow) {
     canvas.drawBitmap(rightHorz, 26, 18, p);
     canvas.drawBitmap(topHorz, 16, 13, null);
     canvas.drawBitmap(vert, 0, temp.getHeight()-vert.getHeight(), null);
-    
+
     return temp;
 };
 
@@ -2852,7 +2856,7 @@ function highlightBlocks(ary, id, data) {
 }
 
 highlightBlocks.prototype = {
-	
+
 	close: function() {
 		for(var e = 0; e < this.backup.length; e++) {
 			Level.setTile(this.backup[e][0], this.backup[e][1], this.backup[e][2], this.backup[e][3], this.backup[e][4]);
@@ -2867,9 +2871,9 @@ function areaHighlight(x1, y1, z1, x2, y2, z2) {
 	var ex = x1 > x2 ? x1 : x2;
 	var ey = y1 > y2 ? y1 : y2;
 	var ez = z1 > z2 ? z1 : z2;
-	
+
 	var blocks = [];
-	
+
 	blocks.push([sx, sy, sz]);
 	blocks.push([sx, sy, ez]);
 	blocks.push([sx, ey, sz]);
@@ -2908,7 +2912,7 @@ function areaHighlight(x1, y1, z1, x2, y2, z2) {
 		blocks.push([ex, ey, sz+1]);
 		blocks.push([ex, ey, ez-1]);
 	}
-	
+
 	return new highlightBlocks(blocks);
 }
 
@@ -2917,11 +2921,11 @@ function highlightBlock(x, y, z) {
 		id: Level.getTile(x, y, z),
 		data: Level.getData(x, y, z)
 	}
-	
+
 	if(temp.id === 41) {
 		return;
 	}
-	
+
 	thread(function() {try {
 		Level.setTile(x, y, z, 41, 0);
 		sleep(1000);
@@ -2951,7 +2955,7 @@ function msg(str, target) {
  * @since 2015-09
  * @author CodeInside
  */
-	
+
 function Vector3(x, y, z) {
 	this.x = x;
 	this.y = y;
@@ -2959,19 +2963,19 @@ function Vector3(x, y, z) {
 }
 
 Vector3.prototype = {
-	
+
 	toString: function() {
 		return "[Vector3 " + this.x + ":" + this.y + ":" + this.z + "]";
 	},
-	
+
 	getX: function() {
 		return this.x;
 	},
-	
+
 	getY: function() {
 		return this.y;
 	},
-	
+
 	getZ: function() {
 		return this.z;
 	}
@@ -2985,7 +2989,7 @@ Vector3.prototype = {
  * @since 2015-09
  * @author CodeInside
  */
- 
+
 function Block(id, data, x, y, z) {
 	this.id = id;
 	this.data = data;
@@ -2995,27 +2999,27 @@ function Block(id, data, x, y, z) {
 }
 
 Block.prototype = {
-	
+
 	toString: function() {
 		return "[Block " + this.id + ":" + this.data + "]";
 	},
-	
+
 	getId: function() {
 		return this.id;
 	},
-	
+
 	getData: function() {
 		return this.data;
 	},
-	
+
 	getX: function() {
 		return this.x;
 	},
-	
+
 	getY: function() {
 		return this.y;
 	},
-	
+
 	getZ: function() {
 		return this.z;
 	}
@@ -3025,7 +3029,7 @@ Block.prototype = {
 
 /**
  * Piece
- * 
+ *
  * @author CodeInside
  * @since 2015-10-12
  */
@@ -3040,23 +3044,23 @@ function Piece(xSize, ySize, zSize, piece) {
 }
 
 Piece.prototype = {
-	
+
 	toStrng: function() {
 		return "[Piece " + xSize + ":" + ySize + ":" + zSize + "]";
 	},
-	
+
 	getSizeX: function() {
 		return this.xs
 	},
-	
+
 	getSizeY: function() {
 		return this.ys
 	},
-	
+
 	getSizeZ: function() {
 		return this.zs
 	},
-	
+
 	getBlock: function(x, y, z) {
 		var index = (z*this.ys*this.xs) + (y*this.xs) + x;
 		if(index >= this.piece.length) {
@@ -3064,7 +3068,7 @@ Piece.prototype = {
 		}
 		return this.piece[index];
 	},
-	
+
 	rotation: function(axis, rot) {
 		var buffer = [];
 		switch(axis) {
@@ -3084,7 +3088,7 @@ Piece.prototype = {
 				this.zs = temp;
 				this.piece = buffer;
 				break;
-				
+
 				case 2:
 				for(var z = this.zs-1; z >= 0; z--) {
 				for(var y = this.ys-1; y >= 0; y--) {
@@ -3095,7 +3099,7 @@ Piece.prototype = {
 				}
 				this.piece = buffer;
 				break;
-				
+
 				case 3:
 				for(var y = 0; y < this.ys; y++) {
 				for(var z = this.zs-1; z >= 0; z--) {
@@ -3109,12 +3113,12 @@ Piece.prototype = {
 				this.zs = temp;
 				this.piece = buffer;
 				break;
-				
+
 				default:
 				throw new Error("Unknown rotation type: " + rot);
 			}
 			break;
-			
+
 			case "y":
 			switch(rot) {
 				case 1:
@@ -3130,7 +3134,7 @@ Piece.prototype = {
 				this.zs = temp;
 				this.piece = buffer;
 				break;
-				
+
 				case 2:
 				for(var z = this.zs-1; z >= 0; z--) {
 				for(var y = 0; y < this.ys; y++) {
@@ -3141,7 +3145,7 @@ Piece.prototype = {
 				}
 				this.piece = buffer;
 				break;
-				
+
 				case 3:
 				for(var x = this.xs-1; x >= 0; x--) {
 				for(var y = 0; y < this.ys; y++) {
@@ -3155,12 +3159,12 @@ Piece.prototype = {
 				this.zs = temp;
 				this.piece = buffer;
 				break;
-				
+
 				default:
 				throw new Error("Unknown rotation type: " + rot);
 			}
 			break;
-			
+
 			case "z":
 			switch(rot) {
 				case 1:
@@ -3176,7 +3180,7 @@ Piece.prototype = {
 				this.ys = temp;
 				this.piece = buffer;
 				break;
-				
+
 				case 2:
 				for(var z = 0; z < this.zs; z++) {
 				for(var y = this.ys-1; y >= 0; y--) {
@@ -3187,7 +3191,7 @@ Piece.prototype = {
 				}
 				this.piece = buffer;
 				break;
-				
+
 				case 3:
 				for(var z = 0; z < this.zs; z++) {
 				for(var x = this.xs-1; x >= 0; x--) {
@@ -3201,17 +3205,17 @@ Piece.prototype = {
 				this.ys = temp;
 				this.piece = buffer;
 				break;
-				
+
 				default:
 				throw new Error("Unknown rotation type: " + rot);
 			}
 			break;
-			
+
 			default:
 			throw new Error("Axis must be instance of 'x', 'y', 'z'");
 		}
 	},
-	
+
 	flip: function(axis) {
 		var buffer = [];
 		switch(axis) {
@@ -3225,7 +3229,7 @@ Piece.prototype = {
 			}
 			this.piece = buffer;
 			break;
-			
+
 			case "y":
 			for(var z = 0; z < this.zs; z++) {
 			for(var y = this.ys-1; y >= 0; y--) {
@@ -3236,7 +3240,7 @@ Piece.prototype = {
 			}
 			this.piece = buffer;
 			break;
-			
+
 			case "z":
 			for(var z = this.zs-1; z >= 0; z--) {
 			for(var y = 0; y < this.ys; y++) {
@@ -3247,7 +3251,7 @@ Piece.prototype = {
 			}
 			this.piece = buffer;
 			break;
-			
+
 			default:
 			throw new Error("ERROR AXIS MUST BE INSTANCE OF 'x', 'y', 'z'");
 		}
@@ -3262,13 +3266,13 @@ Piece.prototype = {
 
 function WorldEdit() {
 	if (!(this instanceof arguments.callee)) return new arguments.callee();
-	
+
 	this.contentType = {
 		REDIRECT_MENU: 0,
 		RUN_FUNCTION: 1,
 		TOGGLE: 2
 	}
-	
+
 	this.settingFile = sgFiles.setting;
 	this.defaultSetting = {
 		Type: "ModPE_Script_WorldEdit",
@@ -3285,11 +3289,11 @@ function WorldEdit() {
 	this.currentMenu = null;
 	this.mainMenu = null;
 	this.loadingLayout = null;
-	
+
 	this.readyInit = false;
-	
+
 	this.editorGroup = new we_editorGroup(this);
-	
+
 	//type -1: No image
 	//type -2: Custom image
 	this.blockData = [
@@ -3328,11 +3332,11 @@ function WorldEdit() {
 ["15:0", BlockTypes.CUBE, [["iron_ore", 0]], true],
 ["16:0", BlockTypes.CUBE, [["coal_ore", 0]], true],
 ["17:0", BlockTypes.CUBE, [["log", 0], ["log", 0], ["log", 1]], true],
-["17:1", BlockTypes.CUBE, [["log", 2], ["log", 2], ["log", 3]], true], 
+["17:1", BlockTypes.CUBE, [["log", 2], ["log", 2], ["log", 3]], true],
 ["17:2", BlockTypes.CUBE, [["log", 4], ["log", 4], ["log", 5]], true],
 ["17:3", BlockTypes.CUBE, [["log", 6], ["log", 6], ["log", 7]], true],
 ["18:0", BlockTypes.CUBE, [["leaves_opaque", 0]], true],
-["18:1", BlockTypes.CUBE, [["leaves_opaque", 1]], true], 
+["18:1", BlockTypes.CUBE, [["leaves_opaque", 1]], true],
 ["18:2", BlockTypes.CUBE, [["leaves_opaque", 2]], true],
 ["18:3", BlockTypes.CUBE, [["leaves_opaque", 3]], true],
 ["19:0", BlockTypes.CUBE, [["sponge", 0]], true],
@@ -3581,17 +3585,20 @@ function WorldEdit() {
 	];
 	this.blockImagesData = null;
 	this.blockImagesLayout = new sg.ll(ctx);
-		this.blockImagesLayout.setOrientation(sg.ll.VERTICAL);
-		this.currentSelectedBlock = null;
+	this.blockImagesLayout.setOrientation(sg.ll.VERTICAL);
+	this.currentSelectedBlock = null;
 }
 
 WorldEdit.prototype = {
-	
+
 	toString: function() {
 		return "[object WorldEdit]";
 	},
-	
+
 	init: function() {
+		var loading = new sgUtils.gui.progressBar(7);
+		loading.setText("Load WorldEdit script...");
+		loading.show();
 		this.loadSetting();
 		this.buildButton();
 		this.buildMenu();
@@ -3604,8 +3611,9 @@ WorldEdit.prototype = {
 		this.editorGroup.init();
 		this.buildBlockImages();
 		this.readyInit = true;
+		loading.close();
 	},
-	
+
 	loadSetting: function() {
 		if(!this.settingFile.exists()) {
 			this.saveSetting();
@@ -3621,7 +3629,7 @@ WorldEdit.prototype = {
 			this.saveSetting();
 		}
 	},
-	
+
 	saveSetting: function() {
 		if(!this.settingFile.exists()) {
 			this.settingFile.getParentFile().mkdirs();
@@ -3632,7 +3640,7 @@ WorldEdit.prototype = {
 			we_toast("[ERROR] Can't save setting File", 2, 5000, true);
 		}
 	},
-	
+
 	get: function(article) {
 		if(this.setting === null) {
 			this.loadSetting();
@@ -3644,7 +3652,7 @@ WorldEdit.prototype = {
 		}
 		return value;
 	},
-	
+
 	set: function(article, value, save) {
 		if(this.setting === null) {
 			this.loadSetting();
@@ -3658,11 +3666,11 @@ WorldEdit.prototype = {
 		}
 		return true;
 	},
-	
+
 	getLocalEditor: function() {
 		return this.editorGroup.getEditor();
 	},
-	
+
 	isButtonVisible: function() {
 		if(this.button === null) {
 			return false;
@@ -3670,7 +3678,7 @@ WorldEdit.prototype = {
 			return this.button.isShowing();
 		}
 	},
-	
+
 	buildButton: function() {
 		var that = this;
 		if(this.isButtonVisible()) {
@@ -3730,7 +3738,7 @@ WorldEdit.prototype = {
 		}}));
 		this.button = new PopupWindow(this.buttonI, sg.wc, sg.wc, false);
 	},
-	
+
 	setButtonVisible: function(vis) {
 		var that = this;
 		if(this.button === null) {
@@ -3750,7 +3758,7 @@ WorldEdit.prototype = {
 			showError(err);
 		}});
 	},
-	
+
 	isMenuVisible: function() {
 		if(this.menu === null) {
 			return false;
@@ -3758,7 +3766,7 @@ WorldEdit.prototype = {
 			return this.menu.isShowing();
 		}
 	},
-	
+
 	buildMenu: function() {
 		var that = this;
 		//메뉴 최상위 레이아웃
@@ -3808,7 +3816,7 @@ WorldEdit.prototype = {
 		this.m_rl.addView(this.m_scroll);
 		//메뉴 팝업 윈도우
 		this.menu = new PopupWindow(this.m_rl, sg.px*0x100, sg.wh, false);
-		
+
 		//메뉴 내용물들 빌드
 		this.mainMenu = new we_menu("WorldEdit");
 		//메인 메뉴 내용물
@@ -3817,23 +3825,23 @@ WorldEdit.prototype = {
 		var mm_setting = new we_menu("Setting");
 		//에딧메뉴 내용물
 		var mme_circular = new we_menu("Circular");
-		
+
 		//메인메뉴 목록
 		this.mainMenu.addMenu(this.contentType.REDIRECT_MENU, "Edit", mm_edit);
 		this.mainMenu.addMenu(this.contentType.REDIRECT_MENU, "Tool", mm_tool);
 		this.mainMenu.addMenu(this.contentType.REDIRECT_MENU, "Setting", mm_setting);
 		//에딧메뉴 목록
 		mm_edit.addMenu(this.contentType.RUN_FUNCTION, "Fill", function() {
-			
+
 		});
 		mm_edit.addMenu(this.contentType.RUN_FUNCTION, "Clean", function() {
-			
+
 		});
 		mm_edit.addMenu(this.contentType.RUN_FUNCTION, "Replace", function() {
-			
+
 		});
 		mm_edit.addMenu(this.contentType.RUN_FUNCTION, "Wall", function() {
-			
+
 		});
 		mm_edit.addMenu(this.contentType.REDIRECT_MENU, "Circular", mme_circular);
 		//원형 에딧메뉴 목록
@@ -3870,11 +3878,11 @@ WorldEdit.prototype = {
 			that.setMenuVisible(false);
 			that.setMenuVisible(true);
 		});
-		
+
 		//기본 메뉴로 전환
 		this.changeMenu(this.mainMenu);
 	},
-	
+
 	setMenuVisible: function(vis) {
 		var that = this;
 		if(this.menu === null) {
@@ -3897,7 +3905,7 @@ WorldEdit.prototype = {
 		uiThread(function() {try {
 			if(vis) {
 				if(!that.isMenuVisible()) {
-					
+
 					that.menu.showAtLocation(sg.dv, grv, 0, 0);
 				}
 			}else {
@@ -3909,7 +3917,7 @@ WorldEdit.prototype = {
 			showError(err);
 		}});
 	},
-	
+
 	changeMenu: function(menu) {
 		var that = this;
 		thread(function() {try {
@@ -3932,7 +3940,7 @@ WorldEdit.prototype = {
 			showError(err);
 		}}).start();
 	},
-	
+
 	backMenu: function() {
 		if(this.currentMenu.getParentMenu() === null) {
 			this.setMenuVisible(false);
@@ -3940,7 +3948,7 @@ WorldEdit.prototype = {
 			this.changeMenu(this.currentMenu.getParentMenu());
 		}
 	},
-	
+
 	getBlockDataIndex: function(id, data) {
 		if(data === undefined) {
 			data = 0;
@@ -3960,7 +3968,7 @@ WorldEdit.prototype = {
 		}
 		return -1;
 	},
-	
+
 	getBlockDataImage: function(index) {
 		if(index < 0 && index >= this.blockData.length) {
 			return Bitmap.createBitmap(51, 57, Bitmap.Config.ARGB_8888);
@@ -3976,7 +3984,7 @@ WorldEdit.prototype = {
 			return BlockImageLoader.create(dat[2][0], dat[2][1], dat[2][2], dat[1], dat[3]);
 		}
 	},
-	
+
 	getBlockDataDescription: function(index) {
 		if(index < 0 && index >= this.blockData.length) {
 			return false;
@@ -3987,10 +3995,10 @@ WorldEdit.prototype = {
 		}
 		return dat[4];
 	},
-	
+
 	buildBlockImages: function() {
 		var that = this;
-		//블럭 정보들을 이미지로 변환해 레이아웃에 저장
+		//블럭 이미지 레이아웃 정보를 저장하는 배열
 		this.blockImagesData = [];
 		uiThread(function() {try {
 			that.blockImagesLayout.removeAllViews();
@@ -4004,7 +4012,7 @@ WorldEdit.prototype = {
 		var crt = 0;
 		var temp;
 		for(var e = 0; e < this.blockData.length; e++) {try {
-			
+
 			var rl = new sg.rl(ctx);
 			var rl_p = new sg.llp(sg.px*0x40, sg.px*0x40);
 			rl.setLayoutParams(rl_p);
@@ -4029,7 +4037,7 @@ WorldEdit.prototype = {
 			}catch(err) {
 				showError(err);
 			}}}));
-			
+
 			rl.addView(imgV);
 			var des = this.getBlockDataDescription(e);
 			if(des !== false) {
@@ -4097,11 +4105,11 @@ function we_menu(name) {
 }
 
 we_menu.prototype = {
-	
+
 	toString: function() {
 		return "['" + this.name + "' Menu]";
 	},
-	
+
 	isEqual: function(menu) {
 		if(menu instanceof we_menu) {
 			return this.name === menu.name;
@@ -4109,22 +4117,22 @@ we_menu.prototype = {
 			return false;
 		}
 	},
-	
+
 	getParentMenu: function() {
 		return this.parentMenu;
 	},
-	
+
 	setParentMenu: function(menu) {
 		if(!(menu instanceof we_menu)) {
 			throw new TypeError("The parameter 'menu' is must instance of we_menu");
 		}
 		this.parentMenu = menu;
 	},
-	
+
 	getName: function() {
 		return this.name;
 	},
-	
+
 	getLayout: function() {
 		var that = this;
 		//반환할 레이아웃
@@ -4176,7 +4184,7 @@ we_menu.prototype = {
 		}
 		return ll;
 	},
-	
+
 	addMenu: function(type, name, content) {
 		//부모 등록
 		if(type === 0) {
@@ -4194,15 +4202,15 @@ function we_editorGroup(worldEdit) {
 }
 
 we_editorGroup.prototype = {
-	
+
 	toString: function() {
 		return "[object we_editorGroup]";
 	},
-	
+
 	init: function() {
-		
+
 	},
-	
+
 	isAllow: function(name) {
 		var lcName = name.toLowerCase();
 		var wl = this._parent.get("WhiteList");
@@ -4219,7 +4227,7 @@ we_editorGroup.prototype = {
 		}
 		return allow;
 	},
-	
+
 	getEditor: function(name) {
 		if(name === undefined) {
 			name = Player.getName(Player.getEntity());
@@ -4248,49 +4256,57 @@ function we_editor(editorGroup, name) {
 }
 
 we_editor.prototype = {
-	
+
 	toString: function() {
 		return "[object we_editor(" + this.owner + ")]";
 	},
-	
+
+	isOnline: function() {
+		return sgUtils.modPE.playerExtra.getPlayer(this.owner) !== false;
+	},
+
 	isOwner: function(name) {
 		return name.toLowerCase() === this.owner.toLowerCase();
 	},
-	
+
 	getOwner: function() {
 		return sgUtils.modPE.playerExtra.getPlayer(this.owner);
 	},
-	
+
+	getName: funciton() {
+		return this.owner;
+	},
+
 	getPos1: function() {
 		return this.pos1;
 	},
-	
+
 	getPos2: function() {
 		return this.pos2;
 	},
-	
+
 	getBackup: function() {
 		return this.backup;
 	},
-	
+
 	getBackupPos: function() {
 		return this.backupPos;
 	},
-	
+
 	setPos1: function(pos) {
 		if(!(pos instanceof Vector3)) {
 			throw new TypeError("Parameter 'pos' must instance of Vector3");
 		}
 		this.pos1 = pos;
 	},
-	
+
 	setPos2: function(pos) {
 		if(!(pos instanceof Vector3)) {
 			throw new TypeError("Parameter 'pos' must instance of Vector3");
 		}
 		this.pos2 = pos;
 	},
-	
+
 	setBackup: function(piece, pos) {
 		if(!(piece instanceof Piece)) {
 			throw new TypeError("Parameter 'piece' must instance of Piece");
@@ -4305,14 +4321,240 @@ we_editor.prototype = {
 
 
 
+var EditType = {
+	FILL: 0x00,
+	CLEAN: 0x01,
+	REPLACE: 0x02,
+	WALL: 0x03,
+	SPHERE: 0x10,
+	HEMISPHERE: 0x11,
+	CIRCLE: 0x12,
+	SEMICIRCLE: 0x13,
+	COPY: 0x20,
+	CUT: 0x21,
+	PASTE: 0x22,
+	ROTATION: 0x23,
+	FLIP: 0x24,
+	RESTORE: 0X30
+}
+
+function we_edit(worldEdit, editor, editType, editDetail) {
+	if(!editor.isOnline()) {
+		msg("Can't find player entity", editor.getName());
+		return;
+	}
+
+	var workType =  worldEdit.get("WorkType");
+
+	switch(editType) {
+
+		//EditDetail: [FilledBlock]
+		case EditType.FILL:
+		var dlthread(function() {try{
+
+		}catch(err) {
+			showError(err);
+		}});
+		break;
+
+
+
+		//EditDetail: []
+		case EditType.CLEAN:
+		break;
+
+
+
+		//EditDetail: [fromReplaceBlock, toReplaceBlock]
+		case EditType.REPLACE:
+		break;
+
+
+
+		//EditDetail: [FilledBlock]
+		case EditType.WALL:
+		break;
+
+
+
+		//EditDetail: [isHollow, FilledBlock]
+		case EditType.SPHERE:
+		break;
+
+
+
+		//EditDetail: [isHollow, FilledBlock, direction]
+		case EditType.HEMISPHERE:
+		break;
+
+
+
+		//EditDetail: [isHollow, FilledBlock, direction]
+		case EditType.CIRCLE:
+		break;
+
+
+		//EditDetail: [isHollow, FilledBlock, direction]
+		case EditType.SEMICIRCLE:
+		break;
+
+
+
+		//EditDetail: []
+		case EditType.COPY:
+		break;
+
+
+
+		//EditDetail: []
+		case EditType.CUT:
+		break;
+
+
+
+		//EditDetail: []
+		case EditType.PASTE:
+		break;
+
+
+
+		//EditDetail: [axis]
+		case EditType.FLIP:
+		break;
+
+
+
+		//EditDetail: [axis, degree]
+		case EditType.ROTATION:
+		break;
+
+
+
+		//EditDetail: []
+		case EditType.RESTORE:
+		break;
+	}
+}
+
+
+
+function we_blockSelect(title, confirmText, layout, idSlotLayout, confirmFunc, cancelTxt, cancelFunc) {
+	var that = this;
+	this.name = title;
+	this
+	this.cfText = confirmText;
+	this.ccText = cancelTxt;
+	this.cfFunc = confirmFunc;//if you want close this window confirmFunc or cancelFunc must contain 'this.close()'
+	this.ccFunc = cancelFunc;
+
+	this.wd = null;
+	this.layoutData = null;
+}
+
+we_blockSelect.prototype = {
+
+	toString: function() {
+		return "[object we_blockSelect(" + this.name + ")]";
+	},
+
+	build: function() {
+		//main Layout
+		var rl = new sg.rl(ctx);
+		rl.setBackgroundDrawable(sgAssets.toast.ninePatch());
+
+		//title Part
+		var title = new sg.rl(ctx);
+		title.setId(sgUtils.math.randomId());
+		var title_p = new sg.rlp(sg.mp, sg.px*0x30);
+		title_p.addRule(sg.rl.ALIGN_PARENT_TOP);
+		title.setLayoutParams(title_p);
+		title.setBackgroundColor(sgColors.main);
+		var t_text = sgUtils.gui.mcFastText(title, sg.px*0x10, false, Color.WHITE, null, null, null, [sg.px*2, sg.px*2, sg.px*2, sg.px*2]);
+		var t_text_p = new sg.rlp(sg.wc, sg.wc);
+		t_text_p.addRule(sg.rl.CENTER_IN_PARENT);
+		t_text.setLayoutParams(t_text_p);
+		title.addView(t_text);
+		//confirm
+		var cf = null;
+		//cancel
+		var cc = null;
+		//confirm Button
+		if(confirmText !== null) {
+			cf = sgUtils.gui.mcFastButton(confirmText, sg.px*0x8, false, sgColors.main, null, null, null, [sg.px*8, sg.px*8, sg.px*8, sg.px*8], null, null, null, function(view) {
+				that.cfFunc(view);
+			});
+			var cf_p = new sg.rlp(sg.mp, sg.wc);
+			cf_p.addRule(sg.rl.CENTER_VERTICAL);
+			cf_p.addRule(sg.rl.ALIGN_PARENT_RIGHT);
+			cf.setLayoutParams(cf_p);
+			cf.setBackgroundColor(Color.WHITE);
+			title.addView(cf);
+		}
+		//cancel Button
+		if(confirmText !== null) {
+			cc = sgUtils.gui.mcFastButton(cancelText, sg.px*0x8, false, sgColors.main, null, null, null, [sg.px*8, sg.px*8, sg.px*8, sg.px*8], null, null, null, function(view) {
+				that.ccFunc(view);
+			});
+			var cc_p = new sg.rlp(sg.mp, sg.wc);
+			cc_p.addRule(sg.rl.CENTER_VERTICAL);
+			cc_p.addRule(sg.rl.ALIGN_PARENT_RIGHT);
+			cc.setLayoutParams(cc_p);
+			cc.setBackgroundColor(Color.WHITE);
+			title.addView(cc);
+		}
+		rl.addView(title);
+
+		//content Part
+		var scroll = new ScrollView(ctx);
+		var scroll_p = new sg.rlp(sg.mp, sg.mp);
+		scroll_p.addRule(sg.rl.BELOW, title.getId());
+		scroll.setLayoutParams(scroll_p);
+		var s_layout =  new sg.ll(ctx);
+		s_layout.setOrientation(sg.ll.VERTICAL);
+		s_layout.setGravity(Gravity.CENTER);
+		scroll.addView(s_layout);
+		rl.addView(scroll);
+
+		this.layoutData = [rl, title, scroll, t_text, cf, cc, s_layout];
+
+		this.wd = new PopupWindow(rl, sg.ww, sg.wh, true);
+	},
+
+	show: function() {
+		if(this.wd === null) {
+			this.build();
+		}
+		if(this.wd.isShowing()) {
+			return;
+		}
+		uiThread(function() {try {
+			this.wd.showAtLocation(sg.dv, 0, 0, 0);
+		}catch(err) {
+			showError(err);
+		}});
+	},
+
+	close: function() {
+		if(this.wd === null) {
+			return;
+		}
+		if(!this.wd.isShowing()) {
+			return;
+		}
+		uiThread(function() {try {
+			this.wd.dismiss();
+		}catch(err) {
+			showError(err);
+		}});
+	}
+}
+
+
+
 var main = new WorldEdit();
 thread(function() {try {
-	sleep(1000);
-	var loading = new sgUtils.gui.progressBar(7);
-	loading.setText("Load WorldEdit script...");
-	loading.show();
+	sleep(500);
 	main.init();
-	loading.close();
 }catch(err) {
 	showError(err);
 }}).start();
@@ -4374,12 +4616,18 @@ function chatReceiveHook(str, sender) {
 		var player = editor.getOwner();
 		switch(cmd[0]) {
 			case "pos1":
-			editor.setPos1(new Vector3(Entity.getX(player), Entity.getY(player), Entity.getZ(player)));
-			msg("위치1이 지정되었습니다", sender);
+			var x = Math.floor(Entity.getX(player));
+			var y = Math.floor(Entity.getY(player));
+			var z = Math.floor(Entity.getZ(player));
+			editor.setPos1(new Vector3(x, y, z));
+			msg("위치1이 지정되었습니다 X:" + x + " Y:" + y + " Z: " + z, sender);
 			break;
 			case "pos2":
-			editor.setPos2(new Vector3(Entity.getX(player), Entity.getY(player), Entity.getZ(player)));
-			msg("위치2이 지정되었습니다", sender);
+			var x = Math.floor(Entity.getX(player));
+			var y = Math.floor(Entity.getY(player));
+			var z = Math.floor(Entity.getZ(player));
+			editor.setPos2(new Vector3(x, y, z));
+			msg("위치2이 지정되었습니다 X:" + x + " Y:" + y + " Z: " + z, sender);
 			break;
 		}
 	}
@@ -4395,21 +4643,7 @@ var WorkType = {
 	ASYNCHRONOUS: 1
 }
 
-var EditType = {
-	FILL: 0x00,
-	CLEAN: 0x01,
-	REPLACE: 0x02,
-	WALL: 0x03,
-	SPHERE: 0x10,
-	HEMISPHERE: 0x11,
-	CIRCLE: 0x12,
-	SEMICIRCLE: 0x13,
-	COPY: 0x20,
-	CUT: 0x21,
-	PASTE: 0x22,
-	ROTATION: 0x23,
-	FLIP: 0x24
-}
+
 
 var ContentType = {
 	REDIRECT_MENU: 0,
@@ -4467,15 +4701,15 @@ function WorldEditScript(setting) {
 }
 
 WorldEditScript.prototype = {
-	
+
 	toString: function() {
 		return "[object WorldEditScript]";
 	},
-	
+
 	init: function() {
 		this.editorGroup.init();
 	},
-	
+
 	loadSetting: function() {
 		if(this.settingFile.exists()) {
 			this.setting = loadJSON(this.settingFile);
@@ -4489,7 +4723,7 @@ WorldEditScript.prototype = {
 			this.saveSetting();
 		}
 	},
-	
+
 	saveSetting: function() {
 		if(!(this.settingFile.exists())) {
 			this.settingFile.createNewFile();
@@ -4499,7 +4733,7 @@ WorldEditScript.prototype = {
 			WES_Toast("경고! 저장불가능\n저장장치를 확인하세요.", 2, 8000);
 		}
 	},
-	
+
 	get: function(article) {
 		if(this.setting === null) {
 			this.loadSetting();
@@ -4511,7 +4745,7 @@ WorldEditScript.prototype = {
 		}
 		return this.setting[article];
 	},
-	
+
 	set: function(article, value) {
 		if(this.setting === null) {
 			this.loadSetting();
@@ -4521,11 +4755,11 @@ WorldEditScript.prototype = {
 		}
 		this.setting[article] = value;
 	},
-	
+
 	isButtonVisible: function() {
 		return this.buttonVis;
 	},
-	
+
 	setButtonVisible: function(bool) {
 		var that = this;
 		if(bool) {
@@ -4555,11 +4789,11 @@ WorldEditScript.prototype = {
 			}
 		}
 	},
-	
+
 	isMenuVisible: function() {
 		return this.menuVis;
 	},
-	
+
 	setMenuVisible: function(bool) {
 		var that = this;
 		if(bool) {
@@ -4589,7 +4823,7 @@ WorldEditScript.prototype = {
 			}
 		}
 	},
-	
+
 	buildButton: function() {
 		var loading = new CustomProgressBar(0, 0);
 		var that = this;
@@ -4655,11 +4889,11 @@ WorldEditScript.prototype = {
 		this.buttonVis = false;
 		loading.close();
 	},
-	
+
 	buildMenu: function() {
 		var that = this;
 		var loading = new CustomProgressBar(0, 0);
-		
+
 		this.layout = new c.r(ctx);
 		this.layout_d = new GradientDrawable();
 		this.layout_d.setColor(Color.argb(0x80, 0x00, 0x00, 0x00));
@@ -4674,7 +4908,7 @@ WorldEditScript.prototype = {
 		this.t_name_p.addRule(c.r.CENTER_IN_PARENT);
 		this.t_name.setLayoutParams(this.t_name_p);
 		this.title.addView(this.t_name);
-	
+
 		this.t_exit = new ImageView(ctx);
 		this.t_exit_p = new c.r.LayoutParams(DIP*0x1c, DIP*0x1c);
 		this.t_exit_p.setMargins(DIP*0x0a, DIP*0x0a, DIP*0x0a, DIP* 0x0a);
@@ -4689,32 +4923,32 @@ WorldEditScript.prototype = {
 		}}}));
 		this.title.addView(this.t_exit);
 		this.layout.addView(this.title);
-	
+
 		this.scroll = new ScrollView(ctx);
 		this.scroll_p = new c.r.LayoutParams(c.m, c.m);
 		this.scroll_p.addRule(c.r.BELOW, this.title.getId());
 		this.scroll.setLayoutParams(this.scroll_p);
 		this.layout.addView(this.scroll);
-	
+
 		this.menu = new PopupWindow(this.layout, DIP*0xf0, c.wh, false);
-		
-		
-		
+
+
+
 		this.menus[MenuType.MAIN] = new WES_Menu(this, "World Edit Script");
-		
-		
-	
+
+
+
 		this.menus[MenuType.EDIT] = new WES_Menu(this, "에딧");
 		this.menus[MenuType.MAIN].addMenu(ContentType.REDIRECT_MENU, "에딧", this.menus[MenuType.EDIT]);
-		
+
 		this.menus[MenuType.POS] = new WES_Menu(this, "위치/블럭 지정");
 		this.menus[MenuType.EDIT].addMenu(ContentType.REDIRECT_MENU, "위치/블럭 지정", this.menus[MenuType.POS]);
-		
+
 			this.menus[MenuType.POS].addMenu(ContentType.FUNCTION, "아이템: 위치 선택 도구", function() {
 			Entity.setCarriedItem(Player.getEntity(), 271, 1, 0);
 			WES_Toast("'위치 선택 도구' 지급됨");
 		});
-	
+
 		this.menus[MenuType.POS].addMenu(ContentType.FUNCTION, "위치1 지정", function() {
 			var editor = that.editorGroup.get(Player.getName(Player.getEntity()));
 			if(editor === false) {
@@ -4727,7 +4961,7 @@ WorldEditScript.prototype = {
 			editor.setPos1(new Vector3(x, y, z));
 			WES_Toast("위치1 지정됨\nx:" + x + " y:" + y + " z:" + z);
 		});
-	
+
 		this.menus[MenuType.POS].addMenu(ContentType.FUNCTION, "위치2 지정", function() {
 			var editor = that.editorGroup.get(Player.getName(Player.getEntity()));
 			if(editor === false) {
@@ -4740,7 +4974,7 @@ WorldEditScript.prototype = {
 			editor.setPos2(new Vector3(x, y, z));
 			WES_Toast("위치2 지정됨\nx:" + x + " y:" + y + " z:" + z);
 		});
-		
+
 		this.menus[MenuType.POS].addMenu(ContentType.FUNCTION, "블럭1 지정", function() {
 			var editor = that.editorGroup.get(Player.getName(Player.getEntity()));
 			if(editor === false) {
@@ -4757,7 +4991,7 @@ WorldEditScript.prototype = {
 			}, "취소", function() {});
 			t.setVisible(true);
 		});
-		
+
 		this.menus[MenuType.POS].addMenu(ContentType.FUNCTION, "블럭2 지정", function() {
 			var editor = that.editorGroup.get(Player.getName(Player.getEntity()));
 			if(editor === false) {
@@ -4774,10 +5008,10 @@ WorldEditScript.prototype = {
 			}, "취소", function() {});
 			t.setVisible(true);
 		});
-		
+
 		this.menus[MenuType.COPY] = new WES_Menu(this, "복사/변형");
 		this.menus[MenuType.EDIT].addMenu(ContentType.REDIRECT_MENU, "복사/변형", this.menus[MenuType.COPY]);
-		
+
 		this.menus[MenuType.COPY].addMenu(ContentType.FUNCTION, "복사", function() {
 			var editor = that.editorGroup.get(Player.getName(Player.getEntity()));
 			if(editor === false) {
@@ -4786,7 +5020,7 @@ WorldEditScript.prototype = {
 			}
 			editor.run(EditType.COPY);
 		});
-		
+
 		this.menus[MenuType.COPY].addMenu(ContentType.FUNCTION, "잘라내기", function() {
 			var editor = that.editorGroup.get(Player.getName(Player.getEntity()));
 			if(editor === false) {
@@ -4795,7 +5029,7 @@ WorldEditScript.prototype = {
 			}
 			editor.run(EditType.CUT);
 		});
-		
+
 		this.menus[MenuType.COPY].addMenu(ContentType.FUNCTION, "붙여넣기", function() {
 			var editor = that.editorGroup.get(Player.getName(Player.getEntity()));
 			if(editor === false) {
@@ -4804,7 +5038,7 @@ WorldEditScript.prototype = {
 			}
 			editor.run(EditType.PASTE);
 		});
-		
+
 		this.menus[MenuType.COPY].addMenu(ContentType.FUNCTION, "회전", function() {
 			var editor = that.editorGroup.get(Player.getName(Player.getEntity()));
 			if(editor === false) {
@@ -4813,7 +5047,7 @@ WorldEditScript.prototype = {
 			}
 			editor.run(EditType.ROTATION);
 		});
-		
+
 		this.menus[MenuType.COPY].addMenu(ContentType.FUNCTION, "대칭", function() {
 			var editor = that.editorGroup.get(Player.getName(Player.getEntity()));
 			if(editor === false) {
@@ -4822,7 +5056,7 @@ WorldEditScript.prototype = {
 			}
 			editor.run(EditType.FLIP);
 		});
-	
+
 		this.menus[MenuType.EDIT].addMenu(ContentType.FUNCTION, "채우기", function() {
 			var editor = that.editorGroup.get(Player.getName(Player.getEntity()));
 			if(editor === false) {
@@ -4831,7 +5065,7 @@ WorldEditScript.prototype = {
 			}
 			editor.run(EditType.FILL);
 		});
-		
+
 		this.menus[MenuType.EDIT].addMenu(ContentType.FUNCTION, "비우기", function() {
 			var editor = that.editorGroup.get(Player.getName(Player.getEntity()));
 			if(editor === false) {
@@ -4840,7 +5074,7 @@ WorldEditScript.prototype = {
 			}
 			editor.run(EditType.CLEAN);
 		});
-		
+
 		this.menus[MenuType.EDIT].addMenu(ContentType.FUNCTION, "바꾸기", function() {
 			var editor = that.editorGroup.get(Player.getName(Player.getEntity()));
 			if(editor === false) {
@@ -4849,7 +5083,7 @@ WorldEditScript.prototype = {
 			}
 			editor.run(EditType.REPLACE);
 		});
-		
+
 		this.menus[MenuType.EDIT].addMenu(ContentType.FUNCTION, "벽 생성", function() {
 			var editor = that.editorGroup.get(Player.getName(Player.getEntity()));
 			if(editor === false) {
@@ -4858,10 +5092,10 @@ WorldEditScript.prototype = {
 			}
 			editor.run(EditType.WALL);
 		});
-		
+
 		this.menus[MenuType.CIRCULAR] = new WES_Menu(this, "원형");
 		this.menus[MenuType.EDIT].addMenu(ContentType.REDIRECT_MENU, "원형 생성", this.menus[MenuType.CIRCULAR]);
-		
+
 		this.menus[MenuType.CIRCULAR].addMenu(ContentType.TOGGLE, "설정: 내부를 비우기", function(bool) {
 			if(bool === true) {
 				that.set("HollowCircular", true);
@@ -4875,7 +5109,7 @@ WorldEditScript.prototype = {
 				return that.get("HollowCircular")
 			}
 		});
-		
+
 		this.menus[MenuType.CIRCULAR].addMenu(ContentType.FUNCTION, "구 생성", function() {
 			var editor = that.editorGroup.get(Player.getName(Player.getEntity()));
 			if(editor === false) {
@@ -4884,7 +5118,7 @@ WorldEditScript.prototype = {
 			}
 			editor.run(EditType.SPHERE);
 		});
-		
+
 		this.menus[MenuType.CIRCULAR].addMenu(ContentType.FUNCTION, "반구 생성", function() {
 			var editor = that.editorGroup.get(Player.getName(Player.getEntity()));
 			if(editor === false) {
@@ -4893,7 +5127,7 @@ WorldEditScript.prototype = {
 			}
 			editor.run(EditType.HEMI_SPHERE);
 		});
-		
+
 		this.menus[MenuType.CIRCULAR].addMenu(ContentType.FUNCTION, "원 생성", function() {
 			var editor = that.editorGroup.get(Player.getName(Player.getEntity()));
 			if(editor === false) {
@@ -4902,30 +5136,30 @@ WorldEditScript.prototype = {
 			}
 			editor.run(EditType.CIRCLE);
 		});
-		
-		
-	
+
+
+
 		this.menus[MenuType.TOOL] = new WES_Menu(this, "도구");
 		this.menus[MenuType.MAIN].addMenu(ContentType.REDIRECT_MENU, "도구", this.menus[MenuType.TOOL]);
-		
-		
-		
-	
+
+
+
+
 		this.menus[MenuType.INFO] = new WES_Menu(this, "정보패널");
 		this.menus[MenuType.MAIN].addMenu(ContentType.REDIRECT_MENU, "정보패널", this.menus[MenuType.INFO]);
-		
-		
-		
-	
+
+
+
+
 		this.menus[MenuType.QUICK] = new WES_Menu(this, "퀵바");
 		this.menus[MenuType.MAIN].addMenu(ContentType.REDIRECT_MENU, "퀵바", this.menus[MenuType.QUICK]);
-		
-		
-		
-	
+
+
+
+
 		this.menus[MenuType.HELP] = new WES_Menu(this, "도움말");
 		this.menus[MenuType.MAIN].addMenu(ContentType.REDIRECT_MENU, "도움말", this.menus[MenuType.HELP]);
-		
+
 		this.menus[MenuType.HELP].addMenu(ContentType.FUNCTION, "에딧하는 방법", function() {
 			var doc = new WES_Document([
 			"s|이 도움말에서는 다양한 에딧의 방법을 다룹니다",
@@ -4952,7 +5186,7 @@ WorldEditScript.prototype = {
 			var dl = new WES_Dialog("기초적인 에딧 도움말", 0, doc.getLayout(), null, null, "닫기", function() {this.setVisible(false)}, true);
 			dl.setVisible(true);
 		});
-		
+
 		this.menus[MenuType.HELP].addMenu(ContentType.FUNCTION, "버전에 대해서...", function() {
 			var doc = new WES_Document([
 			"s|죄송합니다... 전 이 버전이 망했다고 생각해요... 처음부터 다시 만들생각입니다... (170,000자를 다시 쓸 생각하니 몸서리가...)",
@@ -4961,13 +5195,13 @@ WorldEditScript.prototype = {
 			var dl = new WES_Dialog("기초적인 에딧 도움말", 0, doc.getLayout(), null, null, "닫기", function() {this.setVisible(false)}, true);
 			dl.setVisible(true);
 		});
-		
-		
-		
-	
+
+
+
+
 		this.menus[MenuType.SETTING] = new WES_Menu(this, "설정");
 		this.menus[MenuType.MAIN].addMenu(ContentType.REDIRECT_MENU, "설정", this.menus[MenuType.SETTING]);
-		
+
 		this.menus[MenuType.SETTING].addMenu(ContentType.TOGGLE, "버튼 보이기", function(bool) {
 			if(bool === true) {
 				that.set("ButtonVis", true);
@@ -4983,7 +5217,7 @@ WorldEditScript.prototype = {
 				return that.setting.buttonVis
 			}
 		});
-	
+
 		this.menus[MenuType.SETTING].addMenu(ContentType.TOGGLE, (that.get("WorkType") == WorkType.SYNCHRONIZATION) ? "작업방식: Synchronization" : "작업모드: Asynchronous", function(bool) {
 			if(bool === true) {
 				that.set("WorkType", WorkType.SYNCHRONIZATION);
@@ -4997,14 +5231,14 @@ WorldEditScript.prototype = {
 				return that.get("WorkType") == WorkType.SYNCHRONIZATION;
 			}
 		});
-		
+
 		this.menus[MenuType.MAIN].addMenu(ContentType.FUNCTION, "정보", function() {that.about()});
-		
-		
-		
+
+
+
 		loading.close();
 	},
-	
+
 	setMenu: function(menu) {
 		var that = this;
 		this.currentMenu = menu;
@@ -5016,13 +5250,13 @@ WorldEditScript.prototype = {
 			showError(e, WarnType.WARNING);
 		}});
 	},
-	
+
 	about: function() {
 		var layout = new c.r(ctx);
 		var layout_d = new BitmapDrawable(Assets.bg32);
 		layout_d.setTileModeXY(Shader.TileMode.REPEAT, Shader.TileMode.REPEAT);
 		layout.setBackgroundDrawable(layout_d);
-		
+
 		var image = new ImageView(ctx);
 		image.setId(randomId());
 		var image_p = new c.r.LayoutParams(DIP*0x80, DIP*0x80);
@@ -5030,7 +5264,7 @@ WorldEditScript.prototype = {
 		image.setLayoutParams(image_p);
 		image.setImageBitmap(BlockImageLoader.create(["piston_side", 0], ["piston_side", 0], ["piston_top_normal", 0], BlockTypes.CUBE, true));
 		layout.addView(image);
-		
+
 		var txt1 = mcText("World", DIP*0x30);
 		txt1.setGravity(Gravity.CENTER);
 		var txt1_p = new c.r.LayoutParams(c.m, c.w);
@@ -5038,7 +5272,7 @@ WorldEditScript.prototype = {
 		txt1_p.addRule(c.r.LEFT_OF, image.getId());
 		txt1.setLayoutParams(txt1_p);
 		layout.addView(txt1);
-		
+
 		var txt2 = mcText("Edit", DIP*0x30);
 		txt2.setGravity(Gravity.CENTER);
 		var txt2_p = new c.r.LayoutParams(c.m, c.w);
@@ -5046,21 +5280,21 @@ WorldEditScript.prototype = {
 		txt2_p.addRule(c.r.RIGHT_OF, image.getId());
 		txt2.setLayoutParams(txt2_p);
 		layout.addView(txt2);
-		
+
 		var txt3 = mcText(VERSION, DIP*0x20, false, Color.parseColor("#ffff55"));
 		var txt3_p = new c.r.LayoutParams(c.w, c.w);
 		txt3_p.addRule(c.r.CENTER_HORIZONTAL);
 		txt3_p.addRule(c.r.BELOW, image.getId());
 		txt3.setLayoutParams(txt3_p);
 		layout.addView(txt3);
-		
+
 		var txt4 = mcText("author: Semteul", DIP*0x10);
 		var txt4_p = new c.r.LayoutParams(c.w, c.w);
 		txt4_p.addRule(c.r.ALIGN_PARENT_BOTTOM);
 		txt4_p.addRule(c.r.ALIGN_PARENT_RIGHT);
 		txt4.setLayoutParams(txt4_p);
 		layout.addView(txt4);
-		
+
 		var window = new PopupWindow(layout, c.ww, c.wh, true);
 		uiThread(function() {
 			window.showAtLocation(c.d, 0, 0, 0);
@@ -5079,19 +5313,19 @@ function WES_Document(strs, shadow) {
 }
 
 WES_Document.prototype = {
-	
+
 	build: function() {
 		this.mainLayout = new c.l(ctx);
 		this.layout = this.mainLayout;
 		this.layout.setGravity(Gravity.CENTER);
 		this.layout.setOrientation(c.l.VERTICAL);
-		
+
 		this.isMainLayout = true;
-		
+
 		for(var e = 0; e < this.strs.length; e++) {
 			var document = this.strs[e].split("|");
 			switch(document[0]) {
-				
+
 				case "s"://Text
 				if(document.length > 3) {
 					var txt = mcText(document[1], document[2], this.shadow, document[3]);
@@ -5102,7 +5336,7 @@ WES_Document.prototype = {
 				}
 				this.layout.addView(txt);
 				break;
-				
+
 				case "i"://Image
 				var file = new File(document[1]);
 				if(!(file.exists() && file.isFile() && file.canRead())) {
@@ -5128,7 +5362,7 @@ WES_Document.prototype = {
 		}
 		this.isBuild = true;
 	},
-	
+
 	getLayout: function() {
 		if(this.isBuild) {
 			return this.mainLayout;
@@ -5137,7 +5371,7 @@ WES_Document.prototype = {
 			return this.mainLayout;
 		}
 	},
-	
+
 	isBuild: function() {
 		this.isBuild;
 	}
@@ -5153,18 +5387,18 @@ function WES_InfoPanel(name, repeatDelay, func) {
 }
 
 WES_InfoPanel.prototype = {
-	
+
 	toString: function() {
 		return "[" + this.name + " InfoPanel]";
 	},
-	
+
 	run: function() {
 		if(--this.delay < 1) {
 			this.delay = this.repeatDelay;
 			this.func();
 		}
 	},
-	
+
 	forceRun: function() {
 		this.func();
 	}
@@ -5180,11 +5414,11 @@ function WES_TaskManager(name, delay) {
 }
 
 WES_TaskManager.prototype = {
-	
+
 	toString: function() {
 		return "[" + this.name + " TaskManager]";
 	},
-	
+
 	check: function() {
 		var that = this;
 		if(!this.thread.isAlive()) {
@@ -5210,15 +5444,15 @@ function EditorGroup(parent) {
 }
 
 EditorGroup.prototype = {
-	
+
 	toString: function() {
 		return "[EditorGroup: " + this.whitelist + "]";
 	},
-	
+
 	init: function() {
 		this.whitelist = this._parent.get("Whitelist");
 	},
-	
+
 	get: function(name) {
 		var index = this.getEditorIndex(name);
 		if(index === -1) {
@@ -5226,7 +5460,7 @@ EditorGroup.prototype = {
 		}
 		return this.editors[index];
 	},
-	
+
 	isAllow: function(name) {
 		//if Server owner
 		if(name.toLowerCase() === Player.getName(Player.getEntity()).toLowerCase()) {
@@ -5253,13 +5487,13 @@ EditorGroup.prototype = {
 		this.editors.push(new Editor(this._parent, name));
 		return this.editors.length - 1;
 	},
-	
+
 	setWhitelist: function(name) {
 		this.whitelist.push(name);
 		this._parent.set("Whitelist", this.whitelist);
 		this._parent.saveSetting();
 	},
-	
+
 	removeWhitelist: function(name) {
 		var index = this.getEditorIndex(name);
 		this.editor.splice(index, 1);
@@ -5288,31 +5522,31 @@ function Editor(parent, owner) {
 }
 
 Editor.prototype = {
-	
+
 	isOwner: function(owner) {
 		return owner.toLowerCase() === this.owner.toLowerCase();
 	},
-	
+
 	getOwner: function() {
 		return PlayerExtra.getPlayer(this.owner);
 	},
-	
+
 	getPos1: function() {
 		return this.pos1;
 	},
-	
+
 	getPos2: function() {
 		return this.pos2;
 	},
-	
+
 	getBlock1: function() {
 		return this.block1;
 	},
-	
+
 	getBlock2: function() {
 		return this.block2;
 	},
-	
+
 	setPos1: function(vector) {
 		if(!(vector instanceof Vector3)) {
 			throw new TypeError("The parameter 'vector' must be instance of Vector3.");
@@ -5326,21 +5560,21 @@ Editor.prototype = {
 		}
 		this.pos2 = vector;
 	},
-	
+
 	setBlock1: function(block) {
 		 if(!(block instanceof Block)) {
 			throw new TypeError("The parameter 'block' must be instance of Block.");
 		}
 		this.block1 = block;
 	},
-	
+
 	setBlock2: function(block) {
 		 if(!(block instanceof Block)) {
 			throw new TypeError("The parameter 'block' must be instance of Block.");
 		}
 		this.block2 = block;
 	},
-	
+
 	run: function(type) {
 		var that = this;
 		var player = this.getOwner();
@@ -5348,7 +5582,7 @@ Editor.prototype = {
 			msg("플레이어를 찾을 수 없음: " + this.owner);
 		}
 		switch(type) {
-			
+
 			case EditType.FILL:
 			if(!(this.pos1 instanceof Vector3)) {
 				msg("위치1을 지정해주세요", player);
@@ -5362,24 +5596,24 @@ Editor.prototype = {
 				msg("블럭1을 지정해주세요", player);
 				return;
 			}
-			
+
 			var x1 = this.pos1.x;
 			var y1 = this.pos1.y;
 			var z1 = this.pos1.z;
 			var x2 = this.pos2.x;
 			var y2 = this.pos2.y;
 			var z2 = this.pos2.z;
-			
+
 			var sx = (x1 < x2) ? x1 : x2;
 			var sy = (y1 < y2) ? y1 : y2;
 			var sz = (z1 < z2) ? z1 : z2;
 			var ex = (x1 > x2) ? x1 : x2;
 			var ey = (y1 > y2) ? y1 : y2;
 			var ez = (z1 > z2) ? z1 : z2;
-			
+
 			var id = this.block1.id;
 			var data = this.block1.data;
-			
+
 			if(this._parent.get('WorkType') === WorkType.SYNCHRONIZATION) {
 				thread(function() {try {
 					var size = (ex-sx+1) * (ey-sy+1) * (ez-sz+1);
@@ -5429,9 +5663,9 @@ Editor.prototype = {
 				throw new Error("Unknown WorkType: " + this._parent.setting.WorkType);
 			}
 			break;
-			
-			
-			
+
+
+
 			case EditType.CLEAN:
 			if(!(this.pos1 instanceof Vector3)) {
 				msg("위치1을 지정해주세요", player);;
@@ -5441,21 +5675,21 @@ Editor.prototype = {
 				msg("위치1을 지정해주세요", player);
 				return;
 			}
-			
+
 			var x1 = this.pos1.x;
 			var y1 = this.pos1.y;
 			var z1 = this.pos1.z;
 			var x2 = this.pos2.x;
 			var y2 = this.pos2.y;
 			var z2 = this.pos2.z;
-			
+
 			var sx = (x1 < x2) ? x1 : x2;
 			var sy = (y1 < y2) ? y1 : y2;
 			var sz = (z1 < z2) ? z1 : z2;
 			var ex = (x1 > x2) ? x1 : x2;
 			var ey = (y1 > y2) ? y1 : y2;
 			var ez = (z1 > z2) ? z1 : z2;
-			
+
 			if(this._parent.get('WorkType') === WorkType.SYNCHRONIZATION) {
 				thread(function() {try {
 					var size = (ex-sx+1) * (ey-sy+1) * (ez-sz+1);
@@ -5505,9 +5739,9 @@ Editor.prototype = {
 				throw new Error("Unknown WorkType: " + this._parent.setting.WorkType);
 			}
 			break;
-			
-			
-			
+
+
+
 			case EditType.REPLACE:
 			if(!(this.pos1 instanceof Vector3)) {
 				msg("위치1을 지정해주세요", player);
@@ -5525,26 +5759,26 @@ Editor.prototype = {
 				msg("블럭2를 지정해주세요", player);
 				return;
 			}
-			
+
 			var x1 = this.pos1.x;
 			var y1 = this.pos1.y;
 			var z1 = this.pos1.z;
 			var x2 = this.pos2.x;
 			var y2 = this.pos2.y;
 			var z2 = this.pos2.z;
-			
+
 			var sx = (x1 < x2) ? x1 : x2;
 			var sy = (y1 < y2) ? y1 : y2;
 			var sz = (z1 < z2) ? z1 : z2;
 			var ex = (x1 > x2) ? x1 : x2;
 			var ey = (y1 > y2) ? y1 : y2;
 			var ez = (z1 > z2) ? z1 : z2;
-			
+
 			var id1 = this.block1.id;
 			var data1 = this.block1.data;
 			var id2 = this.block2.id;
 			var data2 = this.block2.data;
-			
+
 			if(this._parent.get('WorkType') === WorkType.SYNCHRONIZATION) {
 				thread(function() {try {
 					var size = (ex-sx+1) * (ey-sy+1) * (ez-sz+1);
@@ -5598,9 +5832,9 @@ Editor.prototype = {
 				throw new Error("Unknown WorkType: " + this._parent.setting.WorkType);
 			}
 			break;
-			
-			
-			
+
+
+
 			case EditType.WALL:
 			if(!(this.pos1 instanceof Vector3)) {
 				msg("위치1을 지정해주세요", player);
@@ -5614,24 +5848,24 @@ Editor.prototype = {
 				msg("블럭2을 지정해주세요", player);
 				return;
 			}
-			
+
 			var x1 = this.pos1.x;
 			var y1 = this.pos1.y;
 			var z1 = this.pos1.z;
 			var x2 = this.pos2.x;
 			var y2 = this.pos2.y;
 			var z2 = this.pos2.z;
-			
+
 			var sx = (x1 < x2) ? x1 : x2;
 			var sy = (y1 < y2) ? y1 : y2;
 			var sz = (z1 < z2) ? z1 : z2;
 			var ex = (x1 > x2) ? x1 : x2;
 			var ey = (y1 > y2) ? y1 : y2;
 			var ez = (z1 > z2) ? z1 : z2;
-			
+
 			var id = this.block1.id;
 			var data = this.block1.data;
-			
+
 			if(this._parent.get('WorkType') === WorkType.SYNCHRONIZATION) {
 				thread(function() {try {
 					var load = new CustomProgressBar(5, null, "'벽 생성'작업중...");
@@ -5682,9 +5916,9 @@ Editor.prototype = {
 				throw new Error("Unknown WorkType: " + this._parent.setting.WorkType);
 			}
 			break;
-			
-			
-			
+
+
+
 			case EditType.SPHERE:
 			if(!(this.pos1 instanceof Vector3)) {
 				msg("위치1을 지정해주세요", player);
@@ -5694,20 +5928,20 @@ Editor.prototype = {
 				msg("블럭1을 지정해주세요", player);
 				return;
 			}
-			
+
 			var type = this._parent.get("HollowCircular");
-			
+
 			var cx = this.pos1.x;
 			var cy = this.pos1.y;
 			var cz = this.pos1.z;
-			
+
 			var id = this.block1.id;
 			var data = this.block1.data;
-			
+
 			var np = new NumberPicker(ctx);
 			np.setMinValue(0x01);
 			np.setMaxValue(0xff);
-			
+
 			var dl = new WES_Dialog("반지름...", 0, np, "생성", function() {try {
 				var radi = np.getValue();
 				if(that._parent.get('WorkType') === WorkType.SYNCHRONIZATION) {
@@ -5779,12 +6013,12 @@ Editor.prototype = {
 			}catch(e) {
 				showError(e, WarnType.WARNING);
 			}}, "취소", function() {this.setVisible(false)}, true);
-			
+
 			dl.setVisible(true);
 			break;
-			
-			
-			
+
+
+
 			case EditType.HEMI_SPHERE:
 			if(!(this.pos1 instanceof Vector3)) {
 				msg("위치1을 지정해주세요", player);
@@ -5794,24 +6028,24 @@ Editor.prototype = {
 				msg("블럭1을 지정해주세요", player);
 				return;
 			}
-			
+
 			var type = this._parent.get("HollowCircular");
-			
+
 			var cx = this.pos1.x;
 			var cy = this.pos1.y;
 			var cz = this.pos1.z;
-			
+
 			var id = this.block1.id;
 			var data = this.block1.data;
-			
+
 			var np = new NumberPicker(ctx);
 			np.setMinValue(0x01);
 			np.setMaxValue(0xff);
-			
+
 			var radi = null;
-			
+
 			var direction = null;
-			
+
 			var lo = new c.l(ctx);
 			lo.setOrientation(c.l.VERTICAL);
 			var xp = mcButton("X+", null, true, null, null, c.m,DIP*0x28, null, null, Assets.boxNormal.ninePatch(), null, function(view, event) {
@@ -5844,7 +6078,7 @@ Editor.prototype = {
 				WES_Toast("Z- 방향으로 설정됨");
 			}, null);
 			lo.addView(zm);
-						
+
 			var dl2 = new WES_Dialog("방향...", 0, lo, "생성", function() {try {
 				switch(direction) {
 					case "X+":
@@ -5980,7 +6214,7 @@ Editor.prototype = {
 			}catch(e) {
 				showError(e, WarnType.WARNING);
 			}}, "취소", function() {this.setVisible(false)}, false);
-			
+
 			var dl = new WES_Dialog("반지름...", 0, np, "다음", function() {try {
 				radi = np.getValue();
 				dl2.setVisible(true);
@@ -5988,12 +6222,12 @@ Editor.prototype = {
 			}catch(e) {
 				showError(e, WarnType.WARNING);
 			}}, "취소", function() {this.setVisible(false)}, true);
-			
+
 			dl.setVisible(true);
 			break;
-			
-			
-			
+
+
+
 			case EditType.CIRCLE:
 			if(!(this.pos1 instanceof Vector3)) {
 				msg("위치1을 지정해주세요", player);
@@ -6003,23 +6237,23 @@ Editor.prototype = {
 				msg("블럭1을 지정해주세요", player);
 				return;
 			}
-			
+
 			var type = this._parent.get("HollowCircular");
-			
+
 			var cx = this.pos1.x;
 			var cy = this.pos1.y;
 			var cz = this.pos1.z;
-			
+
 			var id = this.block1.id;
 			var data = this.block1.data;
-			
+
 			var radi = null;
 			var axis = null;
-			
+
 			var np = new NumberPicker(ctx);
 			np.setMinValue(0x01);
 			np.setMaxValue(0xff);
-			
+
 			var lo = new c.l(ctx);
 			lo.setOrientation(c.l.VERTICAL);
 			var xa = mcButton("X-Axis", null, true, null, null, c.m, DIP*0x28, null, null, Assets.boxNormal.ninePatch(), null, function(view, event) {
@@ -6037,7 +6271,7 @@ Editor.prototype = {
 				WES_Toast("Z축 기준으로 설정됨");
 			}, null);
 			lo.addView(za);
-			
+
 			var dl2 = new WES_Dialog("기준 축...", 0, lo, "생성", function() {try {
 				if(axis === null) {
 					WES_Toast("기준 축을 설정해 주세요");
@@ -6186,7 +6420,7 @@ Editor.prototype = {
 			}catch(e) {
 				showError(e, WarnType.WARNING);
 			}}, "취소", function() {this.setVisible(false)}, false);
-			
+
 			var dl = new WES_Dialog("반지름...", 0, np, "다음", function() {try {
 				radi = np.getValue();
 				dl2.setVisible(true);
@@ -6194,12 +6428,12 @@ Editor.prototype = {
 			}catch(e) {
 				showError(e, WarnType.WARNING);
 			}}, "취소", function() {this.setVisible(false)}, true);
-			
+
 			dl.setVisible(true);
 			break;
-			
-			
-			
+
+
+
 			case EditType.COPY:
 			if(!(this.pos1 instanceof Vector3)) {
 				msg("위치1을 지정해주세요", player);
@@ -6209,21 +6443,21 @@ Editor.prototype = {
 				msg("위치2를 지정해주세요", player);
 				return;
 			}
-			
+
 			var x1 = this.pos1.x;
 			var y1 = this.pos1.y;
 			var z1 = this.pos1.z;
 			var x2 = this.pos2.x;
 			var y2 = this.pos2.y;
 			var z2 = this.pos2.z;
-			
+
 			var sx = (x1 < x2) ? x1 : x2;
 			var sy = (y1 < y2) ? y1 : y2;
 			var sz = (z1 < z2) ? z1 : z2;
 			var ex = (x1 > x2) ? x1 : x2;
 			var ey = (y1 > y2) ? y1 : y2;
 			var ez = (z1 > z2) ? z1 : z2;
-			
+
 			thread(function() {try {
 				var size = (ex-sx+1) * (ey-sy+1) * (ez-sz+1);
 				var load = new CustomProgressBar(6, size, "'복사'작업중...(0/" + numberToString(size) + ")");
@@ -6259,9 +6493,9 @@ Editor.prototype = {
 				showError(e, WarnType.WARNING);
 			}}).start();
 			break;
-			
-			
-			
+
+
+
 			case EditType.CUT:
 			if(!(this.pos1 instanceof Vector3)) {
 				msg("위치1을 지정해주세요", player);
@@ -6271,21 +6505,21 @@ Editor.prototype = {
 				msg("위치2를 지정해주세요", player);
 				return;
 			}
-			
+
 			var x1 = this.pos1.x;
 			var y1 = this.pos1.y;
 			var z1 = this.pos1.z;
 			var x2 = this.pos2.x;
 			var y2 = this.pos2.y;
 			var z2 = this.pos2.z;
-			
+
 			var sx = (x1 < x2) ? x1 : x2;
 			var sy = (y1 < y2) ? y1 : y2;
 			var sz = (z1 < z2) ? z1 : z2;
 			var ex = (x1 > x2) ? x1 : x2;
 			var ey = (y1 > y2) ? y1 : y2;
 			var ez = (z1 > z2) ? z1 : z2;
-			
+
 			thread(function() {try {
 				var size = (ex-sx+1) * (ey-sy+1) * (ez-sz+1);
 				var load = new CustomProgressBar(6, size, "'잘라내기'작업중...(0/" + numberToString(size) + ")");
@@ -6322,9 +6556,9 @@ Editor.prototype = {
 				showError(e, WarnType.WARNING);
 			}}).start();
 			break;
-			
-			
-			
+
+
+
 			case EditType.PASTE:
 			if(!(this.copy instanceof Piece)) {
 				msg("복사된 블럭이 없습니다", player);
@@ -6334,18 +6568,18 @@ Editor.prototype = {
 				msg("위치1을 지정해주세요", player);
 				return;
 			}
-			
+
 			var cx = this.pos1.x;
 			var cy = this.pos1.y;
 			var cz = this.pos1.z;
-			
+
 			var highlight = areaHighlight(cx, cy, cz, cx+this.copy.getSizeX()-1, cy+this.copy.getSizeY()-1, cz+this.copy.getSizeZ()-1);
-			
+
 			var text = mcText("정말로 해당지역에 붙여넣기 하시겠습니까?", null, false, null, null, c.w, c.w);
 			text.setGravity(Gravity.CENTER);
-			
+
 			main.setMenuVisible(false);
-			
+
 			var dl = new WES_Dialog("주의!", 1, text, "진행", function() {
 				highlight.close();
 				if(that._parent.get('WorkType') === WorkType.SYNCHRONIZATION) {
@@ -6401,21 +6635,21 @@ Editor.prototype = {
 				this.setVisible(false);
 				main.setMenuVisible(true);
 			}, "취소", function() {highlight.close();this.setVisible(false);main.setMenuVisible(true)}, false, Gravity.TOP);
-			
+
 			dl.setVisible(true);
 			break;
-			
-			
-			
+
+
+
 			case EditType.ROTATION:
 			if(!(this.copy instanceof Piece)) {
 				msg("복사된 블럭이 없습니다");
 				return;
 			}
-			
+
 			var axis = null;
 			var rot = null;
-			
+
 			var lo = new c.l(ctx);
 			lo.setOrientation(c.l.VERTICAL);
 			var ax = mcButton("X축", null, true, null, null, c.m, DIP*0x28, null, null, Assets.boxNormal.ninePatch(), null, function(view, event) {
@@ -6433,7 +6667,7 @@ Editor.prototype = {
 				WES_Toast("Z축 방향으로 설정됨");
 			}, null);
 			lo.addView(az);
-			
+
 			var lo2 = new c.l(ctx);
 			lo2.setOrientation(c.l.VERTICAL);
 			var d1 = mcButton("90도", null, true, null, null, c.m, DIP*0x28, null, null, Assets.boxNormal.ninePatch(), null, function(view, event) {
@@ -6451,7 +6685,7 @@ Editor.prototype = {
 				WES_Toast("270도 회전으로 설정됨");
 			}, null);
 			lo2.addView(d3);
-			
+
 			var dl2 = new WES_Dialog("회전...", 0, lo2, "시작", function() {try {
 				if(rot === null) {
 					WES_Toast("회전할 각도를 지정해주세요");
@@ -6468,7 +6702,7 @@ Editor.prototype = {
 			}catch(e) {
 				showError(e, WarnType.WARNING);
 			}}, "취소", function() {this.setVisible(false)}, true);
-			
+
 			var dl = new WES_Dialog("회전 축...", 0, lo, "다음", function() {try {
 				if(axis === null) {
 					WES_Toast("회전할 축을 지정해주세요");
@@ -6479,20 +6713,20 @@ Editor.prototype = {
 			}catch(e) {
 				showError(e, WarnType.WARNING);
 			}}, "취소", function() {this.setVisible(false)}, true);
-			
+
 			dl.setVisible(true);
 			break;
-			
-			
-			
+
+
+
 			case EditType.FLIP:
 			if(!(this.copy instanceof Piece)) {
 				msg("복사된 블럭이 없습니다");
 				return;
 			}
-			
+
 			var axis = null;
-			
+
 			var lo = new c.l(ctx);
 			lo.setOrientation(c.l.VERTICAL);
 			var ax = mcButton("X축", null, true, null, null, c.m, DIP*0x28, null, null, Assets.boxNormal.ninePatch(), null, function(view, event) {
@@ -6510,7 +6744,7 @@ Editor.prototype = {
 				WES_Toast("Z축으로 지정되었습니다");
 			}, null);
 			lo.addView(az);
-			
+
 			var dl = new WES_Dialog("대칭 축...", 0, lo, "시작", function() {try {
 				if(axis === null) {
 					WES_Toast("대칭축을 설정해주세요");
@@ -6527,12 +6761,12 @@ Editor.prototype = {
 			}catch(e) {
 				showError(e, WarnType.WARNING);
 			}}, "취소", function() {this.setVisible(false)}, true);
-			
+
 			dl.setVisible(true);
 			break;
-			
-			
-			
+
+
+
 			default:
 			throw new Error("Unknown EditType: " + type);
 		}
@@ -6547,17 +6781,17 @@ function WES_Menu(script, name) {
 	this.name = name;
 	this.menus = [];
 	this.parent = null;
-	
+
 	this.layout = new c.l(ctx);
 	this.layout.setOrientation(c.l.VERTICAL);
 }
 
 WES_Menu.prototype = {
-	
+
 	toString: function() {
 		return "['" + this.name + "' Menu]";
 	},
-	
+
 	isEqual: function(menu) {
 		if(menu instanceof WES_Menu) {
 			return this.name === menu.name;
@@ -6565,26 +6799,26 @@ WES_Menu.prototype = {
 			return false;
 		}
 	},
-	
+
 	getParent: function() {
 		return this.parent;
 	},
-	
+
 	setParent: function(menu) {
 		if(!(menu instanceof WES_Menu)) {
 			throw new TypeError("The parameter 'menu' is must instance of WES_Menu");
 		}
 		this.parent = menu;
 	},
-	
+
 	getName: function() {
 		return this.name;
 	},
-	
+
 	getLayout: function() {
 		return this.layout;
 	},
-	
+
 	addMenu: function(type, name, content) {
 		if(type !== ContentType.REDIRECT_MENU && type !== ContentType.FUNCTION && type !== ContentType.TOGGLE) {
 			throw new TypeError("Unknown type parameter 'type'");
@@ -6598,7 +6832,7 @@ WES_Menu.prototype = {
 		btn.setId(id);
 		btn.setGravity(Gravity.CENTER);
 		var btn_p = new c.l.LayoutParams(DIP*0xf0, DIP*0x30);
-		btn.setLayoutParams(btn_p);	
+		btn.setLayoutParams(btn_p);
 		switch(type) {
 			case ContentType.REDIRECT_MENU:
 			case ContentType.FUNCTION:
@@ -6624,7 +6858,7 @@ WES_Menu.prototype = {
 		}});
 		this.menus.push([type, name, content, btn, id]);
 	},
-	
+
 	removeMenu: function(id) {
 		var index = this.getMenuIndex(id);
 		if(index >= 0) {
@@ -6634,7 +6868,7 @@ WES_Menu.prototype = {
 			return false;
 		}
 	},
-	
+
 	getMenuIndex: function(id) {
 		for(var e = 0; e < this.menus.length; e++) {
 			if(this.menus[e][4] == id) {
@@ -6643,7 +6877,7 @@ WES_Menu.prototype = {
 		}
 		return -1;
 	},
-	
+
 	runMenu: function(id) {try {
 		var index = this.getMenuIndex(id);
 		if(index === -1) {
@@ -6680,7 +6914,7 @@ WES_Menu.prototype = {
 	}catch(e) {
 		showError(e, WarnType.WARNING);
 	}},
-	
+
 	close: function() {
 		if(this.parent === null) {
 			this._parent.currentMenu = null;
@@ -6708,11 +6942,11 @@ function WES_Dialog(name, type, layout, confirmTxt, confirmFunc, cancelTxt, canc
 }
 
 WES_Dialog.prototype = {
-	
+
 	isVisible: function() {
 		return this.vis;
 	},
-	
+
 	setVisible: function(bool) {
 		var that = this;
 		if(bool) {
@@ -6742,11 +6976,11 @@ WES_Dialog.prototype = {
 			}
 		}
 	},
-	
+
 	build: function() {
-		
+
 		var that = this;
-		
+
 		this.layout = new c.r(ctx);
 		this.layout_d = new GradientDrawable();
 		this.layout_d.setColor(Color.argb(0x55, 0, 0, 0));
@@ -6763,7 +6997,7 @@ WES_Dialog.prototype = {
 		this.t_text.setLayoutParams(this.t_text_p);
 		this.t_text.setGravity(Gravity.CENTER);
 		this.title.addView(this.t_text);
-		
+
 		if(this.confirmTxt !== null) {
 			this.t_confirm = mcpeText(DIP*0x0a, this.confirmTxt, true);
 			this.t_confirm.setGravity(Gravity.CENTER);
@@ -6779,7 +7013,7 @@ WES_Dialog.prototype = {
 			}}}));
 			this.title.addView(this.t_confirm);
 		}
-	
+
 		if(this.cancelTxt !== null) {
 		 	this.t_cancel = mcpeText(DIP*0x0a, this.cancelTxt, true);
 			this.t_cancel.setGravity(Gravity.CENTER);
@@ -6795,7 +7029,7 @@ WES_Dialog.prototype = {
 			}}}));
 			this.title.addView(this.t_cancel);
 		}
-	
+
 		switch(this.type) {
 			case 1:
 			this.title.setBackgroundDrawable(Assets.boxWarning.ninePatch());
@@ -6820,7 +7054,7 @@ WES_Dialog.prototype = {
 				this.t_cancel.setBackgroundDrawable(Assets.boxNormal.ninePatch());
 		}
 		this.layout.addView(this.title);
-		
+
 		this.scroll = new ScrollView(ctx);
 		this.scroll_p = new c.r.LayoutParams(c.m, c.w);
 		this.scroll_p.setMargins(DIP*0x08, DIP*0X04, DIP*0X08, DIP*0X08);
@@ -6830,10 +7064,10 @@ WES_Dialog.prototype = {
 		this.scroll.setLayoutParams(this.scroll_p);
 		this.scroll.addView(this.childLayout);
 		this.layout.addView(this.scroll);
-		
+
 		this.wd = new PopupWindow(this.layout, c.w, c.w, this.focus);
 	},
-	
+
 	confirm: function() {
 		try {
 			return this.confirmFunc();
@@ -6842,7 +7076,7 @@ WES_Dialog.prototype = {
 			return false;
 		}
 	},
-	
+
 	cancel: function() {
 		try {
 			return this.cancelFunc();
@@ -6851,7 +7085,7 @@ WES_Dialog.prototype = {
 			return false;
 		}
 	},
-	
+
 	setLayout: function(view) {
 		this.childView = view;
 		uiThread(function() {try {
@@ -6874,7 +7108,7 @@ function WES_BlockSelect(script, name, confirmTxt, confirmFunc, cancelTxt, cance
 	this.confirmFunc = confirmFunc;
 	this.cancelTxt = cancelTxt;
 	this.cancelFunc = cancelFunc;
-	
+
 	this.layout = new c.r(ctx);
 	this.layout.setId(randomId());
 	this.layout.setBackgroundDrawable(Assets.windowNormal.ninePatch());
@@ -6884,13 +7118,13 @@ function WES_BlockSelect(script, name, confirmTxt, confirmFunc, cancelTxt, cance
 	this.titleLayout_p = new c.r.LayoutParams(c.ww, DIP*0x30);
 	this.titleLayout_p.addRule(c.r.ALIGN_PARENT_TOP);
 	this.titleLayout.setLayoutParams(this.titleLayout_p);
-	
+
 	this.title = mcpeText(DIP*0x10, this.name, true);
 	this.title_p = new c.r.LayoutParams(c.w, c.w);
 	this.title_p.addRule(c.r.CENTER_IN_PARENT);
 	this.title.setLayoutParams(this.title_p);
 	this.titleLayout.addView(this.title);
-	
+
 	this.titleConfirm = mcpeText(DIP*0x0a, this.confirmTxt, true);
 	this.titleConfirm.setBackgroundDrawable(Assets.boxWarning.ninePatch());
 	this.titleConfirm.setGravity(Gravity.CENTER);
@@ -6905,7 +7139,7 @@ function WES_BlockSelect(script, name, confirmTxt, confirmFunc, cancelTxt, cance
 		showError(e);
 	}}}));
 	this.titleLayout.addView(this.titleConfirm);
-	
+
 	 	this.titleCancel = mcpeText(DIP*0x0a, this.cancelTxt, true);
 	this.titleCancel.setBackgroundDrawable(Assets.boxCritical.ninePatch());
 	this.titleCancel.setGravity(Gravity.CENTER);
@@ -6920,9 +7154,9 @@ function WES_BlockSelect(script, name, confirmTxt, confirmFunc, cancelTxt, cance
 		showError(e);
 	}}}));
 	this.titleLayout.addView(this.titleCancel);
-	
+
 	this.layout.addView(this.titleLayout);
-	
+
 	this.direct = new c.l(ctx);
 	this.direct.setId(randomId());
 	this.direct.setOrientation(c.l.HORIZONTAL);
@@ -6930,13 +7164,13 @@ function WES_BlockSelect(script, name, confirmTxt, confirmFunc, cancelTxt, cance
 	this.direct_p.setMargins(DIP*0x0c, DIP*0x02, DIP*0x0c, DIP*0x02);
 	this.direct_p.addRule(c.r.BELOW, this.titleLayout.getId());
 	this.direct.setLayoutParams(this.direct_p);
-	
+
 	this.direct_idTv = new mcpeText(DIP*0x10, "Id:");
 	this.direct_idTv.setGravity(Gravity.CENTER);
 	this.direct_idTv_p = new c.l.LayoutParams(DIP*0x20, c.m);
 	this.direct_idTv.setLayoutParams(this.direct_idTv_p);
 	this.direct.addView(this.direct_idTv);
-	
+
 	this.direct_id = new EditText(ctx);
 	this.direct_id.setBackgroundDrawable(Assets.textView_9());
 	this.direct_id.setPadding(DIP*0x04, DIP*0x04, DIP*0x04, DIP*0x04);
@@ -6949,13 +7183,13 @@ function WES_BlockSelect(script, name, confirmTxt, confirmFunc, cancelTxt, cance
 	this.direct_id_p = new c.l.LayoutParams((c.ww - (DIP*0x20 + DIP*0x80))/2, c.m);
 	this.direct_id.setLayoutParams(this.direct_id_p);
 	this.direct.addView(this.direct_id);
-	
+
  	this.direct_dataTv = new mcpeText(DIP*0x10, "Damage:");
 	this.direct_dataTv.setGravity(Gravity.CENTER);
 	this.direct_dataTv_p = new c.l.LayoutParams(DIP*0x60, c.m);
 	this.direct_dataTv.setLayoutParams(this.direct_dataTv_p);
 	this.direct.addView(this.direct_dataTv);
-	
+
 	this.direct_data = new EditText(ctx);
 	this.direct_data.setBackgroundDrawable(Assets.textView_9());
 	this.direct_data.setPadding(DIP*0x04, DIP*0x04, DIP*0x04, DIP*0x04);
@@ -6968,36 +7202,36 @@ function WES_BlockSelect(script, name, confirmTxt, confirmFunc, cancelTxt, cance
 	this.direct_data_p = new c.l.LayoutParams((c.ww - (DIP*0x20 + DIP*0x80))/2, c.m);
 	this.direct_data.setLayoutParams(this.direct_data_p);
 	this.direct.addView(this.direct_data);
-	
+
 	this.layout.addView(this.direct);
-	
+
 	this.scroll = new ScrollView(ctx);
 	this.scroll_p = new c.r.LayoutParams(c.m, c.m);
 	this.scroll_p.setMargins(DIP*0x10, 0, DIP*0x10, DIP*0x10);
 	this.scroll_p.addRule(c.r.BELOW, this.direct.getId());
 	this.scroll.setLayoutParams(this.scroll_p);
-	
+
 	this.s_l = new c.l(ctx);
 	this.s_l.setOrientation(c.l.VERTICAL);
 	this.s_l.setGravity(Gravity.CENTER);
-	
+
 	this.scroll.addView(this.s_l);
-	
+
 	this.layout.addView(this.scroll);
-	
+
 	this.wd = new PopupWindow(this.layout, c.ww, c.wh, true);
 }
 
 WES_BlockSelect.prototype = {
-	
+
 	toString: function() {
 		return "['" + this.name + "' - BlockSelectWindow]";
 	},
-	
+
 	isVisible: function() {
 		return this.vis;
 	},
-	
+
 	setVisible: function(bool) {
 		var that = this;
 		if(bool) {
@@ -7034,7 +7268,7 @@ WES_BlockSelect.prototype = {
 			}
 		}
 	},
-	
+
 	confirm: function() {
 		var id = this.direct_id.getText() + "";
 		var data = this.direct_data.getText() + "";
@@ -7048,7 +7282,7 @@ WES_BlockSelect.prototype = {
 		this.confirmFunc(id, data);
 		this.setVisible(false);
 	},
-	
+
 	cancel: function() {
 		this.cancelFunc();
 		this.setVisible(false);
@@ -7170,11 +7404,11 @@ function highlightBlock(x, y, z) {
 		id: Level.getTile(x, y, z),
 		data: Level.getData(x, y, z)
 	}
-	
+
 	if(temp.id === 41) {
 		return;
 	}
-	
+
 	thread(function() {try {
 		Level.setTile(x, y, z, 41, 0);
 		sleep(1000);
@@ -7207,7 +7441,7 @@ function highlightBlocks(ary, id, data) {
 }
 
 highlightBlocks.prototype = {
-	
+
 	close: function() {
 		for(var e = 0; e < this.backup.length; e++) {
 			Level.setTile(this.backup[e][0], this.backup[e][1], this.backup[e][2], this.backup[e][3], this.backup[e][4]);
@@ -7222,9 +7456,9 @@ function areaHighlight(x1, y1, z1, x2, y2, z2) {
 	var ex = x1 > x2 ? x1 : x2;
 	var ey = y1 > y2 ? y1 : y2;
 	var ez = z1 > z2 ? z1 : z2;
-	
+
 	var blocks = [];
-	
+
 	blocks.push([sx, sy, sz]);
 	blocks.push([sx, sy, ez]);
 	blocks.push([sx, ey, sz]);
@@ -7263,7 +7497,7 @@ function areaHighlight(x1, y1, z1, x2, y2, z2) {
 		blocks.push([ex, ey, sz+1]);
 		blocks.push([ex, ey, ez-1]);
 	}
-	
+
 	return new highlightBlocks(blocks);
 }
 
@@ -7279,7 +7513,295 @@ function msg(str, target) {
 
 var blockData = ["0:0", "1:0", "1:1", "1:2", "1:3", "1:4", "1:5", "1:6", "2:0", "3:0", "4:0", "5:0", "5:1", "5:2", "5:3", "5:4", "5:5", "6:0", "6:1", "6:2", "6:3", "6:4", "6:5", "7:0", "8:0", "9:0", "10:0", "11:0", "12:0", "12:1", "13:0", "14:0", "15:0", "16:0", "17:0", "17:1", "17:2", "17:3", "18:0", "18:1", "18:2", "18:3", "19:0", "20:0", "21:0", "22:0", "24:0", "24:1", "24:2", "26:0", "27:0", "30:0", "31:0", "32:0", "35:0", "35:1", "35:2", "35:3", "35:4", "35:5", "35:6", "35:7", "35:8", "35:9", "35:10", "35:11", "35:12", "35:13", "35:14", "35:15", "37:0", "38:0", "38:1", "38:2", "38:3", "38:4", "38:5", "38:6", "38:7", "38:8", "39:0", "40:0", "41:0", "42:0", "43:0", "43:1", "43:2", "43:3", "43:4", "43:5", "43:6", "43:7", "44:0", "44:1", "44:2", "44:3", "44:4", "44:5", "44:6", "44:7", "45:0", "46:0", "47:0", "48:0", "49:0", "50:0", "51:0", "52:0", "53:0", "54:0", "56:0", "57:0", "58:0", "59:0", "60:0", "60:1", "61:0", "62:0", "63:0", "64:0", "65:0", "66:0", "67:0", "68:0", "71:0", "73:0", "74:0", "78:0", "79:0", "80:0", "81:0", "82:0", "83:0", "85:0", "86:0", "87:0", "88:0", "89:0", "90:0", "91:0", "92:0", "95:0", "96:0", "97:0", "97:1", "97:2", "97:3", "97:4", "97:5", "98:0", "98:1", "98:2", "98:3", "99:0", "100:0", "101:0", "102:0", "103:0", "104:0", "105:0", "106:0", "107:0", "108:0", "109:0", "110:0", "111:0", "112:0", "113:0", "114:0", "115:0", "116:0", "117:0", "120:0", "120:15", "121:0", "126:0", "127:0", "128:0", "129:0", "133:0", "134:0", "135:0", "136:0", "139:0", "139:1", "140:0", "141:0", "142:0", "144:0", "145:0", "145:1", "145:2", "152:0", "153:0", "155:0", "155:1", "155:2", "156:0", "157:0", "157:1", "157:2", "157:3", "157:4", "157:5", "158:0", "158:1", "158:2", "158:3", "158:4", "158:5", "158:8", "158:9", "158:10", "158:11", "158:12", "158:13", "159:0", "159:1", "159:2", "159:3", "159:4", "159:5", "159:6", "159:7", "159:8", "159:9", "159:10", "159:11", "159:12", "159:13", "159:14", "159:15", "161:0", "161:1", "162:0", "162:1", "163:0", "164:0", "170:0", "171:0", "171:1", "171:2", "171:3", "171:4", "171:5", "171:6", "171:7", "171:8", "171:9", "171:10", "171:11", "171:12", "171:13", "171:14", "171:15", "172:0", "173:0", "174:0", "175:0", "175:1", "175:2", "175:3", "175:4", "175:5", "183:0", "184:0", "185:0", "186:0", "187:0", "198:0", "243:0", "244:0", "245:0", "246:0", "247:0", "247:1", "247:2", "248:0", "249:0"];
 
-
+//type -1: No image
+//type -2: Custom image
+var blockImageData = [
+["0:0", -1, [], false, "Air"],
+["1:0", BlockTypes.CUBE, [["stone", 0]], true],
+["1:1", BlockTypes.CUBE, [["stone", 1]], true],
+["1:2", BlockTypes.CUBE, [["stone", 2]], true],
+["1:3", BlockTypes.CUBE, [["stone", 3]], true],
+["1:4", BlockTypes.CUBE, [["stone", 4]], true],
+["1:5", BlockTypes.CUBE, [["stone", 5]], true],
+["1:6", BlockTypes.CUBE, [["stone", 6]], true],
+["2:0", BlockTypes.CUBE, [["grass", 3], ["grass", 3], ["grass", 2]], true],
+["3:0", BlockTypes.CUBE, [["dirt", 0]], true],
+["4:0", BlockTypes.CUBE, [["cobblestone", 0]], true],
+["5:0", BlockTypes.CUBE, [["planks", 0]], true],
+["5:1", BlockTypes.CUBE, [["planks", 1]], true],
+["5:2", BlockTypes.CUBE, [["planks", 2]], true],
+["5:3", BlockTypes.CUBE, [["planks", 3]], true],
+["5:4", BlockTypes.CUBE, [["planks", 4]], true],
+["5:5", BlockTypes.CUBE, [["planks", 5]], true],
+["6:0", BlockTypes.GRASS, [["sapling", 0]], false],
+["6:1", BlockTypes.GRASS, [["sapling", 1]], false],
+["6:2", BlockTypes.GRASS, [["sapling", 2]], false],
+["6:3", BlockTypes.GRASS, [["sapling", 3]], false],
+["6:4", BlockTypes.GRASS, [["sapling", 3]], false],
+["6:5", BlockTypes.GRASS, [["sapling", 4]], false],
+["7:0", BlockTypes.CUBE, [["bedrock", 0]], true],
+["8:0", BlockTypes.PATHGRASS, [["flowing_water", 0]], false, "Flow"],
+["9:0", BlockTypes.PATHGRASS, [["still_water", 0]], true, "Still"],
+["10:0", BlockTypes.PATHGRASS, [["flowing_lava", 0]], false, "Flow"],
+["11:0", BlockTypes.PATHGRASS, [["still_lava", 0]], true, "Still"],
+["12:0", BlockTypes.CUBE, [["sand", 0]], true],
+["12:1", BlockTypes.CUBE, [["sand", 1]], true],
+["13:0", BlockTypes.CUBE, [["gravel", 0]], true],
+["14:0", BlockTypes.CUBE, [["gold_ore", 0]], true],
+["15:0", BlockTypes.CUBE, [["iron_ore", 0]], true],
+["16:0", BlockTypes.CUBE, [["coal_ore", 0]], true],
+["17:0", BlockTypes.CUBE, [["log", 0], ["log", 0], ["log", 1]], true],
+["17:1", BlockTypes.CUBE, [["log", 2], ["log", 2], ["log", 3]], true],
+["17:2", BlockTypes.CUBE, [["log", 4], ["log", 4], ["log", 5]], true],
+["17:3", BlockTypes.CUBE, [["log", 6], ["log", 6], ["log", 7]], true],
+["18:0", BlockTypes.CUBE, [["leaves_opaque", 0]], true],
+["18:1", BlockTypes.CUBE, [["leaves_opaque", 1]], true],
+["18:2", BlockTypes.CUBE, [["leaves_opaque", 2]], true],
+["18:3", BlockTypes.CUBE, [["leaves_opaque", 3]], true],
+["19:0", BlockTypes.CUBE, [["sponge", 0]], true],
+["20:0", BlockTypes.CUBE, [["glass", 0]], true],
+["21:0", BlockTypes.CUBE, [["lapis_ore", 0]], true],
+["22:0", BlockTypes.CUBE, [["lapis_block", 0]], true],
+["24:0", BlockTypes.CUBE, [["sandstone", 0], ["sandstone", 0], ["sandstone", 3]], true],
+["24:1", BlockTypes.CUBE, [["sandstone", 1], ["sandstone", 1], ["sandstone", 3]], true],
+["24:2", BlockTypes.CUBE, [["sandstone", 2], ["sandstone", 2], ["sandstone", 3]], true],
+["26:0", BlockTypes.GRASS, [["bed", 0]], false],
+["27:0", BlockTypes.GRASS, [["rail_golden", 0]], false],
+["30:0", BlockTypes.GRASS, [["web", 0]], false],
+["31:0", BlockTypes.GRASS, [["tallgrass", 0]], false],
+["32:0", BlockTypes.GRASS, [["tallgrass", 1]], false],
+["35:0", BlockTypes.CUBE, [["wool", 0]], true],
+["35:1", BlockTypes.CUBE, [["wool", 1]], true],
+["35:2", BlockTypes.CUBE, [["wool", 2]], true],
+["35:3", BlockTypes.CUBE, [["wool", 3]], true],
+["35:4", BlockTypes.CUBE, [["wool", 4]], true],
+["35:5", BlockTypes.CUBE, [["wool", 5]], true],
+["35:6", BlockTypes.CUBE, [["wool", 6]], true],
+["35:7", BlockTypes.CUBE, [["wool", 7]], true],
+["35:8", BlockTypes.CUBE, [["wool", 8]], true],
+["35:9", BlockTypes.CUBE, [["wool", 9]], true],
+["35:10", BlockTypes.CUBE, [["wool", 10]], true],
+["35:11", BlockTypes.CUBE, [["wool", 11]], true],
+["35:12", BlockTypes.CUBE, [["wool", 12]], true],
+["35:13", BlockTypes.CUBE, [["wool", 13]], true],
+["35:14", BlockTypes.CUBE, [["wool", 14]], true],
+["35:15", BlockTypes.CUBE, [["wool", 15]], true],
+["37:0", BlockTypes.GRASS, [["flower1", 0]], false],
+["38:0", BlockTypes.GRASS, [["flower2", 0]], false],
+["38:1", BlockTypes.GRASS, [["flower2", 1]], false],
+["38:2", BlockTypes.GRASS, [["flower2", 2]], false],
+["38:3", BlockTypes.GRASS, [["flower2", 3]], false],
+["38:4", BlockTypes.GRASS, [["flower2", 4]], false],
+["38:5", BlockTypes.GRASS, [["flower2", 5]], false],
+["38:6", BlockTypes.GRASS, [["flower2", 6]], false],
+["38:7", BlockTypes.GRASS, [["flower2", 7]], false],
+["38:8", BlockTypes.GRASS, [["flower2", 8]], false],
+["39:0", BlockTypes.GRASS, [["mushroom_brown", 0]], false],
+["40:0", BlockTypes.GRASS, [["mushroom_red", 0]], false],
+["41:0", BlockTypes.CUBE, [["gold_block", 0]], true],
+["42:0", BlockTypes.CUBE, [["iron_block", 0]], true],
+["43:0", BlockTypes.CUBE, [["stone_slab", 1], ["stone_slab", 1], ["stone_slab", 0]], true, "Double slab"],
+["43:1", BlockTypes.CUBE, [["sandstone", 0], ["sandstone", 0], ["sandstone", 3]], true, "Double slab"],
+["43:2", BlockTypes.CUBE, [["planks", 0]], true, "Double slab"],
+["43:3", BlockTypes.CUBE, [["cobblestone", 0]], true, "Double slab"],
+["43:4", BlockTypes.CUBE, [["brick", 0]], true, "Double slab"],
+["43:5", BlockTypes.CUBE, [["stonebrick", 0]], true, "Double slab"],
+["43:6", BlockTypes.CUBE, [["quartz_block", 0]], true, "Double slab"],
+["43:7", BlockTypes.CUBE, [["nether_brick", 0]], true, "Double slab"],
+["44:0", BlockTypes.SLAB, [["stone_slab", 1], ["stone_slab", 1], ["stone_slab", 0]], true],
+["44:1", BlockTypes.SLAB, [["sandstone", 0], ["sandstone", 0], ["sandstone", 3]], true],
+["44:2", BlockTypes.SLAB, [["planks", 0]], true],
+["44:3", BlockTypes.SLAB, [["cobblestone", 0]], true],
+["44:4", BlockTypes.SLAB, [["brick", 0]], true],
+["44:5", BlockTypes.SLAB, [["stonebrick", 0]], true],
+["44:6", BlockTypes.SLAB, [["quartz_block", 0]], true],
+["44:7", BlockTypes.SLAB, [["nether_brick", 0]], true],
+["45:0", BlockTypes.CUBE, [["brick", 0]], true],
+["46:0", BlockTypes.CUBE, [["tnt", 0], ["tnt", 0], ["tnt", 1]], true],
+["47:0", BlockTypes.CUBE, [["bookshelf", 0], ["bookshelf", 0], ["planks", 0]], true],
+["48:0", BlockTypes.CUBE, [["cobblestone_mossy", 0]], true],
+["49:0", BlockTypes.CUBE, [["obsidian", 0]], true],
+["50:0", BlockTypes.GRASS, [["torch_on", 0]], false],
+["51:0", BlockTypes.GRASS, [["fire", 0]], false, "Fire"],
+["52:0", BlockTypes.CUBE, [["mob_spawner", 0]], true],
+["53:0", BlockTypes.STAIR, [["planks", 0]], true],
+["54:0", BlockTypes.CUBE, [["chest_inventory", 1], ["chest_inventory", 2], ["chest_inventory", 0]], true],
+["56:0", BlockTypes.CUBE, [["diamond_ore", 0]], true],
+["57:0", BlockTypes.CUBE, [["diamond_block", 0]], true],
+["58:0", BlockTypes.CUBE, [["crafting_table", 1], ["crafting_table", 2], ["crafting_table", 0]], true],
+["59:0", BlockTypes.GRASS, [["wheat", 7]], false],
+["60:0", BlockTypes.PATHGRASS, [["dirt", 0], ["dirt", 0], ["farmland", 0]], false],
+["60:1", BlockTypes.PATHGRASS, [["dirt", 0], ["dirt", 0], ["farmland", 1]], false],
+["61:0", BlockTypes.CUBE, [["furnace", 0], ["furnace", 2], ["furnace", 3]], true],
+["62:0", BlockTypes.CUBE, [["furnace", 1], ["furnace", 2], ["furnace", 3]], false],
+//FIXME sign
+["63:0", -1, [], false, "Sign"],
+["64:0", BlockTypes.GRASS, [["door", 1]], false],
+["65:0", BlockTypes.GRASS, [["ladder", 0]], false],
+["66:0", BlockTypes.GRASS, [["rail_normal", 0]], false],
+["67:0", BlockTypes.STAIR, [["cobblestone", 0]], true],
+//FIXME wallsign
+["68:0", -1, [], false, "Wall sign"],
+["71:0", BlockTypes.GRASS, [["door", 3]], false],
+["73:0", BlockTypes.CUBE, [["redstone_ore", 0]], true],
+["74:0", BlockTypes.CUBE, [["redstone_ore", 0]], false],
+["78:0", BlockTypes.SNOW, [["snow", 0]], true],
+["79:0", BlockTypes.CUBE, [["ice", 0]], true],
+["80:0", BlockTypes.CUBE, [["snow", 0]], true],
+["81:0", BlockTypes.GRASS, [["cactus", 0]], false],
+["82:0", BlockTypes.CUBE, [["clay", 0]], true],
+["83:0", BlockTypes.GRASS, [["reeds", 0]], false],
+["85:0", BlockTypes.FENCE, [["planks", 0]], true],
+["86:0", BlockTypes.CUBE, [["pumpkin", 2], ["pumpkin", 1], ["pumpkin", 0]], true],
+["87:0", BlockTypes.CUBE, [["netherrack", 0]], true],
+["88:0", BlockTypes.CUBE, [["soul_sand", 0]], true],
+["89:0", BlockTypes.CUBE, [["glowstone", 0]], false],
+["90:0", BlockTypes.GRASS, [["portal", 0]], false],
+["91:0", BlockTypes.CUBE, [["pumpkin", 3], ["pumpkin", 1], ["pumpkin", 0]], false],
+["92:0", BlockTypes.GRASS, [["cake_top", 0]], false],
+["95:0", -1, [], false, "Invisible Bedrock"],
+["96:0", BlockTypes.TRAPDOOR, [["trapdoor", 0]], true],
+["97:0", BlockTypes.CUBE, [["stone", 0]], false, "Silverfish"],
+["97:1", BlockTypes.CUBE, [["cobblestone", 0]], false, "Silverfish"],
+["97:2", BlockTypes.CUBE, [["stonebrick", 0]], false, "Silverfish"],
+["97:3", BlockTypes.CUBE, [["stonebrick", 1]], false, "Silverfish"],
+["97:4", BlockTypes.CUBE, [["stonebrick", 2]], false, "Silverfish"],
+["97:5", BlockTypes.CUBE, [["stonebrick", 3]], false, "Silverfish"],
+["98:0", BlockTypes.CUBE, [["stonebrick", 0]], true],
+["98:1", BlockTypes.CUBE, [["stonebrick", 1]], true],
+["98:2", BlockTypes.CUBE, [["stonebrick", 2]], true],
+["98:3", BlockTypes.CUBE, [["stonebrick", 3]], true],
+["99:0", BlockTypes.CUBE, [["mushroom_block", 0]], true],
+["100:0", BlockTypes.CUBE, [["mushroom_block", 1]], true],
+["101:0", BlockTypes.GRASS, [["iron_bars", 0]], false],
+["102:0", BlockTypes.GRASS, [["glass", 0]], false],
+["103:0", BlockTypes.CUBE, [["melon", 0], ["melon", 0], ["melon", 1]], true],
+["104:0", BlockTypes.GRASS, [["pumpkin_stem", 0]], false],
+["105:0", BlockTypes.GRASS, [["melon_stem", 0]], false],
+["106:0", BlockTypes.GRASS, [["vine", 0]], false],
+//FIXME fencegate
+["107:0", BlockTypes.GRASS, [["planks", 0]], false, "Fence gate"],
+["108:0", BlockTypes.STAIR,
+[["brick", 0]], true],
+["109:0", BlockTypes.STAIR, [["stonebrick", 0]], true],
+["110:0", BlockTypes.CUBE, [["mycelium", 0], ["mycelium", 0], ["mycelium", 1]], true],
+["111:0", BlockTypes.GRASS, [["waterlily", 0]], false],
+["112:0", BlockTypes.CUBE, [["nether_brick", 0]], true],
+["113:0", BlockTypes.FENCE, [["nether_brick", 0]], true],
+["114:0", BlockTypes.STAIR, [["nether_brick", 0]], true],
+["115:0", BlockTypes.GRASS, [["nether_wart", 2]], false],
+["116:0", BlockTypes.GRASS, [["enchanting_table_side", 0]], false],
+["117:0", BlockTypes.GRASS, [["brewing_stand", 0]], false],
+["120:0", BlockTypes.GRASS, [["endframee", 1]], false],
+["120:15", BlockTypes.GRASS, [["endframee", 0]], false],
+["121:0", BlockTypes.CUBE, [["end_stone", 0]], true],
+["126:0", BlockTypes.GRASS, [["cake_top", 0]], false],
+["127:0", BlockTypes.GRASS, [["cocoa", 2]], false],
+["128:0", BlockTypes.STAIR, [["sandstone", 0], ["sandstone", 0], ["sandstone", 3]], true],
+["129:0", BlockTypes.CUBE, [["emerald_ore", 0]], true],
+["133:0", BlockTypes.CUBE, [["emerald_block", 0]], true],
+["134:0", BlockTypes.STAIR, [["planks", 1]], true],
+["135:0", BlockTypes.STAIR, [["planks", 2]], true],
+["136:0", BlockTypes.STAIR, [["planks", 3]], true],
+["139:0", BlockTypes.STONEWALL, [["cobblestone", 0]], true],
+["139:1", BlockTypes.STONEWALL, [["cobblestone_mossy", 0]], true],
+["140:0", BlockTypes.GRASS, [["flower_pot", 0]], false],
+["141:0", BlockTypes.GRASS, [["carrots", 3]], false],
+["142:0", BlockTypes.GRASS, [["potatoes", 3]], false],
+//FIXME HEADS
+["144:0", -1, [], false, "Head"],
+["145:0", BlockTypes.GRASS, [["anvil_top_damaged_x", 0]], false, "Anvil"],
+["145:1", BlockTypes.GRASS, [["anvil_top_damaged_x", 1]], false, "Anvil"],
+["145:2", BlockTypes.GRASS, [["anvil_top_damaged_x", 2]], false, "Anvil"],
+["152:0", BlockTypes.CUBE, [["redstone_block", 0]], true],
+["153:0", BlockTypes.CUBE, [["quartz_ore", 0]], true],
+["155:0", BlockTypes.CUBE, [["quartz_block", 1]], true],
+["155:1", BlockTypes.CUBE, [["quartz_block", 3], ["quartz_block", 3], ["quartz_block", 4]], true],
+["155:2", BlockTypes.CUBE, [["quartz_block", 5]], true],
+["156:0", BlockTypes.STAIR, [["quartz_block", 1]], true],
+["157:0", BlockTypes.CUBE, [["planks", 0]], true, "Double slab"],
+["157:1", BlockTypes.CUBE, [["planks", 1]], true, "Double slab"],
+["157:2", BlockTypes.CUBE, [["planks", 2]], true, "Double slab"],
+["157:3", BlockTypes.CUBE, [["planks", 3]], true, "Double slab"],
+["157:4", BlockTypes.CUBE, [["planks", 4]], true, "Double slab"],
+["157:5", BlockTypes.CUBE, [["planks", 5]], true, "Double slab"],
+["158:0", BlockTypes.SLAB, [["planks", 0]], true],
+["158:1", BlockTypes.SLAB, [["planks", 1]], true],
+["158:2", BlockTypes.SLAB, [["planks", 2]], true],
+["158:3", BlockTypes.SLAB, [["planks", 3]], true],
+["158:4", BlockTypes.SLAB, [["planks", 4]], true],
+["158:5", BlockTypes.SLAB, [["planks", 5]], true],
+["158:8", BlockTypes.SLAB, [["planks", 0]], true, "Upper"],
+["158:9", BlockTypes.SLAB, [["planks", 1]], true, "Upper"],
+["158:10", BlockTypes.SLAB, [["planks", 2]], true, "Upper"],
+["158:11", BlockTypes.SLAB, [["planks", 3]], true, "Upper"],
+["158:12", BlockTypes.SLAB, [["planks", 4]], true, "Upper"],
+["158:13", BlockTypes.SLAB, [["planks", 5]], true, "Upper"],
+["159:0", BlockTypes.CUBE, [["stained_clay", 0]], true],
+["159:1", BlockTypes.CUBE, [["stained_clay", 1]], true],
+["159:2", BlockTypes.CUBE, [["stained_clay", 2]], true],
+["159:3", BlockTypes.CUBE, [["stained_clay", 3]], true],
+["159:4", BlockTypes.CUBE, [["stained_clay", 4]], true],
+["159:5", BlockTypes.CUBE, [["stained_clay", 5]], true],
+["159:6", BlockTypes.CUBE, [["stained_clay", 6]], true],
+["159:7", BlockTypes.CUBE, [["stained_clay", 7]], true],
+["159:8", BlockTypes.CUBE, [["stained_clay", 8]], true],
+["159:9", BlockTypes.CUBE, [["stained_clay", 9]], true],
+["159:10", BlockTypes.CUBE, [["stained_clay", 10]], true],
+["159:11", BlockTypes.CUBE, [["stained_clay", 11]], true],
+["159:12", BlockTypes.CUBE, [["stained_clay", 12]], true],
+["159:13", BlockTypes.CUBE, [["stained_clay", 13]], true],
+["159:14", BlockTypes.CUBE, [["stained_clay", 14]], true],
+["159:15", BlockTypes.CUBE, [["stained_clay", 15]], true],
+["161:0", BlockTypes.CUBE, [["leaves_opaque2", 0]], true],
+["161:1", BlockTypes.CUBE, [["leaves_opaque2", 1]], true],
+["162:0", BlockTypes.CUBE, [["log2", 0], ["log2", 0], ["log2", 1]], true],
+["162:1", BlockTypes.CUBE, [["log2", 2], ["log2", 2], ["log2", 3]], true],
+["163:0", BlockTypes.STAIR, [["planks", 4]], true],
+["164:0", BlockTypes.STAIR, [["planks", 5]], true],
+["170:0", BlockTypes.CUBE, [["hayblock", 1], ["hayblock", 1], ["hayblock", 0]], true],
+["171:0", BlockTypes.CARPET, [["wool", 0]], true],
+["171:1", BlockTypes.CARPET, [["wool", 1]], true],
+["171:2", BlockTypes.CARPET, [["wool", 2]], true],
+["171:3", BlockTypes.CARPET, [["wool", 3]], true],
+["171:4", BlockTypes.CARPET, [["wool", 4]], true],
+["171:5", BlockTypes.CARPET, [["wool", 5]], true],
+["171:6", BlockTypes.CARPET, [["wool", 6]], true],
+["171:7", BlockTypes.CARPET, [["wool", 7]], true],
+["171:8", BlockTypes.CARPET, [["wool", 8]], true],
+["171:9", BlockTypes.CARPET, [["wool", 9]], true],
+["171:10", BlockTypes.CARPET, [["wool", 10]], true],
+["171:11", BlockTypes.CARPET, [["wool", 11]], true],
+["171:12", BlockTypes.CARPET, [["wool", 12]], true],
+["171:13", BlockTypes.CARPET, [["wool", 13]], true],
+["171:14", BlockTypes.CARPET, [["wool", 14]], true],
+["171:15", BlockTypes.CARPET, [["wool", 15]], true],
+["172:0", BlockTypes.CUBE, [["hardened_clay", 0]], true],
+["173:0", BlockTypes.CUBE, [["coal_block", 0]], true],
+["174:0", BlockTypes.CUBE, [["ice_packed", 0]], true],
+["175:0", BlockTypes.GRASS, [["sunflower_additional", 0]], false],
+["175:1", BlockTypes.GRESS, [["double_plant_top", 1]], false],
+["175:2", BlockTypes.GRESS, [["double_plant_top", 2]], false],
+["175:3", BlockTypes.GRESS, [["double_plant_top", 3]], false],
+["175:4", BlockTypes.GRESS, [["double_plant_top", 4]], false],
+["175:5", BlockTypes.GRESS, [["double_plant_top", 5]], false],
+//FIXME fencegate
+["183:0", BlockTypes.GRASS, [["planks", 1]], false, "Fence gate"],
+["184:0", BlockTypes.GRASS, [["planks", 2]], false, "Fence gate"],
+["185:0", BlockTypes.GRASS, [["planks", 3]], false, "Fence gate"],
+["186:0", BlockTypes.GRASS, [["planks", 4]], false, "Fence gate"],
+["187:0", BlockTypes.GRASS, [["planks", 5]], false, "Fence gate"],
+["198:0", BlockTypes.PATHGRASS, [["grass_path", 1], ["grass_path", 1], ["grass_path", 0]], true],
+["243:0", BlockTypes.CUBE, [["dirt", 2], ["dirt", 2], ["dirt", 1]], true],
+["244:0", BlockTypes.GRASS, [["beetroot", 3]], false],
+["245:0", BlockTypes.CUBE, [["stonecutter", 1], ["stonecutter", 0], ["stonecutter", 2]], true],
+["246:0", BlockTypes.CUBE, [["glowing_obsidian", 0]], false],
+["247:0", BlockTypes.CUBE, [["reactor_core", 0]], true],
+["247:1", BlockTypes.CUBE, [["reactor_core", 1]], true],
+["247:2", BlockTypes.CUBE, [["reactor_core", 2]], true],
+["248:0", BlockTypes.CUBE, [["missing_tile", 0]], true],
+["249:0", BlockTypes.CUBE, [["missing_tile", 0]], true]
+];
 
 function getBlockDataIndex(id, data) {
 	var key = id + ":" + data;
@@ -7335,14 +7857,14 @@ function getBlockSelectLayout(that, key) {
 	var layout = new c.r(ctx);
 	var layout_p = new c.l.LayoutParams(DIP*0x40, DIP*0x40);
 	layout.setLayoutParams(layout_p);
-	
+
 	var image = new ImageView(ctx);
 	var image_p = new c.r.LayoutParams(c.m, c.m);
 	image.setLayoutParams(image_p);
 	image.setPadding(DIP*0x08, DIP*0x08, DIP*0x08, DIP*0x08);
 	image.setImageBitmap(loadBlockImage(block[0], block[1]));
 	layout.addView(image);
-	
+
 	var description = loadBlockDescription(block[0], block[1]);
 	if(description !== false) {
 		var info = mcText(description, DIP*0x08, true, Color.YELLOW);
@@ -7354,7 +7876,7 @@ function getBlockSelectLayout(that, key) {
 		info.setLayoutParams(info_p);
 		layout.addView(info);
 	}
-	
+
 	var txt = mcText(key, DIP*0x08, true);
 	var txt_p = new c.r.LayoutParams(c.m, c.m);
 	txt_p.addRule(c.r.ALIGN_PARENT_LEFT);
@@ -7367,14 +7889,14 @@ function getBlockSelectLayout(that, key) {
 		showError(e);
 	}}}));
 	layout.addView(txt);
-	
+
 	return [layout, image, txt];
 }
 
 function loadBlockImages(that) {thread(function() {try {
 	var loading = new CustomProgressBar(3, blockData.length);
 	that._parent.blockImageWork = true;
-	
+
 	var max = Math.floor((c.ww - DIP*0x18)/(DIP*0x40));
 	var current = 0;
 	var currentLayout = new c.l(ctx);
