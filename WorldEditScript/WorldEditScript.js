@@ -102,6 +102,8 @@ sg.wc = ViewGroup.LayoutParams.WRAP_CONTENT;
 sg.ai = java.lang.reflect.Array.newInstance;
 sg.rl = RelativeLayout;
 sg.ll = LinearLayout;
+sg.rlp = RelativeLayout.LayoutParams;
+sg.llp = LinearLayout.LayoutParams;
 sg.tp = TypedValue.COMPLEX_UNIT_PX;
 sg.sm = net.zhuoweizhang.mcpelauncher.ScriptManager;
 sg.ww = ctx.getScreenWidth();//ctx.getWindowManager().getDefaultDisplay().getWidth();
@@ -1086,10 +1088,12 @@ sgUtils.gui = {
 			duration = 3000;
 		}
 		var tv = sgUtils.gui.mcFastText(text, size, false, textColor, null, null, null, [sg.px*8, sg.px*8, sg.px*8, sg.px*8]);
+		tv.setGravity(Gravity.CENTER);
 		if(drawable !== null && drawable !== undefined) {
 			tv.setBackgroundDrawable(drawable);
 		}
 		var wd = new PopupWindow(tv, sg.wc, sg.wc, false);
+		wd.setTouchable(false);
 		if(sgUtils.data._toast.length > 0 && !sgUtils.data._toast[0][2]) {
 			var owd = sgUtils.data._toast[0][0];
 			sgUtils.data._toast = [];
@@ -1587,6 +1591,17 @@ sgUtils.modPE = {
 				r.splice(i, 1);
 			}
 			return n;
+		},
+		
+		getPlayer: function(name) {
+			var lname = name.toLowerCase()
+			var list = sgUtils.modPE.entityExtra.getAll();
+			for(var e = 0; e < list.length; e++) {
+				if(Player.isPlayer(list[e]) && Player.getName(list[e]).toLowerCase() === lname) {
+					return list[e];
+				}
+			}
+			return false;
 		}
 	}
 }
@@ -2920,11 +2935,11 @@ function highlightBlock(x, y, z) {
 
 function msg(str, target) {
 	if(target === undefined) {
-		broadcast(Chat.Color.YELLOW + str);
+		sgUtils.modPE.broadcast(Chat.Color.YELLOW + str);
 	}else if(Player.getName(Player.getEntity()).toLowerCase() === target.toLowerCase()) {
 		we_toast(str);
 	}else {
-		broadcast("(" + ChatColor.AQUA + target + ChatColor.WHITE + ") " + ChatColor.YELLOW + str);
+		sgUtils.modPE.broadcast("(" + ChatColor.AQUA + target + ChatColor.WHITE + ") " + ChatColor.YELLOW + str);
 	}
 }
 
@@ -3274,6 +3289,300 @@ function WorldEdit() {
 	this.readyInit = false;
 	
 	this.editorGroup = new we_editorGroup(this);
+	
+	//type -1: No image
+	//type -2: Custom image
+	this.blockData = [
+["0:0", -1, [], false, "Air"],
+["1:0", BlockTypes.CUBE, [["stone", 0]], true],
+["1:1", BlockTypes.CUBE, [["stone", 1]], true],
+["1:2", BlockTypes.CUBE, [["stone", 2]], true],
+["1:3", BlockTypes.CUBE, [["stone", 3]], true],
+["1:4", BlockTypes.CUBE, [["stone", 4]], true],
+["1:5", BlockTypes.CUBE, [["stone", 5]], true],
+["1:6", BlockTypes.CUBE, [["stone", 6]], true],
+["2:0", BlockTypes.CUBE, [["grass", 3], ["grass", 3], ["grass", 2]], true],
+["3:0", BlockTypes.CUBE, [["dirt", 0]], true],
+["4:0", BlockTypes.CUBE, [["cobblestone", 0]], true],
+["5:0", BlockTypes.CUBE, [["planks", 0]], true],
+["5:1", BlockTypes.CUBE, [["planks", 1]], true],
+["5:2", BlockTypes.CUBE, [["planks", 2]], true],
+["5:3", BlockTypes.CUBE, [["planks", 3]], true],
+["5:4", BlockTypes.CUBE, [["planks", 4]], true],
+["5:5", BlockTypes.CUBE, [["planks", 5]], true],
+["6:0", BlockTypes.GRASS, [["sapling", 0]], false],
+["6:1", BlockTypes.GRASS, [["sapling", 1]], false],
+["6:2", BlockTypes.GRASS, [["sapling", 2]], false],
+["6:3", BlockTypes.GRASS, [["sapling", 3]], false],
+["6:4", BlockTypes.GRASS, [["sapling", 3]], false],
+["6:5", BlockTypes.GRASS, [["sapling", 4]], false],
+["7:0", BlockTypes.CUBE, [["bedrock", 0]], true],
+["8:0", BlockTypes.PATHGRASS, [["flowing_water", 0]], false, "Flow"],
+["9:0", BlockTypes.PATHGRASS, [["still_water", 0]], true, "Still"],
+["10:0", BlockTypes.PATHGRASS, [["flowing_lava", 0]], false, "Flow"],
+["11:0", BlockTypes.PATHGRASS, [["still_lava", 0]], true, "Still"],
+["12:0", BlockTypes.CUBE, [["sand", 0]], true],
+["12:1", BlockTypes.CUBE, [["sand", 1]], true],
+["13:0", BlockTypes.CUBE, [["gravel", 0]], true],
+["14:0", BlockTypes.CUBE, [["gold_ore", 0]], true],
+["15:0", BlockTypes.CUBE, [["iron_ore", 0]], true],
+["16:0", BlockTypes.CUBE, [["coal_ore", 0]], true],
+["17:0", BlockTypes.CUBE, [["log", 0], ["log", 0], ["log", 1]], true],
+["17:1", BlockTypes.CUBE, [["log", 2], ["log", 2], ["log", 3]], true], 
+["17:2", BlockTypes.CUBE, [["log", 4], ["log", 4], ["log", 5]], true],
+["17:3", BlockTypes.CUBE, [["log", 6], ["log", 6], ["log", 7]], true],
+["18:0", BlockTypes.CUBE, [["leaves_opaque", 0]], true],
+["18:1", BlockTypes.CUBE, [["leaves_opaque", 1]], true], 
+["18:2", BlockTypes.CUBE, [["leaves_opaque", 2]], true],
+["18:3", BlockTypes.CUBE, [["leaves_opaque", 3]], true],
+["19:0", BlockTypes.CUBE, [["sponge", 0]], true],
+["20:0", BlockTypes.CUBE, [["glass", 0]], true],
+["21:0", BlockTypes.CUBE, [["lapis_ore", 0]], true],
+["22:0", BlockTypes.CUBE, [["lapis_block", 0]], true],
+["24:0", BlockTypes.CUBE, [["sandstone", 0], ["sandstone", 0], ["sandstone", 3]], true],
+["24:1", BlockTypes.CUBE, [["sandstone", 1], ["sandstone", 1], ["sandstone", 3]], true],
+["24:2", BlockTypes.CUBE, [["sandstone", 2], ["sandstone", 2], ["sandstone", 3]], true],
+["26:0", BlockTypes.GRASS, [["bed", 0]], false],
+["27:0", BlockTypes.GRASS, [["rail_golden", 0]], false],
+["30:0", BlockTypes.GRASS, [["web", 0]], false],
+["31:0", BlockTypes.GRASS, [["tallgrass", 0]], false],
+["32:0", BlockTypes.GRASS, [["tallgrass", 1]], false],
+["35:0", BlockTypes.CUBE, [["wool", 0]], true],
+["35:1", BlockTypes.CUBE, [["wool", 1]], true],
+["35:2", BlockTypes.CUBE, [["wool", 2]], true],
+["35:3", BlockTypes.CUBE, [["wool", 3]], true],
+["35:4", BlockTypes.CUBE, [["wool", 4]], true],
+["35:5", BlockTypes.CUBE, [["wool", 5]], true],
+["35:6", BlockTypes.CUBE, [["wool", 6]], true],
+["35:7", BlockTypes.CUBE, [["wool", 7]], true],
+["35:8", BlockTypes.CUBE, [["wool", 8]], true],
+["35:9", BlockTypes.CUBE, [["wool", 9]], true],
+["35:10", BlockTypes.CUBE, [["wool", 10]], true],
+["35:11", BlockTypes.CUBE, [["wool", 11]], true],
+["35:12", BlockTypes.CUBE, [["wool", 12]], true],
+["35:13", BlockTypes.CUBE, [["wool", 13]], true],
+["35:14", BlockTypes.CUBE, [["wool", 14]], true],
+["35:15", BlockTypes.CUBE, [["wool", 15]], true],
+["37:0", BlockTypes.GRASS, [["flower1", 0]], false],
+["38:0", BlockTypes.GRASS, [["flower2", 0]], false],
+["38:1", BlockTypes.GRASS, [["flower2", 1]], false],
+["38:2", BlockTypes.GRASS, [["flower2", 2]], false],
+["38:3", BlockTypes.GRASS, [["flower2", 3]], false],
+["38:4", BlockTypes.GRASS, [["flower2", 4]], false],
+["38:5", BlockTypes.GRASS, [["flower2", 5]], false],
+["38:6", BlockTypes.GRASS, [["flower2", 6]], false],
+["38:7", BlockTypes.GRASS, [["flower2", 7]], false],
+["38:8", BlockTypes.GRASS, [["flower2", 8]], false],
+["39:0", BlockTypes.GRASS, [["mushroom_brown", 0]], false],
+["40:0", BlockTypes.GRASS, [["mushroom_red", 0]], false],
+["41:0", BlockTypes.CUBE, [["gold_block", 0]], true],
+["42:0", BlockTypes.CUBE, [["iron_block", 0]], true],
+["43:0", BlockTypes.CUBE, [["stone_slab", 1], ["stone_slab", 1], ["stone_slab", 0]], true, "Double slab"],
+["43:1", BlockTypes.CUBE, [["sandstone", 0], ["sandstone", 0], ["sandstone", 3]], true, "Double slab"],
+["43:2", BlockTypes.CUBE, [["planks", 0]], true, "Double slab"],
+["43:3", BlockTypes.CUBE, [["cobblestone", 0]], true, "Double slab"],
+["43:4", BlockTypes.CUBE, [["brick", 0]], true, "Double slab"],
+["43:5", BlockTypes.CUBE, [["stonebrick", 0]], true, "Double slab"],
+["43:6", BlockTypes.CUBE, [["quartz_block", 0]], true, "Double slab"],
+["43:7", BlockTypes.CUBE, [["nether_brick", 0]], true, "Double slab"],
+["44:0", BlockTypes.SLAB, [["stone_slab", 1], ["stone_slab", 1], ["stone_slab", 0]], true],
+["44:1", BlockTypes.SLAB, [["sandstone", 0], ["sandstone", 0], ["sandstone", 3]], true],
+["44:2", BlockTypes.SLAB, [["planks", 0]], true],
+["44:3", BlockTypes.SLAB, [["cobblestone", 0]], true],
+["44:4", BlockTypes.SLAB, [["brick", 0]], true],
+["44:5", BlockTypes.SLAB, [["stonebrick", 0]], true],
+["44:6", BlockTypes.SLAB, [["quartz_block", 0]], true],
+["44:7", BlockTypes.SLAB, [["nether_brick", 0]], true],
+["45:0", BlockTypes.CUBE, [["brick", 0]], true],
+["46:0", BlockTypes.CUBE, [["tnt", 0], ["tnt", 0], ["tnt", 1]], true],
+["47:0", BlockTypes.CUBE, [["bookshelf", 0], ["bookshelf", 0], ["planks", 0]], true],
+["48:0", BlockTypes.CUBE, [["cobblestone_mossy", 0]], true],
+["49:0", BlockTypes.CUBE, [["obsidian", 0]], true],
+["50:0", BlockTypes.GRASS, [["torch_on", 0]], false],
+["51:0", BlockTypes.GRASS, [["fire", 0]], false, "Fire"],
+["52:0", BlockTypes.CUBE, [["mob_spawner", 0]], true],
+["53:0", BlockTypes.STAIR, [["planks", 0]], true],
+["54:0", BlockTypes.CUBE, [["chest_inventory", 1], ["chest_inventory", 2], ["chest_inventory", 0]], true],
+["56:0", BlockTypes.CUBE, [["diamond_ore", 0]], true],
+["57:0", BlockTypes.CUBE, [["diamond_block", 0]], true],
+["58:0", BlockTypes.CUBE, [["crafting_table", 1], ["crafting_table", 2], ["crafting_table", 0]], true],
+["59:0", BlockTypes.GRASS, [["wheat", 7]], false],
+["60:0", BlockTypes.PATHGRASS, [["dirt", 0], ["dirt", 0], ["farmland", 0]], false],
+["60:1", BlockTypes.PATHGRASS, [["dirt", 0], ["dirt", 0], ["farmland", 1]], false],
+["61:0", BlockTypes.CUBE, [["furnace", 0], ["furnace", 2], ["furnace", 3]], true],
+["62:0", BlockTypes.CUBE, [["furnace", 1], ["furnace", 2], ["furnace", 3]], false],
+//FIXME sign
+["63:0", -1, [], false, "Sign"],
+["64:0", BlockTypes.GRASS, [["door", 1]], false],
+["65:0", BlockTypes.GRASS, [["ladder", 0]], false],
+["66:0", BlockTypes.GRASS, [["rail_normal", 0]], false],
+["67:0", BlockTypes.STAIR, [["cobblestone", 0]], true],
+//FIXME wallsign
+["68:0", -1, [], false, "Wall sign"],
+["71:0", BlockTypes.GRASS, [["door", 3]], false],
+["73:0", BlockTypes.CUBE, [["redstone_ore", 0]], true],
+["74:0", BlockTypes.CUBE, [["redstone_ore", 0]], false],
+["78:0", BlockTypes.SNOW, [["snow", 0]], true],
+["79:0", BlockTypes.CUBE, [["ice", 0]], true],
+["80:0", BlockTypes.CUBE, [["snow", 0]], true],
+["81:0", BlockTypes.GRASS, [["cactus", 0]], false],
+["82:0", BlockTypes.CUBE, [["clay", 0]], true],
+["83:0", BlockTypes.GRASS, [["reeds", 0]], false],
+["85:0", BlockTypes.FENCE, [["planks", 0]], true],
+["86:0", BlockTypes.CUBE, [["pumpkin", 2], ["pumpkin", 1], ["pumpkin", 0]], true],
+["87:0", BlockTypes.CUBE, [["netherrack", 0]], true],
+["88:0", BlockTypes.CUBE, [["soul_sand", 0]], true],
+["89:0", BlockTypes.CUBE, [["glowstone", 0]], false],
+["90:0", BlockTypes.GRASS, [["portal", 0]], false],
+["91:0", BlockTypes.CUBE, [["pumpkin", 3], ["pumpkin", 1], ["pumpkin", 0]], false],
+["92:0", BlockTypes.GRASS, [["cake_top", 0]], false],
+["95:0", -1, [], false, "Invisible Bedrock"],
+["96:0", BlockTypes.TRAPDOOR, [["trapdoor", 0]], true],
+["97:0", BlockTypes.CUBE, [["stone", 0]], false, "Silverfish"],
+["97:1", BlockTypes.CUBE, [["cobblestone", 0]], false, "Silverfish"],
+["97:2", BlockTypes.CUBE, [["stonebrick", 0]], false, "Silverfish"],
+["97:3", BlockTypes.CUBE, [["stonebrick", 1]], false, "Silverfish"],
+["97:4", BlockTypes.CUBE, [["stonebrick", 2]], false, "Silverfish"],
+["97:5", BlockTypes.CUBE, [["stonebrick", 3]], false, "Silverfish"],
+["98:0", BlockTypes.CUBE, [["stonebrick", 0]], true],
+["98:1", BlockTypes.CUBE, [["stonebrick", 1]], true],
+["98:2", BlockTypes.CUBE, [["stonebrick", 2]], true],
+["98:3", BlockTypes.CUBE, [["stonebrick", 3]], true],
+["99:0", BlockTypes.CUBE, [["mushroom_block", 0]], true],
+["100:0", BlockTypes.CUBE, [["mushroom_block", 1]], true],
+["101:0", BlockTypes.GRASS, [["iron_bars", 0]], false],
+["102:0", BlockTypes.GRASS, [["glass", 0]], false],
+["103:0", BlockTypes.CUBE, [["melon", 0], ["melon", 0], ["melon", 1]], true],
+["104:0", BlockTypes.GRASS, [["pumpkin_stem", 0]], false],
+["105:0", BlockTypes.GRASS, [["melon_stem", 0]], false],
+["106:0", BlockTypes.GRASS, [["vine", 0]], false],
+//FIXME fencegate
+["107:0", BlockTypes.GRASS, [["planks", 0]], false, "Fence gate"],
+["108:0", BlockTypes.STAIR,
+[["brick", 0]], true],
+["109:0", BlockTypes.STAIR, [["stonebrick", 0]], true],
+["110:0", BlockTypes.CUBE, [["mycelium", 0], ["mycelium", 0], ["mycelium", 1]], true],
+["111:0", BlockTypes.GRASS, [["waterlily", 0]], false],
+["112:0", BlockTypes.CUBE, [["nether_brick", 0]], true],
+["113:0", BlockTypes.FENCE, [["nether_brick", 0]], true],
+["114:0", BlockTypes.STAIR, [["nether_brick", 0]], true],
+["115:0", BlockTypes.GRASS, [["nether_wart", 2]], false],
+["116:0", BlockTypes.GRASS, [["enchanting_table_side", 0]], false],
+["117:0", BlockTypes.GRASS, [["brewing_stand", 0]], false],
+["120:0", BlockTypes.GRASS, [["endframee", 1]], false],
+["120:15", BlockTypes.GRASS, [["endframee", 0]], false],
+["121:0", BlockTypes.CUBE, [["end_stone", 0]], true],
+["126:0", BlockTypes.GRASS, [["cake_top", 0]], false],
+["127:0", BlockTypes.GRASS, [["cocoa", 2]], false],
+["128:0", BlockTypes.STAIR, [["sandstone", 0], ["sandstone", 0], ["sandstone", 3]], true],
+["129:0", BlockTypes.CUBE, [["emerald_ore", 0]], true],
+["133:0", BlockTypes.CUBE, [["emerald_block", 0]], true],
+["134:0", BlockTypes.STAIR, [["planks", 1]], true],
+["135:0", BlockTypes.STAIR, [["planks", 2]], true],
+["136:0", BlockTypes.STAIR, [["planks", 3]], true],
+["139:0", BlockTypes.STONEWALL, [["cobblestone", 0]], true],
+["139:1", BlockTypes.STONEWALL, [["cobblestone_mossy", 0]], true],
+["140:0", BlockTypes.GRASS, [["flower_pot", 0]], false],
+["141:0", BlockTypes.GRASS, [["carrots", 3]], false],
+["142:0", BlockTypes.GRASS, [["potatoes", 3]], false],
+//FIXME HEADS
+["144:0", -1, [], false, "Head"],
+["145:0", BlockTypes.GRASS, [["anvil_top_damaged_x", 0]], false, "Anvil"],
+["145:1", BlockTypes.GRASS, [["anvil_top_damaged_x", 1]], false, "Anvil"],
+["145:2", BlockTypes.GRASS, [["anvil_top_damaged_x", 2]], false, "Anvil"],
+["152:0", BlockTypes.CUBE, [["redstone_block", 0]], true],
+["153:0", BlockTypes.CUBE, [["quartz_ore", 0]], true],
+["155:0", BlockTypes.CUBE, [["quartz_block", 1]], true],
+["155:1", BlockTypes.CUBE, [["quartz_block", 3], ["quartz_block", 3], ["quartz_block", 4]], true],
+["155:2", BlockTypes.CUBE, [["quartz_block", 5]], true],
+["156:0", BlockTypes.STAIR, [["quartz_block", 1]], true],
+["157:0", BlockTypes.CUBE, [["planks", 0]], true, "Double slab"],
+["157:1", BlockTypes.CUBE, [["planks", 1]], true, "Double slab"],
+["157:2", BlockTypes.CUBE, [["planks", 2]], true, "Double slab"],
+["157:3", BlockTypes.CUBE, [["planks", 3]], true, "Double slab"],
+["157:4", BlockTypes.CUBE, [["planks", 4]], true, "Double slab"],
+["157:5", BlockTypes.CUBE, [["planks", 5]], true, "Double slab"],
+["158:0", BlockTypes.SLAB, [["planks", 0]], true],
+["158:1", BlockTypes.SLAB, [["planks", 1]], true],
+["158:2", BlockTypes.SLAB, [["planks", 2]], true],
+["158:3", BlockTypes.SLAB, [["planks", 3]], true],
+["158:4", BlockTypes.SLAB, [["planks", 4]], true],
+["158:5", BlockTypes.SLAB, [["planks", 5]], true],
+["158:8", BlockTypes.SLAB, [["planks", 0]], true, "Upper"],
+["158:9", BlockTypes.SLAB, [["planks", 1]], true, "Upper"],
+["158:10", BlockTypes.SLAB, [["planks", 2]], true, "Upper"],
+["158:11", BlockTypes.SLAB, [["planks", 3]], true, "Upper"],
+["158:12", BlockTypes.SLAB, [["planks", 4]], true, "Upper"],
+["158:13", BlockTypes.SLAB, [["planks", 5]], true, "Upper"],
+["159:0", BlockTypes.CUBE, [["stained_clay", 0]], true],
+["159:1", BlockTypes.CUBE, [["stained_clay", 1]], true],
+["159:2", BlockTypes.CUBE, [["stained_clay", 2]], true],
+["159:3", BlockTypes.CUBE, [["stained_clay", 3]], true],
+["159:4", BlockTypes.CUBE, [["stained_clay", 4]], true],
+["159:5", BlockTypes.CUBE, [["stained_clay", 5]], true],
+["159:6", BlockTypes.CUBE, [["stained_clay", 6]], true],
+["159:7", BlockTypes.CUBE, [["stained_clay", 7]], true],
+["159:8", BlockTypes.CUBE, [["stained_clay", 8]], true],
+["159:9", BlockTypes.CUBE, [["stained_clay", 9]], true],
+["159:10", BlockTypes.CUBE, [["stained_clay", 10]], true],
+["159:11", BlockTypes.CUBE, [["stained_clay", 11]], true],
+["159:12", BlockTypes.CUBE, [["stained_clay", 12]], true],
+["159:13", BlockTypes.CUBE, [["stained_clay", 13]], true],
+["159:14", BlockTypes.CUBE, [["stained_clay", 14]], true],
+["159:15", BlockTypes.CUBE, [["stained_clay", 15]], true],
+["161:0", BlockTypes.CUBE, [["leaves_opaque2", 0]], true],
+["161:1", BlockTypes.CUBE, [["leaves_opaque2", 1]], true],
+["162:0", BlockTypes.CUBE, [["log2", 0], ["log2", 0], ["log2", 1]], true],
+["162:1", BlockTypes.CUBE, [["log2", 2], ["log2", 2], ["log2", 3]], true],
+["163:0", BlockTypes.STAIR, [["planks", 4]], true],
+["164:0", BlockTypes.STAIR, [["planks", 5]], true],
+["170:0", BlockTypes.CUBE, [["hayblock", 1], ["hayblock", 1], ["hayblock", 0]], true],
+["171:0", BlockTypes.CARPET, [["wool", 0]], true],
+["171:1", BlockTypes.CARPET, [["wool", 1]], true],
+["171:2", BlockTypes.CARPET, [["wool", 2]], true],
+["171:3", BlockTypes.CARPET, [["wool", 3]], true],
+["171:4", BlockTypes.CARPET, [["wool", 4]], true],
+["171:5", BlockTypes.CARPET, [["wool", 5]], true],
+["171:6", BlockTypes.CARPET, [["wool", 6]], true],
+["171:7", BlockTypes.CARPET, [["wool", 7]], true],
+["171:8", BlockTypes.CARPET, [["wool", 8]], true],
+["171:9", BlockTypes.CARPET, [["wool", 9]], true],
+["171:10", BlockTypes.CARPET, [["wool", 10]], true],
+["171:11", BlockTypes.CARPET, [["wool", 11]], true],
+["171:12", BlockTypes.CARPET, [["wool", 12]], true],
+["171:13", BlockTypes.CARPET, [["wool", 13]], true],
+["171:14", BlockTypes.CARPET, [["wool", 14]], true],
+["171:15", BlockTypes.CARPET, [["wool", 15]], true],
+["172:0", BlockTypes.CUBE, [["hardened_clay", 0]], true],
+["173:0", BlockTypes.CUBE, [["coal_block", 0]], true],
+["174:0", BlockTypes.CUBE, [["ice_packed", 0]], true],
+["175:0", BlockTypes.GRASS, [["sunflower_additional", 0]], false],
+["175:1", BlockTypes.GRESS, [["double_plant_top", 1]], false],
+["175:2", BlockTypes.GRESS, [["double_plant_top", 2]], false],
+["175:3", BlockTypes.GRESS, [["double_plant_top", 3]], false],
+["175:4", BlockTypes.GRESS, [["double_plant_top", 4]], false],
+["175:5", BlockTypes.GRESS, [["double_plant_top", 5]], false],
+//FIXME fencegate
+["183:0", BlockTypes.GRASS, [["planks", 1]], false, "Fence gate"],
+["184:0", BlockTypes.GRASS, [["planks", 2]], false, "Fence gate"],
+["185:0", BlockTypes.GRASS, [["planks", 3]], false, "Fence gate"],
+["186:0", BlockTypes.GRASS, [["planks", 4]], false, "Fence gate"],
+["187:0", BlockTypes.GRASS, [["planks", 5]], false, "Fence gate"],
+["198:0", BlockTypes.PATHGRASS, [["grass_path", 1], ["grass_path", 1], ["grass_path", 0]], true],
+["243:0", BlockTypes.CUBE, [["dirt", 2], ["dirt", 2], ["dirt", 1]], true],
+["244:0", BlockTypes.GRASS, [["beetroot", 3]], false],
+["245:0", BlockTypes.CUBE, [["stonecutter", 1], ["stonecutter", 0], ["stonecutter", 2]], true],
+["246:0", BlockTypes.CUBE, [["glowing_obsidian", 0]], false],
+["247:0", BlockTypes.CUBE, [["reactor_core", 0]], true],
+["247:1", BlockTypes.CUBE, [["reactor_core", 1]], true],
+["247:2", BlockTypes.CUBE, [["reactor_core", 2]], true],
+["248:0", BlockTypes.CUBE, [["missing_tile", 0]], true],
+["249:0", BlockTypes.CUBE, [["missing_tile", 0]], true]
+	];
+	this.blockImagesData = null;
+	this.blockImagesLayout = new sg.ll(ctx);
+		this.blockImagesLayout.setOrientation(sg.ll.VERTICAL);
+		this.currentSelectedBlock = null;
 }
 
 WorldEdit.prototype = {
@@ -3293,6 +3602,7 @@ WorldEdit.prototype = {
 		pb.setLayoutParams(pb_p);
 		this.loadingLayout.addView(pb);
 		this.editorGroup.init();
+		this.buildBlockImages();
 		this.readyInit = true;
 	},
 	
@@ -3629,6 +3939,134 @@ WorldEdit.prototype = {
 		}else {
 			this.changeMenu(this.currentMenu.getParentMenu());
 		}
+	},
+	
+	getBlockDataIndex: function(id, data) {
+		if(data === undefined) {
+			data = 0;
+		}
+		var key = id + ":" + data;
+		for(var e = 0; e < this.blockData.length; e++) {
+			if(this.blockData[e][0] === key) {
+				return e;
+			}
+		}
+		data = 0;
+		key = id + ":" + data;
+		for(var e = 0; e < this.blockData.length; e++) {
+			if(this.blockData[e][0] === key) {
+				return e;
+			}
+		}
+		return -1;
+	},
+	
+	getBlockDataImage: function(index) {
+		if(index < 0 && index >= this.blockData.length) {
+			return Bitmap.createBitmap(51, 57, Bitmap.Config.ARGB_8888);
+		}
+		var dat = this.blockData[index];
+		if(dat[1] === -1) {
+			return Bitmap.createBitmap(51, 57, Bitmap.Config.ARGB_8888);
+		}else if(dat[1] === -2) {
+			return dat[2];
+		}else if(dat[2].length === 1) {
+			return BlockImageLoader.create(dat[2][0], dat[2][0], dat[2][0], dat[1], dat[3]);
+		}else {
+			return BlockImageLoader.create(dat[2][0], dat[2][1], dat[2][2], dat[1], dat[3]);
+		}
+	},
+	
+	getBlockDataDescription: function(index) {
+		if(index < 0 && index >= this.blockData.length) {
+			return false;
+		}
+		var dat = this.blockData[index];
+		if(dat[4] === undefined) {
+			return false;
+		}
+		return dat[4];
+	},
+	
+	buildBlockImages: function() {
+		var that = this;
+		//블럭 정보들을 이미지로 변환해 레이아웃에 저장
+		this.blockImagesData = [];
+		uiThread(function() {try {
+			that.blockImagesLayout.removeAllViews();
+		}catch(err) {
+			showError(err);
+		}});
+		var crtLayout = new sg.ll(ctx);
+		crtLayout.setOrientation(sg.ll.HORIZONTAL);
+		crtLayout.setGravity(Gravity.LEFT);
+		var max = Math.floor((sg.ww - (sg.px*16))/(sg.px*0x40));
+		var crt = 0;
+		var temp;
+		for(var e = 0; e < this.blockData.length; e++) {try {
+			
+			var rl = new sg.rl(ctx);
+			var rl_p = new sg.llp(sg.px*0x40, sg.px*0x40);
+			rl.setLayoutParams(rl_p);
+			rl.setPadding(sg.px*4, sg.px*4, sg.px*4, sg.px*4);
+			var imgV = new ImageView(ctx);
+			imgV.setImageBitmap(this.getBlockDataImage(e));
+			var imgV_p = new sg.rlp(sg.mp, sg.mp);
+			imgV_p.addRule(sg.rl.CENTER_IN_PARENT);
+			imgV.setLayoutParams(imgV_p);
+			var idV = sgUtils.gui.mcFastText(this.blockData[e][0], sg.px*0xa, true, Color.WHITE);
+			idV.setTag([e]);
+			var idV_p = new sg.rlp(sg.mp, sg.mp);
+			idV_p.addRule(sg.rl.ALIGN_PARENT_TOP);
+			idV_p.addRule(sg.rl.ALIGN_PARENT_LEFT);
+			idV.setLayoutParams(idV_p);
+			idV.setOnClickListener(View.OnClickListener({onClick: function(view) {try {
+				if(that.currentSelectedBlock !== null) {
+					that.blockImagesData[that.currentSelectedBlock][0].setBackgroundColor(Color.TRANSPARENT);
+				}
+				that.currentSelectedBlock = view.getTag()[0];
+				that.blockImagesData[that.currentSelectedBlock][0].setBackgroundColor(sgColors.mainBr);
+			}catch(err) {
+				showError(err);
+			}}}));
+			
+			rl.addView(imgV);
+			var des = this.getBlockDataDescription(e);
+			if(des !== false) {
+				var desV = sgUtils.gui.mcFastText(des, sg.px*0x8, true, Color.YELLOW);
+				var desV_p = new sg.rlp(sg.wc, sg.wc);
+				desV_p.addRule(sg.rl.ALIGN_PARENT_BOTTOM);
+				desV_p.addRule(sg.rl.ALIGN_PARENT_RIGHT);
+				desV_p.setMargins(0, 0, sg.px*0x4, sg.px*0x10);
+				desV.setLayoutParams(desV_p);
+				desV.setGravity(Gravity.RIGHT);
+				rl.addView(desV);
+			}
+			rl.addView(idV);
+			this.blockImagesData[e] = [rl, imgV, idV, desV];
+			crtLayout.addView(rl);
+			if(++crt >= max) {
+				crt = 0;
+				temp = crtLayout;
+				uiThread(function() {try {
+					that.blockImagesLayout.addView(temp);
+				}catch(err) {
+					showError(err);
+				}});
+				crtLayout = new sg.ll(ctx);
+				crtLayout.setOrientation(sg.ll.HORIZONTAL);
+				crtLayout.setGravity(Gravity.LEFT);
+			}
+		}catch(err) {
+			we_toast("Error occur on load BlockImage(" + this.blockData[e][0] + ")", 1);
+		}}
+		if(crt !== 0) {
+			uiThread(function() {try {
+				that.blockImagesLayout.addView(crtLayout);
+			}catch(err) {
+				showError(err);
+			}});
+		}
 	}
 }
 
@@ -3898,7 +4336,7 @@ function useItem(x, y, z, itemId, blockId, side) {
 		highlightBlock(x, y, z);
 		var editor = main.getLocalEditor();
 		if(editor === false) {
-			we_toast("플레이어를 찾을 수 없습니다\nError: sdb1", 2, 5000, true);
+			we_toast("플레이어를 찾을 수 없습니다\nError: ui1", 2, 5000, true);
 			return;
 		}
 		editor.setPos1(new Vector3(x, y, z));
@@ -3926,22 +4364,22 @@ function destroyBlock(x, y, z, side) {
 }
 
 function chatReceiveHook(str, sender) {
-	if(str.subString(0, 1) === "@") {
-		var cmd = str.subString(1, str.length).split(" ");
+	if(str.substring(0, 1) === "@") {
+		var cmd = str.substring(1, str.length).split(" ");
 		if(!main.editorGroup.isAllow(sender)) {
-			broadcast(sender + " 유저는 월드에딧 권한이 없습니다");
+			msg("해당 유저는 월드에딧 권한이 없습니다", sender);
 			return;
 		}
-		var editor = main.editorGroup.get(sender);
+		var editor = main.editorGroup.getEditor(sender);
 		var player = editor.getOwner();
 		switch(cmd[0]) {
 			case "pos1":
 			editor.setPos1(new Vector3(Entity.getX(player), Entity.getY(player), Entity.getZ(player)));
-			msg("위치1이 지정되었습니다", player);
+			msg("위치1이 지정되었습니다", sender);
 			break;
 			case "pos2":
 			editor.setPos2(new Vector3(Entity.getX(player), Entity.getY(player), Entity.getZ(player)));
-			msg("위치2이 지정되었습니다", player);
+			msg("위치2이 지정되었습니다", sender);
 			break;
 		}
 	}
@@ -6841,295 +7279,7 @@ function msg(str, target) {
 
 var blockData = ["0:0", "1:0", "1:1", "1:2", "1:3", "1:4", "1:5", "1:6", "2:0", "3:0", "4:0", "5:0", "5:1", "5:2", "5:3", "5:4", "5:5", "6:0", "6:1", "6:2", "6:3", "6:4", "6:5", "7:0", "8:0", "9:0", "10:0", "11:0", "12:0", "12:1", "13:0", "14:0", "15:0", "16:0", "17:0", "17:1", "17:2", "17:3", "18:0", "18:1", "18:2", "18:3", "19:0", "20:0", "21:0", "22:0", "24:0", "24:1", "24:2", "26:0", "27:0", "30:0", "31:0", "32:0", "35:0", "35:1", "35:2", "35:3", "35:4", "35:5", "35:6", "35:7", "35:8", "35:9", "35:10", "35:11", "35:12", "35:13", "35:14", "35:15", "37:0", "38:0", "38:1", "38:2", "38:3", "38:4", "38:5", "38:6", "38:7", "38:8", "39:0", "40:0", "41:0", "42:0", "43:0", "43:1", "43:2", "43:3", "43:4", "43:5", "43:6", "43:7", "44:0", "44:1", "44:2", "44:3", "44:4", "44:5", "44:6", "44:7", "45:0", "46:0", "47:0", "48:0", "49:0", "50:0", "51:0", "52:0", "53:0", "54:0", "56:0", "57:0", "58:0", "59:0", "60:0", "60:1", "61:0", "62:0", "63:0", "64:0", "65:0", "66:0", "67:0", "68:0", "71:0", "73:0", "74:0", "78:0", "79:0", "80:0", "81:0", "82:0", "83:0", "85:0", "86:0", "87:0", "88:0", "89:0", "90:0", "91:0", "92:0", "95:0", "96:0", "97:0", "97:1", "97:2", "97:3", "97:4", "97:5", "98:0", "98:1", "98:2", "98:3", "99:0", "100:0", "101:0", "102:0", "103:0", "104:0", "105:0", "106:0", "107:0", "108:0", "109:0", "110:0", "111:0", "112:0", "113:0", "114:0", "115:0", "116:0", "117:0", "120:0", "120:15", "121:0", "126:0", "127:0", "128:0", "129:0", "133:0", "134:0", "135:0", "136:0", "139:0", "139:1", "140:0", "141:0", "142:0", "144:0", "145:0", "145:1", "145:2", "152:0", "153:0", "155:0", "155:1", "155:2", "156:0", "157:0", "157:1", "157:2", "157:3", "157:4", "157:5", "158:0", "158:1", "158:2", "158:3", "158:4", "158:5", "158:8", "158:9", "158:10", "158:11", "158:12", "158:13", "159:0", "159:1", "159:2", "159:3", "159:4", "159:5", "159:6", "159:7", "159:8", "159:9", "159:10", "159:11", "159:12", "159:13", "159:14", "159:15", "161:0", "161:1", "162:0", "162:1", "163:0", "164:0", "170:0", "171:0", "171:1", "171:2", "171:3", "171:4", "171:5", "171:6", "171:7", "171:8", "171:9", "171:10", "171:11", "171:12", "171:13", "171:14", "171:15", "172:0", "173:0", "174:0", "175:0", "175:1", "175:2", "175:3", "175:4", "175:5", "183:0", "184:0", "185:0", "186:0", "187:0", "198:0", "243:0", "244:0", "245:0", "246:0", "247:0", "247:1", "247:2", "248:0", "249:0"];
 
-//type -1: No image
-//type -2: Custom image
-var blockImageData = [
-["0:0", -1, [], false, "Air"],
-["1:0", BlockTypes.CUBE, [["stone", 0]], true],
-["1:1", BlockTypes.CUBE, [["stone", 1]], true],
-["1:2", BlockTypes.CUBE, [["stone", 2]], true],
-["1:3", BlockTypes.CUBE, [["stone", 3]], true],
-["1:4", BlockTypes.CUBE, [["stone", 4]], true],
-["1:5", BlockTypes.CUBE, [["stone", 5]], true],
-["1:6", BlockTypes.CUBE, [["stone", 6]], true],
-["2:0", BlockTypes.CUBE, [["grass", 3], ["grass", 3], ["grass", 2]], true],
-["3:0", BlockTypes.CUBE, [["dirt", 0]], true],
-["4:0", BlockTypes.CUBE, [["cobblestone", 0]], true],
-["5:0", BlockTypes.CUBE, [["planks", 0]], true],
-["5:1", BlockTypes.CUBE, [["planks", 1]], true],
-["5:2", BlockTypes.CUBE, [["planks", 2]], true],
-["5:3", BlockTypes.CUBE, [["planks", 3]], true],
-["5:4", BlockTypes.CUBE, [["planks", 4]], true],
-["5:5", BlockTypes.CUBE, [["planks", 5]], true],
-["6:0", BlockTypes.GRASS, [["sapling", 0]], false],
-["6:1", BlockTypes.GRASS, [["sapling", 1]], false],
-["6:2", BlockTypes.GRASS, [["sapling", 2]], false],
-["6:3", BlockTypes.GRASS, [["sapling", 3]], false],
-["6:4", BlockTypes.GRASS, [["sapling", 3]], false],
-["6:5", BlockTypes.GRASS, [["sapling", 4]], false],
-["7:0", BlockTypes.CUBE, [["bedrock", 0]], true],
-["8:0", BlockTypes.PATHGRASS, [["flowing_water", 0]], false, "Flow"],
-["9:0", BlockTypes.PATHGRASS, [["still_water", 0]], true, "Still"],
-["10:0", BlockTypes.PATHGRASS, [["flowing_lava", 0]], false, "Flow"],
-["11:0", BlockTypes.PATHGRASS, [["still_lava", 0]], true, "Still"],
-["12:0", BlockTypes.CUBE, [["sand", 0]], true],
-["12:1", BlockTypes.CUBE, [["sand", 1]], true],
-["13:0", BlockTypes.CUBE, [["gravel", 0]], true],
-["14:0", BlockTypes.CUBE, [["gold_ore", 0]], true],
-["15:0", BlockTypes.CUBE, [["iron_ore", 0]], true],
-["16:0", BlockTypes.CUBE, [["coal_ore", 0]], true],
-["17:0", BlockTypes.CUBE, [["log", 0], ["log", 0], ["log", 1]], true],
-["17:1", BlockTypes.CUBE, [["log", 2], ["log", 2], ["log", 3]], true], 
-["17:2", BlockTypes.CUBE, [["log", 4], ["log", 4], ["log", 5]], true],
-["17:3", BlockTypes.CUBE, [["log", 6], ["log", 6], ["log", 7]], true],
-["18:0", BlockTypes.CUBE, [["leaves_opaque", 0]], true],
-["18:1", BlockTypes.CUBE, [["leaves_opaque", 1]], true], 
-["18:2", BlockTypes.CUBE, [["leaves_opaque", 2]], true],
-["18:3", BlockTypes.CUBE, [["leaves_opaque", 3]], true],
-["19:0", BlockTypes.CUBE, [["sponge", 0]], true],
-["20:0", BlockTypes.CUBE, [["glass", 0]], true],
-["21:0", BlockTypes.CUBE, [["lapis_ore", 0]], true],
-["22:0", BlockTypes.CUBE, [["lapis_block", 0]], true],
-["24:0", BlockTypes.CUBE, [["sandstone", 0], ["sandstone", 0], ["sandstone", 3]], true],
-["24:1", BlockTypes.CUBE, [["sandstone", 1], ["sandstone", 1], ["sandstone", 3]], true],
-["24:2", BlockTypes.CUBE, [["sandstone", 2], ["sandstone", 2], ["sandstone", 3]], true],
-["26:0", BlockTypes.GRASS, [["bed", 0]], false],
-["27:0", BlockTypes.GRASS, [["rail_golden", 0]], false],
-["30:0", BlockTypes.GRASS, [["web", 0]], false],
-["31:0", BlockTypes.GRASS, [["tallgrass", 0]], false],
-["32:0", BlockTypes.GRASS, [["tallgrass", 1]], false],
-["35:0", BlockTypes.CUBE, [["wool", 0]], true],
-["35:1", BlockTypes.CUBE, [["wool", 1]], true],
-["35:2", BlockTypes.CUBE, [["wool", 2]], true],
-["35:3", BlockTypes.CUBE, [["wool", 3]], true],
-["35:4", BlockTypes.CUBE, [["wool", 4]], true],
-["35:5", BlockTypes.CUBE, [["wool", 5]], true],
-["35:6", BlockTypes.CUBE, [["wool", 6]], true],
-["35:7", BlockTypes.CUBE, [["wool", 7]], true],
-["35:8", BlockTypes.CUBE, [["wool", 8]], true],
-["35:9", BlockTypes.CUBE, [["wool", 9]], true],
-["35:10", BlockTypes.CUBE, [["wool", 10]], true],
-["35:11", BlockTypes.CUBE, [["wool", 11]], true],
-["35:12", BlockTypes.CUBE, [["wool", 12]], true],
-["35:13", BlockTypes.CUBE, [["wool", 13]], true],
-["35:14", BlockTypes.CUBE, [["wool", 14]], true],
-["35:15", BlockTypes.CUBE, [["wool", 15]], true],
-["37:0", BlockTypes.GRASS, [["flower1", 0]], false],
-["38:0", BlockTypes.GRASS, [["flower2", 0]], false],
-["38:1", BlockTypes.GRASS, [["flower2", 1]], false],
-["38:2", BlockTypes.GRASS, [["flower2", 2]], false],
-["38:3", BlockTypes.GRASS, [["flower2", 3]], false],
-["38:4", BlockTypes.GRASS, [["flower2", 4]], false],
-["38:5", BlockTypes.GRASS, [["flower2", 5]], false],
-["38:6", BlockTypes.GRASS, [["flower2", 6]], false],
-["38:7", BlockTypes.GRASS, [["flower2", 7]], false],
-["38:8", BlockTypes.GRASS, [["flower2", 8]], false],
-["39:0", BlockTypes.GRASS, [["mushroom_brown", 0]], false],
-["40:0", BlockTypes.GRASS, [["mushroom_red", 0]], false],
-["41:0", BlockTypes.CUBE, [["gold_block", 0]], true],
-["42:0", BlockTypes.CUBE, [["iron_block", 0]], true],
-["43:0", BlockTypes.CUBE, [["stone_slab", 1], ["stone_slab", 1], ["stone_slab", 0]], true, "Double slab"],
-["43:1", BlockTypes.CUBE, [["sandstone", 0], ["sandstone", 0], ["sandstone", 3]], true, "Double slab"],
-["43:2", BlockTypes.CUBE, [["planks", 0]], true, "Double slab"],
-["43:3", BlockTypes.CUBE, [["cobblestone", 0]], true, "Double slab"],
-["43:4", BlockTypes.CUBE, [["brick", 0]], true, "Double slab"],
-["43:5", BlockTypes.CUBE, [["stonebrick", 0]], true, "Double slab"],
-["43:6", BlockTypes.CUBE, [["quartz_block", 0]], true, "Double slab"],
-["43:7", BlockTypes.CUBE, [["nether_brick", 0]], true, "Double slab"],
-["44:0", BlockTypes.SLAB, [["stone_slab", 1], ["stone_slab", 1], ["stone_slab", 0]], true],
-["44:1", BlockTypes.SLAB, [["sandstone", 0], ["sandstone", 0], ["sandstone", 3]], true],
-["44:2", BlockTypes.SLAB, [["planks", 0]], true],
-["44:3", BlockTypes.SLAB, [["cobblestone", 0]], true],
-["44:4", BlockTypes.SLAB, [["brick", 0]], true],
-["44:5", BlockTypes.SLAB, [["stonebrick", 0]], true],
-["44:6", BlockTypes.SLAB, [["quartz_block", 0]], true],
-["44:7", BlockTypes.SLAB, [["nether_brick", 0]], true],
-["45:0", BlockTypes.CUBE, [["brick", 0]], true],
-["46:0", BlockTypes.CUBE, [["tnt", 0], ["tnt", 0], ["tnt", 1]], true],
-["47:0", BlockTypes.CUBE, [["bookshelf", 0], ["bookshelf", 0], ["planks", 0]], true],
-["48:0", BlockTypes.CUBE, [["cobblestone_mossy", 0]], true],
-["49:0", BlockTypes.CUBE, [["obsidian", 0]], true],
-["50:0", BlockTypes.GRASS, [["torch_on", 0]], false],
-["51:0", BlockTypes.GRASS, [["fire", 0]], false, "Fire"],
-["52:0", BlockTypes.CUBE, [["mob_spawner", 0]], true],
-["53:0", BlockTypes.STAIR, [["planks", 0]], true],
-["54:0", BlockTypes.CUBE, [["chest_inventory", 1], ["chest_inventory", 2], ["chest_inventory", 0]], true],
-["56:0", BlockTypes.CUBE, [["diamond_ore", 0]], true],
-["57:0", BlockTypes.CUBE, [["diamond_block", 0]], true],
-["58:0", BlockTypes.CUBE, [["crafting_table", 1], ["crafting_table", 2], ["crafting_table", 0]], true],
-["59:0", BlockTypes.GRASS, [["wheat", 7]], false],
-["60:0", BlockTypes.PATHGRASS, [["dirt", 0], ["dirt", 0], ["farmland", 0]], false],
-["60:1", BlockTypes.PATHGRASS, [["dirt", 0], ["dirt", 0], ["farmland", 1]], false],
-["61:0", BlockTypes.CUBE, [["furnace", 0], ["furnace", 2], ["furnace", 3]], true],
-["62:0", BlockTypes.CUBE, [["furnace", 1], ["furnace", 2], ["furnace", 3]], false],
-//FIXME sign
-["63:0", -1, [], false, "Sign"],
-["64:0", BlockTypes.GRASS, [["door", 1]], false],
-["65:0", BlockTypes.GRASS, [["ladder", 0]], false],
-["66:0", BlockTypes.GRASS, [["rail_normal", 0]], false],
-["67:0", BlockTypes.STAIR, [["cobblestone", 0]], true],
-//FIXME wallsign
-["68:0", -1, [], false, "Wall sign"],
-["71:0", BlockTypes.GRASS, [["door", 3]], false],
-["73:0", BlockTypes.CUBE, [["redstone_ore", 0]], true],
-["74:0", BlockTypes.CUBE, [["redstone_ore", 0]], false],
-["78:0", BlockTypes.SNOW, [["snow", 0]], true],
-["79:0", BlockTypes.CUBE, [["ice", 0]], true],
-["80:0", BlockTypes.CUBE, [["snow", 0]], true],
-["81:0", BlockTypes.GRASS, [["cactus", 0]], false],
-["82:0", BlockTypes.CUBE, [["clay", 0]], true],
-["83:0", BlockTypes.GRASS, [["reeds", 0]], false],
-["85:0", BlockTypes.FENCE, [["planks", 0]], true],
-["86:0", BlockTypes.CUBE, [["pumpkin", 2], ["pumpkin", 1], ["pumpkin", 0]], true],
-["87:0", BlockTypes.CUBE, [["netherrack", 0]], true],
-["88:0", BlockTypes.CUBE, [["soul_sand", 0]], true],
-["89:0", BlockTypes.CUBE, [["glowstone", 0]], false],
-["90:0", BlockTypes.GRASS, [["portal", 0]], false],
-["91:0", BlockTypes.CUBE, [["pumpkin", 3], ["pumpkin", 1], ["pumpkin", 0]], false],
-["92:0", BlockTypes.GRASS, [["cake_top", 0]], false],
-["95:0", -1, [], false, "Invisible Bedrock"],
-["96:0", BlockTypes.TRAPDOOR, [["trapdoor", 0]], true],
-["97:0", BlockTypes.CUBE, [["stone", 0]], false, "Silverfish"],
-["97:1", BlockTypes.CUBE, [["cobblestone", 0]], false, "Silverfish"],
-["97:2", BlockTypes.CUBE, [["stonebrick", 0]], false, "Silverfish"],
-["97:3", BlockTypes.CUBE, [["stonebrick", 1]], false, "Silverfish"],
-["97:4", BlockTypes.CUBE, [["stonebrick", 2]], false, "Silverfish"],
-["97:5", BlockTypes.CUBE, [["stonebrick", 3]], false, "Silverfish"],
-["98:0", BlockTypes.CUBE, [["stonebrick", 0]], true],
-["98:1", BlockTypes.CUBE, [["stonebrick", 1]], true],
-["98:2", BlockTypes.CUBE, [["stonebrick", 2]], true],
-["98:3", BlockTypes.CUBE, [["stonebrick", 3]], true],
-["99:0", BlockTypes.CUBE, [["mushroom_block", 0]], true],
-["100:0", BlockTypes.CUBE, [["mushroom_block", 1]], true],
-["101:0", BlockTypes.GRASS, [["iron_bars", 0]], false],
-["102:0", BlockTypes.GRASS, [["glass", 0]], false],
-["103:0", BlockTypes.CUBE, [["melon", 0], ["melon", 0], ["melon", 1]], true],
-["104:0", BlockTypes.GRASS, [["pumpkin_stem", 0]], false],
-["105:0", BlockTypes.GRASS, [["melon_stem", 0]], false],
-["106:0", BlockTypes.GRASS, [["vine", 0]], false],
-//FIXME fencegate
-["107:0", BlockTypes.GRASS, [["planks", 0]], false, "Fence gate"],
-["108:0", BlockTypes.STAIR,
-[["brick", 0]], true],
-["109:0", BlockTypes.STAIR, [["stonebrick", 0]], true],
-["110:0", BlockTypes.CUBE, [["mycelium", 0], ["mycelium", 0], ["mycelium", 1]], true],
-["111:0", BlockTypes.GRASS, [["waterlily", 0]], false],
-["112:0", BlockTypes.CUBE, [["nether_brick", 0]], true],
-["113:0", BlockTypes.FENCE, [["nether_brick", 0]], true],
-["114:0", BlockTypes.STAIR, [["nether_brick", 0]], true],
-["115:0", BlockTypes.GRASS, [["nether_wart", 2]], false],
-["116:0", BlockTypes.GRASS, [["enchanting_table_side", 0]], false],
-["117:0", BlockTypes.GRASS, [["brewing_stand", 0]], false],
-["120:0", BlockTypes.GRASS, [["endframee", 1]], false],
-["120:15", BlockTypes.GRASS, [["endframee", 0]], false],
-["121:0", BlockTypes.CUBE, [["end_stone", 0]], true],
-["126:0", BlockTypes.GRASS, [["cake_top", 0]], false],
-["127:0", BlockTypes.GRASS, [["cocoa", 2]], false],
-["128:0", BlockTypes.STAIR, [["sandstone", 0], ["sandstone", 0], ["sandstone", 3]], true],
-["129:0", BlockTypes.CUBE, [["emerald_ore", 0]], true],
-["133:0", BlockTypes.CUBE, [["emerald_block", 0]], true],
-["134:0", BlockTypes.STAIR, [["planks", 1]], true],
-["135:0", BlockTypes.STAIR, [["planks", 2]], true],
-["136:0", BlockTypes.STAIR, [["planks", 3]], true],
-["139:0", BlockTypes.STONEWALL, [["cobblestone", 0]], true],
-["139:1", BlockTypes.STONEWALL, [["cobblestone_mossy", 0]], true],
-["140:0", BlockTypes.GRASS, [["flower_pot", 0]], false],
-["141:0", BlockTypes.GRASS, [["carrots", 3]], false],
-["142:0", BlockTypes.GRASS, [["potatoes", 3]], false],
-//FIXME HEADS
-["144:0", -1, [], false, "Head"],
-["145:0", BlockTypes.GRASS, [["anvil_top_damaged_x", 0]], false, "Anvil"],
-["145:1", BlockTypes.GRASS, [["anvil_top_damaged_x", 1]], false, "Anvil"],
-["145:2", BlockTypes.GRASS, [["anvil_top_damaged_x", 2]], false, "Anvil"],
-["152:0", BlockTypes.CUBE, [["redstone_block", 0]], true],
-["153:0", BlockTypes.CUBE, [["quartz_ore", 0]], true],
-["155:0", BlockTypes.CUBE, [["quartz_block", 1]], true],
-["155:1", BlockTypes.CUBE, [["quartz_block", 3], ["quartz_block", 3], ["quartz_block", 4]], true],
-["155:2", BlockTypes.CUBE, [["quartz_block", 5]], true],
-["156:0", BlockTypes.STAIR, [["quartz_block", 1]], true],
-["157:0", BlockTypes.CUBE, [["planks", 0]], true, "Double slab"],
-["157:1", BlockTypes.CUBE, [["planks", 1]], true, "Double slab"],
-["157:2", BlockTypes.CUBE, [["planks", 2]], true, "Double slab"],
-["157:3", BlockTypes.CUBE, [["planks", 3]], true, "Double slab"],
-["157:4", BlockTypes.CUBE, [["planks", 4]], true, "Double slab"],
-["157:5", BlockTypes.CUBE, [["planks", 5]], true, "Double slab"],
-["158:0", BlockTypes.SLAB, [["planks", 0]], true],
-["158:1", BlockTypes.SLAB, [["planks", 1]], true],
-["158:2", BlockTypes.SLAB, [["planks", 2]], true],
-["158:3", BlockTypes.SLAB, [["planks", 3]], true],
-["158:4", BlockTypes.SLAB, [["planks", 4]], true],
-["158:5", BlockTypes.SLAB, [["planks", 5]], true],
-["158:8", BlockTypes.SLAB, [["planks", 0]], true, "Upper"],
-["158:9", BlockTypes.SLAB, [["planks", 1]], true, "Upper"],
-["158:10", BlockTypes.SLAB, [["planks", 2]], true, "Upper"],
-["158:11", BlockTypes.SLAB, [["planks", 3]], true, "Upper"],
-["158:12", BlockTypes.SLAB, [["planks", 4]], true, "Upper"],
-["158:13", BlockTypes.SLAB, [["planks", 5]], true, "Upper"],
-["159:0", BlockTypes.CUBE, [["stained_clay", 0]], true],
-["159:1", BlockTypes.CUBE, [["stained_clay", 1]], true],
-["159:2", BlockTypes.CUBE, [["stained_clay", 2]], true],
-["159:3", BlockTypes.CUBE, [["stained_clay", 3]], true],
-["159:4", BlockTypes.CUBE, [["stained_clay", 4]], true],
-["159:5", BlockTypes.CUBE, [["stained_clay", 5]], true],
-["159:6", BlockTypes.CUBE, [["stained_clay", 6]], true],
-["159:7", BlockTypes.CUBE, [["stained_clay", 7]], true],
-["159:8", BlockTypes.CUBE, [["stained_clay", 8]], true],
-["159:9", BlockTypes.CUBE, [["stained_clay", 9]], true],
-["159:10", BlockTypes.CUBE, [["stained_clay", 10]], true],
-["159:11", BlockTypes.CUBE, [["stained_clay", 11]], true],
-["159:12", BlockTypes.CUBE, [["stained_clay", 12]], true],
-["159:13", BlockTypes.CUBE, [["stained_clay", 13]], true],
-["159:14", BlockTypes.CUBE, [["stained_clay", 14]], true],
-["159:15", BlockTypes.CUBE, [["stained_clay", 15]], true],
-["161:0", BlockTypes.CUBE, [["leaves_opaque2", 0]], true],
-["161:1", BlockTypes.CUBE, [["leaves_opaque2", 1]], true],
-["162:0", BlockTypes.CUBE, [["log2", 0], ["log2", 0], ["log2", 1]], true],
-["162:1", BlockTypes.CUBE, [["log2", 2], ["log2", 2], ["log2", 3]], true],
-["163:0", BlockTypes.STAIR, [["planks", 4]], true],
-["164:0", BlockTypes.STAIR, [["planks", 5]], true],
-["170:0", BlockTypes.CUBE, [["hayblock", 1], ["hayblock", 1], ["hayblock", 0]], true],
-["171:0", BlockTypes.CARPET, [["wool", 0]], true],
-["171:1", BlockTypes.CARPET, [["wool", 1]], true],
-["171:2", BlockTypes.CARPET, [["wool", 2]], true],
-["171:3", BlockTypes.CARPET, [["wool", 3]], true],
-["171:4", BlockTypes.CARPET, [["wool", 4]], true],
-["171:5", BlockTypes.CARPET, [["wool", 5]], true],
-["171:6", BlockTypes.CARPET, [["wool", 6]], true],
-["171:7", BlockTypes.CARPET, [["wool", 7]], true],
-["171:8", BlockTypes.CARPET, [["wool", 8]], true],
-["171:9", BlockTypes.CARPET, [["wool", 9]], true],
-["171:10", BlockTypes.CARPET, [["wool", 10]], true],
-["171:11", BlockTypes.CARPET, [["wool", 11]], true],
-["171:12", BlockTypes.CARPET, [["wool", 12]], true],
-["171:13", BlockTypes.CARPET, [["wool", 13]], true],
-["171:14", BlockTypes.CARPET, [["wool", 14]], true],
-["171:15", BlockTypes.CARPET, [["wool", 15]], true],
-["172:0", BlockTypes.CUBE, [["hardened_clay", 0]], true],
-["173:0", BlockTypes.CUBE, [["coal_block", 0]], true],
-["174:0", BlockTypes.CUBE, [["ice_packed", 0]], true],
-["175:0", BlockTypes.GRASS, [["sunflower_additional", 0]], false],
-["175:1", BlockTypes.GRESS, [["double_plant_top", 1]], false],
-["175:2", BlockTypes.GRESS, [["double_plant_top", 2]], false],
-["175:3", BlockTypes.GRESS, [["double_plant_top", 3]], false],
-["175:4", BlockTypes.GRESS, [["double_plant_top", 4]], false],
-["175:5", BlockTypes.GRESS, [["double_plant_top", 5]], false],
-//FIXME fencegate
-["183:0", BlockTypes.GRASS, [["planks", 1]], false, "Fence gate"],
-["184:0", BlockTypes.GRASS, [["planks", 2]], false, "Fence gate"],
-["185:0", BlockTypes.GRASS, [["planks", 3]], false, "Fence gate"],
-["186:0", BlockTypes.GRASS, [["planks", 4]], false, "Fence gate"],
-["187:0", BlockTypes.GRASS, [["planks", 5]], false, "Fence gate"],
-["198:0", BlockTypes.PATHGRASS, [["grass_path", 1], ["grass_path", 1], ["grass_path", 0]], true],
-["243:0", BlockTypes.CUBE, [["dirt", 2], ["dirt", 2], ["dirt", 1]], true],
-["244:0", BlockTypes.GRASS, [["beetroot", 3]], false],
-["245:0", BlockTypes.CUBE, [["stonecutter", 1], ["stonecutter", 0], ["stonecutter", 2]], true],
-["246:0", BlockTypes.CUBE, [["glowing_obsidian", 0]], false],
-["247:0", BlockTypes.CUBE, [["reactor_core", 0]], true],
-["247:1", BlockTypes.CUBE, [["reactor_core", 1]], true],
-["247:2", BlockTypes.CUBE, [["reactor_core", 2]], true],
-["248:0", BlockTypes.CUBE, [["missing_tile", 0]], true],
-["249:0", BlockTypes.CUBE, [["missing_tile", 0]], true]
-];
+
 
 function getBlockDataIndex(id, data) {
 	var key = id + ":" + data;
