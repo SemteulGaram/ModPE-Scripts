@@ -824,7 +824,20 @@ sgUtils.math = {
 		while(value < min) value += range;
 		while(value >= max) value -= range;
 		return value;
-	}
+	},
+
+	/**
+	 * isNumber
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-11-23
+	 *
+	 * @param {string} number
+	 * @return {boolean} isNumber
+	 */
+	 isNumber: function(number) {
+		 return parseInt(number) == number;
+	 }
 }
 
 
@@ -1598,10 +1611,9 @@ sgUtils.modPE = {
 		},
 
 		getPlayer: function(name) {
-			var lname = name.toLowerCase();
 			var list = sgUtils.modPE.entityExtra.getAll();
 			for(var e = 0; e < list.length; e++) {
-				if(Player.isPlayer(list[e]) && Player.getName(list[e]).toLowerCase() === lname) {
+				if(Player.isPlayer(list[e]) && sgUtils.modPE.entityExtra.isEqual(list[e], player)) {
 					return list[e];
 				}
 			}
@@ -4429,6 +4441,8 @@ var EditType = {
 	RESTORE: 0x31
 }
 
+//we_initEdit에서 예외처리, GUI작업을 진행
+//we_edit에서 블럭 분석/설치, 요청작업을 진행
 function we_initEdit(worldEdit, editor, editType, editDetail) {
 	var that = this;
 	if(!editor.isOnline()) {
@@ -4446,9 +4460,14 @@ function we_initEdit(worldEdit, editor, editType, editDetail) {
 
 		//EditDetail: [FilledBlock]
 		case EditType.FILL:
+		//위치가 지정되어 있는가?
+		if(editor.getPos1() === null || editor.getPos2() === null) {
+			msg("위치1, 2를 지정해 주세요", editor.getName());
+			return;
+		}
 		//현재 작업 상태
 		var atv_m = 0;
-		//작업
+		//작업 쓰레드 준비
 		var atv = thread(function() {try{
 			//로컬작업일 경우 로딩 프로그래스바 쓰레드 생성
 			if(editor.getName().toLowerCase() === (Player.getName(Player.getEntity())+"").toLowerCase()) {
@@ -4496,8 +4515,7 @@ function we_initEdit(worldEdit, editor, editType, editDetail) {
 
 		if(editDetail === undefined) {
 			var bs = new we_blockSelect("Select 'Fill' block...", "Run", function(id, data) {
-				//FIXME 더 좋은 방법은 없습니까?
-				if(((id-1)+"") === "NaN" || ((data-1)+"") === "NaN") {
+				if(parseInt(id) != id || parseInt(data) != data) {
 					msg("형식에 맞지 않는 입력입니다", editor.getName());
 					return;
 				}
@@ -4523,6 +4541,11 @@ function we_initEdit(worldEdit, editor, editType, editDetail) {
 
 		//EditDetail: []
 		case EditType.CLEAR:
+		//위치가 지정되어 있는가?
+		if(editor.getPos1() === null || editor.getPos2() === null) {
+			msg("위치1, 2를 지정해 주세요", editor.getName());
+			return;
+		}
 		//현재 작업 상태
 		var atv_m = 0;
 		//작업
@@ -4578,119 +4601,186 @@ function we_initEdit(worldEdit, editor, editType, editDetail) {
 
 		//EditDetail: [fromReplaceBlock, toReplaceBlock]
 		case EditType.REPLACE:
+		//예외 처리
+		if(editor.getPos1() === null || editor.getPos2() === null) {
+			msg("위치1, 2를 지정해 주세요", editor.getName());
+			return;
+		}
 		break;
 
 
 
 		//EditDetail: [FilledBlock]
 		case EditType.WALL:
+		//예외 처리
+		if(editor.getPos1() === null || editor.getPos2() === null) {
+			msg("위치1, 2를 지정해 주세요", editor.getName());
+			return;
+		}
 		break;
 
 
 
 		//EditDetail: [isHollow, FilledBlock]
 		case EditType.SPHERE:
+		//예외 처리
+		if(editor.getPos1() === null) {
+			msg("위치1을 지정해 주세요", editor.getName());
+			return;
+		}
 		break;
 
 
 
 		//EditDetail: [isHollow, FilledBlock, direction]
 		case EditType.HEMISPHERE:
+		//예외 처리
+		if(editor.getPos1() === null) {
+			msg("위치1을 지정해 주세요", editor.getName());
+			return;
+		}
 		break;
 
 
 
 		//EditDetail: [isHollow, FilledBlock, direction]
 		case EditType.CIRCLE:
+		//예외 처리
+		if(editor.getPos1() === null) {
+			msg("위치1을 지정해 주세요", editor.getName());
+			return;
+		}
 		break;
 
 
 		//EditDetail: [isHollow, FilledBlock, direction]
 		case EditType.SEMICIRCLE:
+		//예외 처리
+		if(editor.getPos1() === null) {
+			msg("위치1을 지정해 주세요", editor.getName());
+			return;
+		}
 		break;
 
 
 
 		//EditDetail: []
 		case EditType.COPY:
+		//예외 처리
+		if(editor.getPos1() === null || editor.getPos2() === null) {
+			msg("위치1, 2를 지정해 주세요", editor.getName());
+			return;
+		}
 		break;
 
 
 
 		//EditDetail: []
 		case EditType.CUT:
+		//예외 처리
+		if(editor.getPos1() === null || editor.getPos2() === null) {
+			msg("위치1, 2를 지정해 주세요", editor.getName());
+			return;
+		}
 		break;
 
 
 
 		//EditDetail: []
 		case EditType.PASTE:
+		//예외 처리
+		if(editor.getPos1() === null) {
+			msg("위치1을 지정해 주세요", editor.getName());
+			return;
+		}
+		//예외 처리
+		if(editor.getCopy() === null) {
+			msg("복사된 블럭이 없습니다", editor.getName());
+			return;
+		}
 		break;
 
 
 
 		//EditDetail: [axis]
 		case EditType.FLIP:
+		//예외 처리
+		if(editor.getCopy() === null) {
+			msg("복사된 블럭이 없습니다", editor.getName());
+			return;
+		}
 		break;
 
 
 
 		//EditDetail: [axis, degree]
 		case EditType.ROTATION:
+		//예외 처리
+		if(editor.getCopy() === null) {
+			msg("복사된 블럭이 없습니다", editor.getName());
+			return;
+		}
 		break;
 
 
 
 		//EditDetail: []
+		//정상적인 방법으로는 호출될 일 없음 (다른 에딧 작업하면서 자동으로 작업됨)
 		case EditType.BACKUP:
+		//누군가 잉여력 넘치는 방법으로 호출했다면 작동해주는게 인지상정(테스트 안해봐서 안될지도?)
+		//예외 처리
+		if(editor.getPos1() === null || editor.getPos2() === null) {
+			msg("위치1, 2를 지정해 주세요", editor.getName());
+			return;
+		}
 		break;
 
 
 
 		//EditDetail: []
 		case EditType.RESTORE:
+		//예외 처리
+		if(editor.getBackup() === null) {
+			msg("백업된 조각이 없습니다", editor.getName());
+			return;
+		}
 		break;
 	}
 }
 
+//we_initEdit에서 예외처리, GUI작업을 진행
+//we_edit에서 블럭 분석/설치, 요청작업을 진행
 function we_edit(workType, editType, editor, detail) {
 	var that = this;
 	sgUtils.data.isProcessing = true;
-
-	var pos1 = editor.getPos1();
-	var pos2 = editor.getPos2();
-
-	//더 작은 값을 시작값(s) 큰값을 끝값(e)으로 지정
-	var sx = (pos1.getX() < pos2.getX()) ? pos1.getX() : pos2.getX();
-	var sy = (pos1.getY() < pos2.getY()) ? pos1.getY() : pos2.getY();
-	var sz = (pos1.getZ() < pos2.getZ()) ? pos1.getZ() : pos2.getZ();
-	var ex = (pos1.getX() > pos2.getX()) ? pos1.getX() : pos2.getX();
-	var ey = (pos1.getY() > pos2.getY()) ? pos1.getY() : pos2.getY();
-	var ez = (pos1.getZ() > pos2.getZ()) ? pos1.getZ() : pos2.getZ();
-	var max = (ex-sx+1)*(ey-sy+1)*(ez-sz+1);
 
 	switch(editType) {
 
 		//EditDetail: [FilledBlock]
 		case EditType.FILL:
-		//위치가 지정되어 있는가?
-		if(pos1 === null || pos2 === null) {
-			msg("위치1, 2를 지정해 주세요", editor.getName());
-			sgUtils.data.isProcessing = false;
-			return false;
-		}
+		var pos1 = editor.getPos1();
+		var pos2 = editor.getPos2();
+
+		//더 작은 값을 시작값(s) 큰값을 끝값(e)으로 지정
+		var sx = (pos1.getX() < pos2.getX()) ? pos1.getX() : pos2.getX();
+		var sy = (pos1.getY() < pos2.getY()) ? pos1.getY() : pos2.getY();
+		var sz = (pos1.getZ() < pos2.getZ()) ? pos1.getZ() : pos2.getZ();
+		var ex = (pos1.getX() > pos2.getX()) ? pos1.getX() : pos2.getX();
+		var ey = (pos1.getY() > pos2.getY()) ? pos1.getY() : pos2.getY();
+		var ez = (pos1.getZ() > pos2.getZ()) ? pos1.getZ() : pos2.getZ();
+		var max = (ex-sx+1)*(ey-sy+1)*(ez-sz+1);
 		sgUtils.data.progress = [0, max];
 
 		var bid = detail[0].getId();
 		var bdata = detail[0].getData();
 		var blocks = [];
-		for(var cy = sy; cy <= ey; cy++) {
-			for(var cz = sz; cz <= ez; cz++) {
-				for(var cx = sx; cx <= ex; cx++) {
+		for(var y = sy; y <= ey; y++) {
+			for(var z = sz; z <= ez; z++) {
+				for(var x = sx; x <= ex; x++) {
 					if(workType === 0) {
-						Level.setTile(cx, cy, cz, bid, bdata);
+						Level.setTile(x, y, z, bid, bdata);
 					}else {
-						blocks.push([cx, cy, cz, bid, bdata]);
+						blocks.push([x, y, z, bid, bdata]);
 						//TODO
 					}
 					sgUtils.data.progress[0]++;
@@ -4703,22 +4793,27 @@ function we_edit(workType, editType, editor, detail) {
 
 		//EditDetail: []
 		case EditType.CLEAR:
-		//위치가 지정되어 있는가?
-		if(pos1 === null || pos2 === null) {
-			msg("위치1, 2를 지정해 주세요", editor.getName());
-			sgUtils.data.isProcessing = false;
-			return false;
-		}
+		var pos1 = editor.getPos1();
+		var pos2 = editor.getPos2();
+
+		//더 작은 값을 시작값(s) 큰값을 끝값(e)으로 지정
+		var sx = (pos1.getX() < pos2.getX()) ? pos1.getX() : pos2.getX();
+		var sy = (pos1.getY() < pos2.getY()) ? pos1.getY() : pos2.getY();
+		var sz = (pos1.getZ() < pos2.getZ()) ? pos1.getZ() : pos2.getZ();
+		var ex = (pos1.getX() > pos2.getX()) ? pos1.getX() : pos2.getX();
+		var ey = (pos1.getY() > pos2.getY()) ? pos1.getY() : pos2.getY();
+		var ez = (pos1.getZ() > pos2.getZ()) ? pos1.getZ() : pos2.getZ();
+		var max = (ex-sx+1)*(ey-sy+1)*(ez-sz+1);
 		sgUtils.data.progress = [0, max];
 
 		var blocks = [];
-		for(var cy = sy; cy <= ey; cy++) {
-			for(var cz = sz; cz <= ez; cz++) {
-				for(var cx = sx; cx <= ex; cx++) {
+		for(var y = sy; y <= ey; y++) {
+			for(var z = sz; z <= ez; z++) {
+				for(var x = sx; x <= ex; x++) {
 					if(workType === 0) {
-						Level.setTile(cx, cy, cz, 0, 0);
+						Level.setTile(x, y, z, 0, 0);
 					}else {
-						blocks.push([cx, cy, cz, 0, 0]);
+						blocks.push([x, y, z, 0, 0]);
 						//TODO
 					}
 					sgUtils.data.progress[0]++;
@@ -4731,12 +4826,17 @@ function we_edit(workType, editType, editor, detail) {
 
 		//EditDetail: [fromReplaceBlock, toReplaceBlock]
 		case EditType.REPLACE:
-		//위치가 지정되어 있는가?
-		if(pos1 === null || pos2 === null) {
-			msg("위치1, 2를 지정해 주세요", editor.getName());
-			sgUtils.data.isProcessing = false;
-			return false;
-		}
+		var pos1 = editor.getPos1();
+		var pos2 = editor.getPos2();
+
+		//더 작은 값을 시작값(s) 큰값을 끝값(e)으로 지정
+		var sx = (pos1.getX() < pos2.getX()) ? pos1.getX() : pos2.getX();
+		var sy = (pos1.getY() < pos2.getY()) ? pos1.getY() : pos2.getY();
+		var sz = (pos1.getZ() < pos2.getZ()) ? pos1.getZ() : pos2.getZ();
+		var ex = (pos1.getX() > pos2.getX()) ? pos1.getX() : pos2.getX();
+		var ey = (pos1.getY() > pos2.getY()) ? pos1.getY() : pos2.getY();
+		var ez = (pos1.getZ() > pos2.getZ()) ? pos1.getZ() : pos2.getZ();
+		var max = (ex-sx+1)*(ey-sy+1)*(ez-sz+1);
 		sgUtils.data.progress = [0, max];
 
 		var bid = detail[0].getId();
@@ -4744,17 +4844,17 @@ function we_edit(workType, editType, editor, detail) {
 		var bid2 = detail[1].getId();
 		var bdata2 = detail[1].getData();
 		var blocks = [];
-		for(var cy = sy; cy <= ey; cy++) {
-			for(var cz = sz; cz <= ez; cz++) {
-				for(var cx = sx; cx <= ex; cx++) {
+		for(var y = sy; y <= ey; y++) {
+			for(var z = sz; z <= ez; z++) {
+				for(var x = sx; x <= ex; x++) {
 					sgUtils.data.progress[0]++;
-					if(Level.getTile(cx, cy, cz) !== bid || Level.getData(cx, cy, cz) !== bdata) {
+					if(Level.getTile(x, y, z) !== bid || Level.getData(x, y, z) !== bdata) {
 						continue;
 					}
 					if(workType === 0) {
-						Level.setTile(cx, cy, cz, bid2, bdata2);
+						Level.setTile(x, y, z, bid2, bdata2);
 					}else {
-						blocks.push([cx, cy, cz, bid2, bdata2]);
+						blocks.push([x, y, z, bid2, bdata2]);
 						//TODO
 					}
 				}
@@ -4766,19 +4866,24 @@ function we_edit(workType, editType, editor, detail) {
 
 		//EditDetail: [FilledBlock]
 		case EditType.WALL:
-		//위치가 지정되어 있는가?
-		if(pos1 === null || pos2 === null) {
-			msg("위치1, 2를 지정해 주세요", editor.getName());
-			sgUtils.data.isProcessing = false;
-			return false;
-		}
+		var pos1 = editor.getPos1();
+		var pos2 = editor.getPos2();
+
+		//더 작은 값을 시작값(s) 큰값을 끝값(e)으로 지정
+		var sx = (pos1.getX() < pos2.getX()) ? pos1.getX() : pos2.getX();
+		var sy = (pos1.getY() < pos2.getY()) ? pos1.getY() : pos2.getY();
+		var sz = (pos1.getZ() < pos2.getZ()) ? pos1.getZ() : pos2.getZ();
+		var ex = (pos1.getX() > pos2.getX()) ? pos1.getX() : pos2.getX();
+		var ey = (pos1.getY() > pos2.getY()) ? pos1.getY() : pos2.getY();
+		var ez = (pos1.getZ() > pos2.getZ()) ? pos1.getZ() : pos2.getZ();
+		var max = (ex-sx+1)*(ey-sy+1)*(ez-sz+1);
 		sgUtils.data.progress = [0, max];
 
 		var bid = detail[0].getId();
 		var bdata = detail[0].getData();
 		var blocks = [];
-		for(var cy = sy; cy <= ey; cy++) {
-			for(var cz = sz; cz <= ez; cz += (ez-sz)) {
+		for(var y = sy; y <= ey; y++) {
+			for(var z = sz; z <= ez; z += (ez-sz)) {
 				for(var cx = sx; cx <= ex; cx += (ex-sx)) {
 					if(workType === 0) {
 						Level.setTile(cx, cy, cz, bid, bdata);
@@ -4796,20 +4901,117 @@ function we_edit(workType, editType, editor, detail) {
 
 		//EditDetail: [isHollow, FilledBlock, radious]
 		case EditType.SPHERE:
-		//위치가 지정되어 있는가?
-		if(pos1 === null) {
-			msg("위치1을 지정해 주세요", editor.getName());
-			sgUtils.data.isProcessing = false;
-			return false;
-		}
+		var pos1 = editor.getPos1();
 
-		sx -= detail[2]
+		//반지름 사이즈에 맞게 크기를 재설정
+		var cx = pos1.getX();
+		var cy = pos1.getY();
+		var cz = pos1.getZ();
+		var rel = detail[2]-1;
+		var max =  Math.pow(Math.pow(rel, 2)+1, 3);
+		sgUtils.data.progress = [0, max];
+
+		var bid = detail[1].getId();
+		var bdata = detail[1].getData();
+		var blocks = [];
+		for(var y = cy-rel; y <= cy+rel; y++) {
+			for(var z = cz-rel; z <= cz+rel; z++) {
+				for(var x = cx-rel; x <= cx+rel; x++) {
+					if(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2) < Math.pow((detail[2]-0.5), 2)) {
+						sgUtils.data.progress[0]++;
+						if(detail[0] && !(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2) >= (Math.pow((detail[2]-1.5), 2)))) {
+							continue;
+						}
+						if(workType === 0) {
+							Level.setTile(cx + x, cy + y, cz + z, bid, bdata);
+						}else {
+							blocks.push([cx + x, cy + y, cz + z, bid, bdata]);
+						}
+					}
+				}
+			}
+		}
 		break;
 
 
 
 		//EditDetail: [isHollow, FilledBlock, radious, direction]
 		case EditType.HEMISPHERE:
+		var pos1 = editor.getPos1();
+
+		//반지름 사이즈에 맞게 크기를 재설정
+		var cx = pos1.getX();
+		var cy = pos1.getY();
+		var cz = pos1.getZ();
+		var rel = detail[2]-1;
+		var max =  Math.pow(Math.pow(rel, 2)+1, 3);
+		sgUtils.data.progress = [0, max];
+
+		//방향 (속도 향상을 위해 문자열을 숫자로 전환)
+		var dire;
+		switch(detail[3]) {
+			case "x+":
+			dire = 0;
+			break;
+			case "x-":
+			dire = 1;
+			break;
+			case "y+":
+			dire = 2;
+			break;
+			case "y-":
+			dire = 3;
+			break;
+			case "z+":
+			dire = 4;
+			break;
+			case "z-":
+			dire = 5;
+			break;
+			default://예외 처리 했을탠데...
+			throw new Error("Unknown direction type: " + detail[3]);
+		}
+
+		var bid = detail[1].getId();
+		var bdata = detail[1].getData();
+		var blocks = [];
+		for(var y = cy-rel; y <= cy+rel; y++) {
+			for(var z = cz-rel; z <= cz+rel; z++) {
+				for(var x = cx-rel; x <= cx+rel; x++) {
+					switch(dire) {
+						case 0:
+						if(x < 0) continue;
+						break;
+						case 1:
+						if(x > 0) continue;
+						break;
+						case 2:
+						if(y < 0) continue;
+						break;
+						case 3:
+						if(y > 0) continue;
+						break;
+						case 4:
+						if(z < 0) continue;
+						break;
+						case 5:
+						if(z > 0) continue;
+						break;
+					}
+					if(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2) < Math.pow((detail[2]-0.5), 2)) {
+						sgUtils.data.progress[0]++;
+						if(detail[0] && !(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2) >= (Math.pow((detail[2]-1.5), 2)))) {
+							continue;
+						}
+						if(workType === 0) {
+							Level.setTile(cx + x, cy + y, cz + z, bid, bdata);
+						}else {
+							blocks.push([cx + x, cy + y, cz + z, bid, bdata]);
+						}
+					}
+				}
+			}
+		}
 		break;
 
 
@@ -4827,12 +5029,17 @@ function we_edit(workType, editType, editor, detail) {
 
 		//EditDetail: []
 		case EditType.COPY:
-		//위치가 지정되어 있는가?
-		if(pos1 === null || pos2 === null) {
-			msg("위치1, 2를 지정해 주세요", editor.getName());
-			sgUtils.data.isProcessing = false;
-			return false;
-		}
+		var pos1 = editor.getPos1();
+		var pos2 = editor.getPos2();
+
+		//더 작은 값을 시작값(s) 큰값을 끝값(e)으로 지정
+		var sx = (pos1.getX() < pos2.getX()) ? pos1.getX() : pos2.getX();
+		var sy = (pos1.getY() < pos2.getY()) ? pos1.getY() : pos2.getY();
+		var sz = (pos1.getZ() < pos2.getZ()) ? pos1.getZ() : pos2.getZ();
+		var ex = (pos1.getX() > pos2.getX()) ? pos1.getX() : pos2.getX();
+		var ey = (pos1.getY() > pos2.getY()) ? pos1.getY() : pos2.getY();
+		var ez = (pos1.getZ() > pos2.getZ()) ? pos1.getZ() : pos2.getZ();
+		var max = (ex-sx+1)*(ey-sy+1)*(ez-sz+1);
 		sgUtils.data.progress = [0, max];
 
 		var blocks = [];
@@ -4850,21 +5057,25 @@ function we_edit(workType, editType, editor, detail) {
 
 
 		//EditDetail: []
+		case EditType.CUT:
+		//이 메소드가 꼭 필요하신가요?? 그냥 복사하고 지우기 메소드를 같이 사용하면...
+		throw new Error("EditType.CUT method isn't implemented");
+		sgUtils.data.isProcessing = false;
+		return false;
+		break;
+
+
+
+		//EditDetail: []
 		case EditType.PASTE:
-		//위치가 지정되어 있는가?
-		if(pos1 === null) {
-			msg("위치1을 지정해 주세요", editor.getName());
-			sgUtils.data.isProcessing = false;
-			return false;
-		}
+		var pos1 = editor.getPos1();
 
-		var piece = editor.getCopy();
-		if(piece === null) {
-			msg("복사된 블럭이 없습니다", editor.getName());
-			sgUtils.data.isProcessing = false;
-			return false;
-		}
+		var sx = pos1.getX()
+		var sy = pos1.getY();
+		var sz = pos1.getZ();
 
+		//조각 정보
+		var piece =  editor.getCopy();
 		var px = piece.getSizeX();
 		var py = piece.getSizeY();
 		var pz = piece.getSizeZ();
@@ -4891,12 +5102,6 @@ function we_edit(workType, editType, editor, detail) {
 		//EditDetail: [axis]
 		case EditType.FLIP:
 		var piece = editor.getCopy();
-		if(piece === null) {
-			msg("복사된 블럭이 없습니다", editor.getName());
-			sgUtils.data.isProcessing = false;
-			return false;
-		}
-
 		//뒤집기 요청
 		piece.flip(detail[0]);
 		break;
@@ -4906,12 +5111,6 @@ function we_edit(workType, editType, editor, detail) {
 		//EditDetail: [axis, degree]
 		case EditType.ROTATION:
 		var piece = editor.getCopy();
-		if(piece === null) {
-			msg("복사된 블럭이 없습니다", editor.getName());
-			sgUtils.data.isProcessing = false;
-			return false;
-		}
-
 		//뒤집기 요청
 		piece.rotation(detail[0], detail[1]);
 		break;
@@ -4920,12 +5119,18 @@ function we_edit(workType, editType, editor, detail) {
 
 		//EditDetail: []
 		case EditType.BACKUP:
-		//위치가 지정되어 있는가?
-		if(pos1 === null || pos2 === null) {
-			msg("위치1, 2를 지정해 주세요", editor.getName());
-			sgUtils.data.isProcessing = false;
-			return false;
-		}
+		var pos1 = editor.getPos1();
+		var pos2 = editor.getPos2();
+
+		//더 작은 값을 시작값(s) 큰값을 끝값(e)으로 지정
+		var sx = (pos1.getX() < pos2.getX()) ? pos1.getX() : pos2.getX();
+		var sy = (pos1.getY() < pos2.getY()) ? pos1.getY() : pos2.getY();
+		var sz = (pos1.getZ() < pos2.getZ()) ? pos1.getZ() : pos2.getZ();
+		var ex = (pos1.getX() > pos2.getX()) ? pos1.getX() : pos2.getX();
+		var ey = (pos1.getY() > pos2.getY()) ? pos1.getY() : pos2.getY();
+		var ez = (pos1.getZ() > pos2.getZ()) ? pos1.getZ() : pos2.getZ();
+		var max = (ex-sx+1)*(ey-sy+1)*(ez-sz+1);
+
 		sgUtils.data.progress = [0, max];
 
 		var blocks = [];
@@ -4949,11 +5154,6 @@ function we_edit(workType, editType, editor, detail) {
 		var piece = editor.getBackup();
 		//백업된 조각의 위치 불러오기
 		var pos = editor.getBackupPos();
-		if(piece === null) {
-			msg("백업된 블럭이 없습니다", editor.getName());
-			sgUtils.data.isProcessing = false;
-			return false;
-		}
 
 		//위치를 백업된 조각의 위치로 재설정
 		sx = pos.getX();
@@ -4987,6 +5187,7 @@ function we_edit(workType, editType, editor, detail) {
 
 
 
+//단지 블럭 선택창만을 위한 메서드
 function we_blockSelect(title, confirmText, confirmFunc, cancelTxt, cancelFunc) {
 	var that = this;
 	this.name = title;
@@ -5033,11 +5234,11 @@ we_blockSelect.prototype = {
 			cf = sgUtils.gui.mcFastButton(this.cfText, sg.px*0xa, false, sgColors.main, null, null, null, [sg.px*8, sg.px*8, sg.px*8, sg.px*8], null, null, null, function(view) {
 				var id = main.idEditText.getText() + "";
 				var damage = main.damageEditText.getText() + "";
-				if(((id-1)+"") === "NaN") {
+				if(parseInt(id) != id) {
 					we_toast("정확한 블럭 아이디를 입력해 주세요");
 					return;
 				}
-				if(((damage-1)+"") === "NaN") {
+				if(parseInt(data) != data) {
 					damage = 0;
 				}
 				that.cfFunc(id, damage);

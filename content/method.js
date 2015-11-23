@@ -254,6 +254,7 @@ function thread(fc) {
  * ㄴ math
  *   ㄴ randomId
  *   ㄴ leftOver
+ *   ㄴ isNumber
  * ㄴ vector
  *   ㄴ DerectionToVector √
  *   ㄴ VectorToDirection
@@ -884,7 +885,20 @@ sgUtils.math = {
 		while(value < min) value += range;
 		while(value >= max) value -= range;
 		return value;
-	}
+	},
+
+	/**
+	 * isNumber
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-11-23
+	 *
+	 * @param {string} number
+	 * @return {boolean} isNumber
+	 */
+	 isNumber: function(number) {
+		 return parseInt(number) == number;
+	 }
 }
 
 
