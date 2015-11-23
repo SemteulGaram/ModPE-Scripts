@@ -3588,7 +3588,7 @@ function WorldEdit() {
 	this.blockImagesLayout = null;
 	this.currentSelectedBlock = null;
 	this.blockIdLayout = null;
-	
+
 	sgUtils.data.isProcessing = false;
 	sgUtils.data.progress = [0, 1];
 }
@@ -4330,6 +4330,8 @@ function we_editor(editorGroup, name) {
 	this.pos1 = null;
 	this.pos2 = null;
 	this.backup = null;
+	this.backupPos = null;
+	this.copy = null;
 }
 
 we_editor.prototype = {
@@ -4370,6 +4372,10 @@ we_editor.prototype = {
 		return this.backupPos;
 	},
 
+	getCopy: function() {
+		return this.copy;
+	},
+
 	setPos1: function(pos) {
 		if(!(pos instanceof Vector3)) {
 			throw new TypeError("Parameter 'pos' must instance of Vector3");
@@ -4393,6 +4399,13 @@ we_editor.prototype = {
 		}
 		this.backup = piece;
 		this.backupPos = pos;
+	},
+
+	setCopy: function(piece, pos) {
+		if(!(piece instanceof Piece)) {
+			throw new TypeError("Parameter 'piece' must instance of Piece");
+		}
+		this.copy = piece;
 	}
 }
 
@@ -4480,7 +4493,7 @@ function we_initEdit(worldEdit, editor, editType, editDetail) {
 		}catch(err) {
 			showError(err);
 		}});
-		
+
 		if(editDetail === undefined) {
 			var bs = new we_blockSelect("Select 'Fill' block...", "Run", function(id, data) {
 				//FIXME 더 좋은 방법은 없습니까?
@@ -4643,28 +4656,31 @@ function we_initEdit(worldEdit, editor, editType, editDetail) {
 function we_edit(workType, editType, editor, detail) {
 	var that = this;
 	sgUtils.data.isProcessing = true;
+
+	var pos1 = editor.getPos1();
+	var pos2 = editor.getPos2();
+
+	//더 작은 값을 시작값(s) 큰값을 끝값(e)으로 지정
+	var sx = (pos1.getX() < pos2.getX()) ? pos1.getX() : pos2.getX();
+	var sy = (pos1.getY() < pos2.getY()) ? pos1.getY() : pos2.getY();
+	var sz = (pos1.getZ() < pos2.getZ()) ? pos1.getZ() : pos2.getZ();
+	var ex = (pos1.getX() > pos2.getX()) ? pos1.getX() : pos2.getX();
+	var ey = (pos1.getY() > pos2.getY()) ? pos1.getY() : pos2.getY();
+	var ez = (pos1.getZ() > pos2.getZ()) ? pos1.getZ() : pos2.getZ();
+	var max = (ex-sx+1)*(ey-sy+1)*(ez-sz+1);
+
 	switch(editType) {
 
 		//EditDetail: [FilledBlock]
 		case EditType.FILL:
-		var pos1 = editor.getPos1();
-		var pos2 = editor.getPos2();
 		//위치가 지정되어 있는가?
 		if(pos1 === null || pos2 === null) {
 			msg("위치1, 2를 지정해 주세요", editor.getName());
 			sgUtils.data.isProcessing = false;
 			return false;
 		}
-		//더 작은 값을 시작값(s) 큰값을 끝값(e)으로 지정
-		var sx = (pos1.getX() < pos2.getX()) ? pos1.getX() : pos2.getX();
-		var sy = (pos1.getY() < pos2.getY()) ? pos1.getY() : pos2.getY();
-		var sz = (pos1.getZ() < pos2.getZ()) ? pos1.getZ() : pos2.getZ();
-		var ex = (pos1.getX() > pos2.getX()) ? pos1.getX() : pos2.getX();
-		var ey = (pos1.getY() > pos2.getY()) ? pos1.getY() : pos2.getY();
-		var ez = (pos1.getZ() > pos2.getZ()) ? pos1.getZ() : pos2.getZ();
-		var max = (ex-sx+1)*(ey-sy+1)*(ez-sz+1);
 		sgUtils.data.progress = [0, max];
-		
+
 		var bid = detail[0].getId();
 		var bdata = detail[0].getData();
 		var blocks = [];
@@ -4675,6 +4691,7 @@ function we_edit(workType, editType, editor, detail) {
 						Level.setTile(cx, cy, cz, bid, bdata);
 					}else {
 						blocks.push([cx, cy, cz, bid, bdata]);
+						//TODO
 					}
 					sgUtils.data.progress[0]++;
 				}
@@ -4686,40 +4703,123 @@ function we_edit(workType, editType, editor, detail) {
 
 		//EditDetail: []
 		case EditType.CLEAR:
+		//위치가 지정되어 있는가?
+		if(pos1 === null || pos2 === null) {
+			msg("위치1, 2를 지정해 주세요", editor.getName());
+			sgUtils.data.isProcessing = false;
+			return false;
+		}
+		sgUtils.data.progress = [0, max];
+
+		var blocks = [];
+		for(var cy = sy; cy <= ey; cy++) {
+			for(var cz = sz; cz <= ez; cz++) {
+				for(var cx = sx; cx <= ex; cx++) {
+					if(workType === 0) {
+						Level.setTile(cx, cy, cz, 0, 0);
+					}else {
+						blocks.push([cx, cy, cz, 0, 0]);
+						//TODO
+					}
+					sgUtils.data.progress[0]++;
+				}
+			}
+		}
 		break;
 
 
 
 		//EditDetail: [fromReplaceBlock, toReplaceBlock]
 		case EditType.REPLACE:
+		//위치가 지정되어 있는가?
+		if(pos1 === null || pos2 === null) {
+			msg("위치1, 2를 지정해 주세요", editor.getName());
+			sgUtils.data.isProcessing = false;
+			return false;
+		}
+		sgUtils.data.progress = [0, max];
+
+		var bid = detail[0].getId();
+		var bdata = detail[0].getData();
+		var bid2 = detail[1].getId();
+		var bdata2 = detail[1].getData();
+		var blocks = [];
+		for(var cy = sy; cy <= ey; cy++) {
+			for(var cz = sz; cz <= ez; cz++) {
+				for(var cx = sx; cx <= ex; cx++) {
+					sgUtils.data.progress[0]++;
+					if(Level.getTile(cx, cy, cz) !== bid || Level.getData(cx, cy, cz) !== bdata) {
+						continue;
+					}
+					if(workType === 0) {
+						Level.setTile(cx, cy, cz, bid2, bdata2);
+					}else {
+						blocks.push([cx, cy, cz, bid2, bdata2]);
+						//TODO
+					}
+				}
+			}
+		}
 		break;
 
 
 
 		//EditDetail: [FilledBlock]
 		case EditType.WALL:
+		//위치가 지정되어 있는가?
+		if(pos1 === null || pos2 === null) {
+			msg("위치1, 2를 지정해 주세요", editor.getName());
+			sgUtils.data.isProcessing = false;
+			return false;
+		}
+		sgUtils.data.progress = [0, max];
+
+		var bid = detail[0].getId();
+		var bdata = detail[0].getData();
+		var blocks = [];
+		for(var cy = sy; cy <= ey; cy++) {
+			for(var cz = sz; cz <= ez; cz += (ez-sz)) {
+				for(var cx = sx; cx <= ex; cx += (ex-sx)) {
+					if(workType === 0) {
+						Level.setTile(cx, cy, cz, bid, bdata);
+					}else {
+						blocks.push([cx, cy, cz, bid2, bdata2]);
+						//TODO
+					}
+					sgUtils.data.progress[0]++;
+				}
+			}
+		}
 		break;
 
 
 
-		//EditDetail: [isHollow, FilledBlock]
+		//EditDetail: [isHollow, FilledBlock, radious]
 		case EditType.SPHERE:
+		//위치가 지정되어 있는가?
+		if(pos1 === null) {
+			msg("위치1을 지정해 주세요", editor.getName());
+			sgUtils.data.isProcessing = false;
+			return false;
+		}
+
+		sx -= detail[2]
 		break;
 
 
 
-		//EditDetail: [isHollow, FilledBlock, direction]
+		//EditDetail: [isHollow, FilledBlock, radious, direction]
 		case EditType.HEMISPHERE:
 		break;
 
 
 
-		//EditDetail: [isHollow, FilledBlock, direction]
+		//EditDetail: [isHollow, FilledBlock, radious, direction]
 		case EditType.CIRCLE:
 		break;
 
 
-		//EditDetail: [isHollow, FilledBlock, direction]
+		//EditDetail: [isHollow, FilledBlock, radious, direction]
 		case EditType.SEMICIRCLE:
 		break;
 
@@ -4727,54 +4827,14 @@ function we_edit(workType, editType, editor, detail) {
 
 		//EditDetail: []
 		case EditType.COPY:
-		break;
-
-
-
-		//EditDetail: []
-		case EditType.CUT:
-		break;
-
-
-
-		//EditDetail: []
-		case EditType.PASTE:
-		break;
-
-
-
-		//EditDetail: [axis]
-		case EditType.FLIP:
-		break;
-
-
-
-		//EditDetail: [axis, degree]
-		case EditType.ROTATION:
-		break;
-
-
-
-		//EditDetail: []
-		case EditType.BACKUP:
-		var pos1 = editor.getPos1();
-		var pos2 = editor.getPos2();
 		//위치가 지정되어 있는가?
 		if(pos1 === null || pos2 === null) {
 			msg("위치1, 2를 지정해 주세요", editor.getName());
 			sgUtils.data.isProcessing = false;
 			return false;
 		}
-		//더 작은 값을 시작값(s) 큰값을 끝값(e)으로 지정
-		var sx = (pos1.getX() < pos2.getX()) ? pos1.getX() : pos2.getX();
-		var sy = (pos1.getY() < pos2.getY()) ? pos1.getY() : pos2.getY();
-		var sz = (pos1.getZ() < pos2.getZ()) ? pos1.getZ() : pos2.getZ();
-		var ex = (pos1.getX() > pos2.getX()) ? pos1.getX() : pos2.getX();
-		var ey = (pos1.getY() > pos2.getY()) ? pos1.getY() : pos2.getY();
-		var ez = (pos1.getZ() > pos2.getZ()) ? pos1.getZ() : pos2.getZ();
-		var max = (ex-sx+1)*(ey-sy+1)*(ez-sz+1);
 		sgUtils.data.progress = [0, max];
-		
+
 		var blocks = [];
 		for(var cy = sy; cy <= ey; cy++) {
 			for(var cz = sz; cz <= ez; cz++) {
@@ -4784,6 +4844,100 @@ function we_edit(workType, editType, editor, detail) {
 				}
 			}
 		}
+		editor.setCopy(new Piece(ex-sx+1, ey-sy+1, ez-sz+1, blocks));
+		break;
+
+
+
+		//EditDetail: []
+		case EditType.PASTE:
+		//위치가 지정되어 있는가?
+		if(pos1 === null) {
+			msg("위치1을 지정해 주세요", editor.getName());
+			sgUtils.data.isProcessing = false;
+			return false;
+		}
+
+		var piece = editor.getCopy();
+		if(piece === null) {
+			msg("복사된 블럭이 없습니다", editor.getName());
+			sgUtils.data.isProcessing = false;
+			return false;
+		}
+
+		var px = piece.getSizeX();
+		var py = piece.getSizeY();
+		var pz = piece.getSizeZ();
+
+		var blocks = [];
+		var block;
+		for(var ry = 0; ry < px; ry++) {
+			for(var rz = 0; rz < pz; rz++) {
+				for(var rx = 0; rx < px; rx++) {
+					var block = piece.getBlock(rx, ry, rz);
+					if(workType === 0) {
+						Level.setTile(sx+rx, sy+ry, sz+rz, block.getId(), block.getData());
+					}else {
+						blocks.push([sx+rx, sy+ry, sz+rz, block.getId(), block.getData()]);
+						//TODO
+					}
+				}
+			}
+		}
+		break;
+
+
+
+		//EditDetail: [axis]
+		case EditType.FLIP:
+		var piece = editor.getCopy();
+		if(piece === null) {
+			msg("복사된 블럭이 없습니다", editor.getName());
+			sgUtils.data.isProcessing = false;
+			return false;
+		}
+
+		//뒤집기 요청
+		piece.flip(detail[0]);
+		break;
+
+
+
+		//EditDetail: [axis, degree]
+		case EditType.ROTATION:
+		var piece = editor.getCopy();
+		if(piece === null) {
+			msg("복사된 블럭이 없습니다", editor.getName());
+			sgUtils.data.isProcessing = false;
+			return false;
+		}
+
+		//뒤집기 요청
+		piece.rotation(detail[0], detail[1]);
+		break;
+
+
+
+		//EditDetail: []
+		case EditType.BACKUP:
+		//위치가 지정되어 있는가?
+		if(pos1 === null || pos2 === null) {
+			msg("위치1, 2를 지정해 주세요", editor.getName());
+			sgUtils.data.isProcessing = false;
+			return false;
+		}
+		sgUtils.data.progress = [0, max];
+
+		var blocks = [];
+		for(var cy = sy; cy <= ey; cy++) {
+			for(var cz = sz; cz <= ez; cz++) {
+				for(var cx = sx; cx <= ex; cx++) {
+					blocks.push([cx, cy, cz, Level.getTile(cx, cy, cz), Level.getData(cx, cy, cz)]);
+					sgUtils.data.progress[0]++;
+				}
+			}
+		}
+		//백업할 조각이랑 위치정보를 저장
 		editor.setBackup(new Piece(ex-sx+1, ey-sy+1, ez-sz+1, blocks), new Vector3(sx, sy, sz));
 		break;
 
@@ -4791,6 +4945,40 @@ function we_edit(workType, editType, editor, detail) {
 
 		//EditDetail: []
 		case EditType.RESTORE:
+		//백업된 조각 불러오기
+		var piece = editor.getBackup();
+		//백업된 조각의 위치 불러오기
+		var pos = editor.getBackupPos();
+		if(piece === null) {
+			msg("백업된 블럭이 없습니다", editor.getName());
+			sgUtils.data.isProcessing = false;
+			return false;
+		}
+
+		//위치를 백업된 조각의 위치로 재설정
+		sx = pos.getX();
+		sy = pos.getY();
+		sz = pos.getZ();
+		var px = piece.getSizeX();
+		var py = piece.getSizeY();
+		var pz = piece.getSizeZ();
+
+		//복원시작
+		var blocks = [];
+		var block;
+		for(var ry = 0; ry < px; ry++) {
+			for(var rz = 0; rz < pz; rz++) {
+				for(var rx = 0; rx < px; rx++) {
+					var block = piece.getBlock(rx, ry, rz);
+					if(workType === 0) {
+						Level.setTile(sx+rx, sy+ry, sz+rz, block.getId(), block.getData());
+					}else {
+						blocks.push([sx+rx, sy+ry, sz+rz, block.getId(), block.getData()]);
+						//TODO
+					}
+				}
+			}
+		}
 		break;
 	}
 	sgUtils.data.isProcessing = false;
@@ -4884,7 +5072,7 @@ we_blockSelect.prototype = {
 		bid.setPadding(0, sg.px*8, 0, sg.px*8);
 		bid.addView(main.blockIdLayout);
 		rl.addView(bid);
-		
+
 		//content layout
 		var scroll = new ScrollView(ctx);
 		var scroll_p = new sg.rlp(sg.mp, sg.mp);
