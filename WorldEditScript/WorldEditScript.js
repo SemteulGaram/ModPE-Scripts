@@ -3280,6 +3280,7 @@ function WorldEdit() {
 		BtnY: Math.floor(sg.wh/5),
 		BtnVis: 1,
 		MenuLoc: 0,
+		WorkType: 0,
 		WhiteList: [],
 		HollowCircular: 0
 	}
@@ -3584,9 +3585,12 @@ function WorldEdit() {
 ["249:0", BlockTypes.CUBE, [["missing_tile", 0]], true]
 	];
 	this.blockImagesData = null;
-	this.blockImagesLayout = new sg.ll(ctx);
-	this.blockImagesLayout.setOrientation(sg.ll.VERTICAL);
+	this.blockImagesLayout = null;
 	this.currentSelectedBlock = null;
+	this.blockIdLayout = null;
+	
+	sgUtils.data.isProcessing = false;
+	sgUtils.data.progress = [0, 1];
 }
 
 WorldEdit.prototype = {
@@ -3596,21 +3600,72 @@ WorldEdit.prototype = {
 	},
 
 	init: function() {
+		//각종 변수 초기화 및 등록
 		var loading = new sgUtils.gui.progressBar(7);
 		loading.setText("Load WorldEdit script...");
 		loading.show();
+		//설정 불러오기
 		this.loadSetting();
+		//메뉴와 버튼 빌드
 		this.buildButton();
 		this.buildMenu();
+		//메뉴 내부에서 나타나는 프로그래스바 미리 그리기
 		this.loadingLayout = new sg.rl(ctx);
 		var pb = new ProgressBar(ctx);
 		var pb_p = new sg.rl.LayoutParams(sg.px*40, sg.px*40);
 		pb_p.addRule(sg.rl.CENTER_IN_PARENT);
 		pb.setLayoutParams(pb_p);
 		this.loadingLayout.addView(pb);
+		//블럭 이미지를 보관할 레이아웃 미리 생성
+		this.blockImagesLayout = new sg.ll(ctx);
+		this.blockImagesLayout.setOrientation(sg.ll.VERTICAL);
+		this.blockImagesLayout.setGravity(Gravity.CENTER);
+		//블럭 아이디를 입력할 레이아웃
+		this.blockIdLayout = new sg.ll(ctx);
+		this.blockIdLayout.setOrientation(sg.ll.HORIZONTAL);
+		this.blockIdLayout.setGravity(Gravity.CENTER);
+		this.blockIdLayout.setPadding(sg.px*4, 0, sg.px*4, 0);
+		var idTitle = sgUtils.gui.mcFastText("Id:", sg.px*0x10, false, Color.WHITE);
+		var idt_p = new sg.llp(sg.px*30, sg.wc);
+		idTitle.setLayoutParams(idt_p);
+		idTitle.setGravity(Gravity.CENTER);
+		var damageTitle = sgUtils.gui.mcFastText(" Damage:", sg.px*0x10, false, Color.WHITE);
+	 var dgt_p = new sg.llp(sg.px*90, sg.wc);
+		damageTitle.setLayoutParams(dgt_p);
+	 damageTitle.setGravity(Gravity.CENTER);
+		this.idEditText = new EditText(ctx);
+		var idet_p = new sg.llp(Math.floor((sg.ww-(sg.px*140))/2), sg.wc);
+		this.idEditText.setLayoutParams(idet_p);
+		this.idEditText.setBackgroundColor(Color.WHITE);
+		this.idEditText.setTextColor(sgColors.main);
+		this.idEditText.setGravity(Gravity.CENTER|Gravity.RIGHT);
+		this.idEditText.setPadding(sg.px*4, sg.px*4, sg.px*4, sg.px*4);
+		if(sgFiles.font.exists()) {
+			this.idEditText.setTypeface(android.graphics.Typeface.createFromFile(sgFiles.font));
+		}
+		this.idEditText.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, sg.px*0x10);
+		this.damageEditText = new EditText(ctx);
+		var dget_p = new sg.llp(Math.floor((sg.ww-(sg.px*140))/2), sg.wc);
+		this.damageEditText.setLayoutParams(dget_p);
+		this.damageEditText.setBackgroundColor(Color.WHITE);
+		this.damageEditText.setTextColor(sgColors.main);
+		this.damageEditText.setGravity(Gravity.CENTER|Gravity.RIGHT);
+		this.damageEditText.setPadding(sg.px*4, sg.px*4, sg.px*4, sg.px*4);
+		if(sgFiles.font.exists()) {
+			this.damageEditText.setTypeface(android.graphics.Typeface.createFromFile(sgFiles.font));
+		}
+		this.damageEditText.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, sg.px*0x10);
+		this.blockIdLayout.addView(idTitle);
+		this.blockIdLayout.addView(this.idEditText);
+		this.blockIdLayout.addView(damageTitle);
+		this.blockIdLayout.addView(this.damageEditText);
+		//에딧 그룹의 화이트 리스트 불러오기
 		this.editorGroup.init();
+		//블럭 이미지 빌드
 		this.buildBlockImages();
+		//로딩 끝
 		this.readyInit = true;
+		//우측 하단의 로딩창 닫기
 		loading.close();
 	},
 
@@ -3832,16 +3887,16 @@ WorldEdit.prototype = {
 		this.mainMenu.addMenu(this.contentType.REDIRECT_MENU, "Setting", mm_setting);
 		//에딧메뉴 목록
 		mm_edit.addMenu(this.contentType.RUN_FUNCTION, "Fill", function() {
-
+			we_initEdit(that, that.getLocalEditor(), EditType.FILL);
 		});
-		mm_edit.addMenu(this.contentType.RUN_FUNCTION, "Clean", function() {
-
+		mm_edit.addMenu(this.contentType.RUN_FUNCTION, "Clear", function() {
+			we_initEdit(that, that.getLocalEditor(), EditType.CLEAR);
 		});
 		mm_edit.addMenu(this.contentType.RUN_FUNCTION, "Replace", function() {
-
+			we_initEdit(that, that.getLocalEditor(), EditType.REPLACE);
 		});
 		mm_edit.addMenu(this.contentType.RUN_FUNCTION, "Wall", function() {
-
+			we_initEdit(that, that.getLocalEditor(), EditType.WALL);
 		});
 		mm_edit.addMenu(this.contentType.REDIRECT_MENU, "Circular", mme_circular);
 		//원형 에딧메뉴 목록
@@ -4005,47 +4060,58 @@ WorldEdit.prototype = {
 		}catch(err) {
 			showError(err);
 		}});
+		//가로의 한줄 배열
 		var crtLayout = new sg.ll(ctx);
+		var crtLayout_p = new sg.llp(sg.wc, sg.wc);
+		crtLayout.setLayoutParams(crtLayout_p);
 		crtLayout.setOrientation(sg.ll.HORIZONTAL);
 		crtLayout.setGravity(Gravity.LEFT);
-		var max = Math.floor((sg.ww - (sg.px*16))/(sg.px*0x40));
+		var max = Math.floor((sg.ww - (sg.px*16))/(sg.px*0x30));
 		var crt = 0;
-		var temp;
+		var temp = [];
 		for(var e = 0; e < this.blockData.length; e++) {try {
 
+			//각 블럭의 메인레이아웃
 			var rl = new sg.rl(ctx);
-			var rl_p = new sg.llp(sg.px*0x40, sg.px*0x40);
+			var rl_p = new sg.llp(sg.px*0x30, sg.px*0x30);
 			rl.setLayoutParams(rl_p);
 			rl.setPadding(sg.px*4, sg.px*4, sg.px*4, sg.px*4);
+			//블럭 이미지뷰
 			var imgV = new ImageView(ctx);
 			imgV.setImageBitmap(this.getBlockDataImage(e));
 			var imgV_p = new sg.rlp(sg.mp, sg.mp);
 			imgV_p.addRule(sg.rl.CENTER_IN_PARENT);
 			imgV.setLayoutParams(imgV_p);
+			//블럭 아이디 텍스트뷰(항상 최상단이여야함)
 			var idV = sgUtils.gui.mcFastText(this.blockData[e][0], sg.px*0xa, true, Color.WHITE);
 			idV.setTag([e]);
 			var idV_p = new sg.rlp(sg.mp, sg.mp);
 			idV_p.addRule(sg.rl.ALIGN_PARENT_TOP);
 			idV_p.addRule(sg.rl.ALIGN_PARENT_LEFT);
 			idV.setLayoutParams(idV_p);
+			//각각의 블럭이미지를 클릭했을때
 			idV.setOnClickListener(View.OnClickListener({onClick: function(view) {try {
 				if(that.currentSelectedBlock !== null) {
 					that.blockImagesData[that.currentSelectedBlock][0].setBackgroundColor(Color.TRANSPARENT);
 				}
 				that.currentSelectedBlock = view.getTag()[0];
 				that.blockImagesData[that.currentSelectedBlock][0].setBackgroundColor(sgColors.mainBr);
+				var keys = (view.getText() + "").split(":")
+				that.idEditText.setText(keys[0]);
+				that.damageEditText.setText(keys[1]);
 			}catch(err) {
 				showError(err);
 			}}}));
 
 			rl.addView(imgV);
+			//블럭 세부 설명 텍스트뷰
 			var des = this.getBlockDataDescription(e);
 			if(des !== false) {
 				var desV = sgUtils.gui.mcFastText(des, sg.px*0x8, true, Color.YELLOW);
 				var desV_p = new sg.rlp(sg.wc, sg.wc);
 				desV_p.addRule(sg.rl.ALIGN_PARENT_BOTTOM);
 				desV_p.addRule(sg.rl.ALIGN_PARENT_RIGHT);
-				desV_p.setMargins(0, 0, sg.px*0x4, sg.px*0x10);
+				desV_p.setMargins(0, 0, sg.px*0x4, sg.px*0x8);
 				desV.setLayoutParams(desV_p);
 				desV.setGravity(Gravity.RIGHT);
 				rl.addView(desV);
@@ -4055,13 +4121,17 @@ WorldEdit.prototype = {
 			crtLayout.addView(rl);
 			if(++crt >= max) {
 				crt = 0;
-				temp = crtLayout;
+				temp.push(crtLayout);
 				uiThread(function() {try {
-					that.blockImagesLayout.addView(temp);
+					while(temp.length > 0) {
+						that.blockImagesLayout.addView(temp.shift());
+					}
 				}catch(err) {
 					showError(err);
 				}});
 				crtLayout = new sg.ll(ctx);
+				crtLayout_p = new sg.llp(sg.wc, sg.wc);
+				crtLayout.setLayoutParams(crtLayout_p);
 				crtLayout.setOrientation(sg.ll.HORIZONTAL);
 				crtLayout.setGravity(Gravity.LEFT);
 			}
@@ -4145,7 +4215,11 @@ we_menu.prototype = {
 				//REDIRECT_MENU
 				case 0:
 				var btn = sgUtils.gui.mcFastButton(con[1], sg.px*0x10, false, Color.WHITE, null, null, null, [sg.px*4, sg.px*8, sg.px*4, sg.px*8], null, sgAssets.weButton.ninePatch(), null, function(view) {try {
-					main.changeMenu(view.getTag());
+					thread(function() {try {
+						main.changeMenu(view.getTag());
+					}catch(err) {
+						showError(err);
+					}}).start();
 				}catch(err) {
 					showError(err);
 				}}, null);
@@ -4153,9 +4227,12 @@ we_menu.prototype = {
 				//RUN_FUNCTION
 				case 1:
 				var btn = sgUtils.gui.mcFastButton(con[1], sg.px*0x10, false, Color.WHITE, null, null, null, [sg.px*4, sg.px*8, sg.px*4, sg.px*8], null, sgAssets.weButton.ninePatch(), null, function(view) {try {
-					toast(view);
 					var func = view.getTag();
-					func();
+					thread(function() {try {
+						func();
+					}catch(err) {
+						showError(err);
+					}}).start();
 				}catch(err) {
 					showError(err);
 				}}, null);
@@ -4323,7 +4400,7 @@ we_editor.prototype = {
 
 var EditType = {
 	FILL: 0x00,
-	CLEAN: 0x01,
+	CLEAR: 0x01,
 	REPLACE: 0x02,
 	WALL: 0x03,
 	SPHERE: 0x10,
@@ -4335,12 +4412,18 @@ var EditType = {
 	PASTE: 0x22,
 	ROTATION: 0x23,
 	FLIP: 0x24,
-	RESTORE: 0X30
+	BACKUP: 0x30,
+	RESTORE: 0x31
 }
 
-function we_edit(worldEdit, editor, editType, editDetail) {
+function we_initEdit(worldEdit, editor, editType, editDetail) {
+	var that = this;
 	if(!editor.isOnline()) {
 		msg("Can't find player entity", editor.getName());
+		return;
+	}
+	if(sgUtils.data.isProcessing) {
+		msg("현재 진행중인 작업이 있습니다\n작업이 끝날때까지 기다려주세요...", editor.getName());
 		return;
 	}
 
@@ -4350,17 +4433,132 @@ function we_edit(worldEdit, editor, editType, editDetail) {
 
 		//EditDetail: [FilledBlock]
 		case EditType.FILL:
+		//현재 작업 상태
+		var atv_m = 0;
+		//작업
 		var atv = thread(function() {try{
-
+			//로컬작업일 경우 로딩 프로그래스바 쓰레드 생성
+			if(editor.getName().toLowerCase() === (Player.getName(Player.getEntity())+"").toLowerCase()) {
+				thread(function() {try {
+					var loading = new sgUtils.gui.progressBar(3, true);
+					loading.setText("준비 중...");
+					loading.show();
+					var pgt;
+					//작업 상태가 2가 되면 종료
+					while(atv_m !== 2) {
+						if(atv_m === 0) {
+							pgt = "(" + sgUtils.convert.numberToString(sgUtils.data.progress[0]) + "/" + sgUtils.convert.numberToString(sgUtils.data.progress[1]) + ")";
+							loading.setText("백업 중... " + pgt);
+							loading.setMax(sgUtils.data.progress[1]);
+							loading.setProgress(sgUtils.data.progress[0]);
+						}else if(atv_m === 1) {
+							pgt = "(" + sgUtils.convert.numberToString(sgUtils.data.progress[0]) + "/" + sgUtils.convert.numberToString(sgUtils.data.progress[1]) + ")";
+							loading.setText("'채우기' 에딧 중... " + pgt);
+							loading.setMax(sgUtils.data.progress[1]);
+							loading.setProgress(sgUtils.data.progress[0]);
+						}
+						sleep(0x80);
+					}
+					//로딩창 닫기
+					loading.close();
+				}catch(err) {
+					showError(err);
+				}}).start();
+			}
+			//백업
+			if(!we_edit(workType, EditType.BACKUP, editor)) {
+				atv_m = 2;
+				return;
+			}
+			atv_m = 1;
+			//에딧
+			if(!we_edit(workType, EditType.FILL, editor, editDetail)) {
+				atv_m = 2;
+				return;
+			}
+			atv_m = 2;
 		}catch(err) {
 			showError(err);
 		}});
+		
+		if(editDetail === undefined) {
+			var bs = new we_blockSelect("Select 'Fill' block...", "Run", function(id, data) {
+				//FIXME 더 좋은 방법은 없습니까?
+				if(((id-1)+"") === "NaN" || ((data-1)+"") === "NaN") {
+					msg("형식에 맞지 않는 입력입니다", editor.getName());
+					return;
+				}
+				this.close();
+				editDetail = [new Block(id, data)];
+				//엑티브 스타트!
+				atv.start();
+			}, "Cancel", function() {
+				//블럭 선택창 닫기
+				this.close();
+			});
+			bs.show();
+		}else {
+			if(!(editDetail[0] instanceof Block)) {
+				throw new Error("editDetail[0] must instance of Block");
+			}
+			//엑티브 스타트!
+			atv.start();
+		}
 		break;
 
 
 
 		//EditDetail: []
-		case EditType.CLEAN:
+		case EditType.CLEAR:
+		//현재 작업 상태
+		var atv_m = 0;
+		//작업
+		var atv = thread(function() {try{
+			//로컬작업일 경우 로딩 프로그래스바 쓰레드 생성
+			if(editor.getName().toLowerCase() === (Player.getName(Player.getEntity())+"").toLowerCase()) {
+				thread(function() {try {
+					var loading = new sgUtils.gui.progressBar(3, true);
+					loading.setText("준비 중...");
+					loading.show();
+					var pgt;
+					//작업 상태가 2가 되면 종료
+					while(atv_m !== 2) {
+						if(atv_m === 0) {
+							pgt = "(" + sgUtils.convert.numberToString(sgUtils.data.progress[0]) + "/" + sgUtils.convert.numberToString(sgUtils.data.progress[1]) + ")";
+							loading.setText("백업 중... " + pgt);
+							loading.setMax(sgUtils.data.progress[1]);
+							loading.setProgress(sgUtils.data.progress[0]);
+						}else if(atv_m === 1) {
+							pgt = "(" + sgUtils.convert.numberToString(sgUtils.data.progress[0]) + "/" + sgUtils.convert.numberToString(sgUtils.data.progress[1]) + ")";
+							loading.setText("'비우기' 에딧 중... " + pgt);
+							loading.setMax(sgUtils.data.progress[1]);
+							loading.setProgress(sgUtils.data.progress[0]);
+						}
+						sleep(0x80);
+					}
+					//로딩창 닫기
+					loading.close();
+				}catch(err) {
+					showError(err);
+				}}).start();
+			}
+			//백업
+			if(!we_edit(workType, EditType.BACKUP, editor)) {
+				atv_m = 2;
+				return;
+			}
+			atv_m = 1;
+			//에딧
+			if(we_edit(workType, EditType.CLEAR, editor)) {
+				atv_m = 2;
+				return;
+			}
+			atv_m = 2;
+		}catch(err) {
+			showError(err);
+		}});
+		//추가정보 없이 액티브 스타트!
+		atv.start();
 		break;
 
 
@@ -4431,14 +4629,177 @@ function we_edit(worldEdit, editor, editType, editDetail) {
 
 
 		//EditDetail: []
+		case EditType.BACKUP:
+		break;
+
+
+
+		//EditDetail: []
 		case EditType.RESTORE:
 		break;
 	}
 }
 
+function we_edit(workType, editType, editor, detail) {
+	var that = this;
+	sgUtils.data.isProcessing = true;
+	switch(editType) {
+
+		//EditDetail: [FilledBlock]
+		case EditType.FILL:
+		var pos1 = editor.getPos1();
+		var pos2 = editor.getPos2();
+		//위치가 지정되어 있는가?
+		if(pos1 === null || pos2 === null) {
+			msg("위치1, 2를 지정해 주세요", editor.getName());
+			sgUtils.data.isProcessing = false;
+			return false;
+		}
+		//더 작은 값을 시작값(s) 큰값을 끝값(e)으로 지정
+		var sx = (pos1.getX() < pos2.getX()) ? pos1.getX() : pos2.getX();
+		var sy = (pos1.getY() < pos2.getY()) ? pos1.getY() : pos2.getY();
+		var sz = (pos1.getZ() < pos2.getZ()) ? pos1.getZ() : pos2.getZ();
+		var ex = (pos1.getX() > pos2.getX()) ? pos1.getX() : pos2.getX();
+		var ey = (pos1.getY() > pos2.getY()) ? pos1.getY() : pos2.getY();
+		var ez = (pos1.getZ() > pos2.getZ()) ? pos1.getZ() : pos2.getZ();
+		var max = (ex-sx+1)*(ey-sy+1)*(ez-sz+1);
+		sgUtils.data.progress = [0, max];
+		
+		var bid = detail[0].getId();
+		var bdata = detail[0].getData();
+		var blocks = [];
+		for(var cy = sy; cy <= ey; cy++) {
+			for(var cz = sz; cz <= ez; cz++) {
+				for(var cx = sx; cx <= ex; cx++) {
+					if(workType === 0) {
+						Level.setTile(cx, cy, cz, bid, bdata);
+					}else {
+						blocks.push([cx, cy, cz, bid, bdata]);
+					}
+					sgUtils.data.progress[0]++;
+				}
+			}
+		}
+		break;
 
 
-function we_blockSelect(title, confirmText, layout, idSlotLayout, confirmFunc, cancelTxt, cancelFunc) {
+
+		//EditDetail: []
+		case EditType.CLEAR:
+		break;
+
+
+
+		//EditDetail: [fromReplaceBlock, toReplaceBlock]
+		case EditType.REPLACE:
+		break;
+
+
+
+		//EditDetail: [FilledBlock]
+		case EditType.WALL:
+		break;
+
+
+
+		//EditDetail: [isHollow, FilledBlock]
+		case EditType.SPHERE:
+		break;
+
+
+
+		//EditDetail: [isHollow, FilledBlock, direction]
+		case EditType.HEMISPHERE:
+		break;
+
+
+
+		//EditDetail: [isHollow, FilledBlock, direction]
+		case EditType.CIRCLE:
+		break;
+
+
+		//EditDetail: [isHollow, FilledBlock, direction]
+		case EditType.SEMICIRCLE:
+		break;
+
+
+
+		//EditDetail: []
+		case EditType.COPY:
+		break;
+
+
+
+		//EditDetail: []
+		case EditType.CUT:
+		break;
+
+
+
+		//EditDetail: []
+		case EditType.PASTE:
+		break;
+
+
+
+		//EditDetail: [axis]
+		case EditType.FLIP:
+		break;
+
+
+
+		//EditDetail: [axis, degree]
+		case EditType.ROTATION:
+		break;
+
+
+
+		//EditDetail: []
+		case EditType.BACKUP:
+		var pos1 = editor.getPos1();
+		var pos2 = editor.getPos2();
+		//위치가 지정되어 있는가?
+		if(pos1 === null || pos2 === null) {
+			msg("위치1, 2를 지정해 주세요", editor.getName());
+			sgUtils.data.isProcessing = false;
+			return false;
+		}
+		//더 작은 값을 시작값(s) 큰값을 끝값(e)으로 지정
+		var sx = (pos1.getX() < pos2.getX()) ? pos1.getX() : pos2.getX();
+		var sy = (pos1.getY() < pos2.getY()) ? pos1.getY() : pos2.getY();
+		var sz = (pos1.getZ() < pos2.getZ()) ? pos1.getZ() : pos2.getZ();
+		var ex = (pos1.getX() > pos2.getX()) ? pos1.getX() : pos2.getX();
+		var ey = (pos1.getY() > pos2.getY()) ? pos1.getY() : pos2.getY();
+		var ez = (pos1.getZ() > pos2.getZ()) ? pos1.getZ() : pos2.getZ();
+		var max = (ex-sx+1)*(ey-sy+1)*(ez-sz+1);
+		sgUtils.data.progress = [0, max];
+		
+		var blocks = [];
+		for(var cy = sy; cy <= ey; cy++) {
+			for(var cz = sz; cz <= ez; cz++) {
+				for(var cx = sx; cx <= ex; cx++) {
+					blocks.push([cx, cy, cz, Level.getTile(cx, cy, cz), Level.getData(cx, cy, cz)]);
+					sgUtils.data.progress[0]++;
+				}
+			}
+		}
+		editor.setBackup(new Piece(ex-sx+1, ey-sy+1, ez-sz+1, blocks), new Vector3(sx, sy, sz));
+		break;
+
+
+
+		//EditDetail: []
+		case EditType.RESTORE:
+		break;
+	}
+	sgUtils.data.isProcessing = false;
+	return true;
+}
+
+
+
+function we_blockSelect(title, confirmText, confirmFunc, cancelTxt, cancelFunc) {
 	var that = this;
 	this.name = title;
 	this
@@ -4458,6 +4819,7 @@ we_blockSelect.prototype = {
 	},
 
 	build: function() {
+		var that = this;
 		//main Layout
 		var rl = new sg.rl(ctx);
 		rl.setBackgroundDrawable(sgAssets.toast.ninePatch());
@@ -4469,7 +4831,7 @@ we_blockSelect.prototype = {
 		title_p.addRule(sg.rl.ALIGN_PARENT_TOP);
 		title.setLayoutParams(title_p);
 		title.setBackgroundColor(sgColors.main);
-		var t_text = sgUtils.gui.mcFastText(title, sg.px*0x10, false, Color.WHITE, null, null, null, [sg.px*2, sg.px*2, sg.px*2, sg.px*2]);
+		var t_text = sgUtils.gui.mcFastText(this.name, sg.px*0x10, false, Color.WHITE, null, null, null, [sg.px*2, sg.px*2, sg.px*2, sg.px*2]);
 		var t_text_p = new sg.rlp(sg.wc, sg.wc);
 		t_text_p.addRule(sg.rl.CENTER_IN_PARENT);
 		t_text.setLayoutParams(t_text_p);
@@ -4479,11 +4841,20 @@ we_blockSelect.prototype = {
 		//cancel
 		var cc = null;
 		//confirm Button
-		if(confirmText !== null) {
-			cf = sgUtils.gui.mcFastButton(confirmText, sg.px*0x8, false, sgColors.main, null, null, null, [sg.px*8, sg.px*8, sg.px*8, sg.px*8], null, null, null, function(view) {
-				that.cfFunc(view);
+		if(this.cfText !== null) {
+			cf = sgUtils.gui.mcFastButton(this.cfText, sg.px*0xa, false, sgColors.main, null, null, null, [sg.px*8, sg.px*8, sg.px*8, sg.px*8], null, null, null, function(view) {
+				var id = main.idEditText.getText() + "";
+				var damage = main.damageEditText.getText() + "";
+				if(((id-1)+"") === "NaN") {
+					we_toast("정확한 블럭 아이디를 입력해 주세요");
+					return;
+				}
+				if(((damage-1)+"") === "NaN") {
+					damage = 0;
+				}
+				that.cfFunc(id, damage);
 			});
-			var cf_p = new sg.rlp(sg.mp, sg.wc);
+			var cf_p = new sg.rlp(sg.wc, sg.mp);
 			cf_p.addRule(sg.rl.CENTER_VERTICAL);
 			cf_p.addRule(sg.rl.ALIGN_PARENT_RIGHT);
 			cf.setLayoutParams(cf_p);
@@ -4491,36 +4862,51 @@ we_blockSelect.prototype = {
 			title.addView(cf);
 		}
 		//cancel Button
-		if(confirmText !== null) {
-			cc = sgUtils.gui.mcFastButton(cancelText, sg.px*0x8, false, sgColors.main, null, null, null, [sg.px*8, sg.px*8, sg.px*8, sg.px*8], null, null, null, function(view) {
+		if(this.ccText !== null) {
+			cc = sgUtils.gui.mcFastButton(this.ccText, sg.px*0xa, false, sgColors.main, null, null, null, [sg.px*8, sg.px*8, sg.px*8, sg.px*8], null, null, null, function(view) {
 				that.ccFunc(view);
 			});
-			var cc_p = new sg.rlp(sg.mp, sg.wc);
+			var cc_p = new sg.rlp(sg.wc, sg.mp);
 			cc_p.addRule(sg.rl.CENTER_VERTICAL);
-			cc_p.addRule(sg.rl.ALIGN_PARENT_RIGHT);
+			cc_p.addRule(sg.rl.ALIGN_PARENT_LEFT);
 			cc.setLayoutParams(cc_p);
 			cc.setBackgroundColor(Color.WHITE);
 			title.addView(cc);
 		}
 		rl.addView(title);
 
-		//content Part
+		//id, damage editText layout
+		var bid = new sg.rl(ctx);
+		bid.setId(sgUtils.math.randomId());
+		var bid_p = new sg.rlp(sg.wc, sg.wc);
+		bid_p.addRule(sg.rl.BELOW, title.getId());
+		bid.setLayoutParams(bid_p);
+		bid.setPadding(0, sg.px*8, 0, sg.px*8);
+		bid.addView(main.blockIdLayout);
+		rl.addView(bid);
+		
+		//content layout
 		var scroll = new ScrollView(ctx);
 		var scroll_p = new sg.rlp(sg.mp, sg.mp);
-		scroll_p.addRule(sg.rl.BELOW, title.getId());
+		scroll_p.addRule(sg.rl.BELOW, bid.getId());
 		scroll.setLayoutParams(scroll_p);
+		scroll.setPadding(sg.px*2, 0, sg.px*2, sg.px*2);
 		var s_layout =  new sg.ll(ctx);
+		var s_layout_p = new sg.rlp(sg.mp, sg.wc);
+		s_layout.setLayoutParams(s_layout_p);
 		s_layout.setOrientation(sg.ll.VERTICAL);
 		s_layout.setGravity(Gravity.CENTER);
+		s_layout.addView(main.blockImagesLayout);
 		scroll.addView(s_layout);
 		rl.addView(scroll);
 
-		this.layoutData = [rl, title, scroll, t_text, cf, cc, s_layout];
+		this.layoutData = [rl, title, scroll, t_text, cf, cc, bid, s_layout];
 
 		this.wd = new PopupWindow(rl, sg.ww, sg.wh, true);
 	},
 
 	show: function() {
+		var that = this;
 		if(this.wd === null) {
 			this.build();
 		}
@@ -4528,13 +4914,14 @@ we_blockSelect.prototype = {
 			return;
 		}
 		uiThread(function() {try {
-			this.wd.showAtLocation(sg.dv, 0, 0, 0);
+			that.wd.showAtLocation(sg.dv, 0, 0, 0);
 		}catch(err) {
 			showError(err);
 		}});
 	},
 
 	close: function() {
+		var that = this;
 		if(this.wd === null) {
 			return;
 		}
@@ -4542,7 +4929,9 @@ we_blockSelect.prototype = {
 			return;
 		}
 		uiThread(function() {try {
-			this.wd.dismiss();
+			that.layoutData[6].removeAllViews();
+			that.layoutData[7].removeAllViews();
+			that.wd.dismiss();
 		}catch(err) {
 			showError(err);
 		}});
@@ -4620,14 +5009,14 @@ function chatReceiveHook(str, sender) {
 			var y = Math.floor(Entity.getY(player));
 			var z = Math.floor(Entity.getZ(player));
 			editor.setPos1(new Vector3(x, y, z));
-			msg("위치1이 지정되었습니다 X:" + x + " Y:" + y + " Z: " + z, sender);
+			msg("위치1이 지정됨 X:" + x + " Y:" + y + " Z: " + z, sender);
 			break;
 			case "pos2":
 			var x = Math.floor(Entity.getX(player));
 			var y = Math.floor(Entity.getY(player));
 			var z = Math.floor(Entity.getZ(player));
 			editor.setPos2(new Vector3(x, y, z));
-			msg("위치2이 지정되었습니다 X:" + x + " Y:" + y + " Z: " + z, sender);
+			msg("위치2이 지정됨 X:" + x + " Y:" + y + " Z: " + z, sender);
 			break;
 		}
 	}
@@ -5072,7 +5461,7 @@ WorldEditScript.prototype = {
 				WES_Toast("플레이어를 찾을 수 없습니다");
 				return;
 			}
-			editor.run(EditType.CLEAN);
+			editor.run(EditType.CLEAR);
 		});
 
 		this.menus[MenuType.EDIT].addMenu(ContentType.FUNCTION, "바꾸기", function() {
@@ -5666,7 +6055,7 @@ Editor.prototype = {
 
 
 
-			case EditType.CLEAN:
+			case EditType.CLEAR:
 			if(!(this.pos1 instanceof Vector3)) {
 				msg("위치1을 지정해주세요", player);;
 				return;
@@ -6550,7 +6939,7 @@ Editor.prototype = {
 				}
 				}
 				that.copy = new Piece((ex-sx+1), (ey-sy+1), (ez-sz+1), buffer);
-				that.run(EditType.CLEAN);
+				that.run(EditType.CLEAR);
 				WES_Toast("잘라내기 성공");
 			}catch(e) {
 				showError(e, WarnType.WARNING);
