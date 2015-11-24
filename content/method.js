@@ -1674,7 +1674,7 @@ sgUtils.modPE = {
 		getPlayer: function(name) {
 			var list = sgUtils.modPE.entityExtra.getAll();
 			for(var e = 0; e < list.length; e++) {
-				if(Player.isPlayer(list[e]) && sgUtils.modPE.entityExtra.isEqual(list[e], player)) {
+				if(Player.isPlayer(list[e]) && Player.getName(list[e]).toLowerCase() === (name+"").toLowerCase()) {
 					return list[e];
 				}
 			}
