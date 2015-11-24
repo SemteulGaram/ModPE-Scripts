@@ -1613,7 +1613,7 @@ sgUtils.modPE = {
 		getPlayer: function(name) {
 			var list = sgUtils.modPE.entityExtra.getAll();
 			for(var e = 0; e < list.length; e++) {
-				if(Player.isPlayer(list[e]) && sgUtils.modPE.entityExtra.isEqual(list[e], player)) {
+				if(Player.isPlayer(list[e]) && Player.getName(list[e]).toLowerCase() === (name+"").toLowerCase()) {
 					return list[e];
 				}
 			}
@@ -3003,11 +3003,11 @@ Vector3.prototype = {
  */
 
 function Block(id, data, x, y, z) {
-	this.id = id;
-	this.data = data;
-	this.x = x;
-	this.y = y;
-	this.z = z;
+	this.id = parseInt(id);
+	this.data = parseInt(data);
+	this.x = parseInt(x);
+	this.y = parseInt(y);
+	this.z = parseInt(z);
 }
 
 Block.prototype = {
@@ -4460,7 +4460,7 @@ function we_initEdit(worldEdit, editor, editType, editDetail) {
 
 		//EditDetail: [FilledBlock]
 		case EditType.FILL:
-		//위치가 지정되어 있는가?
+		//예외 처리
 		if(editor.getPos1() === null || editor.getPos2() === null) {
 			msg("위치1, 2를 지정해 주세요", editor.getName());
 			return;
@@ -4514,14 +4514,14 @@ function we_initEdit(worldEdit, editor, editType, editDetail) {
 		}});
 
 		if(editDetail === undefined) {
-			var bs = new we_blockSelect("Select 'Fill' block...", "Run", function(id, data) {
+			var bs = new we_blockSelect("Select 'Fill' block...", "Start", function(id, data) {
 				if(parseInt(id) != id || parseInt(data) != data) {
 					msg("형식에 맞지 않는 입력입니다", editor.getName());
 					return;
 				}
 				this.close();
 				editDetail = [new Block(id, data)];
-				//엑티브 스타트!
+				//액티브 스타트!
 				atv.start();
 			}, "Cancel", function() {
 				//블럭 선택창 닫기
@@ -4532,7 +4532,7 @@ function we_initEdit(worldEdit, editor, editType, editDetail) {
 			if(!(editDetail[0] instanceof Block)) {
 				throw new Error("editDetail[0] must instance of Block");
 			}
-			//엑티브 스타트!
+			//액티브 스타트!
 			atv.start();
 		}
 		break;
@@ -4541,7 +4541,7 @@ function we_initEdit(worldEdit, editor, editType, editDetail) {
 
 		//EditDetail: []
 		case EditType.CLEAR:
-		//위치가 지정되어 있는가?
+		//예외 처리
 		if(editor.getPos1() === null || editor.getPos2() === null) {
 			msg("위치1, 2를 지정해 주세요", editor.getName());
 			return;
@@ -4606,6 +4606,91 @@ function we_initEdit(worldEdit, editor, editType, editDetail) {
 			msg("위치1, 2를 지정해 주세요", editor.getName());
 			return;
 		}
+		//현재 작업 상태
+		var atv_m = 0;
+		//작업 쓰레드 준비
+		var atv = thread(function() {try{
+			//로컬작업일 경우 로딩 프로그래스바 쓰레드 생성
+			if(editor.getName().toLowerCase() === (Player.getName(Player.getEntity())+"").toLowerCase()) {
+				thread(function() {try {
+					var loading = new sgUtils.gui.progressBar(3, true);
+					loading.setText("준비 중...");
+					loading.show();
+					var pgt;
+					//작업 상태가 2가 되면 종료
+					while(atv_m !== 2) {
+						if(atv_m === 0) {
+							pgt = "(" + sgUtils.convert.numberToString(sgUtils.data.progress[0]) + "/" + sgUtils.convert.numberToString(sgUtils.data.progress[1]) + ")";
+							loading.setText("백업 중... " + pgt);
+							loading.setMax(sgUtils.data.progress[1]);
+							loading.setProgress(sgUtils.data.progress[0]);
+						}else if(atv_m === 1) {
+							pgt = "(" + sgUtils.convert.numberToString(sgUtils.data.progress[0]) + "/" + sgUtils.convert.numberToString(sgUtils.data.progress[1]) + ")";
+							loading.setText("'바꾸기' 에딧 중... " + pgt);
+							loading.setMax(sgUtils.data.progress[1]);
+							loading.setProgress(sgUtils.data.progress[0]);
+						}
+						sleep(0x80);
+					}
+					//로딩창 닫기
+					loading.close();
+				}catch(err) {
+					showError(err);
+				}}).start();
+			}
+			//백업
+			if(!we_edit(workType, EditType.BACKUP, editor)) {
+				atv_m = 2;
+				return;
+			}
+			atv_m = 1;
+			//에딧
+			if(!we_edit(workType, EditType.REPLACE, editor, editDetail)) {
+				atv_m = 2;
+				return;
+			}
+			atv_m = 2;
+		}catch(err) {
+			showError(err);
+		}});
+
+		if(editDetail === undefined) {
+			//bs(블럭선택)창이 먼저 뜨고나서 bs2(블럭선택)창이 뜹니다
+			var bs2 = new we_blockSelect("Select 'To Replaced' block...", "Start", function(id, data) {
+				if(parseInt(id) != id || parseInt(data) != data) {
+					msg("형식에 맞지 않는 입력입니다", editor.getName());
+					return;
+				}
+				this.close();
+				editDetail.push(new Block(id, data));
+				//액티브 스타트!
+				atv.start();
+			}, "Cancel", function() {
+				//블럭 선택창 닫기
+				this.close();
+			});
+			var bs = new we_blockSelect("Select 'Replace' block...", "Next", function(id, data) {
+				if(parseInt(id) != id || parseInt(data) != data) {
+					msg("형식에 맞지 않는 입력입니다", editor.getName());
+					return;
+				}
+				this.close();
+				editDetail = [new Block(id, data)];
+				//다음 창 보이기
+				bs2.show();
+			}, "Cancel", function() {
+				//블럭 선택창 닫기
+				this.close();
+			});
+			//bs부터 띄우기
+			bs.show();
+		}else {
+			if(!((editDetail[0] instanceof Block) && (editDetail[1] instanceof Block))) {
+				throw new Error("editDetail[0], [1] must instance of Block");
+			}
+			//액티브 스타트!
+			atv.start();
+		}
 		break;
 
 
@@ -4616,6 +4701,76 @@ function we_initEdit(worldEdit, editor, editType, editDetail) {
 		if(editor.getPos1() === null || editor.getPos2() === null) {
 			msg("위치1, 2를 지정해 주세요", editor.getName());
 			return;
+		}
+		//현재 작업 상태
+		var atv_m = 0;
+		//작업 쓰레드 준비
+		var atv = thread(function() {try{
+			//로컬작업일 경우 로딩 프로그래스바 쓰레드 생성
+			if(editor.getName().toLowerCase() === (Player.getName(Player.getEntity())+"").toLowerCase()) {
+				thread(function() {try {
+					var loading = new sgUtils.gui.progressBar(3, true);
+					loading.setText("준비 중...");
+					loading.show();
+					var pgt;
+					//작업 상태가 2가 되면 종료
+					while(atv_m !== 2) {
+						if(atv_m === 0) {
+							pgt = "(" + sgUtils.convert.numberToString(sgUtils.data.progress[0]) + "/" + sgUtils.convert.numberToString(sgUtils.data.progress[1]) + ")";
+							loading.setText("백업 중... " + pgt);
+							loading.setMax(sgUtils.data.progress[1]);
+							loading.setProgress(sgUtils.data.progress[0]);
+						}else if(atv_m === 1) {
+							pgt = "(" + sgUtils.convert.numberToString(sgUtils.data.progress[0]) + "/" + sgUtils.convert.numberToString(sgUtils.data.progress[1]) + ")";
+							loading.setText("'채우기' 에딧 중... " + pgt);
+							loading.setMax(sgUtils.data.progress[1]);
+							loading.setProgress(sgUtils.data.progress[0]);
+						}
+						sleep(0x80);
+					}
+					//로딩창 닫기
+					loading.close();
+				}catch(err) {
+					showError(err);
+				}}).start();
+			}
+			//백업
+			if(!we_edit(workType, EditType.BACKUP, editor)) {
+				atv_m = 2;
+				return;
+			}
+			atv_m = 1;
+			//에딧
+			if(!we_edit(workType, EditType.WALL, editor, editDetail)) {
+				atv_m = 2;
+				return;
+			}
+			atv_m = 2;
+		}catch(err) {
+			showError(err);
+		}});
+
+		if(editDetail === undefined) {
+			var bs = new we_blockSelect("Select 'Fill wall' block...", "Start", function(id, data) {
+				if(parseInt(id) != id || parseInt(data) != data) {
+					msg("형식에 맞지 않는 입력입니다", editor.getName());
+					return;
+				}
+				this.close();
+				editDetail = [new Block(id, data)];
+				//액티브 스타트!
+				atv.start();
+			}, "Cancel", function() {
+				//블럭 선택창 닫기
+				this.close();
+			});
+			bs.show();
+		}else {
+			if(!(editDetail[0] instanceof Block)) {
+				throw new Error("editDetail[0] must instance of Block");
+			}
+			//액티브 스타트!
+			atv.start();
 		}
 		break;
 
@@ -4844,17 +4999,17 @@ function we_edit(workType, editType, editor, detail) {
 		var bid2 = detail[1].getId();
 		var bdata2 = detail[1].getData();
 		var blocks = [];
-		for(var y = sy; y <= ey; y++) {
-			for(var z = sz; z <= ez; z++) {
-				for(var x = sx; x <= ex; x++) {
+		for(var fy = sy; fy <= ey; fy++) {
+			for(var fz = sz; fz <= ez; fz++) {
+				for(var fx = sx; fx <= ex; fx++) {
 					sgUtils.data.progress[0]++;
-					if(Level.getTile(x, y, z) !== bid || Level.getData(x, y, z) !== bdata) {
+					if(Level.getTile(fx, fy, fz) !== bid || Level.getData(fx, fy, fz) !== bdata) {
 						continue;
 					}
 					if(workType === 0) {
-						Level.setTile(x, y, z, bid2, bdata2);
+						Level.setTile(fx, fy, fz, bid2, bdata2);
 					}else {
-						blocks.push([x, y, z, bid2, bdata2]);
+						blocks.push([fx, fy, fz, bid2, bdata2]);
 						//TODO
 					}
 				}
@@ -4882,13 +5037,24 @@ function we_edit(workType, editType, editor, detail) {
 		var bid = detail[0].getId();
 		var bdata = detail[0].getData();
 		var blocks = [];
-		for(var y = sy; y <= ey; y++) {
-			for(var z = sz; z <= ez; z += (ez-sz)) {
-				for(var cx = sx; cx <= ex; cx += (ex-sx)) {
+		for(var fy = sy; fy <= ey; fy++) {
+			for(var fz = sz; fz <= ez; fz += (ez-sz)) {
+				for(var fx = sx; fx <= ex; fx++) {
 					if(workType === 0) {
-						Level.setTile(cx, cy, cz, bid, bdata);
+						Level.setTile(fx, fy, fz, bid, bdata);
 					}else {
-						blocks.push([cx, cy, cz, bid2, bdata2]);
+						blocks.push([cx, cy, cz, bid, bdata]);
+						//TODO
+					}
+					sgUtils.data.progress[0]++;
+				}
+			}
+			for(var fx = sx; fx <= ex; fx += (ex-sx)) {
+				for(var fz = sz; fz <= ez; fz++) {
+					if(workType === 0) {
+						Level.setTile(fx, fy, fz, bid, bdata);
+					}else {
+						blocks.push([fx, fy, fz, bid, bdata]);
 						//TODO
 					}
 					sgUtils.data.progress[0]++;
@@ -5238,7 +5404,7 @@ we_blockSelect.prototype = {
 					we_toast("정확한 블럭 아이디를 입력해 주세요");
 					return;
 				}
-				if(parseInt(data) != data) {
+				if(parseInt(damage) != damage) {
 					damage = 0;
 				}
 				that.cfFunc(id, damage);
