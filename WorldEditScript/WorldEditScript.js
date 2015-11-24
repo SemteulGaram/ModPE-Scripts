@@ -4429,9 +4429,9 @@ var EditType = {
 	REPLACE: 0x02,
 	WALL: 0x03,
 	SPHERE: 0x10,
-	HEMISPHERE: 0x11,
+	HEMI_SPHERE: 0x11,
 	CIRCLE: 0x12,
-	SEMICIRCLE: 0x13,
+	SEMI_CIRCLE: 0x13,
 	COPY: 0x20,
 	CUT: 0x21,
 	PASTE: 0x22,
@@ -4513,25 +4513,19 @@ function we_initEdit(worldEdit, editor, editType, editDetail) {
 			showError(err);
 		}});
 
-		if(editDetail === undefined) {
+		if(editDetail === undefined) {//추가 정보가 없으면(로컬)
 			var bs = new we_blockSelect("Select 'Fill' block...", "Start", function(id, data) {
-				if(parseInt(id) != id || parseInt(data) != data) {
-					msg("형식에 맞지 않는 입력입니다", editor.getName());
-					return;
-				}
+				//긍정 버튼을 누를때
 				this.close();
 				editDetail = [new Block(id, data)];
 				//액티브 스타트!
 				atv.start();
 			}, "Cancel", function() {
-				//블럭 선택창 닫기
+				//부정 버튼을 누를때
 				this.close();
 			});
 			bs.show();
-		}else {
-			if(!(editDetail[0] instanceof Block)) {
-				throw new Error("editDetail[0] must instance of Block");
-			}
+		}else {//추가 정보가 있으면(서버원)
 			//액티브 스타트!
 			atv.start();
 		}
@@ -4654,40 +4648,32 @@ function we_initEdit(worldEdit, editor, editType, editDetail) {
 			showError(err);
 		}});
 
-		if(editDetail === undefined) {
+		if(editDetail === undefined) {//추가 정보가 없으면(로컬)
 			//bs(블럭선택)창이 먼저 뜨고나서 bs2(블럭선택)창이 뜹니다
+			//bs = 바꿀 블럭 선택 / bs2 = 바꿔질 블럭 선택
 			var bs2 = new we_blockSelect("Select 'To Replaced' block...", "Start", function(id, data) {
-				if(parseInt(id) != id || parseInt(data) != data) {
-					msg("형식에 맞지 않는 입력입니다", editor.getName());
-					return;
-				}
+				//긍정 버튼을 누를때
 				this.close();
 				editDetail.push(new Block(id, data));
 				//액티브 스타트!
 				atv.start();
 			}, "Cancel", function() {
-				//블럭 선택창 닫기
+				//부정 버튼을 누를때
 				this.close();
 			});
 			var bs = new we_blockSelect("Select 'Replace' block...", "Next", function(id, data) {
-				if(parseInt(id) != id || parseInt(data) != data) {
-					msg("형식에 맞지 않는 입력입니다", editor.getName());
-					return;
-				}
+				//긍정버튼을 누를때
 				this.close();
 				editDetail = [new Block(id, data)];
 				//다음 창 보이기
 				bs2.show();
 			}, "Cancel", function() {
-				//블럭 선택창 닫기
+				//부정 버튼을 누를때
 				this.close();
 			});
 			//bs부터 띄우기
 			bs.show();
-		}else {
-			if(!((editDetail[0] instanceof Block) && (editDetail[1] instanceof Block))) {
-				throw new Error("editDetail[0], [1] must instance of Block");
-			}
+		}else {//추가 정보가 있으면(서버원)
 			//액티브 스타트!
 			atv.start();
 		}
@@ -4722,7 +4708,7 @@ function we_initEdit(worldEdit, editor, editType, editDetail) {
 							loading.setProgress(sgUtils.data.progress[0]);
 						}else if(atv_m === 1) {
 							pgt = "(" + sgUtils.convert.numberToString(sgUtils.data.progress[0]) + "/" + sgUtils.convert.numberToString(sgUtils.data.progress[1]) + ")";
-							loading.setText("'채우기' 에딧 중... " + pgt);
+							loading.setText("'벽 생성' 에딧 중... " + pgt);
 							loading.setMax(sgUtils.data.progress[1]);
 							loading.setProgress(sgUtils.data.progress[0]);
 						}
@@ -4750,25 +4736,19 @@ function we_initEdit(worldEdit, editor, editType, editDetail) {
 			showError(err);
 		}});
 
-		if(editDetail === undefined) {
+		if(editDetail === undefined) {//추가 정보가 없으면(로컬)
 			var bs = new we_blockSelect("Select 'Fill wall' block...", "Start", function(id, data) {
-				if(parseInt(id) != id || parseInt(data) != data) {
-					msg("형식에 맞지 않는 입력입니다", editor.getName());
-					return;
-				}
+				//긍정 버튼을 누를때
 				this.close();
 				editDetail = [new Block(id, data)];
 				//액티브 스타트!
 				atv.start();
 			}, "Cancel", function() {
-				//블럭 선택창 닫기
+				//부정 버튼을 누를때
 				this.close();
 			});
 			bs.show();
-		}else {
-			if(!(editDetail[0] instanceof Block)) {
-				throw new Error("editDetail[0] must instance of Block");
-			}
+		}else {//추가 정보가 있으면(서버원)
 			//액티브 스타트!
 			atv.start();
 		}
@@ -4783,16 +4763,190 @@ function we_initEdit(worldEdit, editor, editType, editDetail) {
 			msg("위치1을 지정해 주세요", editor.getName());
 			return;
 		}
+		//현재 작업 상태
+		var atv_m = 0;
+		//작업 쓰레드 준비
+		var atv = thread(function() {try{
+			//로컬작업일 경우 로딩 프로그래스바 쓰레드 생성
+			if(editor.getName().toLowerCase() === (Player.getName(Player.getEntity())+"").toLowerCase()) {
+				thread(function() {try {
+					var loading = new sgUtils.gui.progressBar(3, true);
+					loading.setText("준비 중...");
+					loading.show();
+					var pgt;
+					//작업 상태가 2가 되면 종료
+					while(atv_m !== 2) {
+						if(atv_m === 0) {
+							pgt = "(" + sgUtils.convert.numberToString(sgUtils.data.progress[0]) + "/" + sgUtils.convert.numberToString(sgUtils.data.progress[1]) + ")";
+							loading.setText("백업 중... " + pgt);
+							loading.setMax(sgUtils.data.progress[1]);
+							loading.setProgress(sgUtils.data.progress[0]);
+						}else if(atv_m === 1) {
+							pgt = "(" + sgUtils.convert.numberToString(sgUtils.data.progress[0]) + "/" + sgUtils.convert.numberToString(sgUtils.data.progress[1]) + ")";
+							loading.setText("'구 생성' 에딧 중... " + pgt);
+							loading.setMax(sgUtils.data.progress[1]);
+							loading.setProgress(sgUtils.data.progress[0]);
+						}
+						sleep(0x80);
+					}
+					//로딩창 닫기
+					loading.close();
+				}catch(err) {
+					showError(err);
+				}}).start();
+			}
+			//백업
+			if(!we_edit(workType, EditType.BACKUP, editor)) {
+				atv_m = 2;
+				return;
+			}
+			atv_m = 1;
+			//에딧
+			if(!we_edit(workType, EditType.SPHERE, editor, editDetail)) {
+				atv_m = 2;
+				return;
+			}
+			atv_m = 2;
+		}catch(err) {
+			showError(err);
+		}});
+
+		if(editDetail === undefined) {//추가 정보가 없으면(로컬)
+			var bs = new we_blockSelect("Select 'Fill sphere' block...", "Start", function(id, data) {
+				//긍정 버튼을 누를때
+				this.close();
+				editDetail = [main.get("HollowCircular") === 1, new Block(id, data)];
+				//액티브 스타트!
+				atv.start();
+			}, "Cancel", function() {
+				//부정 버튼을 누를때
+				this.close();
+			});
+			bs.show();
+		}else {//추가 정보가 있으면(서버원)
+			//액티브 스타트!
+			atv.start();
+		}
 		break;
 
 
 
 		//EditDetail: [isHollow, FilledBlock, direction]
-		case EditType.HEMISPHERE:
+		case EditType.HEMI_SPHERE:
 		//예외 처리
 		if(editor.getPos1() === null) {
 			msg("위치1을 지정해 주세요", editor.getName());
 			return;
+		}
+		//현재 작업 상태
+		var atv_m = 0;
+		//작업 쓰레드 준비
+		var atv = thread(function() {try{
+			//로컬작업일 경우 로딩 프로그래스바 쓰레드 생성
+			if(editor.getName().toLowerCase() === (Player.getName(Player.getEntity())+"").toLowerCase()) {
+				thread(function() {try {
+					var loading = new sgUtils.gui.progressBar(3, true);
+					loading.setText("준비 중...");
+					loading.show();
+					var pgt;
+					//작업 상태가 2가 되면 종료
+					while(atv_m !== 2) {
+						if(atv_m === 0) {
+							pgt = "(" + sgUtils.convert.numberToString(sgUtils.data.progress[0]) + "/" + sgUtils.convert.numberToString(sgUtils.data.progress[1]) + ")";
+							loading.setText("백업 중... " + pgt);
+							loading.setMax(sgUtils.data.progress[1]);
+							loading.setProgress(sgUtils.data.progress[0]);
+						}else if(atv_m === 1) {
+							pgt = "(" + sgUtils.convert.numberToString(sgUtils.data.progress[0]) + "/" + sgUtils.convert.numberToString(sgUtils.data.progress[1]) + ")";
+							loading.setText("'반구 생성' 에딧 중... " + pgt);
+							loading.setMax(sgUtils.data.progress[1]);
+							loading.setProgress(sgUtils.data.progress[0]);
+						}
+						sleep(0x80);
+					}
+					//로딩창 닫기
+					loading.close();
+				}catch(err) {
+					showError(err);
+				}}).start();
+			}
+			//백업
+			if(!we_edit(workType, EditType.BACKUP, editor)) {
+				atv_m = 2;
+				return;
+			}
+			atv_m = 1;
+			//에딧
+			if(!we_edit(workType, EditType.HEMI_SPHERE, editor, editDetail)) {
+				atv_m = 2;
+				return;
+			}
+			atv_m = 2;
+		}catch(err) {
+			showError(err);
+		}});
+
+		if(editDetail === undefined) {//추가 정보가 없으면(로컬)
+			var bs = new we_blockSelect("Select 'Fill hemi-sphere' block...", "Start", function(id, data) {
+				//긍정 버튼을 누를때
+				this.close();
+				editDetail = [main.get("HollowCircular") === 1, new Block(id, data), direction];
+				//액티브 스타트!
+				atv.start();
+			}, "Cancel", function() {
+				//부정 버튼을 누를때
+				this.close();
+			});
+			var direction;
+			var lo = new sg.ll(ctx);
+			lo.setOrientation(sg.ll.VERTICAL);
+			var b1 =  new sgUtils.gui.mcFastButton("X+", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+				direction = "x+";
+				we_toast("'X+'방향으로 설정되었습니다");
+				dl.close();
+				bs.show();
+			});
+			var b2 =  new sgUtils.gui.mcFastButton("X-", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+				direction = "x-";
+				we_toast("'X-'방향으로 설정되었습니다");
+				dl.close();
+				bs.show();
+			});
+			var b3 =  new sgUtils.gui.mcFastButton("Y+", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+				direction = "y+";
+				we_toast("Y+'방향으로 설정되었습니다");
+				dl.close();
+				bs.show();
+			});
+			var b4 =  new sgUtils.gui.mcFastButton("Y-", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+				direction = "y-";
+				we_toast("'Y-'방향으로 설정되었습니다");
+				dl.close();
+				bs.show();
+			});
+			var b5 =  new sgUtils.gui.mcFastButton("Z+", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+				direction = "z+";
+				we_toast("'Z+'방향으로 설정되었습니다");
+				dl.close();
+				bs.show();
+			});
+			var b6 =  new sgUtils.gui.mcFastButton("Z-", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+				direction = "z-";
+				we_toast("'Z-'방향으로 설정되었습니다");
+				dl.close();
+				bs.show();
+			});
+			lo.addView(b1);
+			lo.addView(b2);
+			lo.addView(b3);
+			lo.addView(b4);
+			lo.addView(b5);
+			lo.addView(b6);
+			var dl =  new we_dialog("Select 'Direction'", lo, null, null, "Cancel", funtion() {this.close()}, Gravity.CENTER);
+			dl.show();
+		}else {//추가 정보가 있으면(서버원)
+			//액티브 스타트!
+			atv.start();
 		}
 		break;
 
@@ -4809,7 +4963,7 @@ function we_initEdit(worldEdit, editor, editType, editDetail) {
 
 
 		//EditDetail: [isHollow, FilledBlock, direction]
-		case EditType.SEMICIRCLE:
+		case EditType.SEMI_CIRCLE:
 		//예외 처리
 		if(editor.getPos1() === null) {
 			msg("위치1을 지정해 주세요", editor.getName());
@@ -4853,6 +5007,7 @@ function we_initEdit(worldEdit, editor, editType, editDetail) {
 			msg("복사된 블럭이 없습니다", editor.getName());
 			return;
 		}
+		//TODO 붙여넣기 영역 홀로그램
 		break;
 
 
@@ -4929,13 +5084,13 @@ function we_edit(workType, editType, editor, detail) {
 		var bid = detail[0].getId();
 		var bdata = detail[0].getData();
 		var blocks = [];
-		for(var y = sy; y <= ey; y++) {
-			for(var z = sz; z <= ez; z++) {
-				for(var x = sx; x <= ex; x++) {
+		for(var fy = sy; fy<= ey; fy++) {
+			for(var fz = sz; fz <= ez; fz++) {
+				for(var fx = sx; fx <= ex; fx++) {
 					if(workType === 0) {
-						Level.setTile(x, y, z, bid, bdata);
+						Level.setTile(fx, fy, fz, bid, bdata);
 					}else {
-						blocks.push([x, y, z, bid, bdata]);
+						blocks.push([fx, fy, fz, bid, bdata]);
 						//TODO
 					}
 					sgUtils.data.progress[0]++;
@@ -4962,13 +5117,13 @@ function we_edit(workType, editType, editor, detail) {
 		sgUtils.data.progress = [0, max];
 
 		var blocks = [];
-		for(var y = sy; y <= ey; y++) {
-			for(var z = sz; z <= ez; z++) {
-				for(var x = sx; x <= ex; x++) {
+		for(var fy = sy; fy <= ey; fy++) {
+			for(var fz = sz; fz <= ez; fz++) {
+				for(var fx = sx; fx <= ex; fx++) {
 					if(workType === 0) {
-						Level.setTile(x, y, z, 0, 0);
+						Level.setTile(fx, fy, fz, 0, 0);
 					}else {
-						blocks.push([x, y, z, 0, 0]);
+						blocks.push([fx, fy, fz, 0, 0]);
 						//TODO
 					}
 					sgUtils.data.progress[0]++;
@@ -5031,7 +5186,7 @@ function we_edit(workType, editType, editor, detail) {
 		var ex = (pos1.getX() > pos2.getX()) ? pos1.getX() : pos2.getX();
 		var ey = (pos1.getY() > pos2.getY()) ? pos1.getY() : pos2.getY();
 		var ez = (pos1.getZ() > pos2.getZ()) ? pos1.getZ() : pos2.getZ();
-		var max = (ex-sx+1)*(ey-sy+1)*(ez-sz+1);
+		var max = ((ex-sx+1)*(ey-sy+1)*2) + ((ez-sz+1)*(ey-sy+1)*2);
 		sgUtils.data.progress = [0, max];
 
 		var bid = detail[0].getId();
@@ -5080,18 +5235,19 @@ function we_edit(workType, editType, editor, detail) {
 		var bid = detail[1].getId();
 		var bdata = detail[1].getData();
 		var blocks = [];
-		for(var y = cy-rel; y <= cy+rel; y++) {
-			for(var z = cz-rel; z <= cz+rel; z++) {
-				for(var x = cx-rel; x <= cx+rel; x++) {
-					if(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2) < Math.pow((detail[2]-0.5), 2)) {
+		for(var fy = -rel; fy <= rel; fy++) {
+			for(var fz = -rel; fz <= rel; fz++) {
+				for(var fx = -rel; fx <= +rel; fx++) {
+					if(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz, 2) < Math.pow((detail[2]-0.5), 2)) {
 						sgUtils.data.progress[0]++;
-						if(detail[0] && !(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2) >= (Math.pow((detail[2]-1.5), 2)))) {
+						//속이 빈 원 옵션 체크
+						if(detail[0] && !(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz, 2) >= (Math.pow((detail[2]-1.5), 2)))) {
 							continue;
 						}
 						if(workType === 0) {
-							Level.setTile(cx + x, cy + y, cz + z, bid, bdata);
+							Level.setTile(cx + fx, cy + fy, cz + fz, bid, bdata);
 						}else {
-							blocks.push([cx + x, cy + y, cz + z, bid, bdata]);
+							blocks.push([cx + fx, cy + fy, cz + fz, bid, bdata]);
 						}
 					}
 				}
@@ -5102,7 +5258,7 @@ function we_edit(workType, editType, editor, detail) {
 
 
 		//EditDetail: [isHollow, FilledBlock, radious, direction]
-		case EditType.HEMISPHERE:
+		case EditType.HEMI_SPHERE:
 		var pos1 = editor.getPos1();
 
 		//반지름 사이즈에 맞게 크기를 재설정
@@ -5141,38 +5297,39 @@ function we_edit(workType, editType, editor, detail) {
 		var bid = detail[1].getId();
 		var bdata = detail[1].getData();
 		var blocks = [];
-		for(var y = cy-rel; y <= cy+rel; y++) {
-			for(var z = cz-rel; z <= cz+rel; z++) {
-				for(var x = cx-rel; x <= cx+rel; x++) {
+		for(var fy = -rel; fy <= rel; fy++) {
+			for(var fz = -rel; fz <= rel; fz++) {
+				for(var fx = -rel; fx <= rel; fx++) {
 					switch(dire) {
 						case 0:
-						if(x < 0) continue;
+						if(fx < 0) continue;
 						break;
 						case 1:
-						if(x > 0) continue;
+						if(fx > 0) continue;
 						break;
 						case 2:
-						if(y < 0) continue;
+						if(fy < 0) continue;
 						break;
 						case 3:
-						if(y > 0) continue;
+						if(fy > 0) continue;
 						break;
 						case 4:
-						if(z < 0) continue;
+						if(fz < 0) continue;
 						break;
 						case 5:
-						if(z > 0) continue;
+						if(fz > 0) continue;
 						break;
 					}
-					if(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2) < Math.pow((detail[2]-0.5), 2)) {
+					if(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz, 2) < Math.pow((detail[2]-0.5), 2)) {
 						sgUtils.data.progress[0]++;
-						if(detail[0] && !(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2) >= (Math.pow((detail[2]-1.5), 2)))) {
+						//속이 빈 원 옵션 체크
+						if(detail[0] && !(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz, 2) >= (Math.pow((detail[2]-1.5), 2)))) {
 							continue;
 						}
 						if(workType === 0) {
-							Level.setTile(cx + x, cy + y, cz + z, bid, bdata);
+							Level.setTile(cx + fx, cy + fy, cz + fz, bid, bdata);
 						}else {
-							blocks.push([cx + x, cy + y, cz + z, bid, bdata]);
+							blocks.push([cx + fx, cy + fy, cz + fz, bid, bdata]);
 						}
 					}
 				}
@@ -5182,13 +5339,233 @@ function we_edit(workType, editType, editor, detail) {
 
 
 
-		//EditDetail: [isHollow, FilledBlock, radious, direction]
+		//EditDetail: [isHollow, FilledBlock, radious, axis]
 		case EditType.CIRCLE:
+		var pos1 = editor.getPos1();
+
+		//반지름 사이즈에 맞게 크기를 재설정
+		var cx = pos1.getX();
+		var cy = pos1.getY();
+		var cz = pos1.getZ();
+		var rel = detail[2]-1;
+		var max =  Math.pow(Math.pow(rel, 2)+1, 2);
+		sgUtils.data.progress = [0, max];
+
+		var bid = detail[1].getId();
+		var bdata = detail[1].getData();
+		var blocks = [];
+		//원을 그릴 기준이 될 축
+		switch(detail[3]) {
+			case "x":
+			var fx = 0;
+			for(var fy = -rel; fy <= rel; fy++) {
+				for(var fz = -rel; fz <= rel; fz++) {
+					if(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz), 2) < Math.pow((detail[2]-0.5), 2)) {
+						sgUtils.data.progress[0]++;
+						//속이 빈 원 옵션 체크
+						if(detail[0] && !(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz, 2) >= (Math.pow((detail[2]-1.5), 2)))) {
+							continue;
+						}
+						if(workType === 0) {
+							Level.setTile(cx + fx, cy + fy, cz + fz, bid, bdata);
+						}else {
+							blocks.push([cx + fx, cy + fy, cz + fz, bid, bdata]);
+						}
+					}
+				}
+			}
+			break;
+			case "y":
+			var fy = 0;
+			for(var fx = -rel; fx <= rel; fx++) {
+				for(var fz = -rel; fz <= rel; fz++) {
+					if(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz), 2) < Math.pow((detail[2]-0.5), 2)) {
+						sgUtils.data.progress[0]++;
+						//속이 빈 원 옵션 체크
+						if(detail[0] && !(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz, 2) >= (Math.pow((detail[2]-1.5), 2)))) {
+							continue;
+						}
+						if(workType === 0) {
+							Level.setTile(cx + fx, cy + fy, cz + fz, bid, bdata);
+						}else {
+							blocks.push([cx + fx, cy + fy, cz + fz, bid, bdata]);
+						}
+					}
+				}
+			}
+			break;
+			case "z":
+			var fz = 0;
+			for(var fy = -rel; fy <= rel; fy++) {
+				for(var fy = -rel; fy <= rel; fy++) {
+					if(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz), 2) < Math.pow((detail[2]-0.5), 2)) {
+						sgUtils.data.progress[0]++;
+						//속이 빈 원 옵션 체크
+						if(detail[0] && !(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz, 2) >= (Math.pow((detail[2]-1.5), 2)))) {
+							continue;
+						}
+						if(workType === 0) {
+							Level.setTile(cx + fx, cy + fy, cz + fz, bid, bdata);
+						}else {
+							blocks.push([cx + fx, cy + fy, cz + fz, bid, bdata]);
+						}
+					}
+				}
+			}
+			break;
+			default:
+			throw new Error("Unknown edit-circle-axis type: " + detail[3]);
+		}
 		break;
 
 
-		//EditDetail: [isHollow, FilledBlock, radious, direction]
-		case EditType.SEMICIRCLE:
+		//EditDetail: [isHollow, FilledBlock, radious, axis, direction]
+		case EditType.SEMI_CIRCLE:
+		var pos1 = editor.getPos1();
+
+		//반지름 사이즈에 맞게 크기를 재설정
+		var cx = pos1.getX();
+		var cy = pos1.getY();
+		var cz = pos1.getZ();
+		var rel = detail[2]-1;
+		var max =  Math.pow(Math.pow(rel, 2)+1, 2);
+		sgUtils.data.progress = [0, max];
+
+		//원을 그릴 방향 (속도 향상을 위해 문자열을 숫자로 전환)
+		var dire;
+		switch(detail[4]) {
+			case "x+":
+			dire = 0;
+			break;
+			case "x-":
+			dire = 1;
+			break;
+			case "y+":
+			dire = 2;
+			break;
+			case "y-":
+			dire = 3;
+			break;
+			case "z+":
+			dire = 4;
+			break;
+			case "z-":
+			dire = 5;
+			break;
+			default://예외 처리 했을탠데...
+			throw new Error("Unknown edit-semiCircle-direction type: " + detail[3]);
+		}
+
+		var bid = detail[1].getId();
+		var bdata = detail[1].getData();
+		var blocks = [];
+		//원을 그릴 기준이 될 축
+		switch(detail[3]) {
+			case "x":
+			var fx = 0;
+			for(var fy = -rel; fy <= rel; fy++) {
+				for(var fz = -rel; fz <= rel; fz++) {
+					//원을 그릴 축에서의 반원의 방향
+					switch(dire) {
+						case 2://y+
+						if(fy < 0) continue;
+						break;
+						case 3://y-
+						if(fy > 0) continue;
+						break;
+						case 4://z+
+						if(fz < 0) continue;
+						break;
+						case 5://z-
+						if(fz > 0) continue;
+						break;
+					}
+					if(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz), 2) < Math.pow((detail[2]-0.5), 2)) {
+						sgUtils.data.progress[0]++;
+						//속이 빈 원 옵션 체크
+						if(detail[0] && !(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz, 2) >= (Math.pow((detail[2]-1.5), 2)))) {
+							continue;
+						}
+						if(workType === 0) {
+							Level.setTile(cx + fx, cy + fy, cz + fz, bid, bdata);
+						}else {
+							blocks.push([cx + fx, cy + fy, cz + fz, bid, bdata]);
+						}
+					}
+				}
+			}
+			break;
+			case "y":
+			var fy = 0;
+			for(var fx = -rel; fx <= rel; fx++) {
+				for(var fz = -rel; fz <= rel; fz++) {
+					//원을 그릴 축에서의 반원의 방향
+					switch(dire) {
+						case 0://x+
+						if(fx < 0) continue;
+						break;
+						case 1://x-
+						if(fx > 0) continue;
+						break;
+						case 4://z+
+						if(fz < 0) continue;
+						break;
+						case 5://z-
+						if(fz > 0) continue;
+						break;
+					}
+					if(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz), 2) < Math.pow((detail[2]-0.5), 2)) {
+						sgUtils.data.progress[0]++;
+						//속이 빈 원 옵션 체크
+						if(detail[0] && !(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz, 2) >= (Math.pow((detail[2]-1.5), 2)))) {
+							continue;
+						}
+						if(workType === 0) {
+							Level.setTile(cx + fx, cy + fy, cz + fz, bid, bdata);
+						}else {
+							blocks.push([cx + fx, cy + fy, cz + fz, bid, bdata]);
+						}
+					}
+				}
+			}
+			break;
+			case "z":
+			var fz = 0;
+			for(var fy = -rel; fy <= rel; fy++) {
+				for(var fy = -rel; fy <= rel; fy++) {
+					//원을 그릴 축에서의 반원의 방향
+					switch(dire) {
+						case 0://x+
+						if(fx < 0) continue;
+						break;
+						case 1://x-
+						if(fx > 0) continue;
+						break;
+						case 2://z+
+						if(fy < 0) continue;
+						break;
+						case 3://z-
+						if(fy > 0) continue;
+						break;
+					}
+					if(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz), 2) < Math.pow((detail[2]-0.5), 2)) {
+						sgUtils.data.progress[0]++;
+						//속이 빈 원 옵션 체크
+						if(detail[0] && !(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz, 2) >= (Math.pow((detail[2]-1.5), 2)))) {
+							continue;
+						}
+						if(workType === 0) {
+							Level.setTile(cx + fx, cy + fy, cz + fz, bid, bdata);
+						}else {
+							blocks.push([cx + fx, cy + fy, cz + fz, bid, bdata]);
+						}
+					}
+				}
+			}
+			break;
+			default:
+			throw new Error("Unknown edit-semiCircle-aixs type: " + detail[3]);
+		}
 		break;
 
 
@@ -5352,15 +5729,129 @@ function we_edit(workType, editType, editor, detail) {
 }
 
 
+//잡일 처리를 gui로 하기위한 틀
+function we_dialog(title, layout, confirmText, confirmFunc, cancelTxt, cancelFunc, gravity) {
+	var that = this;
+	this.name = title;
+	this.cfText = confirmText;
+	this.ccText = cancelTxt;
+	this.cfFunc = confirmFunc;//버튼을 누를때 창을 닫기 위해 'this.close()' 호출 필수
+	this.ccFunc = cancelFunc;
 
-//단지 블럭 선택창만을 위한 메서드
+	this.wd = null;
+	this.layoutData = null;
+	this.gravity = gravity;
+}
+
+we_dialog.prototype = {
+
+		toString: function() {
+			return "[object we_dialog(" + this.name + ")]";
+		},
+
+		build: function() {
+			var that = this;
+			//main Layout
+			var rl = new sg.rl(ctx);
+			rl.setBackgroundDrawable(sgAssets.toast.ninePatch());
+
+			//title Part
+			var title = new sg.rl(ctx);
+			title.setId(sgUtils.math.randomId());
+			var title_p = new sg.rlp(sg.mp, sg.px*0x30);
+			title_p.addRule(sg.rl.ALIGN_PARENT_TOP);
+			title.setLayoutParams(title_p);
+			title.setBackgroundColor(sgColors.main);
+			var t_text = sgUtils.gui.mcFastText(this.name, sg.px*0x10, false, Color.WHITE, null, null, null, [sg.px*2, sg.px*2, sg.px*2, sg.px*2]);
+			var t_text_p = new sg.rlp(sg.wc, sg.wc);
+			t_text_p.addRule(sg.rl.CENTER_IN_PARENT);
+			t_text.setLayoutParams(t_text_p);
+			title.addView(t_text);
+			//confirm
+			var cf = null;
+			//cancel
+			var cc = null;
+			//confirm Button
+			if(this.cfText !== null) {
+				cf = sgUtils.gui.mcFastButton(this.cfText, sg.px*0xa, false, sgColors.main, null, null, null, [sg.px*8, sg.px*8, sg.px*8, sg.px*8], null, null, null, function(view) {
+					that.cfFunc();
+				});
+				var cf_p = new sg.rlp(sg.wc, sg.mp);
+				cf_p.addRule(sg.rl.CENTER_VERTICAL);
+				cf_p.addRule(sg.rl.ALIGN_PARENT_RIGHT);
+				cf.setLayoutParams(cf_p);
+				cf.setBackgroundColor(Color.WHITE);
+				title.addView(cf);
+			}
+			//cancel Button
+			if(this.ccText !== null) {
+				cc = sgUtils.gui.mcFastButton(this.ccText, sg.px*0xa, false, sgColors.main, null, null, null, [sg.px*8, sg.px*8, sg.px*8, sg.px*8], null, null, null, function(view) {
+					that.ccFunc();
+				});
+				var cc_p = new sg.rlp(sg.wc, sg.mp);
+				cc_p.addRule(sg.rl.CENTER_VERTICAL);
+				cc_p.addRule(sg.rl.ALIGN_PARENT_LEFT);
+				cc.setLayoutParams(cc_p);
+				cc.setBackgroundColor(Color.WHITE);
+				title.addView(cc);
+			}
+			rl.addView(title);
+
+			//content layout
+			var scroll = new ScrollView(ctx);
+			var scroll_p = new sg.rlp(sg.wc, sg.wc);
+			scroll_p.addRule(sg.rl.BELOW, bid.getId());
+			scroll_p.addRule(sg.rl.CENTER_HORIZONTAL);
+			scroll.setLayoutParams(scroll_p);
+			scroll.setPadding(sg.px*2, 0, sg.px*2, sg.px*2);
+			scroll.addView(layout);
+			rl.addView(scroll);
+
+			this.layoutData = [rl, title, scroll, t_text, cf, cc];
+
+			this.wd = new PopupWindow(rl, sg.wc, sg.wc, true);
+		},
+
+		show: function() {
+			var that = this;
+			if(this.wd === null) {
+				this.build();
+			}
+			if(this.wd.isShowing()) {
+				return;
+			}
+			uiThread(function() {try {
+				that.wd.showAtLocation(sg.dv, that.gravity, 0, 0);
+			}catch(err) {
+				showError(err);
+			}});
+		},
+
+		close: function() {
+			var that = this;
+			if(this.wd === null) {
+				return;
+			}
+			if(!this.wd.isShowing()) {
+				return;
+			}
+			uiThread(function() {try {
+				that.wd.dismiss();
+			}catch(err) {
+				showError(err);
+			}});
+		}
+}
+
+
+
+//단지 블럭 선택창만을 위한 메서드(we_dialog의 열화 카피판[근데 we_dialog보다 이 레이아웃이 먼저 만들어짐<어째서?>])
 function we_blockSelect(title, confirmText, confirmFunc, cancelTxt, cancelFunc) {
 	var that = this;
 	this.name = title;
-	this
 	this.cfText = confirmText;
 	this.ccText = cancelTxt;
-	this.cfFunc = confirmFunc;//if you want close this window confirmFunc or cancelFunc must contain 'this.close()'
+	this.cfFunc = confirmFunc;//버튼을 누를때 창을 닫기 위해 'this.close()' 호출 필수
 	this.ccFunc = cancelFunc;
 
 	this.wd = null;
@@ -5419,7 +5910,7 @@ we_blockSelect.prototype = {
 		//cancel Button
 		if(this.ccText !== null) {
 			cc = sgUtils.gui.mcFastButton(this.ccText, sg.px*0xa, false, sgColors.main, null, null, null, [sg.px*8, sg.px*8, sg.px*8, sg.px*8], null, null, null, function(view) {
-				that.ccFunc(view);
+				that.ccFunc();
 			});
 			var cc_p = new sg.rlp(sg.wc, sg.mp);
 			cc_p.addRule(sg.rl.CENTER_VERTICAL);
@@ -5587,769 +6078,6 @@ var WorkType = {
 	ASYNCHRONOUS: 1
 }
 
-
-
-var ContentType = {
-	REDIRECT_MENU: 0,
-	FUNCTION: 1,
-	TOGGLE: 2
-}
-
-var MenuType = {
-	MAIN: 0x00,
-	EDIT: 0x01,
-	TOOL: 0x02,
-	INFO: 0x03,
-	QUICK: 0x04,
-	HELP: 0x05,
-	SETTING: 0x06,
-	CIRCULAR: 0x07,
-	COPY: 0x08,
-	POS: 0x09
-}
-
-function WorldEditScript(setting) {
-	this.TYPE = "ModPE_Script";
-	this.defaultSettingFile = new File(sgFiles.script, "setting.json");
-	if(setting instanceof File) {
-		this.settingFile = setting;
-	}else if(setting instanceof string) {
-		this.settingFile = new File(setting);
-	}else {
-		this.settingFile = this.defaultSettingFile;
-	}
-	this.setting = null;
-	this.defaultSetting = {
-		ButtonX: 0,
-		ButtonY: Math.floor(c.wh/3),
-		ButtonVis: true,
-		Whitelist: [],
-		WorkType: WorkType.SYNCHRONIZATION,
-		HollowCircular: false
-	}
-	this.editorGroup = new EditorGroup(this);
-	this.button = null;
-	this.buttonVis = false;
-	this.menu = null;
-	this.menuVis = false;
-	this.menus = [];
-	this.currentMenu = null;
-	this.blockImages = null;
-	this.blockImagesData = [];
-	this.blockImageWork = false;
-	this.asynceBuffer = [];
-	this._selectMenuVis = false;
-	this._onMove = false;
-	this._onWork = false;
-	this._workTick = 200;
-}
-
-WorldEditScript.prototype = {
-
-	toString: function() {
-		return "[object WorldEditScript]";
-	},
-
-	init: function() {
-		this.editorGroup.init();
-	},
-
-	loadSetting: function() {
-		if(this.settingFile.exists()) {
-			this.setting = loadJSON(this.settingFile);
-			if(this.setting === false || this.setting === null || this.setting === undefined || this.setting.toString() !== "[object Object]") {
-				WES_Toast("설정파일 손상!\n복구 시도중입니다...", 2, 8000);
-				this.settingFile.delete();
-				this.saveSetting();
-			}
-		}else {
-			WES_Toast("월드에딧 스크립트의 첫 부팅을 환영합니다...\n설정파일을 생성중입니다", 0, 8000);
-			this.saveSetting();
-		}
-	},
-
-	saveSetting: function() {
-		if(!(this.settingFile.exists())) {
-			this.settingFile.createNewFile();
-			this.setting = this.defaultSetting;
-		}
-		if(!(saveJSON(this.settingFile, this.setting))) {
-			WES_Toast("경고! 저장불가능\n저장장치를 확인하세요.", 2, 8000);
-		}
-	},
-
-	get: function(article) {
-		if(this.setting === null) {
-			this.loadSetting();
-		}
-		if(this.setting[article] === undefined) {
-			WES_Toast("설정 데이터 손상.\n해당 데이터를 벅구중입니다 (" + article + ")", 2, 8000);
-			this.setting[article] = this.defaultSetting[article];
-			return this.setting[article];
-		}
-		return this.setting[article];
-	},
-
-	set: function(article, value) {
-		if(this.setting === null) {
-			this.loadSetting();
-		}
-		if(this.setting[article] === undefined) {
-			msg("알 수 없는 자료 저장시도 (" + article + ")", 2, 8000);
-		}
-		this.setting[article] = value;
-	},
-
-	isButtonVisible: function() {
-		return this.buttonVis;
-	},
-
-	setButtonVisible: function(bool) {
-		var that = this;
-		if(bool) {
-			if(!(this.buttonVis)) {
-				if(this.button === null) {
-					this.buildButton();
-				}
-				uiThread(function() {try {
-					that.button.showAtLocation(c.d, Gravity.LEFT|Gravity.TOP, that.get("ButtonX"), that.get("ButtonY"));
-					that.buttonVis = true;
-				}catch(e) {
-					showError(e, WarnType.CRITICAL);
-				}});
-			}else {
-				return false;
-			}
-		}else {
-			if(this.buttonVis) {
-				uiThread(function() {try {
-					that.button.dismiss();
-					that.buttonVis = false;
-				}catch(e) {
-					showError(e, WarnType.CRITICAL);
-				}});
-			}else {
-				return false;
-			}
-		}
-	},
-
-	isMenuVisible: function() {
-		return this.menuVis;
-	},
-
-	setMenuVisible: function(bool) {
-		var that = this;
-		if(bool) {
-			if(!(this.menuVis)) {
-				if(this.menu === null) {
-					this.buildMenu();
-				}
-				uiThread(function() {try {
-					that.menu.showAtLocation(c.d, Gravity.RIGHT|Gravity.TOP, 0, 0);
-					that.menuVis = true;
-				}catch(e) {
-					showError(e, WarnType.CRITICAL);
-				}});
-			}else {
-				return false;
-			}
-		}else {
-			if(this.menuVis) {
-				uiThread(function() {try {
-					that.menu.dismiss();
-					that.menuVis = false;
-				}catch(e) {
-					showError(e, WarnType.CRITICAL);
-				}});
-			}else {
-				return false;
-			}
-		}
-	},
-
-	buildButton: function() {
-		var loading = new CustomProgressBar(0, 0);
-		var that = this;
-		var btn = new ImageButton(ctx);
-		btn.setImageBitmap(BlockImageLoader.create(["piston_side", 0], ["piston_side", 0], ["piston_top_normal", 0], BlockTypes.CUBE, true));
-		btn.setImageAlpha(0xaa);
-		btn.setOnTouchListener(View.OnTouchListener({onTouch: function(view, event) {try {
-			switch(event.action) {
-				case MotionEvent.ACTION_DOWN:
-  	   	that.relX = event.getX();
-				that.relY = event.getY();
-				that.absX = event.getRawX();
-				that.absY = event.getRawY();
-				that.viewX = that.absX - that.relX;
-				that.viewY = that.absY - that.relY;
-				that.width = that.button.getWidth();
-				that.height = that.button.getHeight();
-				break;
-				case MotionEvent.ACTION_MOVE:
-				if(that._onMove) {
-					var x = event.getRawX() - that.absX + that.viewX;
-					var y = event.getRawY() - that.absY + that.viewY;
-					that.button.update(x, y, that.width, that.height);
-				}
-				break;
-				case MotionEvent.ACTION_UP:
-				if(that._onMove) {
-					that._onMove = false;
-					var x = event.getRawX() - that.absX + that.viewX;
-					var y = event.getRawY() - that.absY + that.viewY;
-					that.button.update(x, y, that.width, that.height);
-					that.set("ButtonX", x);
-					that.set("ButtonY", y);
-					that.saveSetting();
-				}
-				break;
-			}
-		}catch(e) {
-			showError(e, WarnType.RECOVERABLE);
-		}
-		return false;
-		}}));
-		btn.setOnClickListener(View.OnClickListener({onClick: function(view, event) {try {
-			if(!(that.menuVis) || that.currentMenu === null) {
-				if(that.menu === null) {
-					that.buildMenu();
-				}
-				that.setMenu(that.menus[MenuType.MAIN]);
-				that.setMenuVisible(true);
-			}
-		}catch(e) {
-			showError(e, WarnType.RECOVERABLE);
-		}}}));
-		btn.setOnLongClickListener(View.OnLongClickListener({onLongClick: function(view, event) {try {
-			that._onMove = true;
-		}catch(e) {
-			showError(e, WarnType.RECOVERABLE);
-		}
-		return true;
-		}}));
-		this.buttonImage = btn;
-		this.button = new PopupWindow(btn, DIP*0x30, DIP*0x30, false);
-		this.buttonVis = false;
-		loading.close();
-	},
-
-	buildMenu: function() {
-		var that = this;
-		var loading = new CustomProgressBar(0, 0);
-
-		this.layout = new c.r(ctx);
-		this.layout_d = new GradientDrawable();
-		this.layout_d.setColor(Color.argb(0x80, 0x00, 0x00, 0x00));
-		this.layout.setBackgroundDrawable(this.layout_d);
-		this.title = new c.r(ctx);
-		this.title.setId(randomId());
-		this.title.setBackgroundDrawable(Assets.boxNormal.ninePatch());
-		this.title_p = new c.r.LayoutParams(c.m, DIP*0x30);
-		this.title.setLayoutParams(this.title_p);
-		this.t_name = mcpeText(DIP*16, "", true);
-		this.t_name_p = new c.r.LayoutParams(c.w, c.w);
-		this.t_name_p.addRule(c.r.CENTER_IN_PARENT);
-		this.t_name.setLayoutParams(this.t_name_p);
-		this.title.addView(this.t_name);
-
-		this.t_exit = new ImageView(ctx);
-		this.t_exit_p = new c.r.LayoutParams(DIP*0x1c, DIP*0x1c);
-		this.t_exit_p.setMargins(DIP*0x0a, DIP*0x0a, DIP*0x0a, DIP* 0x0a);
-		this.t_exit_p.addRule(c.r.CENTER_VERTICAL);
-		this.t_exit_p.addRule(c.r.ALIGN_PARENT_LEFT);
-		this.t_exit.setLayoutParams(this.t_exit_p);
-		this.t_exit.setBackgroundDrawable(Assets.boxNormal.ninePatch());
-		this.t_exit.setOnClickListener(View.OnClickListener({onClick: function(view, event){ try{
-			that.currentMenu.close();
-		}catch(e) {
-			showError(e);
-		}}}));
-		this.title.addView(this.t_exit);
-		this.layout.addView(this.title);
-
-		this.scroll = new ScrollView(ctx);
-		this.scroll_p = new c.r.LayoutParams(c.m, c.m);
-		this.scroll_p.addRule(c.r.BELOW, this.title.getId());
-		this.scroll.setLayoutParams(this.scroll_p);
-		this.layout.addView(this.scroll);
-
-		this.menu = new PopupWindow(this.layout, DIP*0xf0, c.wh, false);
-
-
-
-		this.menus[MenuType.MAIN] = new WES_Menu(this, "World Edit Script");
-
-
-
-		this.menus[MenuType.EDIT] = new WES_Menu(this, "에딧");
-		this.menus[MenuType.MAIN].addMenu(ContentType.REDIRECT_MENU, "에딧", this.menus[MenuType.EDIT]);
-
-		this.menus[MenuType.POS] = new WES_Menu(this, "위치/블럭 지정");
-		this.menus[MenuType.EDIT].addMenu(ContentType.REDIRECT_MENU, "위치/블럭 지정", this.menus[MenuType.POS]);
-
-			this.menus[MenuType.POS].addMenu(ContentType.FUNCTION, "아이템: 위치 선택 도구", function() {
-			Entity.setCarriedItem(Player.getEntity(), 271, 1, 0);
-			WES_Toast("'위치 선택 도구' 지급됨");
-		});
-
-		this.menus[MenuType.POS].addMenu(ContentType.FUNCTION, "위치1 지정", function() {
-			var editor = that.editorGroup.get(Player.getName(Player.getEntity()));
-			if(editor === false) {
-				WES_Toast("플레이어를 찾을 수 없습니다");
-				return;
-			}
-			var x = Math.floor(Player.getX());
-			var y = Math.floor(Player.getY() - 1);
-			var z = Math.floor(Player.getZ());
-			editor.setPos1(new Vector3(x, y, z));
-			WES_Toast("위치1 지정됨\nx:" + x + " y:" + y + " z:" + z);
-		});
-
-		this.menus[MenuType.POS].addMenu(ContentType.FUNCTION, "위치2 지정", function() {
-			var editor = that.editorGroup.get(Player.getName(Player.getEntity()));
-			if(editor === false) {
-				WES_Toast("플레이어를 찾을 수 없습니다");
-				return;
-			}
-			var x = Math.floor(Player.getX());
-			var y = Math.floor(Player.getY() - 1);
-			var z = Math.floor(Player.getZ());
-			editor.setPos2(new Vector3(x, y, z));
-			WES_Toast("위치2 지정됨\nx:" + x + " y:" + y + " z:" + z);
-		});
-
-		this.menus[MenuType.POS].addMenu(ContentType.FUNCTION, "블럭1 지정", function() {
-			var editor = that.editorGroup.get(Player.getName(Player.getEntity()));
-			if(editor === false) {
-				WES_Toast("플레이어를 찾을 수 없습니다");
-				return;
-			}
-			if(that.blockImageWork) {
-				WES_Toast("이미지 빌드중입니다\n잠시만 기다리세요", 2, 5000);
-				return;
-			}
-			var t = new WES_BlockSelect(that, "블럭1 지정...", "선택", function(id, data) {
-				editor.setBlock1(new Block(id, data));
-				WES_Toast("블럭1 지정됨 " + id + ":" + data);
-			}, "취소", function() {});
-			t.setVisible(true);
-		});
-
-		this.menus[MenuType.POS].addMenu(ContentType.FUNCTION, "블럭2 지정", function() {
-			var editor = that.editorGroup.get(Player.getName(Player.getEntity()));
-			if(editor === false) {
-				WES_Toast("플레이어를 찾을 수 없습니다");
-				return;
-			}
-			if(that.blockImageWork) {
-				WES_Toast("이미지 빌드중입니다\n잠시만 기다리세요", 2, 5000);
-				return;
-			}
-			var t = new WES_BlockSelect(that, "블럭2 지정...", "확인", function(id, data) {
-				editor.setBlock2(new Block(id, data));
-				WES_Toast("블럭2 지정됨 " + id + ":" + data);
-			}, "취소", function() {});
-			t.setVisible(true);
-		});
-
-		this.menus[MenuType.COPY] = new WES_Menu(this, "복사/변형");
-		this.menus[MenuType.EDIT].addMenu(ContentType.REDIRECT_MENU, "복사/변형", this.menus[MenuType.COPY]);
-
-		this.menus[MenuType.COPY].addMenu(ContentType.FUNCTION, "복사", function() {
-			var editor = that.editorGroup.get(Player.getName(Player.getEntity()));
-			if(editor === false) {
-				WES_Toast("플레이어를 찾을 수 없습니다");
-				return;
-			}
-			editor.run(EditType.COPY);
-		});
-
-		this.menus[MenuType.COPY].addMenu(ContentType.FUNCTION, "잘라내기", function() {
-			var editor = that.editorGroup.get(Player.getName(Player.getEntity()));
-			if(editor === false) {
-				WES_Toast("플레이어를 찾을 수 없습니다");
-				return;
-			}
-			editor.run(EditType.CUT);
-		});
-
-		this.menus[MenuType.COPY].addMenu(ContentType.FUNCTION, "붙여넣기", function() {
-			var editor = that.editorGroup.get(Player.getName(Player.getEntity()));
-			if(editor === false) {
-				WES_Toast("플레이어를 찾을 수 없습니다");
-				return;
-			}
-			editor.run(EditType.PASTE);
-		});
-
-		this.menus[MenuType.COPY].addMenu(ContentType.FUNCTION, "회전", function() {
-			var editor = that.editorGroup.get(Player.getName(Player.getEntity()));
-			if(editor === false) {
-				WES_Toast("플레이어를 찾을 수 없습니다");
-				return;
-			}
-			editor.run(EditType.ROTATION);
-		});
-
-		this.menus[MenuType.COPY].addMenu(ContentType.FUNCTION, "대칭", function() {
-			var editor = that.editorGroup.get(Player.getName(Player.getEntity()));
-			if(editor === false) {
-				WES_Toast("플레이어를 찾을 수 없습니다");
-				return;
-			}
-			editor.run(EditType.FLIP);
-		});
-
-		this.menus[MenuType.EDIT].addMenu(ContentType.FUNCTION, "채우기", function() {
-			var editor = that.editorGroup.get(Player.getName(Player.getEntity()));
-			if(editor === false) {
-				WES_Toast("플레이어를 찾을 수 없습니다");
-				return;
-			}
-			editor.run(EditType.FILL);
-		});
-
-		this.menus[MenuType.EDIT].addMenu(ContentType.FUNCTION, "비우기", function() {
-			var editor = that.editorGroup.get(Player.getName(Player.getEntity()));
-			if(editor === false) {
-				WES_Toast("플레이어를 찾을 수 없습니다");
-				return;
-			}
-			editor.run(EditType.CLEAR);
-		});
-
-		this.menus[MenuType.EDIT].addMenu(ContentType.FUNCTION, "바꾸기", function() {
-			var editor = that.editorGroup.get(Player.getName(Player.getEntity()));
-			if(editor === false) {
-				WES_Toast("플레이어를 찾을 수 없습니다");
-				return;
-			}
-			editor.run(EditType.REPLACE);
-		});
-
-		this.menus[MenuType.EDIT].addMenu(ContentType.FUNCTION, "벽 생성", function() {
-			var editor = that.editorGroup.get(Player.getName(Player.getEntity()));
-			if(editor === false) {
-				WES_Toast("플레이어를 찾을 수 없습니다");
-				return;
-			}
-			editor.run(EditType.WALL);
-		});
-
-		this.menus[MenuType.CIRCULAR] = new WES_Menu(this, "원형");
-		this.menus[MenuType.EDIT].addMenu(ContentType.REDIRECT_MENU, "원형 생성", this.menus[MenuType.CIRCULAR]);
-
-		this.menus[MenuType.CIRCULAR].addMenu(ContentType.TOGGLE, "설정: 내부를 비우기", function(bool) {
-			if(bool === true) {
-				that.set("HollowCircular", true);
-				that.saveSetting();
-				return "설정: 내부를 비우기";
-			}else if(bool === false) {
-				that.set("HollowCircular", false);
-				that.saveSetting();
-				return "설정: 내부를 비우기";
-			}else {
-				return that.get("HollowCircular")
-			}
-		});
-
-		this.menus[MenuType.CIRCULAR].addMenu(ContentType.FUNCTION, "구 생성", function() {
-			var editor = that.editorGroup.get(Player.getName(Player.getEntity()));
-			if(editor === false) {
-				WES_Toast("플레이어를 찾을 수 없습니다");
-				return;
-			}
-			editor.run(EditType.SPHERE);
-		});
-
-		this.menus[MenuType.CIRCULAR].addMenu(ContentType.FUNCTION, "반구 생성", function() {
-			var editor = that.editorGroup.get(Player.getName(Player.getEntity()));
-			if(editor === false) {
-				WES_Toast("플레이어를 찾을 수 없습니다");
-				return;
-			}
-			editor.run(EditType.HEMI_SPHERE);
-		});
-
-		this.menus[MenuType.CIRCULAR].addMenu(ContentType.FUNCTION, "원 생성", function() {
-			var editor = that.editorGroup.get(Player.getName(Player.getEntity()));
-			if(editor === false) {
-				WES_Toast("플레이어를 찾을 수 없습니다");
-				return;
-			}
-			editor.run(EditType.CIRCLE);
-		});
-
-
-
-		this.menus[MenuType.TOOL] = new WES_Menu(this, "도구");
-		this.menus[MenuType.MAIN].addMenu(ContentType.REDIRECT_MENU, "도구", this.menus[MenuType.TOOL]);
-
-
-
-
-		this.menus[MenuType.INFO] = new WES_Menu(this, "정보패널");
-		this.menus[MenuType.MAIN].addMenu(ContentType.REDIRECT_MENU, "정보패널", this.menus[MenuType.INFO]);
-
-
-
-
-		this.menus[MenuType.QUICK] = new WES_Menu(this, "퀵바");
-		this.menus[MenuType.MAIN].addMenu(ContentType.REDIRECT_MENU, "퀵바", this.menus[MenuType.QUICK]);
-
-
-
-
-		this.menus[MenuType.HELP] = new WES_Menu(this, "도움말");
-		this.menus[MenuType.MAIN].addMenu(ContentType.REDIRECT_MENU, "도움말", this.menus[MenuType.HELP]);
-
-		this.menus[MenuType.HELP].addMenu(ContentType.FUNCTION, "에딧하는 방법", function() {
-			var doc = new WES_Document([
-			"s|이 도움말에서는 다양한 에딧의 방법을 다룹니다",
-			"s|채우기|" + DIP*0x18 + "|" + Color.YELLOW,
-			"i|" + FILE_MAIN_DIR + "/help1.img",
-			"s|채우고 싶은 영역의 두 꼭짓점을\n'위치1', '위치2'로 지정한 다음에 \n'블럭1'에 원하는 블럭을 선택하고 \n'채우기'를 선택하면 두 꼭짓점 사이의 공간이 해당 블럭으로 채워집니다\n----------",
-			"s|비우기|" + DIP*0x18 + "|" + Color.YELLOW,
-			"s|두 꼭짓점을 지정한 다음 '비우기'를 누르면\n해당 영역의 위쪽 부터 아래쪽으로 제거해 나갑니다\n물이나 모래등을 제거할때 효과적입니다\n----------",
-			"s|바꾸기|" + DIP*0x18 + "|" + Color.YELLOW,
-			"s|두 꼭짓점을 지정한 다음\n'블럭1'에다 바꿀 블럭을\n'블럭2'에다 바꾸고 싶은 블럭을 지정하고\n'바꾸기'를 누르면 해당 영역에 있는 블럭1들이 블럭2로 바뀝니다\n--------",
-			"s|벽 생성|" + DIP*0x18 + "|" + Color.YELLOW,
-			"i|" + FILE_MAIN_DIR + "/help2.img",
-			"s|두 꼭짓점 사이에 블럭1로 구성된 벽을 생성합니다\n--------",
-			"s|구 생성|" + DIP*0x18 + "|" + Color.YELLOW,
-			"i|" + FILE_MAIN_DIR + "/help3.img",
-			"s|'위치1'을 중심으로\n지정한 반지름 크기의 구를 생성합니다\n또한 '설정: 내부를 비우기'를 통해서 속이 빈 구를 생성할 수 있습니다\n--------",
-			"s|반구 생성|" + DIP*0x18 + "|" + Color.YELLOW,
-			"i|" + FILE_MAIN_DIR + "/help4.img",
-			"s|'위치1'을 중심으로\n지정한 반지름 크기와\n지정한 방향에 따라서 반구를 생성합니다\n또한 '설정: 내부를 비우기'를 통해서 속이 빈 반구를 생성할 수 있습니다\n--------",
-			"s|원 생성|" + DIP*0x18 + "|" + Color.YELLOW,
-			"i|" + FILE_MAIN_DIR + "/help5.img",
-			"s|'위치1'을 중심으로\n지정한 반지름 크기와\n지정한 방향의 원을 생성합니다\n또한 '설정: 내부를 비우기'를 통해서 속이 빈 원을 생성할 수 있습니다\n--------"
-			], false);
-			var dl = new WES_Dialog("기초적인 에딧 도움말", 0, doc.getLayout(), null, null, "닫기", function() {this.setVisible(false)}, true);
-			dl.setVisible(true);
-		});
-
-		this.menus[MenuType.HELP].addMenu(ContentType.FUNCTION, "버전에 대해서...", function() {
-			var doc = new WES_Document([
-			"s|죄송합니다... 전 이 버전이 망했다고 생각해요... 처음부터 다시 만들생각입니다... (170,000자를 다시 쓸 생각하니 몸서리가...)",
-			"s|그러한 이유로 이 버전에 자세한 픽스나 자세한 설명은 하지 않을껍니다"
-			], false);
-			var dl = new WES_Dialog("기초적인 에딧 도움말", 0, doc.getLayout(), null, null, "닫기", function() {this.setVisible(false)}, true);
-			dl.setVisible(true);
-		});
-
-
-
-
-		this.menus[MenuType.SETTING] = new WES_Menu(this, "설정");
-		this.menus[MenuType.MAIN].addMenu(ContentType.REDIRECT_MENU, "설정", this.menus[MenuType.SETTING]);
-
-		this.menus[MenuType.SETTING].addMenu(ContentType.TOGGLE, "버튼 보이기", function(bool) {
-			if(bool === true) {
-				that.set("ButtonVis", true);
-				that.setButtonVisible(true);
-				that.saveSetting();
-				return "버튼 보이기"
-			}else if(bool === false) {
-				that.set("ButtonVis", false);
-				that.setButtonVisible(false);
-				that.saveSetting();
-				return "버튼 보이기"
-			}else {
-				return that.setting.buttonVis
-			}
-		});
-
-		this.menus[MenuType.SETTING].addMenu(ContentType.TOGGLE, (that.get("WorkType") == WorkType.SYNCHRONIZATION) ? "작업방식: Synchronization" : "작업모드: Asynchronous", function(bool) {
-			if(bool === true) {
-				that.set("WorkType", WorkType.SYNCHRONIZATION);
-				that.saveSetting();
-				return "작업모드: Synchronization";
-			}else if(bool === false) {
-				that.set("WorkType", WorkType.ASYNCHRONOUS);
-				that.saveSetting();
-				return "작업모드: Asynchronous";
-			}else {
-				return that.get("WorkType") == WorkType.SYNCHRONIZATION;
-			}
-		});
-
-		this.menus[MenuType.MAIN].addMenu(ContentType.FUNCTION, "정보", function() {that.about()});
-
-
-
-		loading.close();
-	},
-
-	setMenu: function(menu) {
-		var that = this;
-		this.currentMenu = menu;
-		uiThread(function() { try{
-			that.scroll.removeAllViews();
-			that.t_name.setText(that.currentMenu.getName());
-			that.scroll.addView(that.currentMenu.getLayout());
-		}catch(e) {
-			showError(e, WarnType.WARNING);
-		}});
-	},
-
-	about: function() {
-		var layout = new c.r(ctx);
-		var layout_d = new BitmapDrawable(Assets.bg32);
-		layout_d.setTileModeXY(Shader.TileMode.REPEAT, Shader.TileMode.REPEAT);
-		layout.setBackgroundDrawable(layout_d);
-
-		var image = new ImageView(ctx);
-		image.setId(randomId());
-		var image_p = new c.r.LayoutParams(DIP*0x80, DIP*0x80);
-		image_p.addRule(c.r.CENTER_IN_PARENT);
-		image.setLayoutParams(image_p);
-		image.setImageBitmap(BlockImageLoader.create(["piston_side", 0], ["piston_side", 0], ["piston_top_normal", 0], BlockTypes.CUBE, true));
-		layout.addView(image);
-
-		var txt1 = mcText("World", DIP*0x30);
-		txt1.setGravity(Gravity.CENTER);
-		var txt1_p = new c.r.LayoutParams(c.m, c.w);
-		txt1_p.addRule(c.r.CENTER_VERTICAL);
-		txt1_p.addRule(c.r.LEFT_OF, image.getId());
-		txt1.setLayoutParams(txt1_p);
-		layout.addView(txt1);
-
-		var txt2 = mcText("Edit", DIP*0x30);
-		txt2.setGravity(Gravity.CENTER);
-		var txt2_p = new c.r.LayoutParams(c.m, c.w);
-		txt2_p.addRule(c.r.CENTER_VERTICAL);
-		txt2_p.addRule(c.r.RIGHT_OF, image.getId());
-		txt2.setLayoutParams(txt2_p);
-		layout.addView(txt2);
-
-		var txt3 = mcText(VERSION, DIP*0x20, false, Color.parseColor("#ffff55"));
-		var txt3_p = new c.r.LayoutParams(c.w, c.w);
-		txt3_p.addRule(c.r.CENTER_HORIZONTAL);
-		txt3_p.addRule(c.r.BELOW, image.getId());
-		txt3.setLayoutParams(txt3_p);
-		layout.addView(txt3);
-
-		var txt4 = mcText("author: Semteul", DIP*0x10);
-		var txt4_p = new c.r.LayoutParams(c.w, c.w);
-		txt4_p.addRule(c.r.ALIGN_PARENT_BOTTOM);
-		txt4_p.addRule(c.r.ALIGN_PARENT_RIGHT);
-		txt4.setLayoutParams(txt4_p);
-		layout.addView(txt4);
-
-		var window = new PopupWindow(layout, c.ww, c.wh, true);
-		uiThread(function() {
-			window.showAtLocation(c.d, 0, 0, 0);
-			//TODO
-			WES_Toast("제작자가 귀차니즘에 빠져서 나가기 버튼을 안 만들었습니다.\n알아서 강제종료해주세요.(에?", 0, 10000);
-		});
-	}
-}
-
-
-
-function WES_Document(strs, shadow) {
-	this.strs = strs;
-	this.shadow = shadow === undefined ? false : shadow;
-	this.isBuild = false;
-}
-
-WES_Document.prototype = {
-
-	build: function() {
-		this.mainLayout = new c.l(ctx);
-		this.layout = this.mainLayout;
-		this.layout.setGravity(Gravity.CENTER);
-		this.layout.setOrientation(c.l.VERTICAL);
-
-		this.isMainLayout = true;
-
-		for(var e = 0; e < this.strs.length; e++) {
-			var document = this.strs[e].split("|");
-			switch(document[0]) {
-
-				case "s"://Text
-				if(document.length > 3) {
-					var txt = mcText(document[1], document[2], this.shadow, document[3]);
-				}else if(document.length > 2) {
-					var txt = mcText(document[1], document[2], this.shadow);
-				}else {
-					var txt = mcText(document[1], null, this.shadow);
-				}
-				this.layout.addView(txt);
-				break;
-
-				case "i"://Image
-				var file = new File(document[1]);
-				if(!(file.exists() && file.isFile() && file.canRead())) {
-					this.layout.addView(mcText("Image load fail.\n'" + file.getName() + "'", null, this.shadow, Color.RED));
-					break;
-				}
-				var bitmap = BitmapFactory.decodeStream(java.io.FileInputStream(file));
-				var image = new ImageView(ctx);
-				if(document.length > 2) {
-					bitmap = Bitmap.createScaledBitmap(bitmap, parseInt(document[2]), parseInt(document[3]), document[4] === "true");
-				}
-				image.setImageBitmap(bitmap);
-				this.layout.addView(image);
-				break;
-				default:
-				throw new Error("Unknown document type: " + document[0]);
-			}
-		}
-		if(this.isMainLayout) {
-			this.mainLayout = this.layout;
-		}else {
-			this.mainLayout.addView(this.layout);
-		}
-		this.isBuild = true;
-	},
-
-	getLayout: function() {
-		if(this.isBuild) {
-			return this.mainLayout;
-		}else {
-			this.build();
-			return this.mainLayout;
-		}
-	},
-
-	isBuild: function() {
-		this.isBuild;
-	}
-}
-
-
-
-function WES_InfoPanel(name, repeatDelay, func) {
-	this.name = name;
-	this.repeatDelay = repeatDelay;
-	this.delay = 0;
-	this.func = func;
-}
-
-WES_InfoPanel.prototype = {
-
-	toString: function() {
-		return "[" + this.name + " InfoPanel]";
-	},
-
-	run: function() {
-		if(--this.delay < 1) {
-			this.delay = this.repeatDelay;
-			this.func();
-		}
-	},
-
-	forceRun: function() {
-		this.func();
-	}
-}
-
-
-
 function WES_TaskManager(name, delay) {
 	this.name = name;
 	this.thread = null;
@@ -6380,76 +6108,6 @@ WES_TaskManager.prototype = {
 }
 
 
-
-function EditorGroup(parent) {
-	this._parent = parent;
-	this.editors = [];
-	this.whitelist = [];
-}
-
-EditorGroup.prototype = {
-
-	toString: function() {
-		return "[EditorGroup: " + this.whitelist + "]";
-	},
-
-	init: function() {
-		this.whitelist = this._parent.get("Whitelist");
-	},
-
-	get: function(name) {
-		var index = this.getEditorIndex(name);
-		if(index === -1) {
-			return false;
-		}
-		return this.editors[index];
-	},
-
-	isAllow: function(name) {
-		//if Server owner
-		if(name.toLowerCase() === Player.getName(Player.getEntity()).toLowerCase()) {
-			return true;
-		}
-		//check whitelist
-		for(var e = 0; e < this._parent.whitelist.length; e++) {
-			if(this._parent.whitelist[e].toLowerCase() === name.toLowerCase()) {
-				return true;
-			}
-		}
-		return false;
-	},
-
-	getEditorIndex: function(name) {
-		if(!(this.isAllow(name))) {
-			return -1;
-		}
-		for(var e = 0; e < this.editors.length; e++) {
-			if(this.editors[e].isOwner(name)) {
-				return e;
-			}
-		}
-		this.editors.push(new Editor(this._parent, name));
-		return this.editors.length - 1;
-	},
-
-	setWhitelist: function(name) {
-		this.whitelist.push(name);
-		this._parent.set("Whitelist", this.whitelist);
-		this._parent.saveSetting();
-	},
-
-	removeWhitelist: function(name) {
-		var index = this.getEditorIndex(name);
-		this.editor.splice(index, 1);
-		for(var e = 0; e < this.whitelist.length; e++) {
-			if(this.whitelist[e].toLowerCase() === name.toLowerCase()) {
-				this.whitelist.splice(e, 1);
-				this._parent.set("Whitelist", this.whitelist);
-				this._parent.saveSetting();
-			}
-		}
-	}
-}
 
 function Editor(parent, owner) {
 	this._parent = parent;
@@ -7717,632 +7375,6 @@ Editor.prototype = {
 	}
 }
 
-
-
-function WES_Menu(script, name) {
-	var that = this;
-	this._parent = script;
-	this.name = name;
-	this.menus = [];
-	this.parent = null;
-
-	this.layout = new c.l(ctx);
-	this.layout.setOrientation(c.l.VERTICAL);
-}
-
-WES_Menu.prototype = {
-
-	toString: function() {
-		return "['" + this.name + "' Menu]";
-	},
-
-	isEqual: function(menu) {
-		if(menu instanceof WES_Menu) {
-			return this.name === menu.name;
-		}else {
-			return false;
-		}
-	},
-
-	getParent: function() {
-		return this.parent;
-	},
-
-	setParent: function(menu) {
-		if(!(menu instanceof WES_Menu)) {
-			throw new TypeError("The parameter 'menu' is must instance of WES_Menu");
-		}
-		this.parent = menu;
-	},
-
-	getName: function() {
-		return this.name;
-	},
-
-	getLayout: function() {
-		return this.layout;
-	},
-
-	addMenu: function(type, name, content) {
-		if(type !== ContentType.REDIRECT_MENU && type !== ContentType.FUNCTION && type !== ContentType.TOGGLE) {
-			throw new TypeError("Unknown type parameter 'type'");
-		}
-		var that = this;
-		if(type === ContentType.REDIRECT_MENU) {
-			content.setParent(this);
-		}
-		var btn = mcpeText(DIP*10, name);
-		var id = randomId();
-		btn.setId(id);
-		btn.setGravity(Gravity.CENTER);
-		var btn_p = new c.l.LayoutParams(DIP*0xf0, DIP*0x30);
-		btn.setLayoutParams(btn_p);
-		switch(type) {
-			case ContentType.REDIRECT_MENU:
-			case ContentType.FUNCTION:
-			btn.setBackgroundDrawable(Assets.wesButton.ninePatch());
-			break;
-			case ContentType.TOGGLE:
-			if(content()) {
-				btn.setBackgroundDrawable(Assets.wesButtonClick.ninePatch());
-			}else {
-				btn.setBackgroundDrawable(Assets.wesButton.ninePatch());
-			}
-			break;
-		}
-		btn.setOnClickListener(View.OnClickListener({onClick: function(view, event) {try {
-			that.runMenu(view.getId());
-		}catch(e) {
-			showError(e, WarnType.RECOVERABLE);
-		}}}));
-		uiThread(function() { try{
-			that.layout.addView(btn);
-		}catch(e) {
-			showError(e, WarnType.WARNING);
-		}});
-		this.menus.push([type, name, content, btn, id]);
-	},
-
-	removeMenu: function(id) {
-		var index = this.getMenuIndex(id);
-		if(index >= 0) {
-			this.menus.splice(index, 1);
-			return true;
-		}else {
-			return false;
-		}
-	},
-
-	getMenuIndex: function(id) {
-		for(var e = 0; e < this.menus.length; e++) {
-			if(this.menus[e][4] == id) {
-				return e;
-			}
-		}
-		return -1;
-	},
-
-	runMenu: function(id) {try {
-		var index = this.getMenuIndex(id);
-		if(index === -1) {
-			throw new ReferenceError("The menu '" + id + "' isn't in Menu.");
-		}
-		var ctn = this.menus[index];
-		switch(ctn[0]) {
-			case ContentType.REDIRECT_MENU:
-			this._parent.setMenu(ctn[2]);
-			break;
-			case ContentType.FUNCTION:
-			ctn[2]();
-			break;
-			case ContentType.TOGGLE:
-			if(ctn[2]()) {
-				uiThread(function() { try{
-					ctn[3].setText(ctn[2](false));
-					ctn[3].setBackgroundDrawable(Assets.wesButton.ninePatch());
-				}catch(e) {
-					showError(e, WarnType.RECOVERABLE);
-				}});
-			}else {
-				uiThread(function() { try{
-					ctn[3].setText(ctn[2](true));
-					ctn[3].setBackgroundDrawable(Assets.wesButtonClick.ninePatch());
-				}catch(e) {
-					showError(e, MenuType.RECOVERABLE);
-				}});
-			}
-			break;
-			default:
-			throw new ReferenceError("This '" + ctn[1] + "' menu type is unknown.");
-		}
-	}catch(e) {
-		showError(e, WarnType.WARNING);
-	}},
-
-	close: function() {
-		if(this.parent === null) {
-			this._parent.currentMenu = null;
-			this._parent.setMenuVisible(false);
-		}else {
-			this._parent.setMenu(this.parent);
-		}
-	}
-}
-
-
-
-function WES_Dialog(name, type, layout, confirmTxt, confirmFunc, cancelTxt, cancelFunc, focus, gravity) {
-	this.vis = false;
-	this.name = name;
-	this.type = type;
-	this.confirmTxt = confirmTxt;
-	this.confirmFunc = confirmFunc;
-	this.cancelTxt = cancelTxt;
-	this.cancelFunc = cancelFunc;
-	this.focus = focus;
-	this.gravity = gravity === undefined ? null : gravity;
-	this.childLayout = layout === undefined ? null : layout;
-	this.wd = null;
-}
-
-WES_Dialog.prototype = {
-
-	isVisible: function() {
-		return this.vis;
-	},
-
-	setVisible: function(bool) {
-		var that = this;
-		if(bool) {
-			if(!(this.vis)) {
-				if(this.wd === null) {
-					this.build();
-				}
-				uiThread(function() {try {
-					if(that.gravity === null) {
-						that.wd.showAtLocation(c.d, Gravity.CENTER, 0, 0);
-					}else {
-						that.wd.showAtLocation(c.d, that.gravity, 0, 0);
-					}
-					that.vis = true;
-				}catch(e) {
-					showError(e, WarnType.WARNING);
-				}});
-			}
-		}else {
-			if(this.vis) {
-				uiThread(function() {try {
-					that.wd.dismiss();
-					that.vis = false;
-				}catch(e) {
-					showError(e, WarnType.WARNING);
-				}});
-			}
-		}
-	},
-
-	build: function() {
-
-		var that = this;
-
-		this.layout = new c.r(ctx);
-		this.layout_d = new GradientDrawable();
-		this.layout_d.setColor(Color.argb(0x55, 0, 0, 0));
-		this.layout_d.setCornerRadius(DIP*5);
-		this.layout.setBackgroundDrawable(this.layout_d);
-		this.title = new c.r(ctx);
-		this.title.setId(randomId());
-		this.title_p = new c.r.LayoutParams(c.m, DIP*0x30);
-		this.title_p.addRule(c.r.ALIGN_PARENT_TOP);
-		this.title.setLayoutParams(this.title_p);
-		this.t_text = mcpeText(DIP*0x10, this.name, true);
-		this.t_text_p = new c.r.LayoutParams(c.w, c.w);
-		this.t_text_p.addRule(c.r.CENTER_IN_PARENT);
-		this.t_text.setLayoutParams(this.t_text_p);
-		this.t_text.setGravity(Gravity.CENTER);
-		this.title.addView(this.t_text);
-
-		if(this.confirmTxt !== null) {
-			this.t_confirm = mcpeText(DIP*0x0a, this.confirmTxt, true);
-			this.t_confirm.setGravity(Gravity.CENTER);
-			this.t_confirm.setPadding(DIP*0x06, DIP*0x02, DIP*0x06, DIP*0x02);
-			this.t_confirm_p = new c.r.LayoutParams(c.w, DIP*0x1c);
-			this.t_confirm_p.setMargins(DIP*0x0a, DIP*0x0a, DIP*0x0a, DIP*0x0a);
-			this.t_confirm_p.addRule(c.r.ALIGN_PARENT_RIGHT);
-			this.t_confirm.setLayoutParams(this.t_confirm_p);
-			this.t_confirm.setOnClickListener(View.OnClickListener({onClick: function(view, event) {try {
-				that.confirm();
-			}catch(e) {
-				showError(e);
-			}}}));
-			this.title.addView(this.t_confirm);
-		}
-
-		if(this.cancelTxt !== null) {
-		 	this.t_cancel = mcpeText(DIP*0x0a, this.cancelTxt, true);
-			this.t_cancel.setGravity(Gravity.CENTER);
-			this.t_cancel.setPadding(DIP*0x06, DIP*0x02, DIP*0x06, DIP*0x02);
-			this.t_cancel_p = new c.r.LayoutParams(c.w, DIP*0x1c);
-			this.t_cancel_p.setMargins(DIP*0x0a, DIP*0x0a, DIP*0x0a, DIP*0x0a);
-			this.t_cancel_p.addRule(c.r.ALIGN_PARENT_LEFT);
-			this.t_cancel.setLayoutParams(this.t_cancel_p);
-			this.t_cancel.setOnClickListener(View.OnClickListener({onClick: function(view, event) {try {
-				that.cancel();
-			}catch(e) {
-				showError(e);
-			}}}));
-			this.title.addView(this.t_cancel);
-		}
-
-		switch(this.type) {
-			case 1:
-			this.title.setBackgroundDrawable(Assets.boxWarning.ninePatch());
-			if(this.confirmTxt !== null)
-				this.t_confirm.setBackgroundDrawable(Assets.boxWarning.ninePatch());
-			if(this.cancelTxt !== null)
-				this.t_cancel.setBackgroundDrawable(Assets.boxWarning.ninePatch());
-			break;
-			case 2:
-			this.title.setBackgroundDrawable(Assets.boxCritical.ninePatch());
-			if(this.confirmTxt !== null)
-				this.t_confirm.setBackgroundDrawable(Assets.boxCritical.ninePatch());
-			if(this.cancelTxt !== null)
-				this.t_cancel.setBackgroundDrawable(Assets.boxCritical.ninePatch());
-			break;
-			case 0:
-			default:
-			this.title.setBackgroundDrawable(Assets.boxNormal.ninePatch());
-			if(this.confirmTxt !== null)
-				this.t_confirm.setBackgroundDrawable(Assets.boxNormal.ninePatch());
-			if(this.cancelTxt !== null)
-				this.t_cancel.setBackgroundDrawable(Assets.boxNormal.ninePatch());
-		}
-		this.layout.addView(this.title);
-
-		this.scroll = new ScrollView(ctx);
-		this.scroll_p = new c.r.LayoutParams(c.m, c.w);
-		this.scroll_p.setMargins(DIP*0x08, DIP*0X04, DIP*0X08, DIP*0X08);
-		//뷰의 자식에게 자동으로 사이즈를 맞추게 한 설정을 부모(화면 전체)사이즈로 강제로 맞춰서 나를 한참이나 *먹인 앞으로 절대 사용하지 말아야 할 메소드
-		//this.scroll_p.addRule(c.r.ALIGN_PARENT_BOTTOM);
-		this.scroll_p.addRule(c.r.BELOW, this.title.getId());
-		this.scroll.setLayoutParams(this.scroll_p);
-		this.scroll.addView(this.childLayout);
-		this.layout.addView(this.scroll);
-
-		this.wd = new PopupWindow(this.layout, c.w, c.w, this.focus);
-	},
-
-	confirm: function() {
-		try {
-			return this.confirmFunc();
-		}catch(e) {
-			showError(e, WarnType.WARNING);
-			return false;
-		}
-	},
-
-	cancel: function() {
-		try {
-			return this.cancelFunc();
-		}catch(e) {
-			showError(e, WarnType.WARNING);
-			return false;
-		}
-	},
-
-	setLayout: function(view) {
-		this.childView = view;
-		uiThread(function() {try {
-			this.scroll.removeAllView();
-			this.scroll.addView(view);
-		}catch(e) {
-			showError(e, WarnType.WARNING);
-		}});
-	}
-}
-
-
-
-function WES_BlockSelect(script, name, confirmTxt, confirmFunc, cancelTxt, cancelFunc) {
-	var that = this;
-	this._parent = script;
-	this.vis = false;
-	this.name = name;
-	this.confirmTxt = confirmTxt;
-	this.confirmFunc = confirmFunc;
-	this.cancelTxt = cancelTxt;
-	this.cancelFunc = cancelFunc;
-
-	this.layout = new c.r(ctx);
-	this.layout.setId(randomId());
-	this.layout.setBackgroundDrawable(Assets.windowNormal.ninePatch());
-	this.titleLayout = new c.r(ctx);
-	this.titleLayout.setId(randomId());
-	this.titleLayout.setBackgroundDrawable(Assets.boxNormal.ninePatch());
-	this.titleLayout_p = new c.r.LayoutParams(c.ww, DIP*0x30);
-	this.titleLayout_p.addRule(c.r.ALIGN_PARENT_TOP);
-	this.titleLayout.setLayoutParams(this.titleLayout_p);
-
-	this.title = mcpeText(DIP*0x10, this.name, true);
-	this.title_p = new c.r.LayoutParams(c.w, c.w);
-	this.title_p.addRule(c.r.CENTER_IN_PARENT);
-	this.title.setLayoutParams(this.title_p);
-	this.titleLayout.addView(this.title);
-
-	this.titleConfirm = mcpeText(DIP*0x0a, this.confirmTxt, true);
-	this.titleConfirm.setBackgroundDrawable(Assets.boxWarning.ninePatch());
-	this.titleConfirm.setGravity(Gravity.CENTER);
-	this.titleConfirm.setPadding(DIP*0x06, DIP*0x02, DIP*0x06, DIP*0x02);
-	this.titleConfirm_p = new c.r.LayoutParams(c.w, DIP*0x1c);
-	this.titleConfirm_p.setMargins(DIP*0x0a, DIP*0x0a, DIP*0x0a, DIP*0x0a);
-	this.titleConfirm_p.addRule(c.r.ALIGN_PARENT_RIGHT);
-	this.titleConfirm.setLayoutParams(this.titleConfirm_p);
-	this.titleConfirm.setOnClickListener(View.OnClickListener({onClick: function(view, event) {try {
-		that.confirm();
-	}catch(e) {
-		showError(e);
-	}}}));
-	this.titleLayout.addView(this.titleConfirm);
-
-	 	this.titleCancel = mcpeText(DIP*0x0a, this.cancelTxt, true);
-	this.titleCancel.setBackgroundDrawable(Assets.boxCritical.ninePatch());
-	this.titleCancel.setGravity(Gravity.CENTER);
-	this.titleCancel.setPadding(DIP*0x06, DIP*0x02, DIP*0x06, DIP*0x02);
-	this.titleCancel_p = new c.r.LayoutParams(c.w, DIP*0x1c);
-	this.titleCancel_p.setMargins(DIP*0x0a, DIP*0x0a, DIP*0x0a, DIP*0x0a);
-	this.titleCancel_p.addRule(c.r.ALIGN_PARENT_LEFT);
-	this.titleCancel.setLayoutParams(this.titleCancel_p);
-	this.titleCancel.setOnClickListener(View.OnClickListener({onClick: function(view, event) {try {
-		that.cancel();
-	}catch(e) {
-		showError(e);
-	}}}));
-	this.titleLayout.addView(this.titleCancel);
-
-	this.layout.addView(this.titleLayout);
-
-	this.direct = new c.l(ctx);
-	this.direct.setId(randomId());
-	this.direct.setOrientation(c.l.HORIZONTAL);
-	this.direct_p = new c.r.LayoutParams(c.m, DIP*20);
-	this.direct_p.setMargins(DIP*0x0c, DIP*0x02, DIP*0x0c, DIP*0x02);
-	this.direct_p.addRule(c.r.BELOW, this.titleLayout.getId());
-	this.direct.setLayoutParams(this.direct_p);
-
-	this.direct_idTv = new mcpeText(DIP*0x10, "Id:");
-	this.direct_idTv.setGravity(Gravity.CENTER);
-	this.direct_idTv_p = new c.l.LayoutParams(DIP*0x20, c.m);
-	this.direct_idTv.setLayoutParams(this.direct_idTv_p);
-	this.direct.addView(this.direct_idTv);
-
-	this.direct_id = new EditText(ctx);
-	this.direct_id.setBackgroundDrawable(Assets.textView_9());
-	this.direct_id.setPadding(DIP*0x04, DIP*0x04, DIP*0x04, DIP*0x04);
-	this.direct_id.setGravity(Gravity.CENTER|Gravity.RIGHT);
-	this.direct_id.setTextColor(Color.WHITE);
-	this.direct_id.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, DIP*0x0a);
-	if(FILE_FONT.exists()) {
-		this.direct_id.setTypeface(android.graphics.Typeface.createFromFile(FILE_FONT));
-	}
-	this.direct_id_p = new c.l.LayoutParams((c.ww - (DIP*0x20 + DIP*0x80))/2, c.m);
-	this.direct_id.setLayoutParams(this.direct_id_p);
-	this.direct.addView(this.direct_id);
-
- 	this.direct_dataTv = new mcpeText(DIP*0x10, "Damage:");
-	this.direct_dataTv.setGravity(Gravity.CENTER);
-	this.direct_dataTv_p = new c.l.LayoutParams(DIP*0x60, c.m);
-	this.direct_dataTv.setLayoutParams(this.direct_dataTv_p);
-	this.direct.addView(this.direct_dataTv);
-
-	this.direct_data = new EditText(ctx);
-	this.direct_data.setBackgroundDrawable(Assets.textView_9());
-	this.direct_data.setPadding(DIP*0x04, DIP*0x04, DIP*0x04, DIP*0x04);
-	this.direct_data.setGravity(Gravity.CENTER|Gravity.RIGHT);
-	this.direct_data.setTextColor(Color.WHITE);
-	this.direct_data.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, DIP*0x0a);
-	if(FILE_FONT.exists()) {
-		this.direct_data.setTypeface(android.graphics.Typeface.createFromFile(FILE_FONT));
-	}
-	this.direct_data_p = new c.l.LayoutParams((c.ww - (DIP*0x20 + DIP*0x80))/2, c.m);
-	this.direct_data.setLayoutParams(this.direct_data_p);
-	this.direct.addView(this.direct_data);
-
-	this.layout.addView(this.direct);
-
-	this.scroll = new ScrollView(ctx);
-	this.scroll_p = new c.r.LayoutParams(c.m, c.m);
-	this.scroll_p.setMargins(DIP*0x10, 0, DIP*0x10, DIP*0x10);
-	this.scroll_p.addRule(c.r.BELOW, this.direct.getId());
-	this.scroll.setLayoutParams(this.scroll_p);
-
-	this.s_l = new c.l(ctx);
-	this.s_l.setOrientation(c.l.VERTICAL);
-	this.s_l.setGravity(Gravity.CENTER);
-
-	this.scroll.addView(this.s_l);
-
-	this.layout.addView(this.scroll);
-
-	this.wd = new PopupWindow(this.layout, c.ww, c.wh, true);
-}
-
-WES_BlockSelect.prototype = {
-
-	toString: function() {
-		return "['" + this.name + "' - BlockSelectWindow]";
-	},
-
-	isVisible: function() {
-		return this.vis;
-	},
-
-	setVisible: function(bool) {
-		var that = this;
-		if(bool) {
-			if(!(that.vis) && !(this._parent._selectMenuVis)) {
-				this._parent._selectMenuVis = true;
-				uiThread(function() {try {
-					if(that._parent.blockImages === null) {
-						that._parent.blockImages = new c.l(ctx);
-						that._parent.blockImages.setOrientation(c.l.VERTICAL);
-						that._parent.blockImages.setGravity(Gravity.CENTER);
-						that._parent.blockImagesData = [];
-						that.s_l.addView(that._parent.blockImages);
-						loadBlockImages(that);
-					}else {
-						reloadBlockImages(that);
-						that.s_l.addView(that._parent.blockImages);
-					}
-					that.wd.showAtLocation(ctx.getWindow().getDecorView(), Gravity.TOP | Gravity.RIGHT, 0, 0);
-					that.vis = true;
-				}catch(e) {
-					showError(e);
-				}});
-			}
-		}else {
-			if(that.vis) {
-				that._parent._selectMenuVis = false;
-				uiThread(function() {try {
-					that.wd.dismiss();
-					that.s_l.removeAllViews();
-					that.vis = false;
-				}catch(e) {
-					showError(e);
-				}});
-			}
-		}
-	},
-
-	confirm: function() {
-		var id = this.direct_id.getText() + "";
-		var data = this.direct_data.getText() + "";
-		if(id == "") {
-			WES_Toast("블럭을 선택하거나 아이디, 데이터를 입력해 주세요", 1);
-			return false;
-		}
-		if(data == "") {
-			data = "0";
-		}
-		this.confirmFunc(id, data);
-		this.setVisible(false);
-	},
-
-	cancel: function() {
-		this.cancelFunc();
-		this.setVisible(false);
-	}
-}
-
-
-
-function newLevel(str) {
-	onMap = true;
-	main.loadSetting();
-	if(main.get("ButtonVis")) {
-		main.setButtonVisible(true);
-	}else {
-		WES_Toast("버튼이 보이지 않게 설정 되어 있습니다", 1);
-	}
-}
-
-function leaveGame() {
-	thread(function() {try {
-		onMap = false;
-		main.saveSetting();
-		main.setButtonVisible(false);
-		if(main.currentMenu !== null) {
-			main.setMenuVisible(false);
-			main.currentMenu = null;
-		}
-	}catch(e) {
-		showError(e, WarnType.WARNING);
-	}}).start();
-}
-
-function modTick() {
-	if(main.asynceBuffer.length > 0) {
-		main._onWork = true;
-		try {
-			var w = main.asynceBuffer.shift();
-			Level.setTile(w[0], w[1], w[2], w[3], w[4]);
-		}catch(e) {
-			showError(e);
-		}
-		if(++main._workTick >= 200) {
-			main._workTick = 0;
-			msg("MSG NOW WORKING... LEFT: " + main.asynceBuffer.length);
-		}
-	}else {
-		if(main._onWork) {
-			main._onWork = false;
-			main._workTick = 200;
-			msg("MSG JOB FINISH");
-		}
-	}
-}
-
-function useItem(x, y, z, itemId, blockId, side) {
-	if(Player.getCarriedItem() === 271) {
-		preventDefault();
-		highlightBlock(x, y, z);
-		var editor = main.editorGroup.get(Player.getName(Player.getEntity()));
-		if(editor === false) {
-			WES_Toast('MSG ERROR CANT FIND PLAYER', 2);
-			return;
-		}
-		editor.setPos1(new Vector3(x, y, z));
-		WES_Toast("위치1 지정됨\nx:" + x + " y:" + y + " z:" + z);
-	}
-}
-
-function startDestroyBlock(x, y, z, side) {
-	if(Player.getCarriedItem() === 271) {
-		highlightBlock(x, y, z);
-		var editor = main.editorGroup.get(Player.getName(Player.getEntity()));
-		if(editor === false) {
-			WES_Toast('MSG ERROR CANT FIND PLAYER', 2);
-			return;
-		}
-		editor.setPos2(new Vector3(x, y, z));
-		WES_Toast("위치2 지정됨\nx:" + x + " y:" + y + " z:" + z);
-	}
-}
-
-function destroyBlock(x, y, z, side) {
-	if(Player.getCarriedItem() === 271) {
-		preventDefault();
-	}
-}
-
-function chatReceiveHook(str, sender) {
-	if(str.subString(0, 1) === "@") {
-		var cmd = str.subString(1, str.length).split(" ");
-		if(!main.editorGroup.isAllow(sender)) {
-			broadcast(sender + " 유저는 월드에딧 권한이 없습니다");
-			return;
-		}
-		var editor = main.editorGroup.get(sender);
-		var player = editor.getOwner();
-		switch(cmd[0]) {
-			case "pos1":
-			editor.setPos1(new Vector3(Entity.getX(player), Entity.getY(player), Entity.getZ(player)));
-			msg("위치1이 지정되었습니다", player);
-			break;
-			case "pos2":
-			editor.setPos2(new Vector3(Entity.getX(player), Entity.getY(player), Entity.getZ(player)));
-			msg("위치2이 지정되었습니다", player);
-			break;
-		}
-	}
-}
-
-
-
-var main = new WorldEditScript(FILE_MAIN_DATA);
-main.init();
-
-
-
 function highlightBlock(x, y, z) {
 	var temp = {
 		id: Level.getTile(x, y, z),
@@ -8444,462 +7476,6 @@ function areaHighlight(x1, y1, z1, x2, y2, z2) {
 
 	return new highlightBlocks(blocks);
 }
-
-function msg(str, target) {
-	if(target === undefined) {
-		broadcast(str);
-	}else if(EntityExtra.isEqual(Player.getEntity(), target)) {
-		toast(str);
-	}else {
-		broadcast("(" + Player.getName(target) + ") " + str);
-	}
-}
-
-var blockData = ["0:0", "1:0", "1:1", "1:2", "1:3", "1:4", "1:5", "1:6", "2:0", "3:0", "4:0", "5:0", "5:1", "5:2", "5:3", "5:4", "5:5", "6:0", "6:1", "6:2", "6:3", "6:4", "6:5", "7:0", "8:0", "9:0", "10:0", "11:0", "12:0", "12:1", "13:0", "14:0", "15:0", "16:0", "17:0", "17:1", "17:2", "17:3", "18:0", "18:1", "18:2", "18:3", "19:0", "20:0", "21:0", "22:0", "24:0", "24:1", "24:2", "26:0", "27:0", "30:0", "31:0", "32:0", "35:0", "35:1", "35:2", "35:3", "35:4", "35:5", "35:6", "35:7", "35:8", "35:9", "35:10", "35:11", "35:12", "35:13", "35:14", "35:15", "37:0", "38:0", "38:1", "38:2", "38:3", "38:4", "38:5", "38:6", "38:7", "38:8", "39:0", "40:0", "41:0", "42:0", "43:0", "43:1", "43:2", "43:3", "43:4", "43:5", "43:6", "43:7", "44:0", "44:1", "44:2", "44:3", "44:4", "44:5", "44:6", "44:7", "45:0", "46:0", "47:0", "48:0", "49:0", "50:0", "51:0", "52:0", "53:0", "54:0", "56:0", "57:0", "58:0", "59:0", "60:0", "60:1", "61:0", "62:0", "63:0", "64:0", "65:0", "66:0", "67:0", "68:0", "71:0", "73:0", "74:0", "78:0", "79:0", "80:0", "81:0", "82:0", "83:0", "85:0", "86:0", "87:0", "88:0", "89:0", "90:0", "91:0", "92:0", "95:0", "96:0", "97:0", "97:1", "97:2", "97:3", "97:4", "97:5", "98:0", "98:1", "98:2", "98:3", "99:0", "100:0", "101:0", "102:0", "103:0", "104:0", "105:0", "106:0", "107:0", "108:0", "109:0", "110:0", "111:0", "112:0", "113:0", "114:0", "115:0", "116:0", "117:0", "120:0", "120:15", "121:0", "126:0", "127:0", "128:0", "129:0", "133:0", "134:0", "135:0", "136:0", "139:0", "139:1", "140:0", "141:0", "142:0", "144:0", "145:0", "145:1", "145:2", "152:0", "153:0", "155:0", "155:1", "155:2", "156:0", "157:0", "157:1", "157:2", "157:3", "157:4", "157:5", "158:0", "158:1", "158:2", "158:3", "158:4", "158:5", "158:8", "158:9", "158:10", "158:11", "158:12", "158:13", "159:0", "159:1", "159:2", "159:3", "159:4", "159:5", "159:6", "159:7", "159:8", "159:9", "159:10", "159:11", "159:12", "159:13", "159:14", "159:15", "161:0", "161:1", "162:0", "162:1", "163:0", "164:0", "170:0", "171:0", "171:1", "171:2", "171:3", "171:4", "171:5", "171:6", "171:7", "171:8", "171:9", "171:10", "171:11", "171:12", "171:13", "171:14", "171:15", "172:0", "173:0", "174:0", "175:0", "175:1", "175:2", "175:3", "175:4", "175:5", "183:0", "184:0", "185:0", "186:0", "187:0", "198:0", "243:0", "244:0", "245:0", "246:0", "247:0", "247:1", "247:2", "248:0", "249:0"];
-
-//type -1: No image
-//type -2: Custom image
-var blockImageData = [
-["0:0", -1, [], false, "Air"],
-["1:0", BlockTypes.CUBE, [["stone", 0]], true],
-["1:1", BlockTypes.CUBE, [["stone", 1]], true],
-["1:2", BlockTypes.CUBE, [["stone", 2]], true],
-["1:3", BlockTypes.CUBE, [["stone", 3]], true],
-["1:4", BlockTypes.CUBE, [["stone", 4]], true],
-["1:5", BlockTypes.CUBE, [["stone", 5]], true],
-["1:6", BlockTypes.CUBE, [["stone", 6]], true],
-["2:0", BlockTypes.CUBE, [["grass", 3], ["grass", 3], ["grass", 2]], true],
-["3:0", BlockTypes.CUBE, [["dirt", 0]], true],
-["4:0", BlockTypes.CUBE, [["cobblestone", 0]], true],
-["5:0", BlockTypes.CUBE, [["planks", 0]], true],
-["5:1", BlockTypes.CUBE, [["planks", 1]], true],
-["5:2", BlockTypes.CUBE, [["planks", 2]], true],
-["5:3", BlockTypes.CUBE, [["planks", 3]], true],
-["5:4", BlockTypes.CUBE, [["planks", 4]], true],
-["5:5", BlockTypes.CUBE, [["planks", 5]], true],
-["6:0", BlockTypes.GRASS, [["sapling", 0]], false],
-["6:1", BlockTypes.GRASS, [["sapling", 1]], false],
-["6:2", BlockTypes.GRASS, [["sapling", 2]], false],
-["6:3", BlockTypes.GRASS, [["sapling", 3]], false],
-["6:4", BlockTypes.GRASS, [["sapling", 3]], false],
-["6:5", BlockTypes.GRASS, [["sapling", 4]], false],
-["7:0", BlockTypes.CUBE, [["bedrock", 0]], true],
-["8:0", BlockTypes.PATHGRASS, [["flowing_water", 0]], false, "Flow"],
-["9:0", BlockTypes.PATHGRASS, [["still_water", 0]], true, "Still"],
-["10:0", BlockTypes.PATHGRASS, [["flowing_lava", 0]], false, "Flow"],
-["11:0", BlockTypes.PATHGRASS, [["still_lava", 0]], true, "Still"],
-["12:0", BlockTypes.CUBE, [["sand", 0]], true],
-["12:1", BlockTypes.CUBE, [["sand", 1]], true],
-["13:0", BlockTypes.CUBE, [["gravel", 0]], true],
-["14:0", BlockTypes.CUBE, [["gold_ore", 0]], true],
-["15:0", BlockTypes.CUBE, [["iron_ore", 0]], true],
-["16:0", BlockTypes.CUBE, [["coal_ore", 0]], true],
-["17:0", BlockTypes.CUBE, [["log", 0], ["log", 0], ["log", 1]], true],
-["17:1", BlockTypes.CUBE, [["log", 2], ["log", 2], ["log", 3]], true],
-["17:2", BlockTypes.CUBE, [["log", 4], ["log", 4], ["log", 5]], true],
-["17:3", BlockTypes.CUBE, [["log", 6], ["log", 6], ["log", 7]], true],
-["18:0", BlockTypes.CUBE, [["leaves_opaque", 0]], true],
-["18:1", BlockTypes.CUBE, [["leaves_opaque", 1]], true],
-["18:2", BlockTypes.CUBE, [["leaves_opaque", 2]], true],
-["18:3", BlockTypes.CUBE, [["leaves_opaque", 3]], true],
-["19:0", BlockTypes.CUBE, [["sponge", 0]], true],
-["20:0", BlockTypes.CUBE, [["glass", 0]], true],
-["21:0", BlockTypes.CUBE, [["lapis_ore", 0]], true],
-["22:0", BlockTypes.CUBE, [["lapis_block", 0]], true],
-["24:0", BlockTypes.CUBE, [["sandstone", 0], ["sandstone", 0], ["sandstone", 3]], true],
-["24:1", BlockTypes.CUBE, [["sandstone", 1], ["sandstone", 1], ["sandstone", 3]], true],
-["24:2", BlockTypes.CUBE, [["sandstone", 2], ["sandstone", 2], ["sandstone", 3]], true],
-["26:0", BlockTypes.GRASS, [["bed", 0]], false],
-["27:0", BlockTypes.GRASS, [["rail_golden", 0]], false],
-["30:0", BlockTypes.GRASS, [["web", 0]], false],
-["31:0", BlockTypes.GRASS, [["tallgrass", 0]], false],
-["32:0", BlockTypes.GRASS, [["tallgrass", 1]], false],
-["35:0", BlockTypes.CUBE, [["wool", 0]], true],
-["35:1", BlockTypes.CUBE, [["wool", 1]], true],
-["35:2", BlockTypes.CUBE, [["wool", 2]], true],
-["35:3", BlockTypes.CUBE, [["wool", 3]], true],
-["35:4", BlockTypes.CUBE, [["wool", 4]], true],
-["35:5", BlockTypes.CUBE, [["wool", 5]], true],
-["35:6", BlockTypes.CUBE, [["wool", 6]], true],
-["35:7", BlockTypes.CUBE, [["wool", 7]], true],
-["35:8", BlockTypes.CUBE, [["wool", 8]], true],
-["35:9", BlockTypes.CUBE, [["wool", 9]], true],
-["35:10", BlockTypes.CUBE, [["wool", 10]], true],
-["35:11", BlockTypes.CUBE, [["wool", 11]], true],
-["35:12", BlockTypes.CUBE, [["wool", 12]], true],
-["35:13", BlockTypes.CUBE, [["wool", 13]], true],
-["35:14", BlockTypes.CUBE, [["wool", 14]], true],
-["35:15", BlockTypes.CUBE, [["wool", 15]], true],
-["37:0", BlockTypes.GRASS, [["flower1", 0]], false],
-["38:0", BlockTypes.GRASS, [["flower2", 0]], false],
-["38:1", BlockTypes.GRASS, [["flower2", 1]], false],
-["38:2", BlockTypes.GRASS, [["flower2", 2]], false],
-["38:3", BlockTypes.GRASS, [["flower2", 3]], false],
-["38:4", BlockTypes.GRASS, [["flower2", 4]], false],
-["38:5", BlockTypes.GRASS, [["flower2", 5]], false],
-["38:6", BlockTypes.GRASS, [["flower2", 6]], false],
-["38:7", BlockTypes.GRASS, [["flower2", 7]], false],
-["38:8", BlockTypes.GRASS, [["flower2", 8]], false],
-["39:0", BlockTypes.GRASS, [["mushroom_brown", 0]], false],
-["40:0", BlockTypes.GRASS, [["mushroom_red", 0]], false],
-["41:0", BlockTypes.CUBE, [["gold_block", 0]], true],
-["42:0", BlockTypes.CUBE, [["iron_block", 0]], true],
-["43:0", BlockTypes.CUBE, [["stone_slab", 1], ["stone_slab", 1], ["stone_slab", 0]], true, "Double slab"],
-["43:1", BlockTypes.CUBE, [["sandstone", 0], ["sandstone", 0], ["sandstone", 3]], true, "Double slab"],
-["43:2", BlockTypes.CUBE, [["planks", 0]], true, "Double slab"],
-["43:3", BlockTypes.CUBE, [["cobblestone", 0]], true, "Double slab"],
-["43:4", BlockTypes.CUBE, [["brick", 0]], true, "Double slab"],
-["43:5", BlockTypes.CUBE, [["stonebrick", 0]], true, "Double slab"],
-["43:6", BlockTypes.CUBE, [["quartz_block", 0]], true, "Double slab"],
-["43:7", BlockTypes.CUBE, [["nether_brick", 0]], true, "Double slab"],
-["44:0", BlockTypes.SLAB, [["stone_slab", 1], ["stone_slab", 1], ["stone_slab", 0]], true],
-["44:1", BlockTypes.SLAB, [["sandstone", 0], ["sandstone", 0], ["sandstone", 3]], true],
-["44:2", BlockTypes.SLAB, [["planks", 0]], true],
-["44:3", BlockTypes.SLAB, [["cobblestone", 0]], true],
-["44:4", BlockTypes.SLAB, [["brick", 0]], true],
-["44:5", BlockTypes.SLAB, [["stonebrick", 0]], true],
-["44:6", BlockTypes.SLAB, [["quartz_block", 0]], true],
-["44:7", BlockTypes.SLAB, [["nether_brick", 0]], true],
-["45:0", BlockTypes.CUBE, [["brick", 0]], true],
-["46:0", BlockTypes.CUBE, [["tnt", 0], ["tnt", 0], ["tnt", 1]], true],
-["47:0", BlockTypes.CUBE, [["bookshelf", 0], ["bookshelf", 0], ["planks", 0]], true],
-["48:0", BlockTypes.CUBE, [["cobblestone_mossy", 0]], true],
-["49:0", BlockTypes.CUBE, [["obsidian", 0]], true],
-["50:0", BlockTypes.GRASS, [["torch_on", 0]], false],
-["51:0", BlockTypes.GRASS, [["fire", 0]], false, "Fire"],
-["52:0", BlockTypes.CUBE, [["mob_spawner", 0]], true],
-["53:0", BlockTypes.STAIR, [["planks", 0]], true],
-["54:0", BlockTypes.CUBE, [["chest_inventory", 1], ["chest_inventory", 2], ["chest_inventory", 0]], true],
-["56:0", BlockTypes.CUBE, [["diamond_ore", 0]], true],
-["57:0", BlockTypes.CUBE, [["diamond_block", 0]], true],
-["58:0", BlockTypes.CUBE, [["crafting_table", 1], ["crafting_table", 2], ["crafting_table", 0]], true],
-["59:0", BlockTypes.GRASS, [["wheat", 7]], false],
-["60:0", BlockTypes.PATHGRASS, [["dirt", 0], ["dirt", 0], ["farmland", 0]], false],
-["60:1", BlockTypes.PATHGRASS, [["dirt", 0], ["dirt", 0], ["farmland", 1]], false],
-["61:0", BlockTypes.CUBE, [["furnace", 0], ["furnace", 2], ["furnace", 3]], true],
-["62:0", BlockTypes.CUBE, [["furnace", 1], ["furnace", 2], ["furnace", 3]], false],
-//FIXME sign
-["63:0", -1, [], false, "Sign"],
-["64:0", BlockTypes.GRASS, [["door", 1]], false],
-["65:0", BlockTypes.GRASS, [["ladder", 0]], false],
-["66:0", BlockTypes.GRASS, [["rail_normal", 0]], false],
-["67:0", BlockTypes.STAIR, [["cobblestone", 0]], true],
-//FIXME wallsign
-["68:0", -1, [], false, "Wall sign"],
-["71:0", BlockTypes.GRASS, [["door", 3]], false],
-["73:0", BlockTypes.CUBE, [["redstone_ore", 0]], true],
-["74:0", BlockTypes.CUBE, [["redstone_ore", 0]], false],
-["78:0", BlockTypes.SNOW, [["snow", 0]], true],
-["79:0", BlockTypes.CUBE, [["ice", 0]], true],
-["80:0", BlockTypes.CUBE, [["snow", 0]], true],
-["81:0", BlockTypes.GRASS, [["cactus", 0]], false],
-["82:0", BlockTypes.CUBE, [["clay", 0]], true],
-["83:0", BlockTypes.GRASS, [["reeds", 0]], false],
-["85:0", BlockTypes.FENCE, [["planks", 0]], true],
-["86:0", BlockTypes.CUBE, [["pumpkin", 2], ["pumpkin", 1], ["pumpkin", 0]], true],
-["87:0", BlockTypes.CUBE, [["netherrack", 0]], true],
-["88:0", BlockTypes.CUBE, [["soul_sand", 0]], true],
-["89:0", BlockTypes.CUBE, [["glowstone", 0]], false],
-["90:0", BlockTypes.GRASS, [["portal", 0]], false],
-["91:0", BlockTypes.CUBE, [["pumpkin", 3], ["pumpkin", 1], ["pumpkin", 0]], false],
-["92:0", BlockTypes.GRASS, [["cake_top", 0]], false],
-["95:0", -1, [], false, "Invisible Bedrock"],
-["96:0", BlockTypes.TRAPDOOR, [["trapdoor", 0]], true],
-["97:0", BlockTypes.CUBE, [["stone", 0]], false, "Silverfish"],
-["97:1", BlockTypes.CUBE, [["cobblestone", 0]], false, "Silverfish"],
-["97:2", BlockTypes.CUBE, [["stonebrick", 0]], false, "Silverfish"],
-["97:3", BlockTypes.CUBE, [["stonebrick", 1]], false, "Silverfish"],
-["97:4", BlockTypes.CUBE, [["stonebrick", 2]], false, "Silverfish"],
-["97:5", BlockTypes.CUBE, [["stonebrick", 3]], false, "Silverfish"],
-["98:0", BlockTypes.CUBE, [["stonebrick", 0]], true],
-["98:1", BlockTypes.CUBE, [["stonebrick", 1]], true],
-["98:2", BlockTypes.CUBE, [["stonebrick", 2]], true],
-["98:3", BlockTypes.CUBE, [["stonebrick", 3]], true],
-["99:0", BlockTypes.CUBE, [["mushroom_block", 0]], true],
-["100:0", BlockTypes.CUBE, [["mushroom_block", 1]], true],
-["101:0", BlockTypes.GRASS, [["iron_bars", 0]], false],
-["102:0", BlockTypes.GRASS, [["glass", 0]], false],
-["103:0", BlockTypes.CUBE, [["melon", 0], ["melon", 0], ["melon", 1]], true],
-["104:0", BlockTypes.GRASS, [["pumpkin_stem", 0]], false],
-["105:0", BlockTypes.GRASS, [["melon_stem", 0]], false],
-["106:0", BlockTypes.GRASS, [["vine", 0]], false],
-//FIXME fencegate
-["107:0", BlockTypes.GRASS, [["planks", 0]], false, "Fence gate"],
-["108:0", BlockTypes.STAIR,
-[["brick", 0]], true],
-["109:0", BlockTypes.STAIR, [["stonebrick", 0]], true],
-["110:0", BlockTypes.CUBE, [["mycelium", 0], ["mycelium", 0], ["mycelium", 1]], true],
-["111:0", BlockTypes.GRASS, [["waterlily", 0]], false],
-["112:0", BlockTypes.CUBE, [["nether_brick", 0]], true],
-["113:0", BlockTypes.FENCE, [["nether_brick", 0]], true],
-["114:0", BlockTypes.STAIR, [["nether_brick", 0]], true],
-["115:0", BlockTypes.GRASS, [["nether_wart", 2]], false],
-["116:0", BlockTypes.GRASS, [["enchanting_table_side", 0]], false],
-["117:0", BlockTypes.GRASS, [["brewing_stand", 0]], false],
-["120:0", BlockTypes.GRASS, [["endframee", 1]], false],
-["120:15", BlockTypes.GRASS, [["endframee", 0]], false],
-["121:0", BlockTypes.CUBE, [["end_stone", 0]], true],
-["126:0", BlockTypes.GRASS, [["cake_top", 0]], false],
-["127:0", BlockTypes.GRASS, [["cocoa", 2]], false],
-["128:0", BlockTypes.STAIR, [["sandstone", 0], ["sandstone", 0], ["sandstone", 3]], true],
-["129:0", BlockTypes.CUBE, [["emerald_ore", 0]], true],
-["133:0", BlockTypes.CUBE, [["emerald_block", 0]], true],
-["134:0", BlockTypes.STAIR, [["planks", 1]], true],
-["135:0", BlockTypes.STAIR, [["planks", 2]], true],
-["136:0", BlockTypes.STAIR, [["planks", 3]], true],
-["139:0", BlockTypes.STONEWALL, [["cobblestone", 0]], true],
-["139:1", BlockTypes.STONEWALL, [["cobblestone_mossy", 0]], true],
-["140:0", BlockTypes.GRASS, [["flower_pot", 0]], false],
-["141:0", BlockTypes.GRASS, [["carrots", 3]], false],
-["142:0", BlockTypes.GRASS, [["potatoes", 3]], false],
-//FIXME HEADS
-["144:0", -1, [], false, "Head"],
-["145:0", BlockTypes.GRASS, [["anvil_top_damaged_x", 0]], false, "Anvil"],
-["145:1", BlockTypes.GRASS, [["anvil_top_damaged_x", 1]], false, "Anvil"],
-["145:2", BlockTypes.GRASS, [["anvil_top_damaged_x", 2]], false, "Anvil"],
-["152:0", BlockTypes.CUBE, [["redstone_block", 0]], true],
-["153:0", BlockTypes.CUBE, [["quartz_ore", 0]], true],
-["155:0", BlockTypes.CUBE, [["quartz_block", 1]], true],
-["155:1", BlockTypes.CUBE, [["quartz_block", 3], ["quartz_block", 3], ["quartz_block", 4]], true],
-["155:2", BlockTypes.CUBE, [["quartz_block", 5]], true],
-["156:0", BlockTypes.STAIR, [["quartz_block", 1]], true],
-["157:0", BlockTypes.CUBE, [["planks", 0]], true, "Double slab"],
-["157:1", BlockTypes.CUBE, [["planks", 1]], true, "Double slab"],
-["157:2", BlockTypes.CUBE, [["planks", 2]], true, "Double slab"],
-["157:3", BlockTypes.CUBE, [["planks", 3]], true, "Double slab"],
-["157:4", BlockTypes.CUBE, [["planks", 4]], true, "Double slab"],
-["157:5", BlockTypes.CUBE, [["planks", 5]], true, "Double slab"],
-["158:0", BlockTypes.SLAB, [["planks", 0]], true],
-["158:1", BlockTypes.SLAB, [["planks", 1]], true],
-["158:2", BlockTypes.SLAB, [["planks", 2]], true],
-["158:3", BlockTypes.SLAB, [["planks", 3]], true],
-["158:4", BlockTypes.SLAB, [["planks", 4]], true],
-["158:5", BlockTypes.SLAB, [["planks", 5]], true],
-["158:8", BlockTypes.SLAB, [["planks", 0]], true, "Upper"],
-["158:9", BlockTypes.SLAB, [["planks", 1]], true, "Upper"],
-["158:10", BlockTypes.SLAB, [["planks", 2]], true, "Upper"],
-["158:11", BlockTypes.SLAB, [["planks", 3]], true, "Upper"],
-["158:12", BlockTypes.SLAB, [["planks", 4]], true, "Upper"],
-["158:13", BlockTypes.SLAB, [["planks", 5]], true, "Upper"],
-["159:0", BlockTypes.CUBE, [["stained_clay", 0]], true],
-["159:1", BlockTypes.CUBE, [["stained_clay", 1]], true],
-["159:2", BlockTypes.CUBE, [["stained_clay", 2]], true],
-["159:3", BlockTypes.CUBE, [["stained_clay", 3]], true],
-["159:4", BlockTypes.CUBE, [["stained_clay", 4]], true],
-["159:5", BlockTypes.CUBE, [["stained_clay", 5]], true],
-["159:6", BlockTypes.CUBE, [["stained_clay", 6]], true],
-["159:7", BlockTypes.CUBE, [["stained_clay", 7]], true],
-["159:8", BlockTypes.CUBE, [["stained_clay", 8]], true],
-["159:9", BlockTypes.CUBE, [["stained_clay", 9]], true],
-["159:10", BlockTypes.CUBE, [["stained_clay", 10]], true],
-["159:11", BlockTypes.CUBE, [["stained_clay", 11]], true],
-["159:12", BlockTypes.CUBE, [["stained_clay", 12]], true],
-["159:13", BlockTypes.CUBE, [["stained_clay", 13]], true],
-["159:14", BlockTypes.CUBE, [["stained_clay", 14]], true],
-["159:15", BlockTypes.CUBE, [["stained_clay", 15]], true],
-["161:0", BlockTypes.CUBE, [["leaves_opaque2", 0]], true],
-["161:1", BlockTypes.CUBE, [["leaves_opaque2", 1]], true],
-["162:0", BlockTypes.CUBE, [["log2", 0], ["log2", 0], ["log2", 1]], true],
-["162:1", BlockTypes.CUBE, [["log2", 2], ["log2", 2], ["log2", 3]], true],
-["163:0", BlockTypes.STAIR, [["planks", 4]], true],
-["164:0", BlockTypes.STAIR, [["planks", 5]], true],
-["170:0", BlockTypes.CUBE, [["hayblock", 1], ["hayblock", 1], ["hayblock", 0]], true],
-["171:0", BlockTypes.CARPET, [["wool", 0]], true],
-["171:1", BlockTypes.CARPET, [["wool", 1]], true],
-["171:2", BlockTypes.CARPET, [["wool", 2]], true],
-["171:3", BlockTypes.CARPET, [["wool", 3]], true],
-["171:4", BlockTypes.CARPET, [["wool", 4]], true],
-["171:5", BlockTypes.CARPET, [["wool", 5]], true],
-["171:6", BlockTypes.CARPET, [["wool", 6]], true],
-["171:7", BlockTypes.CARPET, [["wool", 7]], true],
-["171:8", BlockTypes.CARPET, [["wool", 8]], true],
-["171:9", BlockTypes.CARPET, [["wool", 9]], true],
-["171:10", BlockTypes.CARPET, [["wool", 10]], true],
-["171:11", BlockTypes.CARPET, [["wool", 11]], true],
-["171:12", BlockTypes.CARPET, [["wool", 12]], true],
-["171:13", BlockTypes.CARPET, [["wool", 13]], true],
-["171:14", BlockTypes.CARPET, [["wool", 14]], true],
-["171:15", BlockTypes.CARPET, [["wool", 15]], true],
-["172:0", BlockTypes.CUBE, [["hardened_clay", 0]], true],
-["173:0", BlockTypes.CUBE, [["coal_block", 0]], true],
-["174:0", BlockTypes.CUBE, [["ice_packed", 0]], true],
-["175:0", BlockTypes.GRASS, [["sunflower_additional", 0]], false],
-["175:1", BlockTypes.GRESS, [["double_plant_top", 1]], false],
-["175:2", BlockTypes.GRESS, [["double_plant_top", 2]], false],
-["175:3", BlockTypes.GRESS, [["double_plant_top", 3]], false],
-["175:4", BlockTypes.GRESS, [["double_plant_top", 4]], false],
-["175:5", BlockTypes.GRESS, [["double_plant_top", 5]], false],
-//FIXME fencegate
-["183:0", BlockTypes.GRASS, [["planks", 1]], false, "Fence gate"],
-["184:0", BlockTypes.GRASS, [["planks", 2]], false, "Fence gate"],
-["185:0", BlockTypes.GRASS, [["planks", 3]], false, "Fence gate"],
-["186:0", BlockTypes.GRASS, [["planks", 4]], false, "Fence gate"],
-["187:0", BlockTypes.GRASS, [["planks", 5]], false, "Fence gate"],
-["198:0", BlockTypes.PATHGRASS, [["grass_path", 1], ["grass_path", 1], ["grass_path", 0]], true],
-["243:0", BlockTypes.CUBE, [["dirt", 2], ["dirt", 2], ["dirt", 1]], true],
-["244:0", BlockTypes.GRASS, [["beetroot", 3]], false],
-["245:0", BlockTypes.CUBE, [["stonecutter", 1], ["stonecutter", 0], ["stonecutter", 2]], true],
-["246:0", BlockTypes.CUBE, [["glowing_obsidian", 0]], false],
-["247:0", BlockTypes.CUBE, [["reactor_core", 0]], true],
-["247:1", BlockTypes.CUBE, [["reactor_core", 1]], true],
-["247:2", BlockTypes.CUBE, [["reactor_core", 2]], true],
-["248:0", BlockTypes.CUBE, [["missing_tile", 0]], true],
-["249:0", BlockTypes.CUBE, [["missing_tile", 0]], true]
-];
-
-function getBlockDataIndex(id, data) {
-	var key = id + ":" + data;
-	for(var e = 0; e < blockImageData.length; e++) {
-		if(blockImageData[e][0] === key) {
-			return e;
-		}
-	}
-	key = id + ":" + 0;
-	for(var e = 0; e < blockImageData.length; e++) {
-		if(blockImageData[e][0] === key) {
-			return e;
-		}
-	}
-	return -1;
-}
-
-function loadBlockImage(id, data) {
-	var index = getBlockDataIndex(id, data);
-	if(index === -1) {
-		return android.graphics.Bitmap.createBitmap(51, 57, android.graphics.Bitmap.Config.ARGB_8888);
-	}
-	switch(blockImageData[index][1]) {
-		//No image
-		case -1:
-		return android.graphics.Bitmap.createBitmap(51, 57, android.graphics.Bitmap.Config.ARGB_8888);
-		//Custom
-		case -2:
-		return blockImageData[index][2][0];
-		//Normal
-		default:
-		if(blockImageData[index][2].length === 1) {
-			return BlockImageLoader.create(blockImageData[index][2][0], blockImageData[index][2][0], blockImageData[index][2][0], blockImageData[index][1], blockImageData[index][3]);
-		}else {
-			return BlockImageLoader.create(blockImageData[index][2][0], blockImageData[index][2][1], blockImageData[index][2][2], blockImageData[index][1], blockImageData[index][3]);
-		}
-	}
-}
-
-function loadBlockDescription(id, data) {
-	var index = getBlockDataIndex(id, data);
-	if(index === -1) {
-		return false;
-	}
-	if(blockImageData[index][4] === null) {
-		return false;
-	}
-	return blockImageData[index][4];
-}
-
-function getBlockSelectLayout(that, key) {
-	var block = key.split(":");
-	var layout = new c.r(ctx);
-	var layout_p = new c.l.LayoutParams(DIP*0x40, DIP*0x40);
-	layout.setLayoutParams(layout_p);
-
-	var image = new ImageView(ctx);
-	var image_p = new c.r.LayoutParams(c.m, c.m);
-	image.setLayoutParams(image_p);
-	image.setPadding(DIP*0x08, DIP*0x08, DIP*0x08, DIP*0x08);
-	image.setImageBitmap(loadBlockImage(block[0], block[1]));
-	layout.addView(image);
-
-	var description = loadBlockDescription(block[0], block[1]);
-	if(description !== false) {
-		var info = mcText(description, DIP*0x08, true, Color.YELLOW);
-		info.setGravity(Gravity.RIGHT);
-		var info_p = new c.r.LayoutParams(c.w, c.w);
-		info_p.setMargins(0, 0, DIP*0x02, DIP*0x08);
-		info_p.addRule(c.r.ALIGN_PARENT_RIGHT);
-		info_p.addRule(c.r.ALIGN_PARENT_BOTTOM);
-		info.setLayoutParams(info_p);
-		layout.addView(info);
-	}
-
-	var txt = mcText(key, DIP*0x08, true);
-	var txt_p = new c.r.LayoutParams(c.m, c.m);
-	txt_p.addRule(c.r.ALIGN_PARENT_LEFT);
-	txt_p.addRule(c.r.ALIGN_PARENT_TOP);
-	txt.setLayoutParams(txt_p);
-	txt.setOnClickListener(View.OnClickListener({onClick: function(view, event) {try {
-		that.direct_id.setText(block[0]);
-		that.direct_data.setText(block[1]);
-	}catch(e) {
-		showError(e);
-	}}}));
-	layout.addView(txt);
-
-	return [layout, image, txt];
-}
-
-function loadBlockImages(that) {thread(function() {try {
-	var loading = new CustomProgressBar(3, blockData.length);
-	that._parent.blockImageWork = true;
-
-	var max = Math.floor((c.ww - DIP*0x18)/(DIP*0x40));
-	var current = 0;
-	var currentLayout = new c.l(ctx);
-	currentLayout.setOrientation(c.l.HORIZONTAL);
-	currentLayout.setGravity(Gravity.CENTER);
-	for(var e = 0; e < blockData.length; e++) {
-		if(max == current++) {
-			current = 1;
-			var last = currentLayout;
-			uiThread(function() {try {
-				that._parent.blockImages.addView(last);
-			}catch(e) {
-				showError(e);
-			}});
-			currentLayout = new c.l(ctx);
-			currentLayout.setOrientation(c.l.HORIZONTAL);
-			currentLayout.setGravity(Gravity.CENTER);
-		}
-		var l = getBlockSelectLayout(that, blockData[e]);
-		that._parent.blockImagesData[e] = l;
-		currentLayout.addView(l[0]);
-		uiThread(function() {try {
-			loading.setProgress(e+1);
-		}catch(e) {
-			showError(e);
-		}});
-	}
-	uiThread(function() {try {
-		that._parent.blockImages.addView(currentLayout);
-	}catch(e) {
-		showError(e);
-	}});
-	loading.close();
-	that._parent.blockImageWork = false;
-}catch(e) {
-	showError(e);
-	loading.close();
-	that._parent.blockImageWork = false;
-}}).start();
-}
-
-function reloadBlockImages(that) {thread(function() {try {
-	//var loading = new CustomProgressBar(3, that._parent.blockImagesData.length);
-	uiThread(function() {try {
-	for(var e = 0; e < that._parent.blockImagesData.length; e++) {
-			that._parent.blockImagesData[e][2].setOnClickListener(View.OnClickListener({onClick: function(view, event) {try {
-				var block = (view.getText() + "").split(":");
-				that.direct_id.setText(block[0]);
-				that.direct_data.setText(block[1]);
-			}catch(e) {
-				toast("Please wait...");
-			}}}));
-	}
-	}catch(e) {
-		showError(e, WarnType.WARNING);
-	}});
-}catch(e) {
-	showError(e, WarnType.CRITICAL);
-}}).start()}
 
 function stringToCode(str) {
 	var chars = str + "";
