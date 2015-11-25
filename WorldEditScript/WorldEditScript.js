@@ -3293,6 +3293,7 @@ function WorldEdit() {
 		BtnVis: 1,
 		MenuLoc: 0,
 		WorkType: 0,
+		SafeMode: 1,
 		WhiteList: [],
 		HollowCircular: 0
 	}
@@ -3890,10 +3891,10 @@ WorldEdit.prototype = {
 		var mm_edit = new we_menu("Edit");
 		var mm_tool =  new we_menu("Tool");
 		var mm_setting = new we_menu("Setting");
-		//에딧메뉴 내용물
+		//에딧메뉴 하위 메뉴
 		var mme_circular = new we_menu("Circular");
 
-		//메인메뉴 목록
+		//메인메뉴에 등록
 		this.mainMenu.addMenu(this.contentType.REDIRECT_MENU, "Edit", mm_edit);
 		this.mainMenu.addMenu(this.contentType.REDIRECT_MENU, "Tool", mm_tool);
 		this.mainMenu.addMenu(this.contentType.REDIRECT_MENU, "Setting", mm_setting);
@@ -3911,7 +3912,7 @@ WorldEdit.prototype = {
 			we_initEdit(that, that.getLocalEditor(), EditType.WALL);
 		});
 		mm_edit.addMenu(this.contentType.REDIRECT_MENU, "Circular", mme_circular);
-		//원형 에딧메뉴 목록
+		//원형 에딧메뉴에 등록
 		mme_circular.addMenu(this.contentType.TOGGLE, "Hollow Circular", function(bool) {
 			if(bool === undefined) {
 				return that.get("HollowCircular") == 1;
@@ -3920,6 +3921,12 @@ WorldEdit.prototype = {
 			}else {
 				that.set("HollowCircular", 0);
 			}
+		});
+		mme_circular.addMenu(this.contentType.RUN_FUNCTION, "Sphere", function() {
+			we_initEdit(that, that.getLocalEditor(), EditType.SPHERE);
+		});
+		mme_circular.addMenu(this.contentType.RUN_FUNCTION, "Hemi-sphere", function() {
+			we_initEdit(that, that.getLocalEditor(), EditType.HEMI_SPHERE);
 		});
 		//설정메뉴 목록
 		mm_setting.addMenu(this.contentType.TOGGLE, "Button Visible", function(bool) {
@@ -3944,6 +3951,26 @@ WorldEdit.prototype = {
 			}
 			that.setMenuVisible(false);
 			that.setMenuVisible(true);
+		});
+		mm_setting.addMenu(this.contentType.TOGGLE, "Safe mode", function(bool) {
+			if(bool === undefined) {
+				return that.get("SafeMode") == 1;
+			}else if(bool) {
+				that.set("SafeMode", 1, true);
+			}else {
+				that.set("SafeMode", 0, true);
+			}
+		});
+		mm_setting.addMenu(this.contentType.TOGGLE, that.get("WorkType") == 0 ? "Work type:\nSynchronization" : "Work type:\nAsynchronous", function(bool) {
+			if(bool === undefined) {
+				return that.get("WorkType") == 1;
+			}else if(bool) {
+				that.set("WorkType", 1, true);
+				return "Work type:\nAsynchronous";
+			}else {
+				that.set("WorkType", 0, true);
+				return "Work type:\nSynchronization";
+			}
 		});
 
 		//기본 메뉴로 전환
@@ -4454,7 +4481,7 @@ function we_initEdit(worldEdit, editor, editType, editDetail) {
 		return;
 	}
 
-	var workType =  worldEdit.get("WorkType");
+	var safeMode =  worldEdit.get("SafeMode");
 
 	switch(editType) {
 
@@ -4498,13 +4525,13 @@ function we_initEdit(worldEdit, editor, editType, editDetail) {
 				}}).start();
 			}
 			//백업
-			if(!we_edit(workType, EditType.BACKUP, editor)) {
+			if(!we_edit(safeMode, EditType.BACKUP, editor)) {
 				atv_m = 2;
 				return;
 			}
 			atv_m = 1;
 			//에딧
-			if(!we_edit(workType, EditType.FILL, editor, editDetail)) {
+			if(!we_edit(safeMode, EditType.FILL, editor, editDetail)) {
 				atv_m = 2;
 				return;
 			}
@@ -4573,13 +4600,13 @@ function we_initEdit(worldEdit, editor, editType, editDetail) {
 				}}).start();
 			}
 			//백업
-			if(!we_edit(workType, EditType.BACKUP, editor)) {
+			if(!we_edit(safeMode, EditType.BACKUP, editor)) {
 				atv_m = 2;
 				return;
 			}
 			atv_m = 1;
 			//에딧
-			if(we_edit(workType, EditType.CLEAR, editor)) {
+			if(we_edit(safeMode, EditType.CLEAR, editor)) {
 				atv_m = 2;
 				return;
 			}
@@ -4633,13 +4660,13 @@ function we_initEdit(worldEdit, editor, editType, editDetail) {
 				}}).start();
 			}
 			//백업
-			if(!we_edit(workType, EditType.BACKUP, editor)) {
+			if(!we_edit(safeMode, EditType.BACKUP, editor)) {
 				atv_m = 2;
 				return;
 			}
 			atv_m = 1;
 			//에딧
-			if(!we_edit(workType, EditType.REPLACE, editor, editDetail)) {
+			if(!we_edit(safeMode, EditType.REPLACE, editor, editDetail)) {
 				atv_m = 2;
 				return;
 			}
@@ -4721,13 +4748,13 @@ function we_initEdit(worldEdit, editor, editType, editDetail) {
 				}}).start();
 			}
 			//백업
-			if(!we_edit(workType, EditType.BACKUP, editor)) {
+			if(!we_edit(safeMode, EditType.BACKUP, editor)) {
 				atv_m = 2;
 				return;
 			}
 			atv_m = 1;
 			//에딧
-			if(!we_edit(workType, EditType.WALL, editor, editDetail)) {
+			if(!we_edit(safeMode, EditType.WALL, editor, editDetail)) {
 				atv_m = 2;
 				return;
 			}
@@ -4796,13 +4823,13 @@ function we_initEdit(worldEdit, editor, editType, editDetail) {
 				}}).start();
 			}
 			//백업
-			if(!we_edit(workType, EditType.BACKUP, editor)) {
+			if(!we_edit(safeMode, EditType.BACKUP, editor)) {
 				atv_m = 2;
 				return;
 			}
 			atv_m = 1;
 			//에딧
-			if(!we_edit(workType, EditType.SPHERE, editor, editDetail)) {
+			if(!we_edit(safeMode, EditType.SPHERE, editor, editDetail)) {
 				atv_m = 2;
 				return;
 			}
@@ -4871,13 +4898,13 @@ function we_initEdit(worldEdit, editor, editType, editDetail) {
 				}}).start();
 			}
 			//백업
-			if(!we_edit(workType, EditType.BACKUP, editor)) {
+			if(!we_edit(safeMode, EditType.BACKUP, editor)) {
 				atv_m = 2;
 				return;
 			}
 			atv_m = 1;
 			//에딧
-			if(!we_edit(workType, EditType.HEMI_SPHERE, editor, editDetail)) {
+			if(!we_edit(safeMode, EditType.HEMI_SPHERE, editor, editDetail)) {
 				atv_m = 2;
 				return;
 			}
@@ -4942,7 +4969,7 @@ function we_initEdit(worldEdit, editor, editType, editDetail) {
 			lo.addView(b4);
 			lo.addView(b5);
 			lo.addView(b6);
-			var dl =  new we_dialog("Select 'Direction'", lo, null, null, "Cancel", funtion() {this.close()}, Gravity.CENTER);
+			var dl =  new we_dialog("Select 'Direction'", lo, null, null, "Cancel", function() {this.close()}, Gravity.CENTER);
 			dl.show();
 		}else {//추가 정보가 있으면(서버원)
 			//액티브 스타트!
@@ -5060,7 +5087,7 @@ function we_initEdit(worldEdit, editor, editType, editDetail) {
 
 //we_initEdit에서 예외처리, GUI작업을 진행
 //we_edit에서 블럭 분석/설치, 요청작업을 진행
-function we_edit(workType, editType, editor, detail) {
+function we_edit(safeMode, editType, editor, detail) {
 	var that = this;
 	sgUtils.data.isProcessing = true;
 
@@ -5087,16 +5114,16 @@ function we_edit(workType, editType, editor, detail) {
 		for(var fy = sy; fy<= ey; fy++) {
 			for(var fz = sz; fz <= ez; fz++) {
 				for(var fx = sx; fx <= ex; fx++) {
-					if(workType === 0) {
+					if(safeMode === 0) {
 						Level.setTile(fx, fy, fz, bid, bdata);
 					}else {
 						blocks.push([fx, fy, fz, bid, bdata]);
-						//TODO
 					}
 					sgUtils.data.progress[0]++;
 				}
 			}
 		}
+		return blocks;
 		break;
 
 
@@ -5120,16 +5147,16 @@ function we_edit(workType, editType, editor, detail) {
 		for(var fy = sy; fy <= ey; fy++) {
 			for(var fz = sz; fz <= ez; fz++) {
 				for(var fx = sx; fx <= ex; fx++) {
-					if(workType === 0) {
+					if(safeMode === 0) {
 						Level.setTile(fx, fy, fz, 0, 0);
 					}else {
 						blocks.push([fx, fy, fz, 0, 0]);
-						//TODO
 					}
 					sgUtils.data.progress[0]++;
 				}
 			}
 		}
+		return blocks;
 		break;
 
 
@@ -5161,15 +5188,15 @@ function we_edit(workType, editType, editor, detail) {
 					if(Level.getTile(fx, fy, fz) !== bid || Level.getData(fx, fy, fz) !== bdata) {
 						continue;
 					}
-					if(workType === 0) {
+					if(safeMode === 0) {
 						Level.setTile(fx, fy, fz, bid2, bdata2);
 					}else {
 						blocks.push([fx, fy, fz, bid2, bdata2]);
-						//TODO
 					}
 				}
 			}
 		}
+		return blocks;
 		break;
 
 
@@ -5195,27 +5222,26 @@ function we_edit(workType, editType, editor, detail) {
 		for(var fy = sy; fy <= ey; fy++) {
 			for(var fz = sz; fz <= ez; fz += (ez-sz)) {
 				for(var fx = sx; fx <= ex; fx++) {
-					if(workType === 0) {
+					if(safeMode === 0) {
 						Level.setTile(fx, fy, fz, bid, bdata);
 					}else {
 						blocks.push([cx, cy, cz, bid, bdata]);
-						//TODO
 					}
 					sgUtils.data.progress[0]++;
 				}
 			}
 			for(var fx = sx; fx <= ex; fx += (ex-sx)) {
 				for(var fz = sz; fz <= ez; fz++) {
-					if(workType === 0) {
+					if(safeMode === 0) {
 						Level.setTile(fx, fy, fz, bid, bdata);
 					}else {
 						blocks.push([fx, fy, fz, bid, bdata]);
-						//TODO
 					}
 					sgUtils.data.progress[0]++;
 				}
 			}
 		}
+		return blocks;
 		break;
 
 
@@ -5244,7 +5270,7 @@ function we_edit(workType, editType, editor, detail) {
 						if(detail[0] && !(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz, 2) >= (Math.pow((detail[2]-1.5), 2)))) {
 							continue;
 						}
-						if(workType === 0) {
+						if(safeMode === 0) {
 							Level.setTile(cx + fx, cy + fy, cz + fz, bid, bdata);
 						}else {
 							blocks.push([cx + fx, cy + fy, cz + fz, bid, bdata]);
@@ -5253,6 +5279,7 @@ function we_edit(workType, editType, editor, detail) {
 				}
 			}
 		}
+		return blocks;
 		break;
 
 
@@ -5326,7 +5353,7 @@ function we_edit(workType, editType, editor, detail) {
 						if(detail[0] && !(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz, 2) >= (Math.pow((detail[2]-1.5), 2)))) {
 							continue;
 						}
-						if(workType === 0) {
+						if(safeMode === 0) {
 							Level.setTile(cx + fx, cy + fy, cz + fz, bid, bdata);
 						}else {
 							blocks.push([cx + fx, cy + fy, cz + fz, bid, bdata]);
@@ -5335,6 +5362,7 @@ function we_edit(workType, editType, editor, detail) {
 				}
 			}
 		}
+		return blocks;
 		break;
 
 
@@ -5360,13 +5388,13 @@ function we_edit(workType, editType, editor, detail) {
 			var fx = 0;
 			for(var fy = -rel; fy <= rel; fy++) {
 				for(var fz = -rel; fz <= rel; fz++) {
-					if(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz), 2) < Math.pow((detail[2]-0.5), 2)) {
+					if(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz, 2) < Math.pow((detail[2]-0.5), 2)) {
 						sgUtils.data.progress[0]++;
 						//속이 빈 원 옵션 체크
 						if(detail[0] && !(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz, 2) >= (Math.pow((detail[2]-1.5), 2)))) {
 							continue;
 						}
-						if(workType === 0) {
+						if(safeMode === 0) {
 							Level.setTile(cx + fx, cy + fy, cz + fz, bid, bdata);
 						}else {
 							blocks.push([cx + fx, cy + fy, cz + fz, bid, bdata]);
@@ -5379,13 +5407,13 @@ function we_edit(workType, editType, editor, detail) {
 			var fy = 0;
 			for(var fx = -rel; fx <= rel; fx++) {
 				for(var fz = -rel; fz <= rel; fz++) {
-					if(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz), 2) < Math.pow((detail[2]-0.5), 2)) {
+					if(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz, 2) < Math.pow((detail[2]-0.5), 2)) {
 						sgUtils.data.progress[0]++;
 						//속이 빈 원 옵션 체크
 						if(detail[0] && !(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz, 2) >= (Math.pow((detail[2]-1.5), 2)))) {
 							continue;
 						}
-						if(workType === 0) {
+						if(safeMode === 0) {
 							Level.setTile(cx + fx, cy + fy, cz + fz, bid, bdata);
 						}else {
 							blocks.push([cx + fx, cy + fy, cz + fz, bid, bdata]);
@@ -5398,13 +5426,13 @@ function we_edit(workType, editType, editor, detail) {
 			var fz = 0;
 			for(var fy = -rel; fy <= rel; fy++) {
 				for(var fy = -rel; fy <= rel; fy++) {
-					if(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz), 2) < Math.pow((detail[2]-0.5), 2)) {
+					if(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz, 2) < Math.pow((detail[2]-0.5), 2)) {
 						sgUtils.data.progress[0]++;
 						//속이 빈 원 옵션 체크
 						if(detail[0] && !(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz, 2) >= (Math.pow((detail[2]-1.5), 2)))) {
 							continue;
 						}
-						if(workType === 0) {
+						if(safeMode === 0) {
 							Level.setTile(cx + fx, cy + fy, cz + fz, bid, bdata);
 						}else {
 							blocks.push([cx + fx, cy + fy, cz + fz, bid, bdata]);
@@ -5416,6 +5444,7 @@ function we_edit(workType, editType, editor, detail) {
 			default:
 			throw new Error("Unknown edit-circle-axis type: " + detail[3]);
 		}
+		return blocks;
 		break;
 
 
@@ -5480,13 +5509,13 @@ function we_edit(workType, editType, editor, detail) {
 						if(fz > 0) continue;
 						break;
 					}
-					if(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz), 2) < Math.pow((detail[2]-0.5), 2)) {
+					if(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz, 2) < Math.pow((detail[2]-0.5), 2)) {
 						sgUtils.data.progress[0]++;
 						//속이 빈 원 옵션 체크
 						if(detail[0] && !(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz, 2) >= (Math.pow((detail[2]-1.5), 2)))) {
 							continue;
 						}
-						if(workType === 0) {
+						if(safeMode === 0) {
 							Level.setTile(cx + fx, cy + fy, cz + fz, bid, bdata);
 						}else {
 							blocks.push([cx + fx, cy + fy, cz + fz, bid, bdata]);
@@ -5514,13 +5543,13 @@ function we_edit(workType, editType, editor, detail) {
 						if(fz > 0) continue;
 						break;
 					}
-					if(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz), 2) < Math.pow((detail[2]-0.5), 2)) {
+					if(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz, 2) < Math.pow((detail[2]-0.5), 2)) {
 						sgUtils.data.progress[0]++;
 						//속이 빈 원 옵션 체크
 						if(detail[0] && !(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz, 2) >= (Math.pow((detail[2]-1.5), 2)))) {
 							continue;
 						}
-						if(workType === 0) {
+						if(safeMode === 0) {
 							Level.setTile(cx + fx, cy + fy, cz + fz, bid, bdata);
 						}else {
 							blocks.push([cx + fx, cy + fy, cz + fz, bid, bdata]);
@@ -5548,13 +5577,13 @@ function we_edit(workType, editType, editor, detail) {
 						if(fy > 0) continue;
 						break;
 					}
-					if(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz), 2) < Math.pow((detail[2]-0.5), 2)) {
+					if(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz, 2) < Math.pow((detail[2]-0.5), 2)) {
 						sgUtils.data.progress[0]++;
 						//속이 빈 원 옵션 체크
 						if(detail[0] && !(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz, 2) >= (Math.pow((detail[2]-1.5), 2)))) {
 							continue;
 						}
-						if(workType === 0) {
+						if(safeMode === 0) {
 							Level.setTile(cx + fx, cy + fy, cz + fz, bid, bdata);
 						}else {
 							blocks.push([cx + fx, cy + fy, cz + fz, bid, bdata]);
@@ -5566,6 +5595,7 @@ function we_edit(workType, editType, editor, detail) {
 			default:
 			throw new Error("Unknown edit-semiCircle-aixs type: " + detail[3]);
 		}
+		return blocks;
 		break;
 
 
@@ -5629,15 +5659,15 @@ function we_edit(workType, editType, editor, detail) {
 			for(var rz = 0; rz < pz; rz++) {
 				for(var rx = 0; rx < px; rx++) {
 					var block = piece.getBlock(rx, ry, rz);
-					if(workType === 0) {
+					if(safeMode === 0) {
 						Level.setTile(sx+rx, sy+ry, sz+rz, block.getId(), block.getData());
 					}else {
 						blocks.push([sx+rx, sy+ry, sz+rz, block.getId(), block.getData()]);
-						//TODO
 					}
 				}
 			}
 		}
+		return blocks;
 		break;
 
 
@@ -5713,15 +5743,15 @@ function we_edit(workType, editType, editor, detail) {
 			for(var rz = 0; rz < pz; rz++) {
 				for(var rx = 0; rx < px; rx++) {
 					var block = piece.getBlock(rx, ry, rz);
-					if(workType === 0) {
+					if(safeMode === 0) {
 						Level.setTile(sx+rx, sy+ry, sz+rz, block.getId(), block.getData());
 					}else {
 						blocks.push([sx+rx, sy+ry, sz+rz, block.getId(), block.getData()]);
-						//TODO
 					}
 				}
 			}
 		}
+		return blocks;
 		break;
 	}
 	sgUtils.data.isProcessing = false;
