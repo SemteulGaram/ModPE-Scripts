@@ -3602,6 +3602,10 @@ function WorldEdit() {
 	this.currentSelectedBlock = null;
 	this.blockIdLayout = null;
 
+	this.asynchronousSetTileRequest = [];
+	this.modTickWorking = false;
+	this.modTickMsgTick = 0;
+
 	sgUtils.data.isProcessing = false;
 	sgUtils.data.progress = [0, 1];
 }
@@ -4184,6 +4188,13 @@ WorldEdit.prototype = {
 				showError(err);
 			}});
 		}
+	},
+
+	setTileRequest: function(ary){
+		if(!(ary instanceof Array)) {
+			throw new Error("Unknown setTile request");
+		}
+		this.asynchronousSetTileRequest = this.asynchronousSetTileRequest.concat(ary);
 	}
 }
 
@@ -4282,11 +4293,17 @@ we_menu.prototype = {
 				var btn = sgUtils.gui.mcFastButton(con[1], sg.px*0x10, false, Color.WHITE, null, null, null, [sg.px*4, sg.px*8, sg.px*4, sg.px*8], null, con[2] ? sgAssets.weButtonClick.ninePatch() : sgAssets.weButton.ninePatch(), null, function(view) {try {
 					var func = view.getTag();
 					if(func()) {
-						func(false);
+						var text = func(false);
 						view.setBackgroundDrawable(sgAssets.weButton.ninePatch());
+						if(text !== undefined) {
+							view.setText(text)
+						}
 					}else {
-						func(true);
+						var text = func(true);
 						view.setBackgroundDrawable(sgAssets.weButtonClick.ninePatch());
+						if(text !== undefined) {
+							view.setText(text)
+						}
 					}
 				}catch(err) {
 					showError(err);
@@ -4371,6 +4388,7 @@ function we_editor(editorGroup, name) {
 	this.backup = null;
 	this.backupPos = null;
 	this.copy = null;
+	this.tempBlocks = null;
 }
 
 we_editor.prototype = {
@@ -4407,12 +4425,12 @@ we_editor.prototype = {
 		return this.backup;
 	},
 
-	getBackupPos: function() {
-		return this.backupPos;
-	},
-
 	getCopy: function() {
 		return this.copy;
+	},
+
+	getTempBlocks: function() {
+		return this.tempBlocks;
 	},
 
 	setPos1: function(pos) {
@@ -4429,15 +4447,8 @@ we_editor.prototype = {
 		this.pos2 = pos;
 	},
 
-	setBackup: function(piece, pos) {
-		if(!(piece instanceof Piece)) {
-			throw new TypeError("Parameter 'piece' must instance of Piece");
-		}
-		if(!(pos instanceof Vector3)) {
-			throw new TypeError("Parameter 'pos' must instance of Vector3");
-		}
-		this.backup = piece;
-		this.backupPos = pos;
+	setBackup: function(data) {
+		this.backup = data;
 	},
 
 	setCopy: function(piece, pos) {
@@ -4445,6 +4456,10 @@ we_editor.prototype = {
 			throw new TypeError("Parameter 'piece' must instance of Piece");
 		}
 		this.copy = piece;
+	},
+
+	setTempBlocks: function(tempData) {
+		this.tempBlocks = tempData;
 	}
 }
 
@@ -4465,12 +4480,13 @@ var EditType = {
 	ROTATION: 0x23,
 	FLIP: 0x24,
 	BACKUP: 0x30,
-	RESTORE: 0x31
+	RESTORE: 0x31,
+	PLACE_TEMP_BLOCKS: 0xff
 }
 
 //we_initEdit에서 예외처리, GUI작업을 진행
 //we_edit에서 블럭 분석/설치, 요청작업을 진행
-function we_initEdit(worldEdit, editor, editType, editDetail) {
+function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 	var that = this;
 	if(!editor.isOnline()) {
 		msg("Can't find player entity", editor.getName());
@@ -4481,7 +4497,73 @@ function we_initEdit(worldEdit, editor, editType, editDetail) {
 		return;
 	}
 
-	var safeMode =  worldEdit.get("SafeMode");
+	//현재 작업 상태
+	var atv_m = 0;
+	//작업 이름
+	var workName = "알 수 없음";
+	//작업 타입
+	var type = null;
+	//작업 쓰레드 준비
+	var atv = thread(function() {try{
+		//로컬작업일 경우 로딩 프로그래스바 쓰레드 생성
+		if(editor.getName().toLowerCase() === (Player.getName(Player.getEntity())+"").toLowerCase()) {
+			thread(function() {try {
+				var loading = new sgUtils.gui.progressBar(3, true);
+				loading.setText("준비 중...");
+				loading.show();
+				var pgt;
+				//작업 상태가 3가 되면 종료
+				while(atv_m !== 3) {
+					pgt = "(" + sgUtils.convert.numberToString(sgUtils.data.progress[0]) + "/" + sgUtils.convert.numberToString(sgUtils.data.progress[1]) + ")";
+					if(atv_m === 0) {
+						if(safeMode === 1) {
+							loading.setText("준비 중... " + pgt);
+						}else {
+							loading.setText("'" + workName + "' 에딧 중... " + pgt);
+						}
+						loading.setMax(sgUtils.data.progress[1]);
+						loading.setProgress(sgUtils.data.progress[0]);
+					}else if(atv_m === 1) {
+						loading.setText("백업 중... " + pgt);
+						loading.setMax(sgUtils.data.progress[1]);
+						loading.setProgress(sgUtils.data.progress[0]);
+					}else if(atv_m === 2) {
+						loading.setText("'" + workName + "' 에딧 중... " + pgt);
+						loading.setMax(sgUtils.data.progress[1]);
+						loading.setProgress(sgUtils.data.progress[0]);
+					}
+					sleep(0x80);
+				}
+				//로딩창 닫기
+				loading.close();
+			}catch(err) {
+				showError(err);
+			}}).start();
+		}
+		//정보
+		var blocks = we_edit(safeMode, type, editor, editDetail);
+		if(Array.isArray(blocks) && blocks.length === 0) {
+			atv_m = 3;
+			return;
+		}else {
+			atv_m = 1;
+			editor.setTempBlocks(blocks);
+		}
+
+		//백업
+		we_edit(safeMode, EditType.BACKUP, editor);
+		atv_m = 2;
+
+		//에딧
+		if(workType === 0) {
+			we_edit(safeMode, EditType.PLACE_TEMP_BLOCKS, editor);
+		}else {
+			main.setTileRequest(editor.getTempBlocks());
+		}
+		atv_m = 3;
+	}catch(err) {
+		showError(err);
+	}});
 
 	switch(editType) {
 
@@ -4492,53 +4574,8 @@ function we_initEdit(worldEdit, editor, editType, editDetail) {
 			msg("위치1, 2를 지정해 주세요", editor.getName());
 			return;
 		}
-		//현재 작업 상태
-		var atv_m = 0;
-		//작업 쓰레드 준비
-		var atv = thread(function() {try{
-			//로컬작업일 경우 로딩 프로그래스바 쓰레드 생성
-			if(editor.getName().toLowerCase() === (Player.getName(Player.getEntity())+"").toLowerCase()) {
-				thread(function() {try {
-					var loading = new sgUtils.gui.progressBar(3, true);
-					loading.setText("준비 중...");
-					loading.show();
-					var pgt;
-					//작업 상태가 2가 되면 종료
-					while(atv_m !== 2) {
-						if(atv_m === 0) {
-							pgt = "(" + sgUtils.convert.numberToString(sgUtils.data.progress[0]) + "/" + sgUtils.convert.numberToString(sgUtils.data.progress[1]) + ")";
-							loading.setText("백업 중... " + pgt);
-							loading.setMax(sgUtils.data.progress[1]);
-							loading.setProgress(sgUtils.data.progress[0]);
-						}else if(atv_m === 1) {
-							pgt = "(" + sgUtils.convert.numberToString(sgUtils.data.progress[0]) + "/" + sgUtils.convert.numberToString(sgUtils.data.progress[1]) + ")";
-							loading.setText("'채우기' 에딧 중... " + pgt);
-							loading.setMax(sgUtils.data.progress[1]);
-							loading.setProgress(sgUtils.data.progress[0]);
-						}
-						sleep(0x80);
-					}
-					//로딩창 닫기
-					loading.close();
-				}catch(err) {
-					showError(err);
-				}}).start();
-			}
-			//백업
-			if(!we_edit(safeMode, EditType.BACKUP, editor)) {
-				atv_m = 2;
-				return;
-			}
-			atv_m = 1;
-			//에딧
-			if(!we_edit(safeMode, EditType.FILL, editor, editDetail)) {
-				atv_m = 2;
-				return;
-			}
-			atv_m = 2;
-		}catch(err) {
-			showError(err);
-		}});
+		workName = "채우기";
+		type = EditType.FILL;
 
 		if(editDetail === undefined) {//추가 정보가 없으면(로컬)
 			var bs = new we_blockSelect("Select 'Fill' block...", "Start", function(id, data) {
@@ -4567,53 +4604,9 @@ function we_initEdit(worldEdit, editor, editType, editDetail) {
 			msg("위치1, 2를 지정해 주세요", editor.getName());
 			return;
 		}
-		//현재 작업 상태
-		var atv_m = 0;
-		//작업
-		var atv = thread(function() {try{
-			//로컬작업일 경우 로딩 프로그래스바 쓰레드 생성
-			if(editor.getName().toLowerCase() === (Player.getName(Player.getEntity())+"").toLowerCase()) {
-				thread(function() {try {
-					var loading = new sgUtils.gui.progressBar(3, true);
-					loading.setText("준비 중...");
-					loading.show();
-					var pgt;
-					//작업 상태가 2가 되면 종료
-					while(atv_m !== 2) {
-						if(atv_m === 0) {
-							pgt = "(" + sgUtils.convert.numberToString(sgUtils.data.progress[0]) + "/" + sgUtils.convert.numberToString(sgUtils.data.progress[1]) + ")";
-							loading.setText("백업 중... " + pgt);
-							loading.setMax(sgUtils.data.progress[1]);
-							loading.setProgress(sgUtils.data.progress[0]);
-						}else if(atv_m === 1) {
-							pgt = "(" + sgUtils.convert.numberToString(sgUtils.data.progress[0]) + "/" + sgUtils.convert.numberToString(sgUtils.data.progress[1]) + ")";
-							loading.setText("'비우기' 에딧 중... " + pgt);
-							loading.setMax(sgUtils.data.progress[1]);
-							loading.setProgress(sgUtils.data.progress[0]);
-						}
-						sleep(0x80);
-					}
-					//로딩창 닫기
-					loading.close();
-				}catch(err) {
-					showError(err);
-				}}).start();
-			}
-			//백업
-			if(!we_edit(safeMode, EditType.BACKUP, editor)) {
-				atv_m = 2;
-				return;
-			}
-			atv_m = 1;
-			//에딧
-			if(we_edit(safeMode, EditType.CLEAR, editor)) {
-				atv_m = 2;
-				return;
-			}
-			atv_m = 2;
-		}catch(err) {
-			showError(err);
-		}});
+		workName = "비우기";
+		type = EditType.CLEAR;
+
 		//추가정보 없이 액티브 스타트!
 		atv.start();
 		break;
@@ -4627,53 +4620,8 @@ function we_initEdit(worldEdit, editor, editType, editDetail) {
 			msg("위치1, 2를 지정해 주세요", editor.getName());
 			return;
 		}
-		//현재 작업 상태
-		var atv_m = 0;
-		//작업 쓰레드 준비
-		var atv = thread(function() {try{
-			//로컬작업일 경우 로딩 프로그래스바 쓰레드 생성
-			if(editor.getName().toLowerCase() === (Player.getName(Player.getEntity())+"").toLowerCase()) {
-				thread(function() {try {
-					var loading = new sgUtils.gui.progressBar(3, true);
-					loading.setText("준비 중...");
-					loading.show();
-					var pgt;
-					//작업 상태가 2가 되면 종료
-					while(atv_m !== 2) {
-						if(atv_m === 0) {
-							pgt = "(" + sgUtils.convert.numberToString(sgUtils.data.progress[0]) + "/" + sgUtils.convert.numberToString(sgUtils.data.progress[1]) + ")";
-							loading.setText("백업 중... " + pgt);
-							loading.setMax(sgUtils.data.progress[1]);
-							loading.setProgress(sgUtils.data.progress[0]);
-						}else if(atv_m === 1) {
-							pgt = "(" + sgUtils.convert.numberToString(sgUtils.data.progress[0]) + "/" + sgUtils.convert.numberToString(sgUtils.data.progress[1]) + ")";
-							loading.setText("'바꾸기' 에딧 중... " + pgt);
-							loading.setMax(sgUtils.data.progress[1]);
-							loading.setProgress(sgUtils.data.progress[0]);
-						}
-						sleep(0x80);
-					}
-					//로딩창 닫기
-					loading.close();
-				}catch(err) {
-					showError(err);
-				}}).start();
-			}
-			//백업
-			if(!we_edit(safeMode, EditType.BACKUP, editor)) {
-				atv_m = 2;
-				return;
-			}
-			atv_m = 1;
-			//에딧
-			if(!we_edit(safeMode, EditType.REPLACE, editor, editDetail)) {
-				atv_m = 2;
-				return;
-			}
-			atv_m = 2;
-		}catch(err) {
-			showError(err);
-		}});
+		workName = "바꾸기";
+		type = EditType.REPLACE;
 
 		if(editDetail === undefined) {//추가 정보가 없으면(로컬)
 			//bs(블럭선택)창이 먼저 뜨고나서 bs2(블럭선택)창이 뜹니다
@@ -4715,56 +4663,11 @@ function we_initEdit(worldEdit, editor, editType, editDetail) {
 			msg("위치1, 2를 지정해 주세요", editor.getName());
 			return;
 		}
-		//현재 작업 상태
-		var atv_m = 0;
-		//작업 쓰레드 준비
-		var atv = thread(function() {try{
-			//로컬작업일 경우 로딩 프로그래스바 쓰레드 생성
-			if(editor.getName().toLowerCase() === (Player.getName(Player.getEntity())+"").toLowerCase()) {
-				thread(function() {try {
-					var loading = new sgUtils.gui.progressBar(3, true);
-					loading.setText("준비 중...");
-					loading.show();
-					var pgt;
-					//작업 상태가 2가 되면 종료
-					while(atv_m !== 2) {
-						if(atv_m === 0) {
-							pgt = "(" + sgUtils.convert.numberToString(sgUtils.data.progress[0]) + "/" + sgUtils.convert.numberToString(sgUtils.data.progress[1]) + ")";
-							loading.setText("백업 중... " + pgt);
-							loading.setMax(sgUtils.data.progress[1]);
-							loading.setProgress(sgUtils.data.progress[0]);
-						}else if(atv_m === 1) {
-							pgt = "(" + sgUtils.convert.numberToString(sgUtils.data.progress[0]) + "/" + sgUtils.convert.numberToString(sgUtils.data.progress[1]) + ")";
-							loading.setText("'벽 생성' 에딧 중... " + pgt);
-							loading.setMax(sgUtils.data.progress[1]);
-							loading.setProgress(sgUtils.data.progress[0]);
-						}
-						sleep(0x80);
-					}
-					//로딩창 닫기
-					loading.close();
-				}catch(err) {
-					showError(err);
-				}}).start();
-			}
-			//백업
-			if(!we_edit(safeMode, EditType.BACKUP, editor)) {
-				atv_m = 2;
-				return;
-			}
-			atv_m = 1;
-			//에딧
-			if(!we_edit(safeMode, EditType.WALL, editor, editDetail)) {
-				atv_m = 2;
-				return;
-			}
-			atv_m = 2;
-		}catch(err) {
-			showError(err);
-		}});
+		workName = "벽 생성";
+		type = EditType.WALL;
 
 		if(editDetail === undefined) {//추가 정보가 없으면(로컬)
-			var bs = new we_blockSelect("Select 'Fill wall' block...", "Start", function(id, data) {
+			var bs = new we_blockSelect("Select 'Create wall' block...", "Start", function(id, data) {
 				//긍정 버튼을 누를때
 				this.close();
 				editDetail = [new Block(id, data)];
@@ -4783,72 +4686,42 @@ function we_initEdit(worldEdit, editor, editType, editDetail) {
 
 
 
-		//EditDetail: [isHollow, FilledBlock]
+		//EditDetail: [isHollow, FilledBlock, radious]
 		case EditType.SPHERE:
 		//예외 처리
 		if(editor.getPos1() === null) {
 			msg("위치1을 지정해 주세요", editor.getName());
 			return;
 		}
-		//현재 작업 상태
-		var atv_m = 0;
-		//작업 쓰레드 준비
-		var atv = thread(function() {try{
-			//로컬작업일 경우 로딩 프로그래스바 쓰레드 생성
-			if(editor.getName().toLowerCase() === (Player.getName(Player.getEntity())+"").toLowerCase()) {
-				thread(function() {try {
-					var loading = new sgUtils.gui.progressBar(3, true);
-					loading.setText("준비 중...");
-					loading.show();
-					var pgt;
-					//작업 상태가 2가 되면 종료
-					while(atv_m !== 2) {
-						if(atv_m === 0) {
-							pgt = "(" + sgUtils.convert.numberToString(sgUtils.data.progress[0]) + "/" + sgUtils.convert.numberToString(sgUtils.data.progress[1]) + ")";
-							loading.setText("백업 중... " + pgt);
-							loading.setMax(sgUtils.data.progress[1]);
-							loading.setProgress(sgUtils.data.progress[0]);
-						}else if(atv_m === 1) {
-							pgt = "(" + sgUtils.convert.numberToString(sgUtils.data.progress[0]) + "/" + sgUtils.convert.numberToString(sgUtils.data.progress[1]) + ")";
-							loading.setText("'구 생성' 에딧 중... " + pgt);
-							loading.setMax(sgUtils.data.progress[1]);
-							loading.setProgress(sgUtils.data.progress[0]);
-						}
-						sleep(0x80);
-					}
-					//로딩창 닫기
-					loading.close();
-				}catch(err) {
-					showError(err);
-				}}).start();
-			}
-			//백업
-			if(!we_edit(safeMode, EditType.BACKUP, editor)) {
-				atv_m = 2;
-				return;
-			}
-			atv_m = 1;
-			//에딧
-			if(!we_edit(safeMode, EditType.SPHERE, editor, editDetail)) {
-				atv_m = 2;
-				return;
-			}
-			atv_m = 2;
-		}catch(err) {
-			showError(err);
-		}});
+		workName = "구 생성";
+		type = EditType.SPHERE;
 
 		if(editDetail === undefined) {//추가 정보가 없으면(로컬)
-			var bs = new we_blockSelect("Select 'Fill sphere' block...", "Start", function(id, data) {
+			//bs(블럭 선택창)이 먼저 나타나고 dl(반지름 입력)이 나중에 나타납니다
+			var bs = new we_blockSelect("Select 'Create sphere' block...", "Next", function(id, data) {
 				//긍정 버튼을 누를때
 				this.close();
-				editDetail = [main.get("HollowCircular") === 1, new Block(id, data)];
-				//액티브 스타트!
-				atv.start();
+				editDetail = [main.get("HollowCircular") == 1, new Block(id, data)];
+				dl.shlow();
 			}, "Cancel", function() {
 				//부정 버튼을 누를때
 				this.close();
 			});
+
+			var np = new NumberPicker(ctx);
+			np.setMinValue(0x01);
+			np.setMaxValue(0x100);
+			var np_p = new sg.rlp(sg.px*0x100, sg.px*0x80);
+			np.setLayoutParams(np_p);
+			var dl = new wd_dialog("Type radious...", np, "Start", function() {
+				this.close();
+				editDetail[2] = parseInt(np.getValue());
+				//액티브 스타트!
+				atv.start();
+			}, "Cancel", function() {
+				this.close();
+			}, Gravity.CENTER);
+
 			bs.show();
 		}else {//추가 정보가 있으면(서버원)
 			//액티브 스타트!
@@ -4858,110 +4731,86 @@ function we_initEdit(worldEdit, editor, editType, editDetail) {
 
 
 
-		//EditDetail: [isHollow, FilledBlock, direction]
+		//EditDetail: [isHollow, FilledBlock, radious, direction]
 		case EditType.HEMI_SPHERE:
 		//예외 처리
 		if(editor.getPos1() === null) {
 			msg("위치1을 지정해 주세요", editor.getName());
 			return;
 		}
-		//현재 작업 상태
-		var atv_m = 0;
-		//작업 쓰레드 준비
-		var atv = thread(function() {try{
-			//로컬작업일 경우 로딩 프로그래스바 쓰레드 생성
-			if(editor.getName().toLowerCase() === (Player.getName(Player.getEntity())+"").toLowerCase()) {
-				thread(function() {try {
-					var loading = new sgUtils.gui.progressBar(3, true);
-					loading.setText("준비 중...");
-					loading.show();
-					var pgt;
-					//작업 상태가 2가 되면 종료
-					while(atv_m !== 2) {
-						if(atv_m === 0) {
-							pgt = "(" + sgUtils.convert.numberToString(sgUtils.data.progress[0]) + "/" + sgUtils.convert.numberToString(sgUtils.data.progress[1]) + ")";
-							loading.setText("백업 중... " + pgt);
-							loading.setMax(sgUtils.data.progress[1]);
-							loading.setProgress(sgUtils.data.progress[0]);
-						}else if(atv_m === 1) {
-							pgt = "(" + sgUtils.convert.numberToString(sgUtils.data.progress[0]) + "/" + sgUtils.convert.numberToString(sgUtils.data.progress[1]) + ")";
-							loading.setText("'반구 생성' 에딧 중... " + pgt);
-							loading.setMax(sgUtils.data.progress[1]);
-							loading.setProgress(sgUtils.data.progress[0]);
-						}
-						sleep(0x80);
-					}
-					//로딩창 닫기
-					loading.close();
-				}catch(err) {
-					showError(err);
-				}}).start();
-			}
-			//백업
-			if(!we_edit(safeMode, EditType.BACKUP, editor)) {
-				atv_m = 2;
-				return;
-			}
-			atv_m = 1;
-			//에딧
-			if(!we_edit(safeMode, EditType.HEMI_SPHERE, editor, editDetail)) {
-				atv_m = 2;
-				return;
-			}
-			atv_m = 2;
-		}catch(err) {
-			showError(err);
-		}});
+		workName = "반구 생성";
+		type = EditType.HEMI_SPHERE;
 
 		if(editDetail === undefined) {//추가 정보가 없으면(로컬)
-			var bs = new we_blockSelect("Select 'Fill hemi-sphere' block...", "Start", function(id, data) {
+			//bs(블럭 선택창)이 먼저 나타나고 dl(반지름 선택)이 그 다음 dl2(방향 선택)이 마지막입니다
+			var bs = new we_blockSelect("Select 'Create hemi-sphere' block...", "Start", function(id, data) {
 				//긍정 버튼을 누를때
 				this.close();
-				editDetail = [main.get("HollowCircular") === 1, new Block(id, data), direction];
-				//액티브 스타트!
-				atv.start();
+				editDetail = [main.get("HollowCircular") == 1, new Block(id, data)];
+				//반지름 선택창을 띄우기
+				dl.show();
 			}, "Cancel", function() {
 				//부정 버튼을 누를때
 				this.close();
 			});
-			var direction;
+
+			var np = new NumberPicker(ctx);
+			np.setMinValue(0x01);
+			np.setMaxValue(0x100);
+			var np_p = new sg.rlp(sg.px*0x100, sg.px*0x80);
+			np.setLayoutParams(np_p);
+			var dl = new wd_dialog("Type radious...", np, "Start", function() {
+				this.close();
+				editDetail[2] = parseInt(np.getValue());
+				//방향 선택창 띄우기
+				dl2.show();
+			}, "Cancel", function() {
+				this.close();
+			}, Gravity.CENTER);
+
 			var lo = new sg.ll(ctx);
 			lo.setOrientation(sg.ll.VERTICAL);
 			var b1 =  new sgUtils.gui.mcFastButton("X+", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
-				direction = "x+";
+				editDetail[3] = "x+";
 				we_toast("'X+'방향으로 설정되었습니다");
-				dl.close();
-				bs.show();
+				dl2.close();
+				//액티브 스타트!
+				atv.start();
 			});
 			var b2 =  new sgUtils.gui.mcFastButton("X-", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
-				direction = "x-";
+				editDetail[3] = "x-";
 				we_toast("'X-'방향으로 설정되었습니다");
-				dl.close();
-				bs.show();
+				dl2.close();
+				//액티브 스타트!
+				atv.start();
 			});
 			var b3 =  new sgUtils.gui.mcFastButton("Y+", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
-				direction = "y+";
+				editDetail[3] = "y+";
 				we_toast("Y+'방향으로 설정되었습니다");
-				dl.close();
-				bs.show();
+				dl2.close();
+				//액티브 스타트!
+				atv.start();
 			});
 			var b4 =  new sgUtils.gui.mcFastButton("Y-", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
-				direction = "y-";
+				editDetail[3] = "y-";
 				we_toast("'Y-'방향으로 설정되었습니다");
-				dl.close();
-				bs.show();
+				dl2.close();
+				//액티브 스타트!
+				atv.start();
 			});
 			var b5 =  new sgUtils.gui.mcFastButton("Z+", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
-				direction = "z+";
+				editDetail[3] = "z+";
 				we_toast("'Z+'방향으로 설정되었습니다");
-				dl.close();
-				bs.show();
+				dl2.close();
+				//액티브 스타트!
+				atv.start();
 			});
 			var b6 =  new sgUtils.gui.mcFastButton("Z-", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
-				direction = "z-";
+				editDetail[3] = "z-";
 				we_toast("'Z-'방향으로 설정되었습니다");
-				dl.close();
-				bs.show();
+				dl2.close();
+				//으아아 붙여넣기
+				atv.start();
 			});
 			lo.addView(b1);
 			lo.addView(b2);
@@ -4969,8 +4818,9 @@ function we_initEdit(worldEdit, editor, editType, editDetail) {
 			lo.addView(b4);
 			lo.addView(b5);
 			lo.addView(b6);
-			var dl =  new we_dialog("Select 'Direction'", lo, null, null, "Cancel", function() {this.close()}, Gravity.CENTER);
-			dl.show();
+			var dl2 = new we_dialog("Select 'Direction'", lo, null, null, "Cancel", function() {this.close()}, Gravity.CENTER);
+
+			bs.show();
 		}else {//추가 정보가 있으면(서버원)
 			//액티브 스타트!
 			atv.start();
@@ -4979,22 +4829,206 @@ function we_initEdit(worldEdit, editor, editType, editDetail) {
 
 
 
-		//EditDetail: [isHollow, FilledBlock, direction]
+		//EditDetail: [isHollow, FilledBlock, radious, direction]
 		case EditType.CIRCLE:
 		//예외 처리
 		if(editor.getPos1() === null) {
 			msg("위치1을 지정해 주세요", editor.getName());
 			return;
 		}
+		workName = "원 생성";
+		type = EditType.CIRCLE;
+
+		if(editDetail === undefined) {//추가 정보가 없으면(로컬)
+			//bs(블럭 선택창)이 먼저 dl(반지름 선택창)이 다음 dl3(축 선택창)이 마지막입니다
+			var bs = new we_blockSelect("Select 'Create circle' block...", "Start", function(id, data) {
+				//긍정 버튼을 누를때
+				this.close();
+				editDetail = [main.get("HollowCircular") == 1, new Block(id, data)];
+				dl.show();
+			}, "Cancel", function() {
+				//부정 버튼을 누를때
+				this.close();
+			});
+
+			var np = new NumberPicker(ctx);
+			np.setMinValue(0x01);
+			np.setMaxValue(0x100);
+			var np_p = new sg.rlp(sg.px*0x100, sg.px*0x80);
+			np.setLayoutParams(np_p);
+			var dl = new wd_dialog("Type radious...", np, "Start", function() {
+				this.close();
+				editDetail[2] = parseInt(np.getValue());
+				//축 선택창 띄우기
+				dl3.show();
+			}, "Cancel", function() {
+				this.close();
+			}, Gravity.CENTER);
+
+			var lo2 = new sg.ll(ctx);
+			lo2.setOrientation(sg.ll.VERTICAL);
+			var b7 =  new sgUtils.gui.mcFastButton("X", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+				editDetail[3] = "x+";
+				we_toast("'X+'축 기준으로 설정되었습니다");
+				dl.close();
+				//액티브 스타트!
+				atv.start();
+			});
+			var b8 =  new sgUtils.gui.mcFastButton("Y+", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+				editDetail[3] = "y+";
+				we_toast("Y+'축 기준으로 설정되었습니다");
+				dl.close();
+				//액티브 스타트!
+				atv.start();
+			});
+			var b9 =  new sgUtils.gui.mcFastButton("Z+", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+				editDetail[3] = "z+";
+				we_toast("'Z+'축 기준으로 설정되었습니다");
+				dl.close();
+				//액티브 스타트!
+				atv.start();
+			});
+			lo2.addView(b7);
+			lo2.addView(b8);
+			lo2.addView(b9);
+			var dl3 =  new we_dialog("Select 'Axis'", lo2, null, null, "Cancel", function() {this.close()}, Gravity.CENTER);
+
+			bs.show();
+		}else {//추가 정보가 있으면(서버원)
+			//액티브 스타트!
+			atv.start();
+		}
 		break;
 
 
-		//EditDetail: [isHollow, FilledBlock, direction]
+		//EditDetail: [isHollow, FilledBlock, radious, axis, direction]
 		case EditType.SEMI_CIRCLE:
 		//예외 처리
 		if(editor.getPos1() === null) {
 			msg("위치1을 지정해 주세요", editor.getName());
 			return;
+		}
+		workName = "반원 생성";
+		type = EditType.SEMI_CIRCLE;
+
+		if(editDetail === undefined) {//추가 정보가 없으면(로컬)
+			//bs(블럭 선택창)이 먼저 dl(반지름 선택창)이 다음은 dl3(축 선택창)이 다음은 dl2(방향 선택창)이 마지막입니다
+			//(오 이런 맙소사 순서가 엉망이야 ㅇㄴㅁㄹ...FIXME 태그를 살짝 박아둡시다)
+			//FIXME
+			var bs = new we_blockSelect("Select 'Create semi-circle' block...", "Start", function(id, data) {
+				//긍정 버튼을 누를때
+				this.close();
+				editDetail = [main.get("HollowCircular") == 1, new Block(id, data)];
+				dl.show();
+			}, "Cancel", function() {
+				//부정 버튼을 누를때
+				this.close();
+			});
+
+			var np = new NumberPicker(ctx);
+			np.setMinValue(0x01);
+			np.setMaxValue(0x100);
+			var np_p = new sg.rlp(sg.px*0x100, sg.px*0x80);
+			np.setLayoutParams(np_p);
+			var dl = new wd_dialog("Type radious...", np, "Start", function() {
+				this.close();
+				editDetail[2] = parseInt(np.getValue());
+				//축 선택창 띄우기
+				dl3.show();
+			}, "Cancel", function() {
+				this.close();
+			}, Gravity.CENTER);
+
+			var lo2 = new sg.ll(ctx);
+			lo2.setOrientation(sg.ll.VERTICAL);
+			var b7 =  new sgUtils.gui.mcFastButton("X", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+				editDetail[3] = "x+";
+				we_toast("'X+'축 기준으로 설정되었습니다");
+				dl.close();
+				lo.addView(b3);
+				lo.addView(b4);
+				lo.addView(b5);
+				lo.addView(b6);
+				//방향 선택창 보이기
+				dl2.show();
+			});
+			var b8 =  new sgUtils.gui.mcFastButton("Y+", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+				editDetail[3] = "y+";
+				we_toast("Y+'축 기준으로 설정되었습니다");
+				dl.close();
+				lo.addView(b1);
+				lo.addView(b2);
+				lo.addView(b5);
+				lo.addView(b6);
+				//방향 선택창 보이기
+				dl2.show();
+			});
+			var b9 =  new sgUtils.gui.mcFastButton("Z+", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+				editDetail[3] = "z+";
+				we_toast("'Z+'축 기준으로 설정되었습니다");
+				dl.close();
+				lo.addView(b1);
+				lo.addView(b2);
+				lo.addView(b3);
+				lo.addView(b4);
+				//방향 선택창 보이기
+				dl2.show();
+			});
+			lo2.addView(b7);
+			lo2.addView(b8);
+			lo2.addView(b9);
+			var dl3 =  new we_dialog("Select 'Axis'", lo2, null, null, "Cancel", function() {this.close()}, Gravity.CENTER);
+
+			var lo = new sg.ll(ctx);
+			lo.setOrientation(sg.ll.VERTICAL);
+			var b1 =  new sgUtils.gui.mcFastButton("X+", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+				editDetail[3] = "x+";
+				we_toast("'X+'방향으로 설정되었습니다");
+				dl2.close();
+				//액티브 스타트!
+				atv.start();
+			});
+			var b2 =  new sgUtils.gui.mcFastButton("X-", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+				editDetail[3] = "x-";
+				we_toast("'X-'방향으로 설정되었습니다");
+				dl2.close();
+				//액티브 스타트!
+				atv.start();
+			});
+			var b3 =  new sgUtils.gui.mcFastButton("Y+", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+				editDetail[3] = "y+";
+				we_toast("Y+'방향으로 설정되었습니다");
+				dl2.close();
+				//액티브 스타트!
+				atv.start();
+			});
+			var b4 =  new sgUtils.gui.mcFastButton("Y-", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+				editDetail[3] = "y-";
+				we_toast("'Y-'방향으로 설정되었습니다");
+				dl2.close();
+				//액티브 스타트!
+				atv.start();
+			});
+			var b5 =  new sgUtils.gui.mcFastButton("Z+", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+				editDetail[3] = "z+";
+				we_toast("'Z+'방향으로 설정되었습니다");
+				dl2.close();
+				//액티브 스타트!
+				atv.start();
+			});
+			var b6 =  new sgUtils.gui.mcFastButton("Z-", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+				editDetail[3] = "z-";
+				we_toast("'Z-'방향으로 설정되었습니다");
+				dl2.close();
+				//으아아 붙여넣기
+				atv.start();
+			});
+			var dl2 = new we_dialog("Select 'Direction'", lo, null, null, "Cancel", function() {this.close()}, Gravity.CENTER);
+
+			bs.show();
+		}else {//추가 정보가 있으면(서버원)
+			//액티브 스타트!
+			atv.start();
 		}
 		break;
 
@@ -5007,6 +5041,9 @@ function we_initEdit(worldEdit, editor, editType, editDetail) {
 			msg("위치1, 2를 지정해 주세요", editor.getName());
 			return;
 		}
+		workName = "복사";
+		type = EditType.COPY;
+		safeMode = 0;//FIXME
 		break;
 
 
@@ -5018,6 +5055,9 @@ function we_initEdit(worldEdit, editor, editType, editDetail) {
 			msg("위치1, 2를 지정해 주세요", editor.getName());
 			return;
 		}
+		workName = "자르기";
+		type = EditType.CUT;
+		safeMode = 0;//FIXME
 		break;
 
 
@@ -5034,6 +5074,8 @@ function we_initEdit(worldEdit, editor, editType, editDetail) {
 			msg("복사된 블럭이 없습니다", editor.getName());
 			return;
 		}
+		workName = "붙여넣기";
+		type = EditType.PASTE;
 		//TODO 붙여넣기 영역 홀로그램
 		break;
 
@@ -5070,6 +5112,8 @@ function we_initEdit(worldEdit, editor, editType, editDetail) {
 			msg("위치1, 2를 지정해 주세요", editor.getName());
 			return;
 		}
+		workName = "알 수 없는 백업 요청";
+		type = EditType.BACKUP;
 		break;
 
 
@@ -5081,15 +5125,18 @@ function we_initEdit(worldEdit, editor, editType, editDetail) {
 			msg("백업된 조각이 없습니다", editor.getName());
 			return;
 		}
+		workName = "복원";
+		type = EditType.RESTORE;
 		break;
 	}
 }
 
 //we_initEdit에서 예외처리, GUI작업을 진행
-//we_edit에서 블럭 분석/설치, 요청작업을 진행
+//we_edit에서 블럭 분석, 요청, 일괄 설치작업을 진행
 function we_edit(safeMode, editType, editor, detail) {
 	var that = this;
 	sgUtils.data.isProcessing = true;
+	var blocks = null;
 
 	switch(editType) {
 
@@ -5110,7 +5157,7 @@ function we_edit(safeMode, editType, editor, detail) {
 
 		var bid = detail[0].getId();
 		var bdata = detail[0].getData();
-		var blocks = [];
+		blocks = [];
 		for(var fy = sy; fy<= ey; fy++) {
 			for(var fz = sz; fz <= ez; fz++) {
 				for(var fx = sx; fx <= ex; fx++) {
@@ -5123,7 +5170,6 @@ function we_edit(safeMode, editType, editor, detail) {
 				}
 			}
 		}
-		return blocks;
 		break;
 
 
@@ -5143,7 +5189,7 @@ function we_edit(safeMode, editType, editor, detail) {
 		var max = (ex-sx+1)*(ey-sy+1)*(ez-sz+1);
 		sgUtils.data.progress = [0, max];
 
-		var blocks = [];
+		blocks = [];
 		for(var fy = sy; fy <= ey; fy++) {
 			for(var fz = sz; fz <= ez; fz++) {
 				for(var fx = sx; fx <= ex; fx++) {
@@ -5156,7 +5202,6 @@ function we_edit(safeMode, editType, editor, detail) {
 				}
 			}
 		}
-		return blocks;
 		break;
 
 
@@ -5180,7 +5225,7 @@ function we_edit(safeMode, editType, editor, detail) {
 		var bdata = detail[0].getData();
 		var bid2 = detail[1].getId();
 		var bdata2 = detail[1].getData();
-		var blocks = [];
+		blocks = [];
 		for(var fy = sy; fy <= ey; fy++) {
 			for(var fz = sz; fz <= ez; fz++) {
 				for(var fx = sx; fx <= ex; fx++) {
@@ -5196,7 +5241,6 @@ function we_edit(safeMode, editType, editor, detail) {
 				}
 			}
 		}
-		return blocks;
 		break;
 
 
@@ -5218,7 +5262,7 @@ function we_edit(safeMode, editType, editor, detail) {
 
 		var bid = detail[0].getId();
 		var bdata = detail[0].getData();
-		var blocks = [];
+		blocks = [];
 		for(var fy = sy; fy <= ey; fy++) {
 			for(var fz = sz; fz <= ez; fz += (ez-sz)) {
 				for(var fx = sx; fx <= ex; fx++) {
@@ -5241,7 +5285,6 @@ function we_edit(safeMode, editType, editor, detail) {
 				}
 			}
 		}
-		return blocks;
 		break;
 
 
@@ -5260,7 +5303,7 @@ function we_edit(safeMode, editType, editor, detail) {
 
 		var bid = detail[1].getId();
 		var bdata = detail[1].getData();
-		var blocks = [];
+		blocks = [];
 		for(var fy = -rel; fy <= rel; fy++) {
 			for(var fz = -rel; fz <= rel; fz++) {
 				for(var fx = -rel; fx <= +rel; fx++) {
@@ -5279,7 +5322,6 @@ function we_edit(safeMode, editType, editor, detail) {
 				}
 			}
 		}
-		return blocks;
 		break;
 
 
@@ -5323,7 +5365,7 @@ function we_edit(safeMode, editType, editor, detail) {
 
 		var bid = detail[1].getId();
 		var bdata = detail[1].getData();
-		var blocks = [];
+		blocks = [];
 		for(var fy = -rel; fy <= rel; fy++) {
 			for(var fz = -rel; fz <= rel; fz++) {
 				for(var fx = -rel; fx <= rel; fx++) {
@@ -5362,7 +5404,6 @@ function we_edit(safeMode, editType, editor, detail) {
 				}
 			}
 		}
-		return blocks;
 		break;
 
 
@@ -5381,7 +5422,7 @@ function we_edit(safeMode, editType, editor, detail) {
 
 		var bid = detail[1].getId();
 		var bdata = detail[1].getData();
-		var blocks = [];
+		blocks = [];
 		//원을 그릴 기준이 될 축
 		switch(detail[3]) {
 			case "x":
@@ -5444,7 +5485,6 @@ function we_edit(safeMode, editType, editor, detail) {
 			default:
 			throw new Error("Unknown edit-circle-axis type: " + detail[3]);
 		}
-		return blocks;
 		break;
 
 
@@ -5487,7 +5527,7 @@ function we_edit(safeMode, editType, editor, detail) {
 
 		var bid = detail[1].getId();
 		var bdata = detail[1].getData();
-		var blocks = [];
+		blocks = [];
 		//원을 그릴 기준이 될 축
 		switch(detail[3]) {
 			case "x":
@@ -5595,7 +5635,6 @@ function we_edit(safeMode, editType, editor, detail) {
 			default:
 			throw new Error("Unknown edit-semiCircle-aixs type: " + detail[3]);
 		}
-		return blocks;
 		break;
 
 
@@ -5615,7 +5654,7 @@ function we_edit(safeMode, editType, editor, detail) {
 		var max = (ex-sx+1)*(ey-sy+1)*(ez-sz+1);
 		sgUtils.data.progress = [0, max];
 
-		var blocks = [];
+		blocks = [];
 		for(var cy = sy; cy <= ey; cy++) {
 			for(var cz = sz; cz <= ez; cz++) {
 				for(var cx = sx; cx <= ex; cx++) {
@@ -5632,9 +5671,10 @@ function we_edit(safeMode, editType, editor, detail) {
 		//EditDetail: []
 		case EditType.CUT:
 		//이 메소드가 꼭 필요하신가요?? 그냥 복사하고 지우기 메소드를 같이 사용하면...
-		throw new Error("EditType.CUT method isn't implemented");
 		sgUtils.data.isProcessing = false;
-		return false;
+		throw new Error("EditType.CUT method isn't implemented");
+		//아래 메소드들이 호출될리는 없지만 예의상...
+		return [];
 		break;
 
 
@@ -5653,8 +5693,7 @@ function we_edit(safeMode, editType, editor, detail) {
 		var py = piece.getSizeY();
 		var pz = piece.getSizeZ();
 
-		var blocks = [];
-		var block;
+		blocks = [];
 		for(var ry = 0; ry < px; ry++) {
 			for(var rz = 0; rz < pz; rz++) {
 				for(var rx = 0; rx < px; rx++) {
@@ -5667,7 +5706,6 @@ function we_edit(safeMode, editType, editor, detail) {
 				}
 			}
 		}
-		return blocks;
 		break;
 
 
@@ -5692,31 +5730,18 @@ function we_edit(safeMode, editType, editor, detail) {
 
 		//EditDetail: []
 		case EditType.BACKUP:
-		var pos1 = editor.getPos1();
-		var pos2 = editor.getPos2();
+		var tempData = editor.getTempBlocks();
 
-		//더 작은 값을 시작값(s) 큰값을 끝값(e)으로 지정
-		var sx = (pos1.getX() < pos2.getX()) ? pos1.getX() : pos2.getX();
-		var sy = (pos1.getY() < pos2.getY()) ? pos1.getY() : pos2.getY();
-		var sz = (pos1.getZ() < pos2.getZ()) ? pos1.getZ() : pos2.getZ();
-		var ex = (pos1.getX() > pos2.getX()) ? pos1.getX() : pos2.getX();
-		var ey = (pos1.getY() > pos2.getY()) ? pos1.getY() : pos2.getY();
-		var ez = (pos1.getZ() > pos2.getZ()) ? pos1.getZ() : pos2.getZ();
-		var max = (ex-sx+1)*(ey-sy+1)*(ez-sz+1);
-
+		var max = locData.length;
 		sgUtils.data.progress = [0, max];
 
-		var blocks = [];
-		for(var cy = sy; cy <= ey; cy++) {
-			for(var cz = sz; cz <= ez; cz++) {
-				for(var cx = sx; cx <= ex; cx++) {
-					blocks.push([cx, cy, cz, Level.getTile(cx, cy, cz), Level.getData(cx, cy, cz)]);
-					sgUtils.data.progress[0]++;
-				}
-			}
+		blocks = [];
+		for(var e = 0; e < max; e++) {
+			blocks.push([tempData[e][0], tempData[e][1], tempData[e][2], Level.getTile(tempData[e][0], tempData[e][1], tempData[e][2]), Level.getData(tempData[e][0], tempData[e][1], tempData[e][2])]);
+			sgUtils.data.progress[0]++;
 		}
 		//백업할 조각이랑 위치정보를 저장
-		editor.setBackup(new Piece(ex-sx+1, ey-sy+1, ez-sz+1, blocks), new Vector3(sx, sy, sz));
+		editor.setBackup(blocks);
 		break;
 
 
@@ -5724,38 +5749,45 @@ function we_edit(safeMode, editType, editor, detail) {
 		//EditDetail: []
 		case EditType.RESTORE:
 		//백업된 조각 불러오기
-		var piece = editor.getBackup();
-		//백업된 조각의 위치 불러오기
-		var pos = editor.getBackupPos();
+		var backupData = editor.getBackup();
 
-		//위치를 백업된 조각의 위치로 재설정
-		sx = pos.getX();
-		sy = pos.getY();
-		sz = pos.getZ();
-		var px = piece.getSizeX();
-		var py = piece.getSizeY();
-		var pz = piece.getSizeZ();
+		var max = backupData.length;
+		sgUtils.data.progress = [0, max];
 
-		//복원시작
-		var blocks = [];
-		var block;
-		for(var ry = 0; ry < px; ry++) {
-			for(var rz = 0; rz < pz; rz++) {
-				for(var rx = 0; rx < px; rx++) {
-					var block = piece.getBlock(rx, ry, rz);
-					if(safeMode === 0) {
-						Level.setTile(sx+rx, sy+ry, sz+rz, block.getId(), block.getData());
-					}else {
-						blocks.push([sx+rx, sy+ry, sz+rz, block.getId(), block.getData()]);
-					}
-				}
-			}
+		//복원할 블럭 등록 시작
+		blocks = [];
+		for(var e = 0; e < max; e++) {
+			blocks.push([backupData[e][0], backupData[e][1], backupData[e][2], backupData[e][3], backupData[e][4]]);
+			sgUtils.data.progress[0]++;
 		}
-		return blocks;
 		break;
+
+
+
+		//EditDetail: []
+		case EditType.PLACE_TEMP_BLOCKS:
+		var tempBlocks = editor.getTempBlocks();
+		if(!Array.isArray(tempBlocks)) {
+			msg("알 수 없는 에딧 요청이 들어왔습니다", editor.getName());
+			return null;
+		}
+		var max = tempBloocks.length;
+		sgUtils.data.progress = [0, max];
+
+		var block;
+		for(var e = 0; e < max; e++) {
+			Levet.setTile(tempBlocks[e][0], tempBlocks[e][1], tempBlocks[e][2], tempBlocks[e][3], tempBlocks[e][4]);
+			sgUtils.data.progress[0]++;
+		}
+		break;
+
+
+
+		default:
+		throw new Error("Unknown EditType");
 	}
 	sgUtils.data.isProcessing = false;
-	return true;
+	return blocks;
 }
 
 
@@ -6035,6 +6067,25 @@ function leaveGame() {
 	//맵 퇴장시 버튼과 메뉴 비활성화
 	main.setButtonVisible(false);
 	main.setMenuVisible(false);
+}
+
+function modTick() {
+	if(main.asynchronousSetTileRequest.length > 0) {
+		if(!main.modTickWorking) {
+			msg("비동기로 에딧을 시작합니다. 전원을 종료하지 마세요...");
+			main.modTickWorking = true;
+		}
+		if(++main.modTickMsgTick >= 200) {
+			main.modTickMsgTick = 0;
+			msg("에딧중..." + ChatColor.AQUA + main.asynchronousSetTileRequest.length + ChatColor.YELLOW + "개 남았습니다";
+		}
+		var tempData = main.asynchronousSetTileRequest.shift();
+		Level.setTile(tempData[0], tempData[1], tempData[2], tempData[3], tempData[4]);
+		if(main.asynchronousSetTileRequest.lenght <= 0) {
+			msg("에딧 완료됨");
+			main.modTickWorking = false;
+		}
+	}
 }
 
 function useItem(x, y, z, itemId, blockId, side) {
