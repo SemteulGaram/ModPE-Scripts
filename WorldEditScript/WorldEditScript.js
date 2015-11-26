@@ -16,9 +16,9 @@
 
 const NAME = "WorldEditScript";
 //Season . Release Number . Commits
-const VERSION = "0.1.4";
-const VERSION_CODE = 104;
-const TAG = "[" + "WES" + " " + VERSION + "] ";
+const VERSION = "0.2.0";
+const VERSION_CODE = 105;
+const TAG = "[" + "WorldEdit" + " " + VERSION + "] ";
 
 var File = java.io.File;
 var BufferdInputStream = java.io.BufferedInputStream;
@@ -2950,16 +2950,15 @@ function highlightBlock(x, y, z) {
 
 
 function msg(str, target) {
-	
+
 	var tempName = Entity.getNameTag(Player.getEntity());
 	Entity.setNameTag(Player.getEntity(), "");
-	var tag = "[" + ChatColor.YELLOW + "WorldEdit" + ChatColor.WHITE + "] ";
 	if(target === undefined) {
-		sgUtils.modPE.broadcast(tag + ChatColor.YELLOW + str);
+		sgUtils.modPE.broadcast(ChatColor.GRAY + TAG + ChatColor.YELLOW + str);
 	}else if(tempName.toLowerCase() === target.toLowerCase()) {
 		we_toast(str);
 	}else {
-		sgUtils.modPE.broadcast(tag + "(" + ChatColor.AQUA + target + ChatColor.WHITE + ") " + ChatColor.YELLOW + str);
+		sgUtils.modPE.broadcast(ChatColor.GRAY + TAG + ChatColor.WHITE + "(" + ChatColor.AQUA + target + ChatColor.WHITE + ") " + ChatColor.YELLOW + str);
 	}
 	Entity.setNameTag(Player.getEntity(), tempName);
 }
@@ -3334,8 +3333,8 @@ function WorldEdit() {
 ["5:4", BlockTypes.CUBE, [["planks", 4]], true],
 ["5:5", BlockTypes.CUBE, [["planks", 5]], true],
 ["6:0", BlockTypes.GRASS, [["sapling", 0]], false],
-["6:1", BlockTypes.GRASS, [["sapling", 1]], false],
-["6:2", BlockTypes.GRASS, [["sapling", 2]], false],
+["6:1", BlockTypes.GRASS, [["sapling", 2]], false],
+["6:2", BlockTypes.GRASS, [["sapling", 1]], false],
 ["6:3", BlockTypes.GRASS, [["sapling", 3]], false],
 ["6:4", BlockTypes.GRASS, [["sapling", 3]], false],
 ["6:5", BlockTypes.GRASS, [["sapling", 4]], false],
@@ -3896,17 +3895,19 @@ WorldEdit.prototype = {
 
 		//메뉴 내용물들 빌드
 		this.mainMenu = new we_menu("WorldEdit");
-		//메인 메뉴 내용물
+		//메인 메뉴 하위메뉴
 		var mm_edit = new we_menu("Edit");
 		var mm_tool =  new we_menu("Tool");
 		var mm_setting = new we_menu("Setting");
 		//에딧메뉴 하위 메뉴
 		var mme_circular = new we_menu("Circular");
+		var mme_copy = new we_menu("Copy");
 
-		//메인메뉴에 등록
+		//메인메뉴 목록
 		this.mainMenu.addMenu(this.contentType.REDIRECT_MENU, "Edit", mm_edit);
 		this.mainMenu.addMenu(this.contentType.REDIRECT_MENU, "Tool", mm_tool);
 		this.mainMenu.addMenu(this.contentType.REDIRECT_MENU, "Setting", mm_setting);
+		this.mainMenu.addMenu(this.contentType.RUN_FUNCTION, "About", this.about);
 		//에딧메뉴 목록
 		mm_edit.addMenu(this.contentType.RUN_FUNCTION, "Restore", function() {
 			we_initEdit(parseInt(that.get("SafeMode")), parseInt(that.get("WorkType")), that.getLocalEditor(), EditType.RESTORE);
@@ -3924,7 +3925,8 @@ WorldEdit.prototype = {
 			we_initEdit(parseInt(that.get("SafeMode")), parseInt(that.get("WorkType")), that.getLocalEditor(), EditType.WALL);
 		});
 		mm_edit.addMenu(this.contentType.REDIRECT_MENU, "Circular", mme_circular);
-		//원형 에딧메뉴에 등록
+		mm_edit.addMenu(this.contentType.REDIRECT_MENU, "Copy", mme_copy);
+		//원형 생성 에딧메뉴 목록
 		mme_circular.addMenu(this.contentType.TOGGLE, "Hollow Circular", function(bool) {
 			if(bool === undefined) {
 				return that.get("HollowCircular") == 1;
@@ -3945,6 +3947,22 @@ WorldEdit.prototype = {
 		});
 		mme_circular.addMenu(this.contentType.RUN_FUNCTION, "Semi-circle", function() {
 			we_initEdit(parseInt(that.get("SafeMode")), parseInt(that.get("WorkType")), that.getLocalEditor(), EditType.SEMI_CIRCLE);
+		});
+		//복사 에딧메뉴 목록
+		mme_copy.addMenu(this.contentType.RUN_FUNCTION, "Copy", function() {
+			we_initEdit(parseInt(that.get("SafeMode")), parseInt(that.get("WorkType")), that.getLocalEditor(), EditType.COPY);
+		});
+		mme_copy.addMenu(this.contentType.RUN_FUNCTION, "Cut", function() {
+			we_initEdit(parseInt(that.get("SafeMode")), parseInt(that.get("WorkType")), that.getLocalEditor(), EditType.CUT);
+		});
+		mme_copy.addMenu(this.contentType.RUN_FUNCTION, "Paste", function() {
+			we_initEdit(parseInt(that.get("SafeMode")), parseInt(that.get("WorkType")), that.getLocalEditor(), EditType.PASTE);
+		});
+		mme_copy.addMenu(this.contentType.RUN_FUNCTION, "Flip", function() {
+			we_initEdit(parseInt(that.get("SafeMode")), parseInt(that.get("WorkType")), that.getLocalEditor(), EditType.FLIP);
+		});
+		mme_copy.addMenu(this.contentType.RUN_FUNCTION, "Rotation", function() {
+			we_initEdit(parseInt(that.get("SafeMode")), parseInt(that.get("WorkType")), that.getLocalEditor(), EditType.ROTATION);
 		});
 		//설정메뉴 목록
 		mm_setting.addMenu(this.contentType.TOGGLE, "Button Visible", function(bool) {
@@ -4209,6 +4227,11 @@ WorldEdit.prototype = {
 			throw new Error("Unknown setTile request");
 		}
 		this.asynchronousSetTileRequest = this.asynchronousSetTileRequest.concat(ary);
+	},
+
+	about: function() {
+		//TODO
+		we_toast("TODO");
 	}
 }
 
@@ -4533,7 +4556,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 						if(safeMode === 1) {
 							loading.setText("준비 중... " + pgt);
 						}else {
-							loading.setText("'" + workName + "' 에딧 중... " + pgt);
+							loading.setText("'" + workName + "' 작업 중... " + pgt);
 						}
 						loading.setMax(sgUtils.data.progress[1]);
 						loading.setProgress(sgUtils.data.progress[0]);
@@ -4542,7 +4565,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 						loading.setMax(sgUtils.data.progress[1]);
 						loading.setProgress(sgUtils.data.progress[0]);
 					}else if(atv_m === 2) {
-						loading.setText("'" + workName + "' 에딧 중... " + pgt);
+						loading.setText("'" + workName + "' 작업 중... " + pgt);
 						loading.setMax(sgUtils.data.progress[1]);
 						loading.setProgress(sgUtils.data.progress[0]);
 					}
@@ -4575,6 +4598,50 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 			main.setTileRequest(editor.getTempBlocks());
 		}
 		atv_m = 3;
+	}catch(err) {
+		showError(err);
+	}});
+	//작업 현황을 알 수 없는 작업 쓰레드 준비
+	var uatv = thread(function() {try{
+		//로컬작업일 경우 로딩 프로그래스바 쓰레드 생성
+		if(editor.getName().toLowerCase() === (Player.getName(Player.getEntity())+"").toLowerCase()) {
+			thread(function() {try {
+				var loading = new sgUtils.gui.progressBar(4, true);
+				loading.setText("준비 중...");
+				loading.show();
+				var pgt;
+				//작업 상태가 1이 되면 종료
+				while(atv_m !== 1) {
+					if(atv_m === 0) {
+						loading.setText("'" + workName + "' 작업 중... ");
+					}
+					sleep(0x80);
+				}
+				//로딩창 닫기
+				loading.close();
+			}catch(err) {
+				showError(err);
+			}}).start();
+		}
+		//정보
+		var blocks = we_edit(safeMode, type, editor, editDetail);
+		if(Array.isArray(blocks) && blocks.length === 0) {
+			atv_m = 1;
+			return;
+		}else {
+			editor.setTempBlocks(blocks);
+		}
+
+		//백업
+		we_edit(safeMode, EditType.BACKUP, editor);
+
+		//에딧
+		if(workType === 0) {
+			we_edit(safeMode, EditType.PLACE_TEMP_BLOCKS, editor);
+		}else {
+			main.setTileRequest(editor.getTempBlocks());
+		}
+		atv_m = 1;
 	}catch(err) {
 		showError(err);
 	}});
@@ -4886,7 +4953,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 			}, "Cancel", function() {
 				this.close();
 			}, Gravity.CENTER);
-			
+
 			var sv2 = new ScrollView(ctx);
 			var lo2 = new sg.ll(ctx);
 			lo2.setOrientation(sg.ll.VERTICAL);
@@ -5083,7 +5150,10 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 		}
 		workName = "복사";
 		type = EditType.COPY;
-		safeMode = 0;//FIXME
+		safeMode = 0;//FIXME 작동하나요?
+
+		//액티브 스타트!
+		atv.start();
 		break;
 
 
@@ -5095,9 +5165,11 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 			msg("위치1, 2를 지정해 주세요", editor.getName());
 			return;
 		}
-		workName = "자르기";
+		workName = "잘라내기";
 		type = EditType.CUT;
-		safeMode = 0;//FIXME
+
+		//액티브 스타트!
+		atv.start();
 		break;
 
 
@@ -5117,6 +5189,9 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 		workName = "붙여넣기";
 		type = EditType.PASTE;
 		//TODO 붙여넣기 영역 홀로그램
+
+		//액티브 스타트!
+		atv.start();
 		break;
 
 
@@ -5128,6 +5203,11 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 			msg("복사된 블럭이 없습니다", editor.getName());
 			return;
 		}
+		workName = "대칭";
+		type = EditType.PASTE;
+
+		//액티브 스타트!
+		uatv.start();
 		break;
 
 
@@ -5139,6 +5219,11 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 			msg("복사된 블럭이 없습니다", editor.getName());
 			return;
 		}
+		workName = "회전";
+		type = EditType.PASTE;
+
+		//액티브 스타트!
+		uatv.start();
 		break;
 
 
@@ -5154,6 +5239,9 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 		}
 		workName = "알 수 없는 백업 요청";
 		type = EditType.BACKUP;
+
+		//액티브 스타트!
+		atv.start();
 		break;
 
 
@@ -5167,7 +5255,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 		}
 		workName = "복원";
 		type = EditType.RESTORE;
-		
+
 		//액티브 스타트!
 		atv.start();
 		break;
@@ -5713,11 +5801,30 @@ function we_edit(safeMode, editType, editor, detail) {
 
 		//EditDetail: []
 		case EditType.CUT:
-		//이 메소드가 꼭 필요하신가요?? 그냥 복사하고 지우기 메소드를 같이 사용하면...
-		sgUtils.data.isProcessing = false;
-		throw new Error("EditType.CUT method isn't implemented");
-		//아래 메소드들이 호출될리는 없지만 예의상...
-		return [];
+		var pos1 = editor.getPos1();
+		var pos2 = editor.getPos2();
+
+		//더 작은 값을 시작값(s) 큰값을 끝값(e)으로 지정
+		var sx = (pos1.getX() < pos2.getX()) ? pos1.getX() : pos2.getX();
+		var sy = (pos1.getY() < pos2.getY()) ? pos1.getY() : pos2.getY();
+		var sz = (pos1.getZ() < pos2.getZ()) ? pos1.getZ() : pos2.getZ();
+		var ex = (pos1.getX() > pos2.getX()) ? pos1.getX() : pos2.getX();
+		var ey = (pos1.getY() > pos2.getY()) ? pos1.getY() : pos2.getY();
+		var ez = (pos1.getZ() > pos2.getZ()) ? pos1.getZ() : pos2.getZ();
+		var max = (ex-sx+1)*(ey-sy+1)*(ez-sz+1);
+		sgUtils.data.progress = [0, max];
+
+		var sblocks = [];
+		for(var cy = sy; cy <= ey; cy++) {
+			for(var cz = sz; cz <= ez; cz++) {
+				for(var cx = sx; cx <= ex; cx++) {
+					sblocks.push([cx, cy, cz, Level.getTile(cx, cy, cz), Level.getData(cx, cy, cz)]);
+					block.push([cx, cy, cz, 0, 0]);
+					sgUtils.data.progress[0]++;
+				}
+			}
+		}
+		editor.setCopy(new Piece(ex-sx+1, ey-sy+1, ez-sz+1, sblocks));
 		break;
 
 
@@ -6175,8 +6282,13 @@ function chatReceiveHook(str, sender) {
 		}
 		var editor = main.editorGroup.getEditor(sender);
 		var player = editor.getOwner();
+		var isHollow = false;
 		switch(cmd[0].toLowerCase()) {
-			
+
+			case "":
+			msg("도움말: @도움말", sender);
+			break;
+
 			case "pos1":
 			case "위치1":
 			var x = Math.floor(Entity.getX(player));
@@ -6185,7 +6297,7 @@ function chatReceiveHook(str, sender) {
 			editor.setPos1(new Vector3(x, y, z));
 			msg("위치1이 지정됨 X:" + x + " Y:" + y + " Z: " + z, sender);
 			break;
-			
+
 			case "pos2":
 			case "위치2":
 			var x = Math.floor(Entity.getX(player));
@@ -6194,11 +6306,11 @@ function chatReceiveHook(str, sender) {
 			editor.setPos2(new Vector3(x, y, z));
 			msg("위치2이 지정됨 X:" + x + " Y:" + y + " Z: " + z, sender);
 			break;
-			
+
 			case "fill":
 			case "채우기":
 			if(cmd.length < 2) {
-				msg("사용법: '@fill <블럭아이디>:<데미지값>'", sender);
+				msg("사용법: '@채우기 <블럭아이디>:<데미지값>'", sender);
 				return;
 			}
 			var block = cmd[1].split(":");
@@ -6211,1436 +6323,217 @@ function chatReceiveHook(str, sender) {
 			}
 			we_initEdit(1, 1, editor, EditType.FILL, [new Block(block[0], block[1])]);
 		}
-	}
-}
+		break;
 
+		case "clear":
+		case "비우기":
+		we_initEdit(1, 1, editor, EditType.CLEAR, [new Block(block[0], block[1])]);
+		break;
 
-
-//XXXXXX
-
-/*
-var WorkType = {
-	SYNCHRONIZATION: 0,
-	ASYNCHRONOUS: 1
-}
-
-function WES_TaskManager(name, delay) {
-	this.name = name;
-	this.thread = null;
-	this.delay = delay;
-	this.task = [];
-}
-
-WES_TaskManager.prototype = {
-
-	toString: function() {
-		return "[" + this.name + " TaskManager]";
-	},
-
-	check: function() {
-		var that = this;
-		if(!this.thread.isAlive()) {
-			this.thread = thread(function() {try {
-				while(that.task.length > 0) {
-					for(var e = 0; e < that.task.length; e++) {
-						that.task[e].run();
-					}
-				}
-			}catch(e) {
-				showError(e, WarnType.WARNING);
-			}}).start();
+		case "replace":
+		case "바꾸기":
+		if(cmd.length < 3) {
+			msg("사용법: '@바꾸기 <바꿀블럭아이디>:<데미지값> <블럭아이디>:<데미지>'", sender);
+			return;
 		}
+		var block1 = cmd[1].split(":");
+		if(block1.length === 0) {
+			block1[1] = 0;
+		}
+		var block2 = cmd[1].split(":");
+		if(block2.length === 0) {
+			block2[1] = 0;
+		}
+		if(parseInt(block1[0]) != block1[0] || parseInt(block1[0]) != block1[0], block1[0] >= 0x80 || block1[0] < 0 || block1[1] >= 0x10 || block1[1] < 0) {
+			msg("알 수 없는 블럭아이디 입니다", sender);
+			return;
+		}
+		if(parseInt(block2[0]) != block2[0] || parseInt(block2[0]) != block2[0], block2[0] >= 0x80 || block2[0] < 0 || block2[1] >= 0x10 || block2[1] < 0) {
+			msg("알 수 없는 블럭아이디 입니다", sender);
+			return;
+		}
+		we_initEdit(1, 1, editor, EditType.REPLACE, [new Block(block1[0], block1[1], new Block(block2[0], block2[1]))]);
+		break;
+
+		case "wall":
+		case "벽":
+		if(cmd.length < 2) {
+			msg("사용법: '@벽 <블럭아이디>:<데미지값>'", sender);
+			return;
+		}
+		var block = cmd[1].split(":");
+		if(block.length === 0) {
+			block[1] = 0;
+		}
+		if(parseInt(block[0]) != block[0] || parseInt(block[0]) != block[0], block[0] >= 0x80 || block[0] < 0 || block[1] >= 0x10 || block[1] < 0) {
+			msg("알 수 없는 블럭아이디 입니다", sender);
+			return;
+		}
+		we_initEdit(1, 1, editor, EditType.WALL, [new Block(block[0], block[1])]);
+		break;
+
+		case "hollowsphere":
+		case "빈구":
+		if(cmd.length < 3) {
+			msg("사용법: '@빈구 <블럭아이디>:<데미지값> <반지름>'", sender);
+			return;
+		}
+		isHollow = true;
+		case "sphere":
+		case "구":
+		if(cmd.length < 3) {
+			msg("사용법: '@구 <블럭아이디>:<데미지값> <반지름>'", sender);
+			return;
+		}
+		var block = cmd[1].split(":");
+		if(block.length === 0) {
+			block[1] = 0;
+		}
+		if(parseInt(block[0]) != block[0] || parseInt(block[0]) != block[0], block[0] >= 0x80 || block[0] < 0 || block[1] >= 0x10 || block[1] < 0) {
+			msg("알 수 없는 블럭아이디 입니다", sender);
+			return;
+		}
+		if(parseInt(cmd[2]) != cmd[2] || cmd[2] < 1) {
+			msg("반지름 길이는 자연수만 가능합니다", sender);
+			return;
+		}
+		we_initEdit(1, 1, editor, EditType.SPHERE, [isHollow, new Block(block[0], block[1]), cmd[2]]);
+		break;
+
+		case "hollowhemisphere":
+		case "빈반구":
+		if(cmd.length < 4) {
+			msg("사용법: '@빈반구 <블럭아이디>:<데미지값> <반지름> <방향>'", sender);
+			return;
+		}
+		isHollow = true;
+		case "hemisphere":
+		case "반구":
+		if(cmd.length < 4) {
+			msg("사용법: '@반구 <블럭아이디>:<데미지값> <반지름> <방향>'", sender);
+			return;
+		}
+		var block = cmd[1].split(":");
+		if(block.length === 0) {
+			block[1] = 0;
+		}
+		if(parseInt(block[0]) != block[0] || parseInt(block[0]) != block[0], block[0] >= 0x80 || block[0] < 0 || block[1] >= 0x10 || block[1] < 0) {
+			msg("알 수 없는 블럭아이디 입니다", sender);
+			return;
+		}
+		if(parseInt(cmd[2]) != cmd[2] || cmd[2] < 1) {
+			msg("반지름 길이는 자연수만 가능합니다", sender);
+			return;
+		}
+		var drc = cmd[3].toLowerCase();
+		if(drc !== "x+" && drc !== "x-" && drc !== "y+" && drc !== "y-" && drc !== "z+" && drc !== "z-") {
+			msg("방향은 다음것중 하나만 가능합니다:", sender);
+			msg("X+, X-, Y+, Y-, Z+, Z-");
+		}
+		we_initEdit(1, 1, editor, EditType.HEMI_SPHERE, [isHollow, new Block(block[0], block[1]), cmd[2], drc]);
+		break;
+
+		case "hollowcircle":
+		case "빈원":
+		if(cmd.length < 4) {
+			msg("사용법: '@빈원 <블럭아이디>:<데미지값> <반지름> <기준축>'", sender);
+			return;
+		}
+		isHollow = true;
+		case "circle":
+		case "원":
+		if(cmd.length < 4) {
+			msg("사용법: '@원 <블럭아이디>:<데미지값> <반지름> <기준축>'", sender);
+			return;
+		}
+		var block = cmd[1].split(":");
+		if(block.length === 0) {
+			block[1] = 0;
+		}
+		if(parseInt(block[0]) != block[0] || parseInt(block[0]) != block[0], block[0] >= 0x80 || block[0] < 0 || block[1] >= 0x10 || block[1] < 0) {
+			msg("알 수 없는 블럭아이디 입니다", sender);
+			return;
+		}
+		if(parseInt(cmd[2]) != cmd[2] || cmd[2] < 1) {
+			msg("반지름 길이는 자연수만 가능합니다", sender);
+			return;
+		}
+		var axis = cmd[3].toLowerCase();
+		if(axis !== "x" && axis !== "y" && axis !== "z") {
+			msg("기준 축은 다음것중 하나만 가능합니다:", sender);
+			msg("X, Y, Z");
+		}
+		we_initEdit(1, 1, editor, EditType.CIRCLE, [isHollow, new Block(block[0], block[1]), cmd[2], axis]);
+		break;
+
+		case "hollowsemicircle":
+		case "빈반원":
+		if(cmd.length < 5) {
+			msg("사용법: '@빈반원 <블럭아이디>:<데미지값> <반지름> <기준축> <방향>'", sender);
+			return;
+		}
+		case "semicircle":
+		case "반원":
+		if(cmd.length < 5) {
+			msg("사용법: '@반원 <블럭아이디>:<데미지값> <반지름> <기준축> <방향>'", sender);
+			return;
+		}
+		var block = cmd[1].split(":");
+		if(block.length === 0) {
+			block[1] = 0;
+		}
+		if(parseInt(block[0]) != block[0] || parseInt(block[0]) != block[0], block[0] >= 0x80 || block[0] < 0 || block[1] >= 0x10 || block[1] < 0) {
+			msg("알 수 없는 블럭아이디 입니다", sender);
+			return;
+		}
+		if(parseInt(cmd[2]) != cmd[2] || cmd[2] < 1) {
+			msg("반지름 길이는 자연수만 가능합니다", sender);
+			return;
+		}
+		var axis = cmd[3].toLowerCase();
+		if(axis !== "x" && axis !== "y" && axis !== "z") {
+			msg("기준 축은 다음것중 하나만 가능합니다:", sender);
+			msg("X, Y, Z");
+		}
+		var drc = cmd[4].toLowerCase();
+		if(drc !== "x+" && drc !== "x-" && drc !== "y+" && drc !== "y-" && drc !== "z+" && drc !== "z-") {
+			msg("방향은 다음것중 하나만 가능합니다:", sender);
+			msg("X+, X-, Y+, Y-, Z+, Z-");
+		}
+		//TODO 예외처리가 남았습니다! 기준축에 따라서 선택가능한 방향이 제한적입니다!
+		we_initEdit(1, 1, editor, EditType.SEMI_CIRCLE, [isHollow, new Block(block[0], block[1]), cmd[2], axis, drc]);
+		break;
+
+		case "copy":
+		case "복사":
+		we_initEdit(0, 1, editor, EditType.COPY);
+		break;
+
+		case "cut":
+		case "잘라내기":
+		we_initEdit(1, 1, editor, EditType.CUT);
+		break;
+
+		case "paste":
+		case "붙여넣기":
+		we_initEdit(1, 1, editor, EditType.PASTE);
+		break;
+
+		case "flip":
+		case "대칭":
+		we_initEdit(0, 1, editor, EditType.FLIP);
+		break;
+
+		case "rotation":
+		case "회전":
+		we_initEdit(0, 1, editor, EditType.ROTATION);
+		break;
+
+		case "help":
+		case "도움말":
+		msg("===사용가능한 명령어 목록===", sender);
+		msg("@위치1, @위치2, @채우기, @비우기, @바꾸기, @벽, @구, @빈구, @반구, @빈반구, @원, @빈원, @반원, @빈반원, @복사, @잘라내기, @붙여넣기, @대칭, @회전");
+		msg("각각의 명령어를 치면 맞는 형식을 알려줍니다");
+		break;
 	}
 }
-
-
-
-function Editor(parent, owner) {
-	this._parent = parent;
-	this.owner = owner;
-	this.pos1 = null;
-	this.pos2 = null;
-	this.block1 = null;
-	this.block2 = null;
-	this.copy = null;
-	this.backup = null;
-	this.backupX = null;
-	this.backupY = null;
-	this.backupZ = null;
-}
-
-Editor.prototype = {
-
-	isOwner: function(owner) {
-		return owner.toLowerCase() === this.owner.toLowerCase();
-	},
-
-	getOwner: function() {
-		return PlayerExtra.getPlayer(this.owner);
-	},
-
-	getPos1: function() {
-		return this.pos1;
-	},
-
-	getPos2: function() {
-		return this.pos2;
-	},
-
-	getBlock1: function() {
-		return this.block1;
-	},
-
-	getBlock2: function() {
-		return this.block2;
-	},
-
-	setPos1: function(vector) {
-		if(!(vector instanceof Vector3)) {
-			throw new TypeError("The parameter 'vector' must be instance of Vector3.");
-		}
-		this.pos1 = vector;
-	},
-
- 	setPos2: function(vector) {
-		if(!(vector instanceof Vector3)) {
-			throw new TypeError("The parameter 'vector' must be instance of Vector3.");
-		}
-		this.pos2 = vector;
-	},
-
-	setBlock1: function(block) {
-		 if(!(block instanceof Block)) {
-			throw new TypeError("The parameter 'block' must be instance of Block.");
-		}
-		this.block1 = block;
-	},
-
-	setBlock2: function(block) {
-		 if(!(block instanceof Block)) {
-			throw new TypeError("The parameter 'block' must be instance of Block.");
-		}
-		this.block2 = block;
-	},
-
-	run: function(type) {
-		var that = this;
-		var player = this.getOwner();
-		if(player === false) {
-			msg("플레이어를 찾을 수 없음: " + this.owner);
-		}
-		switch(type) {
-
-			case EditType.FILL:
-			if(!(this.pos1 instanceof Vector3)) {
-				msg("위치1을 지정해주세요", player);
-				return;
-			}
-			if(!(this.pos2 instanceof Vector3)) {
-				msg("위치2를 지정해주세요", player);
-				return;
-			}
-			if(!(this.block1 instanceof Block)) {
-				msg("블럭1을 지정해주세요", player);
-				return;
-			}
-
-			var x1 = this.pos1.x;
-			var y1 = this.pos1.y;
-			var z1 = this.pos1.z;
-			var x2 = this.pos2.x;
-			var y2 = this.pos2.y;
-			var z2 = this.pos2.z;
-
-			var sx = (x1 < x2) ? x1 : x2;
-			var sy = (y1 < y2) ? y1 : y2;
-			var sz = (z1 < z2) ? z1 : z2;
-			var ex = (x1 > x2) ? x1 : x2;
-			var ey = (y1 > y2) ? y1 : y2;
-			var ez = (z1 > z2) ? z1 : z2;
-
-			var id = this.block1.id;
-			var data = this.block1.data;
-
-			if(this._parent.get('WorkType') === WorkType.SYNCHRONIZATION) {
-				thread(function() {try {
-					var size = (ex-sx+1) * (ey-sy+1) * (ez-sz+1);
-					var load = new CustomProgressBar(6, size, "'채우기'작업중...(0/" + numberToString(size) + ")");
-					var pg = 0;
-					thread(function() {try {
-						while(true) {
-							if(size === pg) {
-								load.setProgress(pg);
-								load.setText("'채우기'작업중...(" + numberToString(pg) + "/" + numberToString(size) + ")");
-								sleep(1000);
-								load.close();
-								break;
-							}
-							load.setProgress(pg);
-							load.setText("'채우기'작업중...(" + numberToString(pg) + "/" + numberToString(size) + ")");
-							sleep(100);
-						}
-					}catch(e) {
-						showError(e, WarnType.RECOVERABLE);
-					}}).start();
-					for(var y = sy; y <= ey; y++) {
-					for(var z = sz; z <= ez; z++) {
-					for(var x = sx; x <= ex; x++) {
-						Level.setTile(x, y, z, id, data);
-						pg++;
-					}
-					}
-					}
-				}catch(e) {
-					showError(e, WarnType.WARNING);
-				}}).start();
-			}else if(this._parent.setting.WorkType === WorkType.ASYNCHRONOUS) {
-				thread(function() {try {
-					for(var y = sy; y <= ey; y++) {
-					for(var z = sz; z <= ez; z++) {
-					for(var x = sx; x <= ex; x++) {
-						that._parent.asynceBuffer.push([x, y, z, id, data]);
-						sleep(1);
-					}
-					}
-					}
-				}catch(e) {
-					showError(e, WarnType.WARNING);
-				}}).start();
-			}else {
-				throw new Error("Unknown WorkType: " + this._parent.setting.WorkType);
-			}
-			break;
-
-
-
-			case EditType.CLEAR:
-			if(!(this.pos1 instanceof Vector3)) {
-				msg("위치1을 지정해주세요", player);;
-				return;
-			}
-			if(!(this.pos2 instanceof Vector3)) {
-				msg("위치1을 지정해주세요", player);
-				return;
-			}
-
-			var x1 = this.pos1.x;
-			var y1 = this.pos1.y;
-			var z1 = this.pos1.z;
-			var x2 = this.pos2.x;
-			var y2 = this.pos2.y;
-			var z2 = this.pos2.z;
-
-			var sx = (x1 < x2) ? x1 : x2;
-			var sy = (y1 < y2) ? y1 : y2;
-			var sz = (z1 < z2) ? z1 : z2;
-			var ex = (x1 > x2) ? x1 : x2;
-			var ey = (y1 > y2) ? y1 : y2;
-			var ez = (z1 > z2) ? z1 : z2;
-
-			if(this._parent.get('WorkType') === WorkType.SYNCHRONIZATION) {
-				thread(function() {try {
-					var size = (ex-sx+1) * (ey-sy+1) * (ez-sz+1);
-					var load = new CustomProgressBar(6, size, "'비우기'작업중...(0/" + numberToString(size) + ")");
-					var pg = 0;
-					thread(function() {try {
-						while(true) {
-							if(size === pg) {
-								load.setProgress(pg);
-								load.setText("'비우기'작업중...(" + numberToString(pg) + "/" + numberToString(size) + ")");
-								sleep(1000);
-								load.close();
-								break;
-							}
-							load.setProgress(pg);
-							load.setText("'비우기'작업중...(" + numberToString(pg) + "/" + numberToString(size) + ")");
-							sleep(100);
-						}
-					}catch(e) {
-						showError(e, WarnType.RECOVERABLE);
-					}}).start();
-					for(var y = ey; y >= sy; y--) {
-					for(var z = sz; z <= ez; z++) {
-					for(var x = sx; x <= ex; x++) {
-						Level.setTile(x, y, z, 0, 0);
-						pg++;
-					}
-					}
-					}
-				}catch(e) {
-					showError(e, WarnType.WARNING);
-				}}).start();
-			}else if(this._parent.setting.WorkType === WorkType.ASYNCHRONOUS) {
-				thread(function() {try {
-					for(var y = ey; y >= sy; y--) {
-					for(var z = sz; z <= ez; z++) {
-					for(var x = sx; x <= ex; x++) {
-						that._parent.asynceBuffer.push([x, y, z, 0, 0]);
-						sleep(1);
-					}
-					}
-					}
-				}catch(e) {
-					showError(e, WarnType.WARNING);
-				}}).start();
-			}else {
-				throw new Error("Unknown WorkType: " + this._parent.setting.WorkType);
-			}
-			break;
-
-
-
-			case EditType.REPLACE:
-			if(!(this.pos1 instanceof Vector3)) {
-				msg("위치1을 지정해주세요", player);
-				return;
-			}
-			if(!(this.pos2 instanceof Vector3)) {
-				msg("위치2를 지정해주세요", player);
-				return;
-			}
-			if(!(this.block1 instanceof Block)) {
-				msg("블럭1을 지정해주세요", player);
-				return;
-			}
-			if(!(this.block2 instanceof Block)) {
-				msg("블럭2를 지정해주세요", player);
-				return;
-			}
-
-			var x1 = this.pos1.x;
-			var y1 = this.pos1.y;
-			var z1 = this.pos1.z;
-			var x2 = this.pos2.x;
-			var y2 = this.pos2.y;
-			var z2 = this.pos2.z;
-
-			var sx = (x1 < x2) ? x1 : x2;
-			var sy = (y1 < y2) ? y1 : y2;
-			var sz = (z1 < z2) ? z1 : z2;
-			var ex = (x1 > x2) ? x1 : x2;
-			var ey = (y1 > y2) ? y1 : y2;
-			var ez = (z1 > z2) ? z1 : z2;
-
-			var id1 = this.block1.id;
-			var data1 = this.block1.data;
-			var id2 = this.block2.id;
-			var data2 = this.block2.data;
-
-			if(this._parent.get('WorkType') === WorkType.SYNCHRONIZATION) {
-				thread(function() {try {
-					var size = (ex-sx+1) * (ey-sy+1) * (ez-sz+1);
-					var load = new CustomProgressBar(6, size, "'바꾸기'작업중...(0/" + numberToString(size) + ")");
-					var pg = 0;
-					thread(function() {try {
-						while(true) {
-							if(size === pg) {
-								load.setProgress(pg);
-								load.setText("'바꾸기'작업중...(" + numberToString(pg) + "/" + numberToString(size) + ")");
-								sleep(1000);
-								load.close();
-								break;
-							}
-							load.setProgress(pg);
-							load.setText("'바꾸기'작업중...(" + numberToString(pg) + "/" + numberToString(size) + ")");
-							sleep(100);
-						}
-					}catch(e) {
-						showError(e, WarnType.RECOVERABLE);
-					}}).start();
-					for(var y = sy; y <= ey; y++) {
-					for(var z = sz; z <= ez; z++) {
-					for(var x = sx; x <= ex; x++) {
-						if(Level.getTile(x, y, z) == id1 && Level.getData(x, y, z) == data1) {
-							Level.setTile(x, y, z, id2, data2);
-						}
-						pg++;
-					}
-					}
-					}
-				}catch(e) {
-					showError(e, WarnType.WARNING);
-				}}).start();
-			}else if(this._parent.setting.WorkType === WorkType.ASYNCHRONOUS) {
-				thread(function() {try {
-					for(var y = sy; y <= ey; y++) {
-					for(var z = sz; z <= ez; z++) {
-					for(var x = sx; x <= ex; x++) {
-						if(Level.getTile(x, y, z) == id1 && Level.getData(x, y, z) == data1) {
-							that._parent.asynceBuffer.push([x, y, z, id2, data2]);
-							sleep(1);
-						}
-					}
-					}
-					}
-				}catch(e) {
-					showError(e, WarnType.WARNING);
-				}}).start();
-			}else {
-				throw new Error("Unknown WorkType: " + this._parent.setting.WorkType);
-			}
-			break;
-
-
-
-			case EditType.WALL:
-			if(!(this.pos1 instanceof Vector3)) {
-				msg("위치1을 지정해주세요", player);
-				return;
-			}
-			if(!(this.pos2 instanceof Vector3)) {
-				msg("위치2를 지정해주세요", player);
-				return;
-			}
-			if(!(this.block1 instanceof Block)) {
-				msg("블럭2을 지정해주세요", player);
-				return;
-			}
-
-			var x1 = this.pos1.x;
-			var y1 = this.pos1.y;
-			var z1 = this.pos1.z;
-			var x2 = this.pos2.x;
-			var y2 = this.pos2.y;
-			var z2 = this.pos2.z;
-
-			var sx = (x1 < x2) ? x1 : x2;
-			var sy = (y1 < y2) ? y1 : y2;
-			var sz = (z1 < z2) ? z1 : z2;
-			var ex = (x1 > x2) ? x1 : x2;
-			var ey = (y1 > y2) ? y1 : y2;
-			var ez = (z1 > z2) ? z1 : z2;
-
-			var id = this.block1.id;
-			var data = this.block1.data;
-
-			if(this._parent.get('WorkType') === WorkType.SYNCHRONIZATION) {
-				thread(function() {try {
-					var load = new CustomProgressBar(5, null, "'벽 생성'작업중...");
-					for(var x = sx; true; x = ex) {
-					for(var y = sy; y <= ey; y++) {
-					for(var z = sz; z <= ez; z++) {
-						Level.setTile(x, y, z, id, data);
-					}
-					}
-					if(x === ex) break;
-					}
-					for(var z = sz; true; z = ez) {
-					for(var y = sy; y <= ey; y++) {
-					for(var x = sx; x <= ex; x++) {
-						Level.setTile(x, y, z, id, data);
-					}
-					}
-					if(z === ez) break;
-					}
-					load.close();
-				}catch(e) {
-					showError(e, WarnType.WARNING);
-				}}).start();
-			}else if(this._parent.setting.WorkType === WorkType.ASYNCHRONOUS) {
-				thread(function() {try {
-					for(var x = sx; true; x = ex) {
-					for(var y = sy; y <= ey; y++) {
-					for(var z = sz; z <= ez; z++) {
-						that._parent.asynceBuffer.push([x, y, z, id, data]);
-						sleep(1);
-					}
-					}
-					if(x === ex) break;
-					}
-					for(var z = sz; true; z = ez) {
-					for(var y = sy; y <= ey; y++) {
-					for(var x = sx; x <= ex; x++) {
-						that._parent.asynceBuffer.push([x, y, z, id, data]);
-						sleep(1);
-					}
-					}
-					if(z === ez) break;
-					}
-				}catch(e) {
-					showError(e, WarnType.WARNING);
-				}}).start();
-			}else {
-				throw new Error("Unknown WorkType: " + this._parent.setting.WorkType);
-			}
-			break;
-
-
-
-			case EditType.SPHERE:
-			if(!(this.pos1 instanceof Vector3)) {
-				msg("위치1을 지정해주세요", player);
-				return;
-			}
-			if(!(this.block1 instanceof Block)) {
-				msg("블럭1을 지정해주세요", player);
-				return;
-			}
-
-			var type = this._parent.get("HollowCircular");
-
-			var cx = this.pos1.x;
-			var cy = this.pos1.y;
-			var cz = this.pos1.z;
-
-			var id = this.block1.id;
-			var data = this.block1.data;
-
-			var np = new NumberPicker(ctx);
-			np.setMinValue(0x01);
-			np.setMaxValue(0xff);
-
-			var dl = new WES_Dialog("반지름...", 0, np, "생성", function() {try {
-				var radi = np.getValue();
-				if(that._parent.get('WorkType') === WorkType.SYNCHRONIZATION) {
-					thread(function() {try {
-						var size = Math.pow(((radi+1)*2)+1, 3);
-						var load = new CustomProgressBar(6, size, "'구 생성'작업중...(0/" + numberToString(size) + ")");
-						var pg = 0;
-						thread(function() {try {
-							while(true) {
-								if(size === pg) {
-									load.setProgress(pg);
-									load.setText("'구 생성'작업중...(" + numberToString(pg) + "/" + numberToString(size) + ")");
-									sleep(1000);
-									load.close();
-									break;
-								}
-								load.setProgress(pg);
-								load.setText("'구 생성'작업중...(" + numberToString(pg) + "/" + numberToString(size) + ")");
-								sleep(100);
-							}
-						}catch(e) {
-							showError(e, WarnType.RECOVERABLE);
-						}}).start();
-						for(var y = -(radi+1); y <= (radi+1); y++) {
-						for(var z = -(radi+1); z <= (radi+1); z++) {
-						for(var x = -(radi+1); x <= (radi+1); x++) {
-							if(type) {
-								if(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2) < Math.pow(radi, 2) && Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2) >= (Math.pow(radi-1, 2))) {
-									Level.setTile(cx + x, cy + y, cz + z, id, data);
-								}
-							}else {
-								if(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2) < Math.pow(radi, 2)) {
-									Level.setTile(cx + x, cy + y, cz + z, id, data);
-								}
-							}
-							pg++;
-						}
-						}
-						}
-					}catch(e) {
-						showError(e, WarnType.WARNING);
-					}}).start();
-				}else if(that._parent.setting.WorkType === WorkType.ASYNCHRONOUS) {
-					thread(function() {try {
-						for(var y = -(radi+1); y <= (radi+1); y++) {
-						for(var z = -(radi+1); z <= (radi+1); z++) {
-						for(var x = -(radi+1); x <= (radi+1); x++) {
-							if(type) {
-								if(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2) < Math.pow(radi, 2) && Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2) >= (Math.pow(radi-1, 2))) {
-									that._parent.asynceBuffer.push([cx + x, cy + y, cz + z, id, data]);
-									sleep(1);
-								}
-							}else {
-								if(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2) < Math.pow(radi, 2)) {
-									that._parent.asynceBuffer.push([cx + x, cy + y, cz + z, id, data]);
-									sleep(1);
-								}
-							}
-						}
-						}
-						}
-					}catch(e) {
-						showError(e, WarnType.WARNING);
-					}}).start();
-				}else {
-					throw new Error("Unknown WorkType: " + this._parent.setting.WorkType);
-				}
-				this.setVisible(false);
-			}catch(e) {
-				showError(e, WarnType.WARNING);
-			}}, "취소", function() {this.setVisible(false)}, true);
-
-			dl.setVisible(true);
-			break;
-
-
-
-			case EditType.HEMI_SPHERE:
-			if(!(this.pos1 instanceof Vector3)) {
-				msg("위치1을 지정해주세요", player);
-				return;
-			}
-			if(!(this.block1 instanceof Block)) {
-				msg("블럭1을 지정해주세요", player);
-				return;
-			}
-
-			var type = this._parent.get("HollowCircular");
-
-			var cx = this.pos1.x;
-			var cy = this.pos1.y;
-			var cz = this.pos1.z;
-
-			var id = this.block1.id;
-			var data = this.block1.data;
-
-			var np = new NumberPicker(ctx);
-			np.setMinValue(0x01);
-			np.setMaxValue(0xff);
-
-			var radi = null;
-
-			var direction = null;
-
-			var lo = new c.l(ctx);
-			lo.setOrientation(c.l.VERTICAL);
-			var xp = mcButton("X+", null, true, null, null, c.m,DIP*0x28, null, null, Assets.boxNormal.ninePatch(), null, function(view, event) {
-				direction = "X+";
-				WES_Toast("X+ 방향으로 설정됨");
-			}, null);
-			lo.addView(xp);
-			var xm = mcButton("X-", null, true, null, null, c.m,DIP*0x28, null, null, Assets.boxNormal.ninePatch(), null, function(view, event) {
-				direction = "X-";
-				WES_Toast("X- 방향으로 설정됨");
-			}, null);
-			lo.addView(xm);
-			var yp = mcButton("Y+", null, true, null, null, c.m,DIP*0x28, null, null, Assets.boxNormal.ninePatch(), null, function(view, event) {
-				direction = "Y+";
-				WES_Toast("Y+ 방향으로 설정됨");
-			}, null);
-			lo.addView(yp);
-			var ym = mcButton("Y-", null, true, null, null, c.m,DIP*0x28, null, null, Assets.boxNormal.ninePatch(), null, function(view, event) {
-				direction = "Y-";
-				WES_Toast("Y- 방향으로 설정됨");
-			}, null);
-			lo.addView(ym);
-			var zp = mcButton("Z+", null, true, null, null, c.m,DIP*0x28, null, null, Assets.boxNormal.ninePatch(), null, function(view, event) {
-				direction = "Z+";
-				WES_Toast("Z+ 방향으로 설정됨");
-			}, null);
-			lo.addView(zp);
-			var zm = mcButton("Z-", null, true, null, null, c.m,DIP*0x28, null, null, Assets.boxNormal.ninePatch(), null, function(view, event) {
-				direction = "Z-";
-				WES_Toast("Z- 방향으로 설정됨");
-			}, null);
-			lo.addView(zm);
-
-			var dl2 = new WES_Dialog("방향...", 0, lo, "생성", function() {try {
-				switch(direction) {
-					case "X+":
-					var xpa = true;
-					var xma = false;
-					var ypa = true;
-					var yma = true;
-					var zpa = true;
-					var zma = true;
-					break;
-					case "X-":
-					var xpa = false;
-					var xma = true;
-					var ypa = true;
-					var yma = true;
-					var zpa = true;
-					var zma = true;
-					break;
-					case "Y+":
-					var xpa = true;
-					var xma = true;
-					var ypa = true;
-					var yma = false;
-					var zpa = true;
-					var zma = true;
-					break;
-					case "Y-":
-					var xpa = true;
-					var xma = true;
-					var ypa = false;
-					var yma = true;
-					var zpa = true;
-					var zma = true;
-					break;
-					case "Z+":
-					var xpa = true;
-					var xma = true;
-					var ypa = true;
-					var yma = true;
-					var zpa = true;
-					var zma = false;
-					break;
-					case "Z-":
-					var xpa = true;
-					var xma = true;
-					var ypa = true;
-					var yma = true;
-					var zpa = false;
-					var zma = true;
-					break;
-					default:
-					msg("방향을 설정해주세요", Player.getEntity());
-					return false;
-				}
-				if(that._parent.get('WorkType') === WorkType.SYNCHRONIZATION) {
-					thread(function() {try {
-						var size = Math.pow(((radi+1)*2)+1, 3);
-						var load = new CustomProgressBar(6, size, "'반구 생성'작업중...(0/" + numberToString(size) + ")");
-						var pg = 0;
-						thread(function() {try {
-							while(true) {
-								if(size === pg) {
-									load.setProgress(pg);
-									load.setText("'반구 생성'작업중...(" + numberToString(pg) + "/" + numberToString(size) + ")");
-									sleep(1000);
-									load.close();
-									break;
-								}
-								load.setProgress(pg);
-								load.setText("'반구 생성'작업중...(" + numberToString(pg) + "/" + numberToString(size) + ")");
-								sleep(100);
-							}
-						}catch(e) {
-							showError(e, WarnType.RECOVERABLE);
-						}}).start();
-						for(var y = -(radi+1); y <= (radi+1); y++) {
-							if(!ypa && y > 0) continue;
-							if(!yma && y < 0) continue;
-						for(var z = -(radi+1); z <= (radi+1); z++) {
-							if(!zpa && z > 0) continue;
-							if(!zma && z < 0) continue;
-						for(var x = -(radi+1); x <= (radi+1); x++) {
-							if(!xpa && x > 0) continue;
-							if(!xma && x < 0) continue;
-							if(type) {
-								if(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2) < Math.pow(radi, 2) && Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2) >= (Math.pow(radi-1, 2))) {
-									Level.setTile(cx + x, cy + y, cz + z, id, data);
-								}
-							}else {
-								if(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2) < Math.pow(radi, 2)) {
-									Level.setTile(cx + x, cy + y, cz + z, id, data);
-								}
-							}
-							pg++;
-						}
-						}
-						}
-					}catch(e) {
-						showError(e, WarnType.WARNING);
-					}}).start();
-				}else if(that._parent.setting.WorkType === WorkType.ASYNCHRONOUS) {
-					thread(function() {try {
-						for(var y = -(radi+1); y <= (radi+1); y++) {
-							if(!ypa && y > 0) continue;
-							if(!yma && y < 0) continue;
-						for(var z = -(radi+1); z <= (radi+1); z++) {
-							if(!zpa && z > 0) continue;
-							if(!zma && z < 0) continue;
-						for(var x = -(radi+1); x <= (radi+1); x++) {
-							if(!xpa && x > 0) continue;
-							if(!xma && x < 0) continue;
-							if(type) {
-								if(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2) < Math.pow(radi, 2) && Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2) >= (Math.pow(radi-1, 2))) {
-									that._parent.asynceBuffer.push([cx + x, cy + y, cz + z, id, data]);
-									sleep(1);
-								}
-							}else {
-								if(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2) < Math.pow(radi, 2)) {
-									that._parent.asynceBuffer.push([cx + x, cy + y, cz + z, id, data]);
-									sleep(1);
-								}
-							}
-						}
-						}
-						}
-					}catch(e) {
-						showError(e, WarnType.WARNING);
-					}}).start();
-				}else {
-					throw new Error("Unknown WorkType: " + this._parent.setting.WorkType);
-				}
-				this.setVisible(false);
-			}catch(e) {
-				showError(e, WarnType.WARNING);
-			}}, "취소", function() {this.setVisible(false)}, false);
-
-			var dl = new WES_Dialog("반지름...", 0, np, "다음", function() {try {
-				radi = np.getValue();
-				dl2.setVisible(true);
-				this.setVisible(false);
-			}catch(e) {
-				showError(e, WarnType.WARNING);
-			}}, "취소", function() {this.setVisible(false)}, true);
-
-			dl.setVisible(true);
-			break;
-
-
-
-			case EditType.CIRCLE:
-			if(!(this.pos1 instanceof Vector3)) {
-				msg("위치1을 지정해주세요", player);
-				return;
-			}
-			if(!(this.block1 instanceof Block)) {
-				msg("블럭1을 지정해주세요", player);
-				return;
-			}
-
-			var type = this._parent.get("HollowCircular");
-
-			var cx = this.pos1.x;
-			var cy = this.pos1.y;
-			var cz = this.pos1.z;
-
-			var id = this.block1.id;
-			var data = this.block1.data;
-
-			var radi = null;
-			var axis = null;
-
-			var np = new NumberPicker(ctx);
-			np.setMinValue(0x01);
-			np.setMaxValue(0xff);
-
-			var lo = new c.l(ctx);
-			lo.setOrientation(c.l.VERTICAL);
-			var xa = mcButton("X-Axis", null, true, null, null, c.m, DIP*0x28, null, null, Assets.boxNormal.ninePatch(), null, function(view, event) {
-				axis = "X";
-				WES_Toast("X축 기준으로 설정됨");
-			}, null);
-			lo.addView(xa);
-			var ya = mcButton("Y-Axis", null, true, null, null, c.m, DIP*0x28, null, null, Assets.boxNormal.ninePatch(), null, function(view, event) {
-				axis = "Y";
-				WES_Toast("Y축 기준으로 설정됨");
-			}, null);
-			lo.addView(ya);
-			var za = mcButton("Z-Axis", null, true, null, null, c.m, DIP*0x28, null, null, Assets.boxNormal.ninePatch(), null, function(view, event) {
-				axis = "Z";
-				WES_Toast("Z축 기준으로 설정됨");
-			}, null);
-			lo.addView(za);
-
-			var dl2 = new WES_Dialog("기준 축...", 0, lo, "생성", function() {try {
-				if(axis === null) {
-					WES_Toast("기준 축을 설정해 주세요");
-					return false;
-				}
-				if(that._parent.get('WorkType') === WorkType.SYNCHRONIZATION) {
-					thread(function() {try {
-						var size = Math.pow(((radi+1)*2)+1, 2);
-						var load = new CustomProgressBar(6, size, "'원 생성'작업중...(0/" + numberToString(size) + ")");
-						var pg = 0;
-						thread(function() {try {
-							while(true) {
-								if(size === pg) {
-									load.setProgress(pg);
-									load.setText("'원 생성'작업중...(" + numberToString(pg) + "/" + numberToString(size) + ")");
-									sleep(1000);
-									load.close();
-									break;
-								}
-								load.setProgress(pg);
-								load.setText("'원 생성'작업중...(" + numberToString(pg) + "/" + numberToString(size) + ")");
-								sleep(100);
-							}
-						}catch(e) {
-							showError(e, WarnType.RECOVERABLE);
-						}}).start();
-						switch(axis) {
-							case "X":
-							for(var y = -(radi+1); y <= (radi+1); y++) {
-							for(var z = -(radi+1); z <= (radi+1); z++) {
-								if(type) {
-									if(Math.pow(y, 2) + Math.pow(z, 2) < Math.pow(radi, 2) && Math.pow(y, 2) + Math.pow(z, 2) >= (Math.pow(radi-1, 2))) {
-										Level.setTile(cx, cy + y, cz + z, id, data);
-									}
-								}else {
-									if(Math.pow(y, 2) + Math.pow(z, 2) < Math.pow(radi, 2)) {
-										Level.setTile(cx, cy + y, cz + z, id, data);
-									}
-								}
-								pg++;
-							}
-							}
-							break
-							case "Y":
-							for(var x = -(radi+1); x <= (radi+1); x++) {
-							for(var z = -(radi+1); z <= (radi+1); z++) {
-								if(type) {
-									if(Math.pow(x, 2) + Math.pow(z, 2) < Math.pow(radi, 2) && Math.pow(x, 2) + Math.pow(z, 2) >= (Math.pow(radi-1, 2))) {
-										Level.setTile(cx + x, cy, cz + z, id, data);
-									}
-								}else {
-									if(Math.pow(x, 2) + Math.pow(z, 2) < Math.pow(radi, 2)) {
-										Level.setTile(cx + x, cy, cz + z, id, data);
-									}
-								}
-								pg++;
-							}
-							}
-							break;
-							case "Z":
-							for(var y = -(radi+1); y <= (radi+1); y++) {
-							for(var x = -(radi+1); x <= (radi+1); x++) {
-								if(type) {
-									if(Math.pow(y, 2) + Math.pow(x, 2) < Math.pow(radi, 2) && Math.pow(y, 2) + Math.pow(x, 2) >= (Math.pow(radi-1, 2))) {
-										Level.setTile(cx + x, cy + y, cz, id, data);
-									}
-								}else {
-									if(Math.pow(y, 2) + Math.pow(x, 2) < Math.pow(radi, 2)) {
-										Level.setTile(cx + x, cy + y, cz, id, data);
-									}
-								}
-								pg++;
-							}
-							}
-							break;
-							default:
-							throw new Error("Unknown Axis");
-						}
-					}catch(e) {
-						showError(e, WarnType.WARNING);
-					}}).start();
-				}else if(that._parent.setting.WorkType === WorkType.ASYNCHRONOUS) {
-					thread(function() {try {
-						switch(axis) {
-							case "X":
-							for(var y = -(radi+1); y <= (radi+1); y++) {
-							for(var z = -(radi+1); z <= (radi+1); z++) {
-								if(type) {
-									if(Math.pow(y, 2) + Math.pow(z, 2) < Math.pow(radi, 2) && Math.pow(y, 2) + Math.pow(z, 2) >= (Math.pow(radi-1, 2))) {
-										that._parent.asynceBuffer.push([cx, cy + y, cz + z, id, data]);
-										sleep(1);
-									}
-								}else {
-									if(Math.pow(y, 2) + Math.pow(z, 2) < Math.pow(radi, 2)) {
-										that._parent.asynceBuffer.push([cx, cy + y, cz + z, id, data]);
-										sleep(1);
-									}
-								}
-							}
-							}
-							break
-							case "Y":
-							for(var x = -(radi+1); x <= (radi+1); x++) {
-							for(var z = -(radi+1); z <= (radi+1); z++) {
-								if(type) {
-									if(Math.pow(x, 2) + Math.pow(z, 2) < Math.pow(radi, 2) && Math.pow(x, 2) + Math.pow(z, 2) >= (Math.pow(radi-1, 2))) {
-										that._parent.asynceBuffer.push([cx + x, cy, cz + z, id, data]);
-										sleep(1);
-									}
-								}else {
-									if(Math.pow(x, 2) + Math.pow(z, 2) < Math.pow(radi, 2)) {
-										that._parent.asynceBuffer.push([cx + x, cy, cz + z, id, data]);
-										sleep(1);
-									}
-								}
-							}
-							}
-							break;
-							case "Z":
-							for(var y = -(radi+1); y <= (radi+1); y++) {
-							for(var x = -(radi+1); x <= (radi+1); x++) {
-								if(type) {
-									if(Math.pow(y, 2) + Math.pow(x, 2) < Math.pow(radi, 2) && Math.pow(y, 2) + Math.pow(x, 2) >= (Math.pow(radi-1, 2))) {
-										that._parent.asynceBuffer.push([cx + x, cy + y, cz, id, data]);
-										sleep(1);
-									}
-								}else {
-									if(Math.pow(y, 2) + Math.pow(x, 2) < Math.pow(radi, 2)) {
-										that._parent.asynceBuffer.push([cx + x, cy + y, cz, id, data]);
-										sleep(1);
-									}
-								}
-							}
-							}
-							break;
-							default:
-							throw new Error("Unknown Axis");
-						}
-					}catch(e) {
-						showError(e, WarnType.WARNING);
-					}}).start();
-				}else {
-					throw new Error("Unknown WorkType: " + this._parent.setting.WorkType);
-				}
-				this.setVisible(false);
-			}catch(e) {
-				showError(e, WarnType.WARNING);
-			}}, "취소", function() {this.setVisible(false)}, false);
-
-			var dl = new WES_Dialog("반지름...", 0, np, "다음", function() {try {
-				radi = np.getValue();
-				dl2.setVisible(true);
-				this.setVisible(false);
-			}catch(e) {
-				showError(e, WarnType.WARNING);
-			}}, "취소", function() {this.setVisible(false)}, true);
-
-			dl.setVisible(true);
-			break;
-
-
-
-			case EditType.COPY:
-			if(!(this.pos1 instanceof Vector3)) {
-				msg("위치1을 지정해주세요", player);
-				return;
-			}
-			if(!(this.pos2 instanceof Vector3)) {
-				msg("위치2를 지정해주세요", player);
-				return;
-			}
-
-			var x1 = this.pos1.x;
-			var y1 = this.pos1.y;
-			var z1 = this.pos1.z;
-			var x2 = this.pos2.x;
-			var y2 = this.pos2.y;
-			var z2 = this.pos2.z;
-
-			var sx = (x1 < x2) ? x1 : x2;
-			var sy = (y1 < y2) ? y1 : y2;
-			var sz = (z1 < z2) ? z1 : z2;
-			var ex = (x1 > x2) ? x1 : x2;
-			var ey = (y1 > y2) ? y1 : y2;
-			var ez = (z1 > z2) ? z1 : z2;
-
-			thread(function() {try {
-				var size = (ex-sx+1) * (ey-sy+1) * (ez-sz+1);
-				var load = new CustomProgressBar(6, size, "'복사'작업중...(0/" + numberToString(size) + ")");
-				var pg = 0;
-				thread(function() {try {
-					while(true) {
-						if(size === pg) {
-							load.setProgress(pg);
-							load.setText("'복사'작업중...(" + numberToString(pg) + "/" + numberToString(size) + ")");
-							sleep(1000);
-							load.close();
-							break;
-						}
-						load.setProgress(pg);
-						load.setText("'복사'작업중...(" + numberToString(pg) + "/" + numberToString(size) + ")");
-						sleep(100);
-					}
-				}catch(e) {
-					showError(e, WarnType.RECOVERABLE);
-				}}).start();
-				var buffer = [];
-				for(var z = sz; z <= ez; z++) {
-				for(var y = sy; y <= ey; y++) {
-				for(var x = sx; x <= ex; x++) {
-					buffer.push([Level.getTile(x, y, z), Level.getData(x, y, z)]);
-					pg++;
-				}
-				}
-				}
-				that.copy = new Piece((ex-sx+1), (ey-sy+1), (ez-sz+1), buffer);
-				WES_Toast("복사 성공");
-			}catch(e) {
-				showError(e, WarnType.WARNING);
-			}}).start();
-			break;
-
-
-
-			case EditType.CUT:
-			if(!(this.pos1 instanceof Vector3)) {
-				msg("위치1을 지정해주세요", player);
-				return;
-			}
-			if(!(this.pos2 instanceof Vector3)) {
-				msg("위치2를 지정해주세요", player);
-				return;
-			}
-
-			var x1 = this.pos1.x;
-			var y1 = this.pos1.y;
-			var z1 = this.pos1.z;
-			var x2 = this.pos2.x;
-			var y2 = this.pos2.y;
-			var z2 = this.pos2.z;
-
-			var sx = (x1 < x2) ? x1 : x2;
-			var sy = (y1 < y2) ? y1 : y2;
-			var sz = (z1 < z2) ? z1 : z2;
-			var ex = (x1 > x2) ? x1 : x2;
-			var ey = (y1 > y2) ? y1 : y2;
-			var ez = (z1 > z2) ? z1 : z2;
-
-			thread(function() {try {
-				var size = (ex-sx+1) * (ey-sy+1) * (ez-sz+1);
-				var load = new CustomProgressBar(6, size, "'잘라내기'작업중...(0/" + numberToString(size) + ")");
-				var pg = 0;
-				thread(function() {try {
-					while(true) {
-						if(size === pg) {
-							load.setProgress(pg);
-							load.setText("'잘라내기'작업중...(" + numberToString(pg) + "/" + numberToString(size) + ")");
-							sleep(1000);
-							load.close();
-							break;
-						}
-						load.setProgress(pg);
-						load.setText("'잘라내기'작업중...(" + numberToString(pg) + "/" + numberToString(size) + ")");
-						sleep(100);
-					}
-				}catch(e) {
-					showError(e, WarnType.RECOVERABLE);
-				}}).start();
-				var buffer = [];
-				for(var z = sz; z <= ez; z++) {
-				for(var y = sy; y <= ey; y++) {
-				for(var x = sx; x <= ex; x++) {
-					buffer.push([Level.getTile(x, y, z), Level.getData(x, y, z)]);
-					pg++;
-				}
-				}
-				}
-				that.copy = new Piece((ex-sx+1), (ey-sy+1), (ez-sz+1), buffer);
-				that.run(EditType.CLEAR);
-				WES_Toast("잘라내기 성공");
-			}catch(e) {
-				showError(e, WarnType.WARNING);
-			}}).start();
-			break;
-
-
-
-			case EditType.PASTE:
-			if(!(this.copy instanceof Piece)) {
-				msg("복사된 블럭이 없습니다", player);
-				return;
-			}
-			if(!(this.pos1 instanceof Vector3)) {
-				msg("위치1을 지정해주세요", player);
-				return;
-			}
-
-			var cx = this.pos1.x;
-			var cy = this.pos1.y;
-			var cz = this.pos1.z;
-
-			var highlight = areaHighlight(cx, cy, cz, cx+this.copy.getSizeX()-1, cy+this.copy.getSizeY()-1, cz+this.copy.getSizeZ()-1);
-
-			var text = mcText("정말로 해당지역에 붙여넣기 하시겠습니까?", null, false, null, null, c.w, c.w);
-			text.setGravity(Gravity.CENTER);
-
-			main.setMenuVisible(false);
-
-			var dl = new WES_Dialog("주의!", 1, text, "진행", function() {
-				highlight.close();
-				if(that._parent.get('WorkType') === WorkType.SYNCHRONIZATION) {
-					thread(function() {try {
-						var size = that.copy.getSizeX()*that.copy.getSizeY()*that.copy.getSizeZ();;
-						var load = new CustomProgressBar(6, size, "'붙여넣기'작업중...(0/" + numberToString(size) + ")");
-						var pg = 0;
-						thread(function() {try {
-							while(true) {
-								if(size === pg) {
-									load.setProgress(pg);
-									load.setText("'붙여넣기'작업중...(" + numberToString(pg) + "/" + numberToString(size) + ")");
-									sleep(1000);
-									load.close();
-									break;
-								}
-								load.setProgress(pg);
-								load.setText("'붙여넣기'작업중...(" + numberToString(pg) + "/" + numberToString(size) + ")");
-								sleep(100);
-							}
-						}catch(e) {
-							showError(e, WarnType.RECOVERABLE);
-						}}).start();
-						for(var y = 0; y < that.copy.getSizeY(); y++) {
-						for(var z = 0; z < that.copy.getSizeZ(); z++) {
-						for(var x = 0; x < that.copy.getSizeX(); x++) {
-							var block = that.copy.getBlock(x, y, z);
-							Level.setTile(cx+x, cy+y, cz+z, block[0], block[1]);
-							pg++;
-						}
-						}
-						}
-					}catch(e) {
-						showError(e, WarnType.WARNING);
-					}}).start();
-				}else if(that._parent.setting.WorkType === WorkType.ASYNCHRONOUS) {
-					thread(function() {try {
-						for(var y = 0; y < that.copy.getSizeY(); y++) {
-						for(var z = 0; z < that.copy.getSizeZ(); z++) {
-						for(var x = 0; x < that.copy.getSizeX(); x++) {
-							var block = that.copy.getBlock(x, y, z);
-							that._parent.asynceBuffer.push([cx+x, cy+y, cz+z, block[0], block[1]]);
-						sleep(1);
-						}
-						}
-						}
-					}catch(e) {
-						showError(e, WarnType.WARNING);
-					}}).start();
-				}else {
-					throw new Error("Unknown WorkType: " + that._parent.setting.WorkType);
-				}
-				this.setVisible(false);
-				main.setMenuVisible(true);
-			}, "취소", function() {highlight.close();this.setVisible(false);main.setMenuVisible(true)}, false, Gravity.TOP);
-
-			dl.setVisible(true);
-			break;
-
-
-
-			case EditType.ROTATION:
-			if(!(this.copy instanceof Piece)) {
-				msg("복사된 블럭이 없습니다");
-				return;
-			}
-
-			var axis = null;
-			var rot = null;
-
-			var lo = new c.l(ctx);
-			lo.setOrientation(c.l.VERTICAL);
-			var ax = mcButton("X축", null, true, null, null, c.m, DIP*0x28, null, null, Assets.boxNormal.ninePatch(), null, function(view, event) {
-				axis = "x";
-				WES_Toast("X축 방향으로 설정됨");
-			}, null);
-			lo.addView(ax);
-			var ay = mcButton("Y축", null, true, null, null, c.m, DIP*0x28, null, null, Assets.boxNormal.ninePatch(), null, function(view, event) {
-				axis = "y";
-				WES_Toast("Y축 방향으로 설정됨");
-			}, null);
-			lo.addView(ay);
-			var az = mcButton("Z축", null, true, null, null, c.m, DIP*0x28, null, null, Assets.boxNormal.ninePatch(), null, function(view, event) {
-				axis = "z";
-				WES_Toast("Z축 방향으로 설정됨");
-			}, null);
-			lo.addView(az);
-
-			var lo2 = new c.l(ctx);
-			lo2.setOrientation(c.l.VERTICAL);
-			var d1 = mcButton("90도", null, true, null, null, c.m, DIP*0x28, null, null, Assets.boxNormal.ninePatch(), null, function(view, event) {
-				rot = 1;
-				WES_Toast("90도 회전으로 설정됨");
-			}, null);
-			lo2.addView(d1);
-			var d2 = mcButton("180도", null, true, null, null, c.m, DIP*0x28, null, null, Assets.boxNormal.ninePatch(), null, function(view, event) {
-				rot = 2;
-				WES_Toast("180도 회전으로 설정됨");
-			}, null);
-			lo2.addView(d2);
-			var d3 = mcButton("270도", null, true, null, null, c.m, DIP*0x28, null, null, Assets.boxNormal.ninePatch(), null, function(view, event) {
-				rot = 3;
-				WES_Toast("270도 회전으로 설정됨");
-			}, null);
-			lo2.addView(d3);
-
-			var dl2 = new WES_Dialog("회전...", 0, lo2, "시작", function() {try {
-				if(rot === null) {
-					WES_Toast("회전할 각도를 지정해주세요");
-					return false;
-				}
-				thread(function() {try {
-					var load = new CustomProgressBar(5, null, "'회전'작업중...");
-					that.copy.rotation(axis, rot);
-					load.close();
-				}catch(e) {
-					showError(e, WarnType.WARNING);
-				}}).start();
-				this.setVisible(false);
-			}catch(e) {
-				showError(e, WarnType.WARNING);
-			}}, "취소", function() {this.setVisible(false)}, true);
-
-			var dl = new WES_Dialog("회전 축...", 0, lo, "다음", function() {try {
-				if(axis === null) {
-					WES_Toast("회전할 축을 지정해주세요");
-					return false;
-				}
-				dl2.setVisible(true);
-				this.setVisible(false);
-			}catch(e) {
-				showError(e, WarnType.WARNING);
-			}}, "취소", function() {this.setVisible(false)}, true);
-
-			dl.setVisible(true);
-			break;
-
-
-
-			case EditType.FLIP:
-			if(!(this.copy instanceof Piece)) {
-				msg("복사된 블럭이 없습니다");
-				return;
-			}
-
-			var axis = null;
-
-			var lo = new c.l(ctx);
-			lo.setOrientation(c.l.VERTICAL);
-			var ax = mcButton("X축", null, true, null, null, c.m, DIP*0x28, null, null, Assets.boxNormal.ninePatch(), null, function(view, event) {
-				axis = "x";
-				WES_Toast("X축으로 지정되었습니다");
-			}, null);
-			lo.addView(ax);
-			var ay = mcButton("Y축", null, true, null, null, c.m, DIP*0x28, null, null, Assets.boxNormal.ninePatch(), null, function(view, event) {
-				axis = "y";
-				WES_Toast("Y축으로 지정되었습니다");
-			}, null);
-			lo.addView(ay);
-			var az = mcButton("Z축", null, true, null, null, c.m, DIP*0x28, null, null, Assets.boxNormal.ninePatch(), null, function(view, event) {
-				axis = "z";
-				WES_Toast("Z축으로 지정되었습니다");
-			}, null);
-			lo.addView(az);
-
-			var dl = new WES_Dialog("대칭 축...", 0, lo, "시작", function() {try {
-				if(axis === null) {
-					WES_Toast("대칭축을 설정해주세요");
-					return false;
-				}
-				thread(function() {try {
-					var load = new CustomProgressBar(5, null, "'대칭'작업중...");
-					that.copy.flip(axis);
-					load.close();
-				}catch(e) {
-					showError(e, WarnType.WARNING);
-				}}).start();
-				this.setVisible(false);
-			}catch(e) {
-				showError(e, WarnType.WARNING);
-			}}, "취소", function() {this.setVisible(false)}, true);
-
-			dl.setVisible(true);
-			break;
-
-
-
-			default:
-			throw new Error("Unknown EditType: " + type);
-		}
-	}
-}
-
-function highlightBlock(x, y, z) {
-	var temp = {
-		id: Level.getTile(x, y, z),
-		data: Level.getData(x, y, z)
-	}
-
-	if(temp.id === 41) {
-		return;
-	}
-
-	thread(function() {try {
-		Level.setTile(x, y, z, 41, 0);
-		sleep(1000);
-		Level.setTile(x, y, z, temp.id, temp.data);
-	}catch(e) {
-		showError(e);
-	}}).start();
-}
-
-function highlightBlocks(ary, id, data) {
-	if(id === undefined) {
-		id = 41;
-		data = 0;
-	}else if(data === undefined) {
-		data = 0;
-	}
-	this.backup = [];
-	for(var e = 0; e < ary.length; e++) {
-		var x = ary[e][0];
-		var y = ary[e][1];
-		var z = ary[e][2];
-		this.backup.push([x, y, z, Level.getTile(x, y, z), Level.getData(x, y, z)]);
-	}
-	for(var e = 0; e < ary.length; e++) {
-		var x = ary[e][0];
-		var y = ary[e][1];
-		var z = ary[e][2];
-		Level.setTile(x, y, z, id, data);
-	}
-}
-
-highlightBlocks.prototype = {
-
-	close: function() {
-		for(var e = 0; e < this.backup.length; e++) {
-			Level.setTile(this.backup[e][0], this.backup[e][1], this.backup[e][2], this.backup[e][3], this.backup[e][4]);
-		}
-	}
-}
-
-function areaHighlight(x1, y1, z1, x2, y2, z2) {
-	var sx = x1 < x2 ? x1 : x2;
-	var sy = y1 < y2 ? y1 : y2;
-	var sz = z1 < z2 ? z1 : z2;
-	var ex = x1 > x2 ? x1 : x2;
-	var ey = y1 > y2 ? y1 : y2;
-	var ez = z1 > z2 ? z1 : z2;
-
-	var blocks = [];
-
-	blocks.push([sx, sy, sz]);
-	blocks.push([sx, sy, ez]);
-	blocks.push([sx, ey, sz]);
-	blocks.push([sx, ey, ez]);
-	blocks.push([ex, sy, sz]);
-	blocks.push([ex, sy, ez]);
-	blocks.push([ex, ey, sz]);
-	blocks.push([ex, ey, ez]);
-	if(sx !== ex) {
-		blocks.push([sx+1, sy, sz]);
-		blocks.push([sx+1, sy, ez]);
-		blocks.push([sx+1, ey, sz]);
-		blocks.push([sx+1, ey, ez]);
-		blocks.push([ex-1, sy, sz]);
-		blocks.push([ex-1, sy, ez]);
-		blocks.push([ex-1, ey, sz]);
-		blocks.push([ex-1, ey, ez]);
-	}
-	if(sy !== ey) {
-		blocks.push([sx, sy+1, sz]);
-		blocks.push([sx, sy+1, ez]);
-		blocks.push([sx, ey-1, sz]);
-		blocks.push([sx, ey-1, ez]);
-		blocks.push([ex, sy+1, sz]);
-		blocks.push([ex, sy+1, ez]);
-		blocks.push([ex, ey-1, sz]);
-		blocks.push([ex, ey-1, ez]);
-	}
-	if(sz !== ez) {
-		blocks.push([sx, sy, sz+1]);
-		blocks.push([sx, sy, ez-1]);
-		blocks.push([sx, ey, sz+1]);
-		blocks.push([sx, ey, ez-1]);
-		blocks.push([ex, sy, sz+1]);
-		blocks.push([ex, sy, ez-1]);
-		blocks.push([ex, ey, sz+1]);
-		blocks.push([ex, ey, ez-1]);
-	}
-
-	return new highlightBlocks(blocks);
-}
-
-function stringToCode(str) {
-	var chars = str + "";
-	var code = "";
-	for(var e = 0; e < chars.length; e++) {
-		code += chars.charCodeAt(e).toString(35) + "z";
-	}
-	return code + "E";
-}
-
-function codeToString(code) {
-	var t = code.split(String.fromCharCode(122));
-	var str = "";
-	for(var e = 0; e < t.length-1; e++) {
-		var c = String.fromCharCode(parseInt(t[e], 35));
-		if(t == "E") {
-			break;
-		}
-		str += t;
-	}
-	return str;
-}*/
