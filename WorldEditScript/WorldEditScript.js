@@ -2950,13 +2950,18 @@ function highlightBlock(x, y, z) {
 
 
 function msg(str, target) {
+	
+	var tempName = Entity.getNameTag(Player.getEntity());
+	Entity.setNameTag(Player.getEntity(), "");
+	var tag = "[" + ChatColor.YELLOW + "WorldEdit" + ChatColor.WHITE + "] ";
 	if(target === undefined) {
-		sgUtils.modPE.broadcast(Chat.Color.YELLOW + str);
-	}else if(Player.getName(Player.getEntity()).toLowerCase() === target.toLowerCase()) {
+		sgUtils.modPE.broadcast(tag + ChatColor.YELLOW + str);
+	}else if(tempName.toLowerCase() === target.toLowerCase()) {
 		we_toast(str);
 	}else {
-		sgUtils.modPE.broadcast("(" + ChatColor.AQUA + target + ChatColor.WHITE + ") " + ChatColor.YELLOW + str);
+		sgUtils.modPE.broadcast(tag + "(" + ChatColor.AQUA + target + ChatColor.WHITE + ") " + ChatColor.YELLOW + str);
 	}
+	Entity.setNameTag(Player.getEntity(), tempName);
 }
 
 
@@ -3903,17 +3908,20 @@ WorldEdit.prototype = {
 		this.mainMenu.addMenu(this.contentType.REDIRECT_MENU, "Tool", mm_tool);
 		this.mainMenu.addMenu(this.contentType.REDIRECT_MENU, "Setting", mm_setting);
 		//에딧메뉴 목록
+		mm_edit.addMenu(this.contentType.RUN_FUNCTION, "Restore", function() {
+			we_initEdit(parseInt(that.get("SafeMode")), parseInt(that.get("WorkType")), that.getLocalEditor(), EditType.RESTORE);
+		});
 		mm_edit.addMenu(this.contentType.RUN_FUNCTION, "Fill", function() {
-			we_initEdit(that, that.getLocalEditor(), EditType.FILL);
+			we_initEdit(parseInt(that.get("SafeMode")), parseInt(that.get("WorkType")), that.getLocalEditor(), EditType.FILL);
 		});
 		mm_edit.addMenu(this.contentType.RUN_FUNCTION, "Clear", function() {
-			we_initEdit(that, that.getLocalEditor(), EditType.CLEAR);
+			we_initEdit(parseInt(that.get("SafeMode")), parseInt(that.get("WorkType")), that.getLocalEditor(), EditType.CLEAR);
 		});
 		mm_edit.addMenu(this.contentType.RUN_FUNCTION, "Replace", function() {
-			we_initEdit(that, that.getLocalEditor(), EditType.REPLACE);
+			we_initEdit(parseInt(that.get("SafeMode")), parseInt(that.get("WorkType")), that.getLocalEditor(), EditType.REPLACE);
 		});
 		mm_edit.addMenu(this.contentType.RUN_FUNCTION, "Wall", function() {
-			we_initEdit(that, that.getLocalEditor(), EditType.WALL);
+			we_initEdit(parseInt(that.get("SafeMode")), parseInt(that.get("WorkType")), that.getLocalEditor(), EditType.WALL);
 		});
 		mm_edit.addMenu(this.contentType.REDIRECT_MENU, "Circular", mme_circular);
 		//원형 에딧메뉴에 등록
@@ -3921,16 +3929,22 @@ WorldEdit.prototype = {
 			if(bool === undefined) {
 				return that.get("HollowCircular") == 1;
 			}else if(bool) {
-				that.set("HollowCircular", 1);
+				that.set("HollowCircular", 1, true);
 			}else {
-				that.set("HollowCircular", 0);
+				that.set("HollowCircular", 0, true);
 			}
 		});
 		mme_circular.addMenu(this.contentType.RUN_FUNCTION, "Sphere", function() {
-			we_initEdit(that, that.getLocalEditor(), EditType.SPHERE);
+			we_initEdit(parseInt(that.get("SafeMode")), parseInt(that.get("WorkType")), that.getLocalEditor(), EditType.SPHERE);
 		});
 		mme_circular.addMenu(this.contentType.RUN_FUNCTION, "Hemi-sphere", function() {
-			we_initEdit(that, that.getLocalEditor(), EditType.HEMI_SPHERE);
+			we_initEdit(parseInt(that.get("SafeMode")), parseInt(that.get("WorkType")), that.getLocalEditor(), EditType.HEMI_SPHERE);
+		});
+		mme_circular.addMenu(this.contentType.RUN_FUNCTION, "Circle", function() {
+			we_initEdit(parseInt(that.get("SafeMode")), parseInt(that.get("WorkType")), that.getLocalEditor(), EditType.CIRCLE);
+		});
+		mme_circular.addMenu(this.contentType.RUN_FUNCTION, "Semi-circle", function() {
+			we_initEdit(parseInt(that.get("SafeMode")), parseInt(that.get("WorkType")), that.getLocalEditor(), EditType.SEMI_CIRCLE);
 		});
 		//설정메뉴 목록
 		mm_setting.addMenu(this.contentType.TOGGLE, "Button Visible", function(bool) {
@@ -4290,7 +4304,7 @@ we_menu.prototype = {
 				//TOGGLE
 				case 2:
 				//현재 토글의 상태 (true, false)
-				var btn = sgUtils.gui.mcFastButton(con[1], sg.px*0x10, false, Color.WHITE, null, null, null, [sg.px*4, sg.px*8, sg.px*4, sg.px*8], null, con[2] ? sgAssets.weButtonClick.ninePatch() : sgAssets.weButton.ninePatch(), null, function(view) {try {
+				var btn = sgUtils.gui.mcFastButton(con[1], sg.px*0x10, false, Color.WHITE, null, null, null, [sg.px*4, sg.px*8, sg.px*4, sg.px*8], null, con[2]() ? sgAssets.weButtonClick.ninePatch() : sgAssets.weButton.ninePatch(), null, function(view) {try {
 					var func = view.getTag();
 					if(func()) {
 						var text = func(false);
@@ -4702,7 +4716,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 				//긍정 버튼을 누를때
 				this.close();
 				editDetail = [main.get("HollowCircular") == 1, new Block(id, data)];
-				dl.shlow();
+				dl.show();
 			}, "Cancel", function() {
 				//부정 버튼을 누를때
 				this.close();
@@ -4713,7 +4727,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 			np.setMaxValue(0x100);
 			var np_p = new sg.rlp(sg.px*0x100, sg.px*0x80);
 			np.setLayoutParams(np_p);
-			var dl = new wd_dialog("Type radious...", np, "Start", function() {
+			var dl = new we_dialog("Type radious...", np, "Start", function() {
 				this.close();
 				editDetail[2] = parseInt(np.getValue());
 				//액티브 스타트!
@@ -4759,7 +4773,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 			np.setMaxValue(0x100);
 			var np_p = new sg.rlp(sg.px*0x100, sg.px*0x80);
 			np.setLayoutParams(np_p);
-			var dl = new wd_dialog("Type radious...", np, "Start", function() {
+			var dl = new we_dialog("Type radious...", np, "Start", function() {
 				this.close();
 				editDetail[2] = parseInt(np.getValue());
 				//방향 선택창 띄우기
@@ -4768,6 +4782,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 				this.close();
 			}, Gravity.CENTER);
 
+			var sv = new ScrollView(ctx);
 			var lo = new sg.ll(ctx);
 			lo.setOrientation(sg.ll.VERTICAL);
 			var b1 =  new sgUtils.gui.mcFastButton("X+", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
@@ -4777,6 +4792,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 				//액티브 스타트!
 				atv.start();
 			});
+			b1.setBackgroundColor(Color.WHITE);
 			var b2 =  new sgUtils.gui.mcFastButton("X-", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
 				editDetail[3] = "x-";
 				we_toast("'X-'방향으로 설정되었습니다");
@@ -4784,6 +4800,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 				//액티브 스타트!
 				atv.start();
 			});
+			b2.setBackgroundColor(Color.WHITE);
 			var b3 =  new sgUtils.gui.mcFastButton("Y+", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
 				editDetail[3] = "y+";
 				we_toast("Y+'방향으로 설정되었습니다");
@@ -4791,6 +4808,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 				//액티브 스타트!
 				atv.start();
 			});
+			b3.setBackgroundColor(Color.WHITE);
 			var b4 =  new sgUtils.gui.mcFastButton("Y-", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
 				editDetail[3] = "y-";
 				we_toast("'Y-'방향으로 설정되었습니다");
@@ -4798,6 +4816,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 				//액티브 스타트!
 				atv.start();
 			});
+			b4.setBackgroundColor(Color.WHITE);
 			var b5 =  new sgUtils.gui.mcFastButton("Z+", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
 				editDetail[3] = "z+";
 				we_toast("'Z+'방향으로 설정되었습니다");
@@ -4805,6 +4824,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 				//액티브 스타트!
 				atv.start();
 			});
+			b5.setBackgroundColor(Color.WHITE);
 			var b6 =  new sgUtils.gui.mcFastButton("Z-", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
 				editDetail[3] = "z-";
 				we_toast("'Z-'방향으로 설정되었습니다");
@@ -4812,13 +4832,15 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 				//으아아 붙여넣기
 				atv.start();
 			});
+			b6.setBackgroundColor(Color.WHITE);
 			lo.addView(b1);
 			lo.addView(b2);
 			lo.addView(b3);
 			lo.addView(b4);
 			lo.addView(b5);
 			lo.addView(b6);
-			var dl2 = new we_dialog("Select 'Direction'", lo, null, null, "Cancel", function() {this.close()}, Gravity.CENTER);
+			sv.addView(lo);
+			var dl2 = new we_dialog("Select 'Direction'", sv, null, null, "Cancel", function() {this.close()}, Gravity.CENTER);
 
 			bs.show();
 		}else {//추가 정보가 있으면(서버원)
@@ -4856,7 +4878,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 			np.setMaxValue(0x100);
 			var np_p = new sg.rlp(sg.px*0x100, sg.px*0x80);
 			np.setLayoutParams(np_p);
-			var dl = new wd_dialog("Type radious...", np, "Start", function() {
+			var dl = new we_dialog("Type radious...", np, "Start", function() {
 				this.close();
 				editDetail[2] = parseInt(np.getValue());
 				//축 선택창 띄우기
@@ -4864,34 +4886,39 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 			}, "Cancel", function() {
 				this.close();
 			}, Gravity.CENTER);
-
+			
+			var sv2 = new ScrollView(ctx);
 			var lo2 = new sg.ll(ctx);
 			lo2.setOrientation(sg.ll.VERTICAL);
 			var b7 =  new sgUtils.gui.mcFastButton("X", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
-				editDetail[3] = "x+";
-				we_toast("'X+'축 기준으로 설정되었습니다");
-				dl.close();
+				editDetail[3] = "x";
+				we_toast("'X'축 기준으로 설정되었습니다");
+				dl3.close();
 				//액티브 스타트!
 				atv.start();
 			});
-			var b8 =  new sgUtils.gui.mcFastButton("Y+", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
-				editDetail[3] = "y+";
+			b7.setBackgroundColor(Color.WHITE);
+			var b8 =  new sgUtils.gui.mcFastButton("Y", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+				editDetail[3] = "y";
 				we_toast("Y+'축 기준으로 설정되었습니다");
-				dl.close();
+				dl3.close();
 				//액티브 스타트!
 				atv.start();
 			});
-			var b9 =  new sgUtils.gui.mcFastButton("Z+", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
-				editDetail[3] = "z+";
-				we_toast("'Z+'축 기준으로 설정되었습니다");
-				dl.close();
+			b8.setBackgroundColor(Color.WHITE);
+			var b9 =  new sgUtils.gui.mcFastButton("Z", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+				editDetail[3] = "z";
+				we_toast("'Z'축 기준으로 설정되었습니다");
+				dl3.close();
 				//액티브 스타트!
 				atv.start();
 			});
+			b9.setBackgroundColor(Color.WHITE);
 			lo2.addView(b7);
 			lo2.addView(b8);
 			lo2.addView(b9);
-			var dl3 =  new we_dialog("Select 'Axis'", lo2, null, null, "Cancel", function() {this.close()}, Gravity.CENTER);
+			sv2.addView(lo2);
+			var dl3 =  new we_dialog("Select 'Axis'", sv2, null, null, "Cancel", function() {this.close()}, Gravity.CENTER);
 
 			bs.show();
 		}else {//추가 정보가 있으면(서버원)
@@ -4930,7 +4957,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 			np.setMaxValue(0x100);
 			var np_p = new sg.rlp(sg.px*0x100, sg.px*0x80);
 			np.setLayoutParams(np_p);
-			var dl = new wd_dialog("Type radious...", np, "Start", function() {
+			var dl = new we_dialog("Type radious...", np, "Start", function() {
 				this.close();
 				editDetail[2] = parseInt(np.getValue());
 				//축 선택창 띄우기
@@ -4939,12 +4966,13 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 				this.close();
 			}, Gravity.CENTER);
 
+			var sv2 = new ScrollView(ctx);
 			var lo2 = new sg.ll(ctx);
 			lo2.setOrientation(sg.ll.VERTICAL);
 			var b7 =  new sgUtils.gui.mcFastButton("X", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
-				editDetail[3] = "x+";
-				we_toast("'X+'축 기준으로 설정되었습니다");
-				dl.close();
+				editDetail[3] = "x";
+				we_toast("'X'축 기준으로 설정되었습니다");
+				dl3.close();
 				lo.addView(b3);
 				lo.addView(b4);
 				lo.addView(b5);
@@ -4952,10 +4980,11 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 				//방향 선택창 보이기
 				dl2.show();
 			});
-			var b8 =  new sgUtils.gui.mcFastButton("Y+", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
-				editDetail[3] = "y+";
-				we_toast("Y+'축 기준으로 설정되었습니다");
-				dl.close();
+			b7.setBackgroundColor(Color.WHITE);
+			var b8 =  new sgUtils.gui.mcFastButton("Y", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+				editDetail[3] = "y";
+				we_toast("Y'축 기준으로 설정되었습니다");
+				dl3.close();
 				lo.addView(b1);
 				lo.addView(b2);
 				lo.addView(b5);
@@ -4963,10 +4992,11 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 				//방향 선택창 보이기
 				dl2.show();
 			});
-			var b9 =  new sgUtils.gui.mcFastButton("Z+", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
-				editDetail[3] = "z+";
-				we_toast("'Z+'축 기준으로 설정되었습니다");
-				dl.close();
+			b8.setBackgroundColor(Color.WHITE);
+			var b9 =  new sgUtils.gui.mcFastButton("Z", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+				editDetail[3] = "z";
+				we_toast("'Z'축 기준으로 설정되었습니다");
+				dl3.close();
 				lo.addView(b1);
 				lo.addView(b2);
 				lo.addView(b3);
@@ -4974,56 +5004,66 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 				//방향 선택창 보이기
 				dl2.show();
 			});
+			b9.setBackgroundColor(Color.WHITE);
 			lo2.addView(b7);
 			lo2.addView(b8);
 			lo2.addView(b9);
-			var dl3 =  new we_dialog("Select 'Axis'", lo2, null, null, "Cancel", function() {this.close()}, Gravity.CENTER);
+			sv2.addView(lo2);
+			var dl3 =  new we_dialog("Select 'Axis'", sv2, null, null, "Cancel", function() {this.close()}, Gravity.CENTER);
 
+			var sv = new ScrollView(ctx);
 			var lo = new sg.ll(ctx);
 			lo.setOrientation(sg.ll.VERTICAL);
 			var b1 =  new sgUtils.gui.mcFastButton("X+", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
-				editDetail[3] = "x+";
+				editDetail[4] = "x+";
 				we_toast("'X+'방향으로 설정되었습니다");
 				dl2.close();
 				//액티브 스타트!
 				atv.start();
 			});
+			b1.setBackgroundColor(Color.WHITE);
 			var b2 =  new sgUtils.gui.mcFastButton("X-", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
-				editDetail[3] = "x-";
+				editDetail[4] = "x-";
 				we_toast("'X-'방향으로 설정되었습니다");
 				dl2.close();
 				//액티브 스타트!
 				atv.start();
 			});
+			b2.setBackgroundColor(Color.WHITE);
 			var b3 =  new sgUtils.gui.mcFastButton("Y+", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
-				editDetail[3] = "y+";
+				editDetail[4] = "y+";
 				we_toast("Y+'방향으로 설정되었습니다");
 				dl2.close();
 				//액티브 스타트!
 				atv.start();
 			});
+			b3.setBackgroundColor(Color.WHITE);
 			var b4 =  new sgUtils.gui.mcFastButton("Y-", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
-				editDetail[3] = "y-";
+				editDetail[4] = "y-";
 				we_toast("'Y-'방향으로 설정되었습니다");
 				dl2.close();
 				//액티브 스타트!
 				atv.start();
 			});
+			b4.setBackgroundColor(Color.WHITE);
 			var b5 =  new sgUtils.gui.mcFastButton("Z+", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
-				editDetail[3] = "z+";
+				editDetail[4] = "z+";
 				we_toast("'Z+'방향으로 설정되었습니다");
 				dl2.close();
 				//액티브 스타트!
 				atv.start();
 			});
+			b5.setBackgroundColor(Color.WHITE);
 			var b6 =  new sgUtils.gui.mcFastButton("Z-", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
-				editDetail[3] = "z-";
+				editDetail[4] = "z-";
 				we_toast("'Z-'방향으로 설정되었습니다");
 				dl2.close();
 				//으아아 붙여넣기
 				atv.start();
 			});
-			var dl2 = new we_dialog("Select 'Direction'", lo, null, null, "Cancel", function() {this.close()}, Gravity.CENTER);
+			b6.setBackgroundColor(Color.WHITE);
+			sv.addView(lo);
+			var dl2 = new we_dialog("Select 'Direction'", sv, null, null, "Cancel", function() {this.close()}, Gravity.CENTER);
 
 			bs.show();
 		}else {//추가 정보가 있으면(서버원)
@@ -5127,6 +5167,9 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 		}
 		workName = "복원";
 		type = EditType.RESTORE;
+		
+		//액티브 스타트!
+		atv.start();
 		break;
 	}
 }
@@ -5465,7 +5508,7 @@ function we_edit(safeMode, editType, editor, detail) {
 			break;
 			case "z":
 			var fz = 0;
-			for(var fy = -rel; fy <= rel; fy++) {
+			for(var fx = -rel; fx <= rel; fx++) {
 				for(var fy = -rel; fy <= rel; fy++) {
 					if(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz, 2) < Math.pow((detail[2]-0.5), 2)) {
 						sgUtils.data.progress[0]++;
@@ -5522,7 +5565,7 @@ function we_edit(safeMode, editType, editor, detail) {
 			dire = 5;
 			break;
 			default://예외 처리 했을탠데...
-			throw new Error("Unknown edit-semiCircle-direction type: " + detail[3]);
+			throw new Error("Unknown edit-semiCircle-direction type: " + detail[4]);
 		}
 
 		var bid = detail[1].getId();
@@ -5600,7 +5643,7 @@ function we_edit(safeMode, editType, editor, detail) {
 			break;
 			case "z":
 			var fz = 0;
-			for(var fy = -rel; fy <= rel; fy++) {
+			for(var fx = -rel; fx <= rel; fx++) {
 				for(var fy = -rel; fy <= rel; fy++) {
 					//원을 그릴 축에서의 반원의 방향
 					switch(dire) {
@@ -5654,16 +5697,16 @@ function we_edit(safeMode, editType, editor, detail) {
 		var max = (ex-sx+1)*(ey-sy+1)*(ez-sz+1);
 		sgUtils.data.progress = [0, max];
 
-		blocks = [];
+		var sblocks = [];
 		for(var cy = sy; cy <= ey; cy++) {
 			for(var cz = sz; cz <= ez; cz++) {
 				for(var cx = sx; cx <= ex; cx++) {
-					blocks.push([cx, cy, cz, Level.getTile(cx, cy, cz), Level.getData(cx, cy, cz)]);
+					sblocks.push([cx, cy, cz, Level.getTile(cx, cy, cz), Level.getData(cx, cy, cz)]);
 					sgUtils.data.progress[0]++;
 				}
 			}
 		}
-		editor.setCopy(new Piece(ex-sx+1, ey-sy+1, ez-sz+1, blocks));
+		editor.setCopy(new Piece(ex-sx+1, ey-sy+1, ez-sz+1, sblocks));
 		break;
 
 
@@ -5732,7 +5775,7 @@ function we_edit(safeMode, editType, editor, detail) {
 		case EditType.BACKUP:
 		var tempData = editor.getTempBlocks();
 
-		var max = locData.length;
+		var max = tempData.length;
 		sgUtils.data.progress = [0, max];
 
 		blocks = [];
@@ -5771,12 +5814,13 @@ function we_edit(safeMode, editType, editor, detail) {
 			msg("알 수 없는 에딧 요청이 들어왔습니다", editor.getName());
 			return null;
 		}
-		var max = tempBloocks.length;
+		var max = tempBlocks.length;
 		sgUtils.data.progress = [0, max];
 
 		var block;
 		for(var e = 0; e < max; e++) {
-			Levet.setTile(tempBlocks[e][0], tempBlocks[e][1], tempBlocks[e][2], tempBlocks[e][3], tempBlocks[e][4]);
+			Level.setTile(tempBlocks[e][0], tempBlocks[e][1], tempBlocks[e][2], tempBlocks[e][3], tempBlocks[e][4]);
+			sleep(1);
 			sgUtils.data.progress[0]++;
 		}
 		break;
@@ -5800,6 +5844,7 @@ function we_dialog(title, layout, confirmText, confirmFunc, cancelTxt, cancelFun
 	this.cfFunc = confirmFunc;//버튼을 누를때 창을 닫기 위해 'this.close()' 호출 필수
 	this.ccFunc = cancelFunc;
 
+	this.nativeLayout = layout;
 	this.wd = null;
 	this.layoutData = null;
 	this.gravity = gravity;
@@ -5862,11 +5907,11 @@ we_dialog.prototype = {
 			//content layout
 			var scroll = new ScrollView(ctx);
 			var scroll_p = new sg.rlp(sg.wc, sg.wc);
-			scroll_p.addRule(sg.rl.BELOW, bid.getId());
+			scroll_p.addRule(sg.rl.BELOW, title.getId());
 			scroll_p.addRule(sg.rl.CENTER_HORIZONTAL);
 			scroll.setLayoutParams(scroll_p);
 			scroll.setPadding(sg.px*2, 0, sg.px*2, sg.px*2);
-			scroll.addView(layout);
+			scroll.addView(this.nativeLayout);
 			rl.addView(scroll);
 
 			this.layoutData = [rl, title, scroll, t_text, cf, cc];
@@ -6077,7 +6122,7 @@ function modTick() {
 		}
 		if(++main.modTickMsgTick >= 200) {
 			main.modTickMsgTick = 0;
-			msg("에딧중..." + ChatColor.AQUA + main.asynchronousSetTileRequest.length + ChatColor.YELLOW + "개 남았습니다";
+			msg("에딧중... " + ChatColor.AQUA + main.asynchronousSetTileRequest.length + ChatColor.YELLOW + "개 남았습니다");
 		}
 		var tempData = main.asynchronousSetTileRequest.shift();
 		Level.setTile(tempData[0], tempData[1], tempData[2], tempData[3], tempData[4]);
@@ -6130,21 +6175,41 @@ function chatReceiveHook(str, sender) {
 		}
 		var editor = main.editorGroup.getEditor(sender);
 		var player = editor.getOwner();
-		switch(cmd[0]) {
+		switch(cmd[0].toLowerCase()) {
+			
 			case "pos1":
+			case "위치1":
 			var x = Math.floor(Entity.getX(player));
 			var y = Math.floor(Entity.getY(player));
 			var z = Math.floor(Entity.getZ(player));
 			editor.setPos1(new Vector3(x, y, z));
 			msg("위치1이 지정됨 X:" + x + " Y:" + y + " Z: " + z, sender);
 			break;
+			
 			case "pos2":
+			case "위치2":
 			var x = Math.floor(Entity.getX(player));
 			var y = Math.floor(Entity.getY(player));
 			var z = Math.floor(Entity.getZ(player));
 			editor.setPos2(new Vector3(x, y, z));
 			msg("위치2이 지정됨 X:" + x + " Y:" + y + " Z: " + z, sender);
 			break;
+			
+			case "fill":
+			case "채우기":
+			if(cmd.length < 2) {
+				msg("사용법: '@fill <블럭아이디>:<데미지값>'", sender);
+				return;
+			}
+			var block = cmd[1].split(":");
+			if(block.length === 0) {
+				block[1] = 0;
+			}
+			if(parseInt(block[0]) != block[0] || parseInt(block[0]) != block[0], block[0] >= 0x80 || block[0] < 0 || block[1] >= 0x10 || block[1] < 0) {
+				msg("알 수 없는 블럭아이디 입니다", sender);
+				return;
+			}
+			we_initEdit(1, 1, editor, EditType.FILL, [new Block(block[0], block[1])]);
 		}
 	}
 }
