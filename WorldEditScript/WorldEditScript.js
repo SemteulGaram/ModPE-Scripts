@@ -1227,7 +1227,7 @@ sgUtils.gui = {
 				showError(err);
 			}});
 		}
-		
+
 		this.isShowing = function() {
 			return this.wdVis;
 		}
@@ -3304,6 +3304,7 @@ function WorldEdit() {
 		BtnVis: 1,
 		MenuLoc: 0,
 		WorkType: 0,
+		WorkSpeed: 8,
 		SafeMode: 1,
 		WhiteList: [],
 		HollowCircular: 0
@@ -3612,7 +3613,7 @@ function WorldEdit() {
 	this.blockImagesLayout = null;
 	this.currentSelectedBlock = null;
 	this.blockIdLayout = null;
-	
+
 	this.synchronizationSetTileRequest = [];
 	this.asynchronousSetTileRequest = [];
 	this.modTickWorking = false;
@@ -3635,6 +3636,7 @@ WorldEdit.prototype = {
 		loading.show();
 		//설정 불러오기
 		this.loadSetting();
+		this.asynchEditSpeed = parseInt(this.setting.WorkSpeed);
 		//메뉴와 버튼 빌드
 		this.buildButton();
 		this.buildMenu();
@@ -3996,7 +3998,7 @@ WorldEdit.prototype = {
 			that.setMenuVisible(false);
 			that.setMenuVisible(true);
 		});
-		mm_setting.addMenu(this.contentType.TOGGLE, "Safe mode", function(bool) {
+		mm_setting.addMenu(this.contentType.TOGGLE, "Auto backup", function(bool) {
 			if(bool === undefined) {
 				return that.get("SafeMode") == 1;
 			}else if(bool) {
@@ -4015,6 +4017,22 @@ WorldEdit.prototype = {
 				that.set("WorkType", 0, true);
 				return "Work type:\nSynchronization";
 			}
+		});
+		mm_setting.addMenu(this.contentType.RUN_FUNCTION, "Asynchronous\n edit speed: " + that.get("WorkSpeed"), function() {
+			var np = new NumberPicker(ctx);
+			np.setMinValue(0x1);
+			np.setMaxValue(0x100);
+			np.setValue(parseInt(that.get("WorkSpeed")));
+			var dl = new we_dialog("Edit speed", np, "Save", function() {
+				this.close();
+				that.set("WorkSpeed", parseInt(np.getValue()), true);
+				that.asynchEditSpeed = parseInt(that.setting.WorkSpeed);
+				that.setMenuVisible(false);
+				that.setMenuVisible(true);
+			}, "Cancel", function() {
+				this.close();
+			}, Gravity.CENTER)
+
 		});
 
 		//기본 메뉴로 전환
@@ -4229,7 +4247,7 @@ WorldEdit.prototype = {
 			}});
 		}
 	},
-	
+
 	synchSetTileRequest: function(ary){
 		if(!(ary instanceof Array)) {
 			throw new Error("Unknown setTile request");
@@ -4245,8 +4263,20 @@ WorldEdit.prototype = {
 	},
 
 	about: function() {
-		//TODO
-		we_toast("TODO");
+		//최상위 레이아웃
+		var lo = new sg.rl(ctx);
+		//마인크래프트식 배경
+		var lo_d = new BitmapDrawable(sgAssets.bg32.scaleBitmap);
+		lo_d.setTileModeXY(Shader.TileMode.REPEAT, Shader.TileMode.REPEAT);
+		lo.setBackgroundDrawable(lo_d);
+
+		//팝업윈도우
+		var wd = new PopupWindow(lo, sg.ww, sg.wh, true);
+		uiThread(function() {try {
+			wd.showAtLocation(sg.dv, 0, 0, 0);
+		}catch(err) {
+			showError(err);
+		}})
 	}
 }
 
@@ -4598,7 +4628,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 			atv_m = 1;
 			editor.setTempBlocks(blocks);
 		}
-		
+
 		if(safeMode === 1) {
 			//백업
 			we_edit(EditType.BACKUP, editor);
@@ -6167,7 +6197,7 @@ function leaveGame() {
 
 var _loadingScreen = null;
 function modTick() {
-		
+
 	if(main.asynchronousSetTileRequest.length > 0) {
 		if(!main.modTickWorking) {
 			msg("비동기로 에딧을 시작합니다. 전원을 종료하지 마세요...");
@@ -6177,9 +6207,12 @@ function modTick() {
 			main.modTickMsgTick = 0;
 			msg("에딧중... " + ChatColor.AQUA + main.asynchronousSetTileRequest.length + ChatColor.YELLOW + "개 남았습니다");
 		}
-		var tempData = main.asynchronousSetTileRequest.shift();
-		Level.setTile(tempData[0], tempData[1], tempData[2], tempData[3], tempData[4]);
-		if(main.asynchronousSetTileRequest.length <= 0) {
+		for(var e = 0; e < main.asynchEditSpeed; e++) {
+			if(main.asynchronousSetTileRequest.length === 0) break;
+			var tempData = main.asynchronousSetTileRequest.shift();
+			Level.setTile(tempData[0], tempData[1], tempData[2], tempData[3], tempData[4]);
+		}
+		if(main.asynchronousSetTileRequest.length === 0) {
 			msg("에딧 완료됨");
 			main.modTickWorking = false;
 		}

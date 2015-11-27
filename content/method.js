@@ -103,8 +103,10 @@ sg.wc = ViewGroup.LayoutParams.WRAP_CONTENT;
 sg.ai = java.lang.reflect.Array.newInstance;
 sg.rl = RelativeLayout;
 sg.ll = LinearLayout;
+sh.fl = FrameLayout;
 sg.rlp = RelativeLayout.LayoutParams;
 sg.llp = LinearLayout.LayoutParams;
+sg.flp = FrameLayout.LayoutParams;
 sg.tp = TypedValue.COMPLEX_UNIT_PX;
 sg.sm = net.zhuoweizhang.mcpelauncher.ScriptManager;
 sg.ww = ctx.getScreenWidth();//ctx.getWindowManager().getDefaultDisplay().getWidth();
@@ -245,6 +247,7 @@ function thread(fc) {
  *   ㄴ saveArticle √
  *   ㄴ loadMcpeSetting √
  *   ㄴ saveMcpeSetting √
+ *   ㄴ loadBitmapFile
  * ㄴ convert
  *   ㄴ splitLines √
  *   ㄴ margeArray √
@@ -615,6 +618,29 @@ sgUtils.io = {
 			sg.sm.requestGraphicsReset();
 		}catch(e) {};
 		return true;
+	},
+
+	/**
+	 * Load Bitmap to Layout
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-11-27
+	 *
+	 * @param {File} imageFile
+	 * @return {Bitmap|false} bitmap
+	 */
+	loadBitmapLayout: function(imageFile) {
+		var lo = new sg.fl(ctx);
+		lo.setGravity(Gravity.CENTER);
+		try {
+			var bm = BitmapFactory.decodeFile(imageFile.getAbsolutePath());
+			var iv = new ImageView(ctx);
+			iv.setImageBitmap(bm);
+			lo.addView(iv);
+		}catch(err) {
+			return lo.addView(sgUtils.gui.mcFastText)
+		}
+		return lo;
 	}
 }
 
@@ -1234,6 +1260,7 @@ sgUtils.gui = {
 		this.thread = null;
 		this.rl = new sg.rl(ctx);
 		this.wd = null;
+		this.wdVis = false;
 		this.getText = function() {
 			if(this.textView === null) {
 				throw new Error("This type of custom progress bar don't support 'text' parameter");
@@ -1288,7 +1315,12 @@ sgUtils.gui = {
 			}});
 		}
 
+		this.isShowing = function() {
+			return this.wdVis;
+		}
+
 		this.show = function() {
+			this.wdVis = true;
 			uiThread(function() {try {
 				if(!that.wd.isShowing()) {
 					that.wd.showAtLocation(sg.dv, Gravity.LEFT|Gravity.TOP, 0, 0);
@@ -1302,6 +1334,7 @@ sgUtils.gui = {
 		}
 
 		this.close = function() {
+			this.wdVis = false;
 			uiThread(function() {try {
 				if(that.wd.isShowing()) {
 					that.wd.dismiss();
