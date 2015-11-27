@@ -16,8 +16,8 @@
 
 const NAME = "WorldEditScript";
 //Season . Release Number . Commits
-const VERSION = "0.2.0";
-const VERSION_CODE = 105;
+const VERSION = "0.2.1";
+const VERSION_CODE = 106;
 const TAG = "[" + "WorldEdit" + " " + VERSION + "] ";
 
 var File = java.io.File;
@@ -1173,6 +1173,7 @@ sgUtils.gui = {
 		this.thread = null;
 		this.rl = new sg.rl(ctx);
 		this.wd = null;
+		this.wdVis = false;
 		this.getText = function() {
 			if(this.textView === null) {
 				throw new Error("This type of custom progress bar don't support 'text' parameter");
@@ -1226,8 +1227,13 @@ sgUtils.gui = {
 				showError(err);
 			}});
 		}
+		
+		this.isShowing = function() {
+			return this.wdVis;
+		}
 
 		this.show = function() {
+			this.wdVis = true;
 			uiThread(function() {try {
 				if(!that.wd.isShowing()) {
 					that.wd.showAtLocation(sg.dv, Gravity.LEFT|Gravity.TOP, 0, 0);
@@ -1241,6 +1247,7 @@ sgUtils.gui = {
 		}
 
 		this.close = function() {
+			this.wdVis = false;
 			uiThread(function() {try {
 				if(that.wd.isShowing()) {
 					that.wd.dismiss();
@@ -3605,7 +3612,8 @@ function WorldEdit() {
 	this.blockImagesLayout = null;
 	this.currentSelectedBlock = null;
 	this.blockIdLayout = null;
-
+	
+	this.synchronizationSetTileRequest = [];
 	this.asynchronousSetTileRequest = [];
 	this.modTickWorking = false;
 	this.modTickMsgTick = 0;
@@ -4221,8 +4229,15 @@ WorldEdit.prototype = {
 			}});
 		}
 	},
+	
+	synchSetTileRequest: function(ary){
+		if(!(ary instanceof Array)) {
+			throw new Error("Unknown setTile request");
+		}
+		this.synchronizationSetTileRequest = this.synchronizationSetTileRequest.concat(ary);
+	},
 
-	setTileRequest: function(ary){
+	asynchSetTileRequest: function(ary){
 		if(!(ary instanceof Array)) {
 			throw new Error("Unknown setTile request");
 		}
@@ -4517,8 +4532,8 @@ var EditType = {
 	ROTATION: 0x23,
 	FLIP: 0x24,
 	BACKUP: 0x30,
-	RESTORE: 0x31,
-	PLACE_TEMP_BLOCKS: 0xff
+	RESTORE: 0x31
+	//PLACE_TEMP_BLOCKS: 0xff 사용 금지
 }
 
 //we_initEdit에서 예외처리, GUI작업을 진행
@@ -4541,23 +4556,20 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 	//작업 타입
 	var type = null;
 	//작업 쓰레드 준비
+	var loading = null;
 	var atv = thread(function() {try{
 		//로컬작업일 경우 로딩 프로그래스바 쓰레드 생성
 		if(editor.getName().toLowerCase() === (Player.getName(Player.getEntity())+"").toLowerCase()) {
 			thread(function() {try {
-				var loading = new sgUtils.gui.progressBar(3, true);
+				loading = new sgUtils.gui.progressBar(3, true);
 				loading.setText("준비 중...");
 				loading.show();
 				var pgt;
 				//작업 상태가 3가 되면 종료
-				while(atv_m !== 3) {
+				while(atv_m !== 3 && loading.isShowing()) {
 					pgt = "(" + sgUtils.convert.numberToString(sgUtils.data.progress[0]) + "/" + sgUtils.convert.numberToString(sgUtils.data.progress[1]) + ")";
 					if(atv_m === 0) {
-						if(safeMode === 1) {
-							loading.setText("준비 중... " + pgt);
-						}else {
-							loading.setText("'" + workName + "' 작업 중... " + pgt);
-						}
+						loading.setText("준비 중... " + pgt);
 						loading.setMax(sgUtils.data.progress[1]);
 						loading.setProgress(sgUtils.data.progress[0]);
 					}else if(atv_m === 1) {
@@ -4578,26 +4590,30 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 			}}).start();
 		}
 		//정보
-		var blocks = we_edit(safeMode, type, editor, editDetail);
-		if(Array.isArray(blocks) && blocks.length === 0) {
+		var blocks = we_edit(type, editor, editDetail);
+		if(!Array.isArray(blocks) || blocks.length === 0) {
 			atv_m = 3;
 			return;
 		}else {
 			atv_m = 1;
 			editor.setTempBlocks(blocks);
 		}
-
-		//백업
-		we_edit(safeMode, EditType.BACKUP, editor);
+		
+		if(safeMode === 1) {
+			//백업
+			we_edit(EditType.BACKUP, editor);
+		}
 		atv_m = 2;
 
 		//에딧
+		if(loading !== null) {
+			_loadingScreen = loading;
+		};
 		if(workType === 0) {
-			we_edit(safeMode, EditType.PLACE_TEMP_BLOCKS, editor);
+			main.synchSetTileRequest(editor.getTempBlocks());
 		}else {
-			main.setTileRequest(editor.getTempBlocks());
+			main.asynchSetTileRequest(editor.getTempBlocks());
 		}
-		atv_m = 3;
 	}catch(err) {
 		showError(err);
 	}});
@@ -4606,12 +4622,12 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 		//로컬작업일 경우 로딩 프로그래스바 쓰레드 생성
 		if(editor.getName().toLowerCase() === (Player.getName(Player.getEntity())+"").toLowerCase()) {
 			thread(function() {try {
-				var loading = new sgUtils.gui.progressBar(4, true);
+				loading = new sgUtils.gui.progressBar(4, true);
 				loading.setText("준비 중...");
 				loading.show();
 				var pgt;
 				//작업 상태가 1이 되면 종료
-				while(atv_m !== 1) {
+				while(atv_m !== 1 && loading.isShowing()) {
 					if(atv_m === 0) {
 						loading.setText("'" + workName + "' 작업 중... ");
 					}
@@ -4624,24 +4640,28 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 			}}).start();
 		}
 		//정보
-		var blocks = we_edit(safeMode, type, editor, editDetail);
-		if(Array.isArray(blocks) && blocks.length === 0) {
+		var blocks = we_edit(type, editor, editDetail);
+		if(!Array.isArray(blocks) || blocks.length === 0) {
 			atv_m = 1;
 			return;
 		}else {
 			editor.setTempBlocks(blocks);
 		}
 
-		//백업
-		we_edit(safeMode, EditType.BACKUP, editor);
+		if(safeMode === 1) {
+			//백업
+			we_edit(EditType.BACKUP, editor);
+		}
 
 		//에딧
-		if(workType === 0) {
-			we_edit(safeMode, EditType.PLACE_TEMP_BLOCKS, editor);
-		}else {
-			main.setTileRequest(editor.getTempBlocks());
+		if(loading !== null) {
+			_loadingScreen = loading;
 		}
-		atv_m = 1;
+		if(workType === 0) {
+			main.synchSetTileRequest(editor.getTempBlocks());
+		}else {
+			main.asynchSetTileRequest(editor.getTempBlocks());
+		}
 	}catch(err) {
 		showError(err);
 	}});
@@ -5263,8 +5283,8 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 }
 
 //we_initEdit에서 예외처리, GUI작업을 진행
-//we_edit에서 블럭 분석, 요청, 일괄 설치작업을 진행
-function we_edit(safeMode, editType, editor, detail) {
+//we_edit에서 블럭 분석, 요청작업을 진행
+function we_edit(editType, editor, detail) {
 	var that = this;
 	sgUtils.data.isProcessing = true;
 	var blocks = null;
@@ -5292,11 +5312,7 @@ function we_edit(safeMode, editType, editor, detail) {
 		for(var fy = sy; fy<= ey; fy++) {
 			for(var fz = sz; fz <= ez; fz++) {
 				for(var fx = sx; fx <= ex; fx++) {
-					if(safeMode === 0) {
-						Level.setTile(fx, fy, fz, bid, bdata);
-					}else {
-						blocks.push([fx, fy, fz, bid, bdata]);
-					}
+					blocks.push([fx, fy, fz, bid, bdata]);
 					sgUtils.data.progress[0]++;
 				}
 			}
@@ -5321,14 +5337,10 @@ function we_edit(safeMode, editType, editor, detail) {
 		sgUtils.data.progress = [0, max];
 
 		blocks = [];
-		for(var fy = sy; fy <= ey; fy++) {
+		for(var fy = ey; fy >= sy; fy--) {
 			for(var fz = sz; fz <= ez; fz++) {
 				for(var fx = sx; fx <= ex; fx++) {
-					if(safeMode === 0) {
-						Level.setTile(fx, fy, fz, 0, 0);
-					}else {
-						blocks.push([fx, fy, fz, 0, 0]);
-					}
+					blocks.push([fx, fy, fz, 0, 0]);
 					sgUtils.data.progress[0]++;
 				}
 			}
@@ -5364,11 +5376,7 @@ function we_edit(safeMode, editType, editor, detail) {
 					if(Level.getTile(fx, fy, fz) !== bid || Level.getData(fx, fy, fz) !== bdata) {
 						continue;
 					}
-					if(safeMode === 0) {
-						Level.setTile(fx, fy, fz, bid2, bdata2);
-					}else {
-						blocks.push([fx, fy, fz, bid2, bdata2]);
-					}
+					blocks.push([fx, fy, fz, bid2, bdata2]);
 				}
 			}
 		}
@@ -5397,21 +5405,13 @@ function we_edit(safeMode, editType, editor, detail) {
 		for(var fy = sy; fy <= ey; fy++) {
 			for(var fz = sz; fz <= ez; fz += (ez-sz)) {
 				for(var fx = sx; fx <= ex; fx++) {
-					if(safeMode === 0) {
-						Level.setTile(fx, fy, fz, bid, bdata);
-					}else {
-						blocks.push([cx, cy, cz, bid, bdata]);
-					}
+					blocks.push([cx, cy, cz, bid, bdata]);
 					sgUtils.data.progress[0]++;
 				}
 			}
 			for(var fx = sx; fx <= ex; fx += (ex-sx)) {
 				for(var fz = sz; fz <= ez; fz++) {
-					if(safeMode === 0) {
-						Level.setTile(fx, fy, fz, bid, bdata);
-					}else {
-						blocks.push([fx, fy, fz, bid, bdata]);
-					}
+					blocks.push([fx, fy, fz, bid, bdata]);
 					sgUtils.data.progress[0]++;
 				}
 			}
@@ -5429,7 +5429,7 @@ function we_edit(safeMode, editType, editor, detail) {
 		var cy = pos1.getY();
 		var cz = pos1.getZ();
 		var rel = detail[2]-1;
-		var max =  Math.pow(Math.pow(rel, 2)+1, 3);
+		var max = Math.pow((rel*2)+1, 3);
 		sgUtils.data.progress = [0, max];
 
 		var bid = detail[1].getId();
@@ -5438,17 +5438,13 @@ function we_edit(safeMode, editType, editor, detail) {
 		for(var fy = -rel; fy <= rel; fy++) {
 			for(var fz = -rel; fz <= rel; fz++) {
 				for(var fx = -rel; fx <= +rel; fx++) {
+					sgUtils.data.progress[0]++;
 					if(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz, 2) < Math.pow((detail[2]-0.5), 2)) {
-						sgUtils.data.progress[0]++;
 						//속이 빈 원 옵션 체크
 						if(detail[0] && !(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz, 2) >= (Math.pow((detail[2]-1.5), 2)))) {
 							continue;
 						}
-						if(safeMode === 0) {
-							Level.setTile(cx + fx, cy + fy, cz + fz, bid, bdata);
-						}else {
-							blocks.push([cx + fx, cy + fy, cz + fz, bid, bdata]);
-						}
+						blocks.push([cx + fx, cy + fy, cz + fz, bid, bdata]);
 					}
 				}
 			}
@@ -5466,7 +5462,7 @@ function we_edit(safeMode, editType, editor, detail) {
 		var cy = pos1.getY();
 		var cz = pos1.getZ();
 		var rel = detail[2]-1;
-		var max =  Math.pow(Math.pow(rel, 2)+1, 3);
+		var max = Math.pow((rel*2)+1, 3);
 		sgUtils.data.progress = [0, max];
 
 		//방향 (속도 향상을 위해 문자열을 숫자로 전환)
@@ -5500,6 +5496,7 @@ function we_edit(safeMode, editType, editor, detail) {
 		for(var fy = -rel; fy <= rel; fy++) {
 			for(var fz = -rel; fz <= rel; fz++) {
 				for(var fx = -rel; fx <= rel; fx++) {
+					sgUtils.data.progress[0]++;
 					switch(dire) {
 						case 0:
 						if(fx < 0) continue;
@@ -5521,16 +5518,11 @@ function we_edit(safeMode, editType, editor, detail) {
 						break;
 					}
 					if(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz, 2) < Math.pow((detail[2]-0.5), 2)) {
-						sgUtils.data.progress[0]++;
 						//속이 빈 원 옵션 체크
 						if(detail[0] && !(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz, 2) >= (Math.pow((detail[2]-1.5), 2)))) {
 							continue;
 						}
-						if(safeMode === 0) {
-							Level.setTile(cx + fx, cy + fy, cz + fz, bid, bdata);
-						}else {
-							blocks.push([cx + fx, cy + fy, cz + fz, bid, bdata]);
-						}
+						blocks.push([cx + fx, cy + fy, cz + fz, bid, bdata]);
 					}
 				}
 			}
@@ -5548,7 +5540,7 @@ function we_edit(safeMode, editType, editor, detail) {
 		var cy = pos1.getY();
 		var cz = pos1.getZ();
 		var rel = detail[2]-1;
-		var max =  Math.pow(Math.pow(rel, 2)+1, 2);
+		var max = Math.pow((rel*2)+1, 2);
 		sgUtils.data.progress = [0, max];
 
 		var bid = detail[1].getId();
@@ -5560,17 +5552,13 @@ function we_edit(safeMode, editType, editor, detail) {
 			var fx = 0;
 			for(var fy = -rel; fy <= rel; fy++) {
 				for(var fz = -rel; fz <= rel; fz++) {
+					sgUtils.data.progress[0]++;
 					if(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz, 2) < Math.pow((detail[2]-0.5), 2)) {
-						sgUtils.data.progress[0]++;
 						//속이 빈 원 옵션 체크
 						if(detail[0] && !(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz, 2) >= (Math.pow((detail[2]-1.5), 2)))) {
 							continue;
 						}
-						if(safeMode === 0) {
-							Level.setTile(cx + fx, cy + fy, cz + fz, bid, bdata);
-						}else {
-							blocks.push([cx + fx, cy + fy, cz + fz, bid, bdata]);
-						}
+						blocks.push([cx + fx, cy + fy, cz + fz, bid, bdata]);
 					}
 				}
 			}
@@ -5579,17 +5567,13 @@ function we_edit(safeMode, editType, editor, detail) {
 			var fy = 0;
 			for(var fx = -rel; fx <= rel; fx++) {
 				for(var fz = -rel; fz <= rel; fz++) {
+					sgUtils.data.progress[0]++;
 					if(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz, 2) < Math.pow((detail[2]-0.5), 2)) {
-						sgUtils.data.progress[0]++;
 						//속이 빈 원 옵션 체크
 						if(detail[0] && !(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz, 2) >= (Math.pow((detail[2]-1.5), 2)))) {
 							continue;
 						}
-						if(safeMode === 0) {
-							Level.setTile(cx + fx, cy + fy, cz + fz, bid, bdata);
-						}else {
-							blocks.push([cx + fx, cy + fy, cz + fz, bid, bdata]);
-						}
+						blocks.push([cx + fx, cy + fy, cz + fz, bid, bdata]);
 					}
 				}
 			}
@@ -5598,17 +5582,13 @@ function we_edit(safeMode, editType, editor, detail) {
 			var fz = 0;
 			for(var fx = -rel; fx <= rel; fx++) {
 				for(var fy = -rel; fy <= rel; fy++) {
+					sgUtils.data.progress[0]++;
 					if(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz, 2) < Math.pow((detail[2]-0.5), 2)) {
-						sgUtils.data.progress[0]++;
 						//속이 빈 원 옵션 체크
 						if(detail[0] && !(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz, 2) >= (Math.pow((detail[2]-1.5), 2)))) {
 							continue;
 						}
-						if(safeMode === 0) {
-							Level.setTile(cx + fx, cy + fy, cz + fz, bid, bdata);
-						}else {
-							blocks.push([cx + fx, cy + fy, cz + fz, bid, bdata]);
-						}
+						blocks.push([cx + fx, cy + fy, cz + fz, bid, bdata]);
 					}
 				}
 			}
@@ -5628,7 +5608,7 @@ function we_edit(safeMode, editType, editor, detail) {
 		var cy = pos1.getY();
 		var cz = pos1.getZ();
 		var rel = detail[2]-1;
-		var max =  Math.pow(Math.pow(rel, 2)+1, 2);
+		var max = Math.pow((rel*2)+1, 2);
 		sgUtils.data.progress = [0, max];
 
 		//원을 그릴 방향 (속도 향상을 위해 문자열을 숫자로 전환)
@@ -5665,6 +5645,7 @@ function we_edit(safeMode, editType, editor, detail) {
 			var fx = 0;
 			for(var fy = -rel; fy <= rel; fy++) {
 				for(var fz = -rel; fz <= rel; fz++) {
+					sgUtils.data.progress[0]++;
 					//원을 그릴 축에서의 반원의 방향
 					switch(dire) {
 						case 2://y+
@@ -5681,16 +5662,11 @@ function we_edit(safeMode, editType, editor, detail) {
 						break;
 					}
 					if(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz, 2) < Math.pow((detail[2]-0.5), 2)) {
-						sgUtils.data.progress[0]++;
 						//속이 빈 원 옵션 체크
 						if(detail[0] && !(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz, 2) >= (Math.pow((detail[2]-1.5), 2)))) {
 							continue;
 						}
-						if(safeMode === 0) {
-							Level.setTile(cx + fx, cy + fy, cz + fz, bid, bdata);
-						}else {
-							blocks.push([cx + fx, cy + fy, cz + fz, bid, bdata]);
-						}
+						blocks.push([cx + fx, cy + fy, cz + fz, bid, bdata]);
 					}
 				}
 			}
@@ -5699,6 +5675,7 @@ function we_edit(safeMode, editType, editor, detail) {
 			var fy = 0;
 			for(var fx = -rel; fx <= rel; fx++) {
 				for(var fz = -rel; fz <= rel; fz++) {
+					sgUtils.data.progress[0]++;
 					//원을 그릴 축에서의 반원의 방향
 					switch(dire) {
 						case 0://x+
@@ -5715,16 +5692,11 @@ function we_edit(safeMode, editType, editor, detail) {
 						break;
 					}
 					if(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz, 2) < Math.pow((detail[2]-0.5), 2)) {
-						sgUtils.data.progress[0]++;
 						//속이 빈 원 옵션 체크
 						if(detail[0] && !(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz, 2) >= (Math.pow((detail[2]-1.5), 2)))) {
 							continue;
 						}
-						if(safeMode === 0) {
-							Level.setTile(cx + fx, cy + fy, cz + fz, bid, bdata);
-						}else {
-							blocks.push([cx + fx, cy + fy, cz + fz, bid, bdata]);
-						}
+						blocks.push([cx + fx, cy + fy, cz + fz, bid, bdata]);
 					}
 				}
 			}
@@ -5733,6 +5705,7 @@ function we_edit(safeMode, editType, editor, detail) {
 			var fz = 0;
 			for(var fx = -rel; fx <= rel; fx++) {
 				for(var fy = -rel; fy <= rel; fy++) {
+					sgUtils.data.progress[0]++;
 					//원을 그릴 축에서의 반원의 방향
 					switch(dire) {
 						case 0://x+
@@ -5749,16 +5722,11 @@ function we_edit(safeMode, editType, editor, detail) {
 						break;
 					}
 					if(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz, 2) < Math.pow((detail[2]-0.5), 2)) {
-						sgUtils.data.progress[0]++;
 						//속이 빈 원 옵션 체크
 						if(detail[0] && !(Math.pow(fx, 2) + Math.pow(fy, 2) + Math.pow(fz, 2) >= (Math.pow((detail[2]-1.5), 2)))) {
 							continue;
 						}
-						if(safeMode === 0) {
-							Level.setTile(cx + fx, cy + fy, cz + fz, bid, bdata);
-						}else {
-							blocks.push([cx + fx, cy + fy, cz + fz, bid, bdata]);
-						}
+						blocks.push([cx + fx, cy + fy, cz + fz, bid, bdata]);
 					}
 				}
 			}
@@ -5786,10 +5754,10 @@ function we_edit(safeMode, editType, editor, detail) {
 		sgUtils.data.progress = [0, max];
 
 		var sblocks = [];
-		for(var cy = sy; cy <= ey; cy++) {
-			for(var cz = sz; cz <= ez; cz++) {
-				for(var cx = sx; cx <= ex; cx++) {
-					sblocks.push([cx, cy, cz, Level.getTile(cx, cy, cz), Level.getData(cx, cy, cz)]);
+		for(var cx = sx; cx <= ex; cx++) {
+			for(var cy = sy; cy <= ey; cy++) {
+				for(var cz = sz; cz <= ez; cz++) {
+					sblocks.push(new Block(Level.getTile(cx, cy, cz), Level.getData(cx, cy, cz)));
 					sgUtils.data.progress[0]++;
 				}
 			}
@@ -5815,10 +5783,10 @@ function we_edit(safeMode, editType, editor, detail) {
 		sgUtils.data.progress = [0, max];
 
 		var sblocks = [];
-		for(var cy = sy; cy <= ey; cy++) {
-			for(var cz = sz; cz <= ez; cz++) {
-				for(var cx = sx; cx <= ex; cx++) {
-					sblocks.push([cx, cy, cz, Level.getTile(cx, cy, cz), Level.getData(cx, cy, cz)]);
+		for(var cx = sx; cx <= ex; cx++) {
+			for(var cy = sy; cy <= ey; cy++) {
+				for(var cz = sz; cz <= ez; cz++) {
+					sblocks.push(new Block(Level.getTile(cx, cy, cz), Level.getData(cx, cy, cz)));
 					block.push([cx, cy, cz, 0, 0]);
 					sgUtils.data.progress[0]++;
 				}
@@ -5844,15 +5812,11 @@ function we_edit(safeMode, editType, editor, detail) {
 		var pz = piece.getSizeZ();
 
 		blocks = [];
-		for(var ry = 0; ry < px; ry++) {
+		for(var ry = 0; ry < py; ry++) {
 			for(var rz = 0; rz < pz; rz++) {
 				for(var rx = 0; rx < px; rx++) {
 					var block = piece.getBlock(rx, ry, rz);
-					if(safeMode === 0) {
-						Level.setTile(sx+rx, sy+ry, sz+rz, block.getId(), block.getData());
-					}else {
-						blocks.push([sx+rx, sy+ry, sz+rz, block.getId(), block.getData()]);
-					}
+					blocks.push([sx+rx, sy+ry, sz+rz, block.getId(), block.getData()]);
 				}
 			}
 		}
@@ -5908,26 +5872,6 @@ function we_edit(safeMode, editType, editor, detail) {
 		blocks = [];
 		for(var e = 0; e < max; e++) {
 			blocks.push([backupData[e][0], backupData[e][1], backupData[e][2], backupData[e][3], backupData[e][4]]);
-			sgUtils.data.progress[0]++;
-		}
-		break;
-
-
-
-		//EditDetail: []
-		case EditType.PLACE_TEMP_BLOCKS:
-		var tempBlocks = editor.getTempBlocks();
-		if(!Array.isArray(tempBlocks)) {
-			msg("알 수 없는 에딧 요청이 들어왔습니다", editor.getName());
-			return null;
-		}
-		var max = tempBlocks.length;
-		sgUtils.data.progress = [0, max];
-
-		var block;
-		for(var e = 0; e < max; e++) {
-			Level.setTile(tempBlocks[e][0], tempBlocks[e][1], tempBlocks[e][2], tempBlocks[e][3], tempBlocks[e][4]);
-			sleep(1);
 			sgUtils.data.progress[0]++;
 		}
 		break;
@@ -6221,7 +6165,9 @@ function leaveGame() {
 	main.setMenuVisible(false);
 }
 
+var _loadingScreen = null;
 function modTick() {
+		
 	if(main.asynchronousSetTileRequest.length > 0) {
 		if(!main.modTickWorking) {
 			msg("비동기로 에딧을 시작합니다. 전원을 종료하지 마세요...");
@@ -6233,10 +6179,24 @@ function modTick() {
 		}
 		var tempData = main.asynchronousSetTileRequest.shift();
 		Level.setTile(tempData[0], tempData[1], tempData[2], tempData[3], tempData[4]);
-		if(main.asynchronousSetTileRequest.lenght <= 0) {
+		if(main.asynchronousSetTileRequest.length <= 0) {
 			msg("에딧 완료됨");
 			main.modTickWorking = false;
 		}
+	}
+	if(main.synchronizationSetTileRequest.length > 0) {
+		sgUtils.data.progress = [0, main.synchronizationSetTileRequest.length];
+		for(var e = 0; e < main.synchronizationSetTileRequest.length; e++) {
+			Level.setTile(main.synchronizationSetTileRequest[e][0], main.synchronizationSetTileRequest[e][1], main.synchronizationSetTileRequest[e][2], main.synchronizationSetTileRequest[e][3], main.synchronizationSetTileRequest[e][4]);
+			sgUtils.data.progress[0]++;
+		}
+		main.synchronizationSetTileRequest = [];
+	}
+	if(_loadingScreen !== null) {
+		uiThread(function() {try {
+			_loadingScreen.close();
+			_loadingScreen = null;
+		}catch(err) {}});
 	}
 }
 
@@ -6254,6 +6214,7 @@ function useItem(x, y, z, itemId, blockId, side) {
 	}
 }
 
+var _destroyBlockHook = false;
 function startDestroyBlock(x, y, z, side) {
 	if(Player.getCarriedItem() === 271) {
 		highlightBlock(x, y, z);
@@ -6264,12 +6225,25 @@ function startDestroyBlock(x, y, z, side) {
 		}
 		editor.setPos2(new Vector3(x, y, z));
 		we_toast("위치2 지정됨\nx:" + x + " y:" + y + " z:" + z);
+		_destroyBlockHook = true;
 	}
 }
 
 function destroyBlock(x, y, z, side) {
 	if(Player.getCarriedItem() === 271) {
 		preventDefault();
+		if(_destroyBlockHook) {
+			_destroyBlockHook = false;
+		}else {
+			highlightBlock(x, y, z);
+			var editor = main.getLocalEditor();
+			if(editor === false) {
+				we_toast("플레이어를 찾을 수 없습니다\nError: db1", 2, 5000, true);
+				return;
+			}
+			editor.setPos2(new Vector3(x, y, z));
+			we_toast("위치2 지정됨\nx:" + x + " y:" + y + " z:" + z);
+		}
 	}
 }
 
@@ -6322,218 +6296,218 @@ function chatReceiveHook(str, sender) {
 				return;
 			}
 			we_initEdit(1, 1, editor, EditType.FILL, [new Block(block[0], block[1])]);
-		}
-		break;
+			break;
 
-		case "clear":
-		case "비우기":
-		we_initEdit(1, 1, editor, EditType.CLEAR, [new Block(block[0], block[1])]);
-		break;
+			case "clear":
+			case "비우기":
+			we_initEdit(1, 1, editor, EditType.CLEAR, [new Block(block[0], block[1])]);
+			break;
 
-		case "replace":
-		case "바꾸기":
-		if(cmd.length < 3) {
-			msg("사용법: '@바꾸기 <바꿀블럭아이디>:<데미지값> <블럭아이디>:<데미지>'", sender);
-			return;
-		}
-		var block1 = cmd[1].split(":");
-		if(block1.length === 0) {
-			block1[1] = 0;
-		}
-		var block2 = cmd[1].split(":");
-		if(block2.length === 0) {
-			block2[1] = 0;
-		}
-		if(parseInt(block1[0]) != block1[0] || parseInt(block1[0]) != block1[0], block1[0] >= 0x80 || block1[0] < 0 || block1[1] >= 0x10 || block1[1] < 0) {
-			msg("알 수 없는 블럭아이디 입니다", sender);
-			return;
-		}
-		if(parseInt(block2[0]) != block2[0] || parseInt(block2[0]) != block2[0], block2[0] >= 0x80 || block2[0] < 0 || block2[1] >= 0x10 || block2[1] < 0) {
-			msg("알 수 없는 블럭아이디 입니다", sender);
-			return;
-		}
-		we_initEdit(1, 1, editor, EditType.REPLACE, [new Block(block1[0], block1[1], new Block(block2[0], block2[1]))]);
-		break;
+			case "replace":
+			case "바꾸기":
+			if(cmd.length < 3) {
+				msg("사용법: '@바꾸기 <바꿀블럭아이디>:<데미지값> <블럭아이디>:<데미지>'", sender);
+				return;
+			}
+			var block1 = cmd[1].split(":");
+			if(block1.length === 0) {
+				block1[1] = 0;
+			}
+			var block2 = cmd[1].split(":");
+			if(block2.length === 0) {
+				block2[1] = 0;
+			}
+			if(parseInt(block1[0]) != block1[0] || parseInt(block1[0]) != block1[0], block1[0] >= 0x80 || block1[0] < 0 || block1[1] >= 0x10 || block1[1] < 0) {
+				msg("알 수 없는 블럭아이디 입니다", sender);
+				return;
+			}
+			if(parseInt(block2[0]) != block2[0] || parseInt(block2[0]) != block2[0], block2[0] >= 0x80 || block2[0] < 0 || block2[1] >= 0x10 || block2[1] < 0) {
+				msg("알 수 없는 블럭아이디 입니다", sender);
+				return;
+			}
+			we_initEdit(1, 1, editor, EditType.REPLACE, [new Block(block1[0], block1[1], new Block(block2[0], block2[1]))]);
+			break;
 
-		case "wall":
-		case "벽":
-		if(cmd.length < 2) {
-			msg("사용법: '@벽 <블럭아이디>:<데미지값>'", sender);
-			return;
-		}
-		var block = cmd[1].split(":");
-		if(block.length === 0) {
-			block[1] = 0;
-		}
-		if(parseInt(block[0]) != block[0] || parseInt(block[0]) != block[0], block[0] >= 0x80 || block[0] < 0 || block[1] >= 0x10 || block[1] < 0) {
-			msg("알 수 없는 블럭아이디 입니다", sender);
-			return;
-		}
-		we_initEdit(1, 1, editor, EditType.WALL, [new Block(block[0], block[1])]);
-		break;
+			case "wall":
+			case "벽":
+			if(cmd.length < 2) {
+				msg("사용법: '@벽 <블럭아이디>:<데미지값>'", sender);
+				return;
+			}
+			var block = cmd[1].split(":");
+			if(block.length === 0) {
+				block[1] = 0;
+			}
+			if(parseInt(block[0]) != block[0] || parseInt(block[0]) != block[0], block[0] >= 0x80 || block[0] < 0 || block[1] >= 0x10 || block[1] < 0) {
+				msg("알 수 없는 블럭아이디 입니다", sender);
+				return;
+			}
+			we_initEdit(1, 1, editor, EditType.WALL, [new Block(block[0], block[1])]);
+			break;
 
-		case "hollowsphere":
-		case "빈구":
-		if(cmd.length < 3) {
-			msg("사용법: '@빈구 <블럭아이디>:<데미지값> <반지름>'", sender);
-			return;
-		}
-		isHollow = true;
-		case "sphere":
-		case "구":
-		if(cmd.length < 3) {
-			msg("사용법: '@구 <블럭아이디>:<데미지값> <반지름>'", sender);
-			return;
-		}
-		var block = cmd[1].split(":");
-		if(block.length === 0) {
-			block[1] = 0;
-		}
-		if(parseInt(block[0]) != block[0] || parseInt(block[0]) != block[0], block[0] >= 0x80 || block[0] < 0 || block[1] >= 0x10 || block[1] < 0) {
-			msg("알 수 없는 블럭아이디 입니다", sender);
-			return;
-		}
-		if(parseInt(cmd[2]) != cmd[2] || cmd[2] < 1) {
-			msg("반지름 길이는 자연수만 가능합니다", sender);
-			return;
-		}
-		we_initEdit(1, 1, editor, EditType.SPHERE, [isHollow, new Block(block[0], block[1]), cmd[2]]);
-		break;
+			case "hollowsphere":
+			case "빈구":
+			if(cmd.length < 3) {
+				msg("사용법: '@빈구 <블럭아이디>:<데미지값> <반지름>'", sender);
+				return;
+			}
+			isHollow = true;
+			case "sphere":
+			case "구":
+			if(cmd.length < 3) {
+				msg("사용법: '@구 <블럭아이디>:<데미지값> <반지름>'", sender);
+				return;
+			}
+			var block = cmd[1].split(":");
+			if(block.length === 0) {
+				block[1] = 0;
+			}
+			if(parseInt(block[0]) != block[0] || parseInt(block[0]) != block[0], block[0] >= 0x80 || block[0] < 0 || block[1] >= 0x10 || block[1] < 0) {
+				msg("알 수 없는 블럭아이디 입니다", sender);
+				return;
+			}
+			if(parseInt(cmd[2]) != cmd[2] || cmd[2] < 1) {
+				msg("반지름 길이는 자연수만 가능합니다", sender);
+				return;
+			}
+			we_initEdit(1, 1, editor, EditType.SPHERE, [isHollow, new Block(block[0], block[1]), cmd[2]]);
+			break;
 
-		case "hollowhemisphere":
-		case "빈반구":
-		if(cmd.length < 4) {
-			msg("사용법: '@빈반구 <블럭아이디>:<데미지값> <반지름> <방향>'", sender);
-			return;
-		}
-		isHollow = true;
-		case "hemisphere":
-		case "반구":
-		if(cmd.length < 4) {
-			msg("사용법: '@반구 <블럭아이디>:<데미지값> <반지름> <방향>'", sender);
-			return;
-		}
-		var block = cmd[1].split(":");
-		if(block.length === 0) {
-			block[1] = 0;
-		}
-		if(parseInt(block[0]) != block[0] || parseInt(block[0]) != block[0], block[0] >= 0x80 || block[0] < 0 || block[1] >= 0x10 || block[1] < 0) {
-			msg("알 수 없는 블럭아이디 입니다", sender);
-			return;
-		}
-		if(parseInt(cmd[2]) != cmd[2] || cmd[2] < 1) {
-			msg("반지름 길이는 자연수만 가능합니다", sender);
-			return;
-		}
-		var drc = cmd[3].toLowerCase();
-		if(drc !== "x+" && drc !== "x-" && drc !== "y+" && drc !== "y-" && drc !== "z+" && drc !== "z-") {
-			msg("방향은 다음것중 하나만 가능합니다:", sender);
-			msg("X+, X-, Y+, Y-, Z+, Z-");
-		}
-		we_initEdit(1, 1, editor, EditType.HEMI_SPHERE, [isHollow, new Block(block[0], block[1]), cmd[2], drc]);
-		break;
+			case "hollowhemisphere":
+			case "빈반구":
+			if(cmd.length < 4) {
+				msg("사용법: '@빈반구 <블럭아이디>:<데미지값> <반지름> <방향>'", sender);
+				return;
+			}
+			isHollow = true;
+			case "hemisphere":
+			case "반구":
+			if(cmd.length < 4) {
+				msg("사용법: '@반구 <블럭아이디>:<데미지값> <반지름> <방향>'", sender);
+				return;
+			}
+			var block = cmd[1].split(":");
+			if(block.length === 0) {
+				block[1] = 0;
+			}
+			if(parseInt(block[0]) != block[0] || parseInt(block[0]) != block[0], block[0] >= 0x80 || block[0] < 0 || block[1] >= 0x10 || block[1] < 0) {
+				msg("알 수 없는 블럭아이디 입니다", sender);
+				return;
+			}
+			if(parseInt(cmd[2]) != cmd[2] || cmd[2] < 1) {
+				msg("반지름 길이는 자연수만 가능합니다", sender);
+				return;
+			}
+			var drc = cmd[3].toLowerCase();
+			if(drc !== "x+" && drc !== "x-" && drc !== "y+" && drc !== "y-" && drc !== "z+" && drc !== "z-") {
+				msg("방향은 다음것중 하나만 가능합니다:", sender);
+				msg("X+, X-, Y+, Y-, Z+, Z-");
+			}
+			we_initEdit(1, 1, editor, EditType.HEMI_SPHERE, [isHollow, new Block(block[0], block[1]), cmd[2], drc]);
+			break;
 
-		case "hollowcircle":
-		case "빈원":
-		if(cmd.length < 4) {
-			msg("사용법: '@빈원 <블럭아이디>:<데미지값> <반지름> <기준축>'", sender);
-			return;
-		}
-		isHollow = true;
-		case "circle":
-		case "원":
-		if(cmd.length < 4) {
-			msg("사용법: '@원 <블럭아이디>:<데미지값> <반지름> <기준축>'", sender);
-			return;
-		}
-		var block = cmd[1].split(":");
-		if(block.length === 0) {
-			block[1] = 0;
-		}
-		if(parseInt(block[0]) != block[0] || parseInt(block[0]) != block[0], block[0] >= 0x80 || block[0] < 0 || block[1] >= 0x10 || block[1] < 0) {
-			msg("알 수 없는 블럭아이디 입니다", sender);
-			return;
-		}
-		if(parseInt(cmd[2]) != cmd[2] || cmd[2] < 1) {
-			msg("반지름 길이는 자연수만 가능합니다", sender);
-			return;
-		}
-		var axis = cmd[3].toLowerCase();
-		if(axis !== "x" && axis !== "y" && axis !== "z") {
-			msg("기준 축은 다음것중 하나만 가능합니다:", sender);
-			msg("X, Y, Z");
-		}
-		we_initEdit(1, 1, editor, EditType.CIRCLE, [isHollow, new Block(block[0], block[1]), cmd[2], axis]);
-		break;
+			case "hollowcircle":
+			case "빈원":
+			if(cmd.length < 4) {
+				msg("사용법: '@빈원 <블럭아이디>:<데미지값> <반지름> <기준축>'", sender);
+				return;
+			}
+			isHollow = true;
+			case "circle":
+			case "원":
+			if(cmd.length < 4) {
+				msg("사용법: '@원 <블럭아이디>:<데미지값> <반지름> <기준축>'", sender);
+				return;
+			}
+			var block = cmd[1].split(":");
+			if(block.length === 0) {
+				block[1] = 0;
+			}
+			if(parseInt(block[0]) != block[0] || parseInt(block[0]) != block[0], block[0] >= 0x80 || block[0] < 0 || block[1] >= 0x10 || block[1] < 0) {
+				msg("알 수 없는 블럭아이디 입니다", sender);
+				return;
+			}
+			if(parseInt(cmd[2]) != cmd[2] || cmd[2] < 1) {
+				msg("반지름 길이는 자연수만 가능합니다", sender);
+				return;
+			}
+			var axis = cmd[3].toLowerCase();
+			if(axis !== "x" && axis !== "y" && axis !== "z") {
+				msg("기준 축은 다음것중 하나만 가능합니다:", sender);
+				msg("X, Y, Z");
+			}
+			we_initEdit(1, 1, editor, EditType.CIRCLE, [isHollow, new Block(block[0], block[1]), cmd[2], axis]);
+			break;
 
-		case "hollowsemicircle":
-		case "빈반원":
-		if(cmd.length < 5) {
-			msg("사용법: '@빈반원 <블럭아이디>:<데미지값> <반지름> <기준축> <방향>'", sender);
-			return;
-		}
-		case "semicircle":
-		case "반원":
-		if(cmd.length < 5) {
-			msg("사용법: '@반원 <블럭아이디>:<데미지값> <반지름> <기준축> <방향>'", sender);
-			return;
-		}
-		var block = cmd[1].split(":");
-		if(block.length === 0) {
-			block[1] = 0;
-		}
-		if(parseInt(block[0]) != block[0] || parseInt(block[0]) != block[0], block[0] >= 0x80 || block[0] < 0 || block[1] >= 0x10 || block[1] < 0) {
-			msg("알 수 없는 블럭아이디 입니다", sender);
-			return;
-		}
-		if(parseInt(cmd[2]) != cmd[2] || cmd[2] < 1) {
-			msg("반지름 길이는 자연수만 가능합니다", sender);
-			return;
-		}
-		var axis = cmd[3].toLowerCase();
-		if(axis !== "x" && axis !== "y" && axis !== "z") {
-			msg("기준 축은 다음것중 하나만 가능합니다:", sender);
-			msg("X, Y, Z");
-		}
-		var drc = cmd[4].toLowerCase();
-		if(drc !== "x+" && drc !== "x-" && drc !== "y+" && drc !== "y-" && drc !== "z+" && drc !== "z-") {
-			msg("방향은 다음것중 하나만 가능합니다:", sender);
-			msg("X+, X-, Y+, Y-, Z+, Z-");
-		}
-		//TODO 예외처리가 남았습니다! 기준축에 따라서 선택가능한 방향이 제한적입니다!
-		we_initEdit(1, 1, editor, EditType.SEMI_CIRCLE, [isHollow, new Block(block[0], block[1]), cmd[2], axis, drc]);
-		break;
+			case "hollowsemicircle":
+			case "빈반원":
+			if(cmd.length < 5) {
+				msg("사용법: '@빈반원 <블럭아이디>:<데미지값> <반지름> <기준축> <방향>'", sender);
+				return;
+			}
+			case "semicircle":
+			case "반원":
+			if(cmd.length < 5) {
+				msg("사용법: '@반원 <블럭아이디>:<데미지값> <반지름> <기준축> <방향>'", sender);
+				return;
+			}
+			var block = cmd[1].split(":");
+			if(block.length === 0) {
+				block[1] = 0;
+			}
+			if(parseInt(block[0]) != block[0] || parseInt(block[0]) != block[0], block[0] >= 0x80 || block[0] < 0 || block[1] >= 0x10 || block[1] < 0) {
+				msg("알 수 없는 블럭아이디 입니다", sender);
+				return;
+			}
+			if(parseInt(cmd[2]) != cmd[2] || cmd[2] < 1) {
+				msg("반지름 길이는 자연수만 가능합니다", sender);
+				return;
+			}
+			var axis = cmd[3].toLowerCase();
+			if(axis !== "x" && axis !== "y" && axis !== "z") {
+				msg("기준 축은 다음것중 하나만 가능합니다:", sender);
+				msg("X, Y, Z");
+			}
+			var drc = cmd[4].toLowerCase();
+			if(drc !== "x+" && drc !== "x-" && drc !== "y+" && drc !== "y-" && drc !== "z+" && drc !== "z-") {
+				msg("방향은 다음것중 하나만 가능합니다:", sender);
+				msg("X+, X-, Y+, Y-, Z+, Z-");
+			}
+			//TODO 예외처리가 남았습니다! 기준축에 따라서 선택가능한 방향이 제한적입니다!
+			we_initEdit(1, 1, editor, EditType.SEMI_CIRCLE, [isHollow, new Block(block[0], block[1]), cmd[2], axis, drc]);
+			break;
 
-		case "copy":
-		case "복사":
-		we_initEdit(0, 1, editor, EditType.COPY);
-		break;
+			case "copy":
+			case "복사":
+			we_initEdit(0, 1, editor, EditType.COPY);
+			break;
 
-		case "cut":
-		case "잘라내기":
-		we_initEdit(1, 1, editor, EditType.CUT);
-		break;
+			case "cut":
+			case "잘라내기":
+			we_initEdit(1, 1, editor, EditType.CUT);
+			break;
 
-		case "paste":
-		case "붙여넣기":
-		we_initEdit(1, 1, editor, EditType.PASTE);
-		break;
+			case "paste":
+			case "붙여넣기":
+			we_initEdit(1, 1, editor, EditType.PASTE);
+			break;
 
-		case "flip":
-		case "대칭":
-		we_initEdit(0, 1, editor, EditType.FLIP);
-		break;
+			case "flip":
+			case "대칭":
+			we_initEdit(0, 1, editor, EditType.FLIP);
+			break;
 
-		case "rotation":
-		case "회전":
-		we_initEdit(0, 1, editor, EditType.ROTATION);
-		break;
+			case "rotation":
+			case "회전":
+			we_initEdit(0, 1, editor, EditType.ROTATION);
+			break;
 
-		case "help":
-		case "도움말":
-		msg("===사용가능한 명령어 목록===", sender);
-		msg("@위치1, @위치2, @채우기, @비우기, @바꾸기, @벽, @구, @빈구, @반구, @빈반구, @원, @빈원, @반원, @빈반원, @복사, @잘라내기, @붙여넣기, @대칭, @회전");
-		msg("각각의 명령어를 치면 맞는 형식을 알려줍니다");
-		break;
+			case "help":
+			case "도움말":
+			msg("===사용가능한 명령어 목록===", sender);
+			msg("@위치1, @위치2, @채우기, @비우기, @바꾸기, @벽, @구, @빈구, @반구, @빈반구, @원, @빈원, @반원, @빈반원, @복사, @잘라내기, @붙여넣기, @대칭, @회전");
+			msg("각각의 명령어를 치면 맞는 형식을 알려줍니다");
+			break;
+		}
 	}
 }
