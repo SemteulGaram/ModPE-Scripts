@@ -17,8 +17,8 @@
 const NAME = "WorldEdit script";
 const NAME_CODE = "WorldEdit";
 //Season . Release Number . Commits
-const VERSION = "0.3.0";
-const VERSION_CODE = 107;
+const VERSION = "0.3.1";
+const VERSION_CODE = 108;
 const TAG = "[" + "WorldEdit" + " " + VERSION + "] ";
 
 var File = java.io.File;
@@ -3975,7 +3975,6 @@ WorldEdit.prototype = {
 
 		//메인메뉴 목록
 		this.mainMenu.addMenu(this.contentType.REDIRECT_MENU, "Edit", mm_edit);
-		this.mainMenu.addMenu(this.contentType.REDIRECT_MENU, "Tool", mm_tool);
 		this.mainMenu.addMenu(this.contentType.REDIRECT_MENU, "Setting", mm_setting);
 		this.mainMenu.addMenu(this.contentType.RUN_FUNCTION, "About", this.about);
 		//에딧메뉴 목록
@@ -4381,6 +4380,22 @@ WorldEdit.prototype = {
 		var tsv = sgUtils.gui.mcFastText(VERSION, sg.px*0x10, false, Color.YELLOW, null, null, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4]);
 		tlo.addView(tsv);
 		
+		//네임 스페이스
+		var ns = sgUtils.gui.mcFastText("SemteulGaram©", sg.px*0x10, false, Color.WHITE, null, null, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4]);
+		var ns_p = new sg.rlp(sg.wc, sg.wc);
+		ns_p.addRule(sg.rl.ALIGN_PARENT_BOTTOM);
+		ns_p.addRule(sg.rl.ALIGN_PARENT_LEFT);
+		ns.setLayoutParams(ns_p);
+		lo.addView(ns);
+		
+		//여분의 공간
+		var es = sgUtils.gui.mcFastText("BETA Version", sg.px*0x10, false, Color.WHITE, null, null, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4]);
+		var es_p = new sg.rlp(sg.wc, sg.wc);
+		es_p.addRule(sg.rl.ALIGN_PARENT_BOTTOM);
+		es_p.addRule(sg.rl.ALIGN_PARENT_RIGHT);
+		es.setLayoutParams(es_p);
+		lo.addView(es);
+		
 		lg.addView(tlo);
 		lo.addView(lg);
 
@@ -4704,9 +4719,9 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 	var atv = thread(function() {try{
 		//로컬작업일 경우 로딩 프로그래스바 쓰레드 생성
 		if(editor.getName().toLowerCase() === (Player.getName(Player.getEntity())+"").toLowerCase()) {
+			loading = new sgUtils.gui.progressBar(3, true);
+			loading.setText("준비 중...");
 			thread(function() {try {
-				loading = new sgUtils.gui.progressBar(3, true);
-				loading.setText("준비 중...");
 				loading.show();
 				var pgt;
 				//작업 상태가 3가 되면 종료
@@ -4765,9 +4780,9 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 	var uatv = thread(function() {try{
 		//로컬작업일 경우 로딩 프로그래스바 쓰레드 생성
 		if(editor.getName().toLowerCase() === (Player.getName(Player.getEntity())+"").toLowerCase()) {
+			loading = new sgUtils.gui.progressBar(4, true);
+			loading.setText("준비 중...");
 			thread(function() {try {
-				loading = new sgUtils.gui.progressBar(4, true);
-				loading.setText("준비 중...");
 				loading.show();
 				var pgt;
 				//작업 상태가 1이 되면 종료
