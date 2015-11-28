@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-const NAME = "WorldEditScript";
+const NAME = "WorldEdit script";
+const NAME_CODE = "WorldEdit";
 //Season . Release Number . Commits
-const VERSION = "0.2.1";
-const VERSION_CODE = 106;
+const VERSION = "0.3.0";
+const VERSION_CODE = 107;
 const TAG = "[" + "WorldEdit" + " " + VERSION + "] ";
 
 var File = java.io.File;
-var BufferdInputStream = java.io.BufferedInputStream;
-var BufferdOutputStream = java.io.BufferedOutputstream;
+var BufferedInputStream = java.io.BufferedInputStream;
+var BufferedOutputStream = java.io.BufferedOutputstream;
 var BufferedReader = java.io.BufferedReader;
 var BufferedWriter = java.io.BufferedWriter;
 var FileInputStream = java.io.FileInputStream;
@@ -41,6 +42,7 @@ var Long = java.lang.Long;
 var Short = java.lang.Short;
 var Thread = java.lang.Thread;
 var Runnable = java.lang.Runnable;
+var System = java.lang.System;
 
 var URL = java.net.URL;
 
@@ -102,14 +104,17 @@ sg.wc = ViewGroup.LayoutParams.WRAP_CONTENT;
 sg.ai = java.lang.reflect.Array.newInstance;
 sg.rl = RelativeLayout;
 sg.ll = LinearLayout;
+sg.fl = FrameLayout;
 sg.rlp = RelativeLayout.LayoutParams;
 sg.llp = LinearLayout.LayoutParams;
+sg.flp = FrameLayout.LayoutParams;
 sg.tp = TypedValue.COMPLEX_UNIT_PX;
 sg.sm = net.zhuoweizhang.mcpelauncher.ScriptManager;
 sg.ww = ctx.getScreenWidth();//ctx.getWindowManager().getDefaultDisplay().getWidth();
 sg.wh = ctx.getScreenHeight();//ctx.getWindowManager().getDefaultDisplay().getHeight();
 sg.dv = ctx.getWindow().getDecorView();
 sg.px = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 1, ctx.getResources().getDisplayMetrics());
+sg.ct = System.currentTimeMillis;
 
 
 
@@ -145,19 +150,36 @@ function showError(e) {
 
 
 
+var sgUrls = {}
+sgUrls.font = "https://www.dropbox.com/s/y1o46b2jkbxwl3o/minecraft.ttf?dl=1";
+sgUrls.logo = "https://www.dropbox.com/s/iqolfhsqwppu4bo/logo.ast?dl=1";
+
+
+
 var sgFiles = {}
 sgFiles.sdcard = Environment.getExternalStorageDirectory();
 sgFiles.mcpe = new File(sgFiles.sdcard, "games/com.mojang");
 sgFiles.world = new File(sgFiles.mcpe, "minecraftWorlds");
 sgFiles.mod = new File(sgFiles.mcpe, "minecraftpe/mods");
 sgFiles.font = new File(sgFiles.mod, "minecraft.ttf");
-sgFiles.script = new File(sgFiles.mod, NAME);
+sgFiles.script = new File(sgFiles.mod, NAME_CODE);
 sgFiles.setting = new File(sgFiles.script, "setting.json");
 sgFiles.test = new File(sgFiles.script, "log.txt");
 sgFiles.noMedia = new File(sgFiles.script, ".nomedia");
 sgFiles.map = function() {return new File(mfiles.map, Level.getWorldDir())};
 sgFiles.mapMod = function() {return new File(sgFiles.map, Level.getWorldDir() + "/mods")}
 sgFiles.mapSetting = function() {return new File(sgFiles.map, Level.getWorldDir() + "/mods/" + NAME + ".json")}
+
+sgFiles.assets = new File(sgFiles.script, "assets");
+sgFiles.logo = new File(sgFiles.assets, "logo.ast");
+
+
+if(!sgFiles.font.exists()) {
+	sgFiles.font.getParent().mkdirs();
+	thread(function() {try {
+		sgUtils.net.download(sgFiles.font, sgUrls.font);
+	}catch(err) {}});
+}
 
 
 
@@ -554,6 +576,35 @@ sgUtils.io = {
 			sg.sm.requestGraphicsReset();
 		}catch(e) {};
 		return true;
+	},
+
+	/**
+	 * Load Bitmap to Layout
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-11-27
+	 *
+	 * @param {File} imageFile
+	 * @return {Bitmap|false} bitmap
+	 */
+	loadBitmapLayout: function(imageFile) {
+		var lo = new sg.rl(ctx);
+		lo.setGravity(Gravity.CENTER);
+		if(!(imageFile instanceof File)) {
+			var er = sgUtils.gui.mcFastText("This isn't instance of File\n\n" + imageFile, sg.px*0x8, false, Color.RED);
+			er.setGravity(Gravity.CENTER);
+			lo.addView(er);
+		}else if(!imageFile.exists()) {
+			var er = sgUtils.gui.mcFastText("Image not found\n\n" + imageFile.getPath(), sg.px*0x8, false, Color.RED);
+			er.setGravity(Gravity.CENTER);
+			lo.addView(er);
+		}else {
+			var bm = BitmapFactory.decodeFile(imageFile.getAbsolutePath());
+			var iv = new ImageView(ctx);
+			iv.setImageBitmap(bm);
+			lo.addView(iv);
+		}
+		return lo;
 	}
 }
 
@@ -1469,6 +1520,7 @@ sgUtils.net = {
 			bis.close();
 			return true;
 		}catch(e){
+			showError(e);
 			return false;
 		}
 	},
@@ -3634,6 +3686,14 @@ WorldEdit.prototype = {
 		var loading = new sgUtils.gui.progressBar(7);
 		loading.setText("Load WorldEdit script...");
 		loading.show();
+		//TODO 더 나은방식으로 자원관리하기
+		if(!sgFiles.logo.exists()) {
+			thread(function() {try {
+				sgFiles.assets.mkdirs();
+				sgFiles.noMedia.createNewFile();
+				sgUtils.net.download(sgFiles.logo, sgUrls.logo);
+			}catch(err) {showError(err)}}).start();
+		}
 		//설정 불러오기
 		this.loadSetting();
 		this.asynchEditSpeed = parseInt(this.setting.WorkSpeed);
@@ -4018,8 +4078,10 @@ WorldEdit.prototype = {
 				return "Work type:\nSynchronization";
 			}
 		});
-		mm_setting.addMenu(this.contentType.RUN_FUNCTION, "Asynchronous\n edit speed: " + that.get("WorkSpeed"), function() {
+		mm_setting.addMenu(this.contentType.RUN_FUNCTION, "Asynchronous\n edit speed: " + that.get("WorkSpeed"), function(view) {
 			var np = new NumberPicker(ctx);
+			var np_p = new sg.rlp(sg.mp, sg.mp);
+			np.setLayoutParams(np_p);
 			np.setMinValue(0x1);
 			np.setMaxValue(0x100);
 			np.setValue(parseInt(that.get("WorkSpeed")));
@@ -4027,12 +4089,15 @@ WorldEdit.prototype = {
 				this.close();
 				that.set("WorkSpeed", parseInt(np.getValue()), true);
 				that.asynchEditSpeed = parseInt(that.setting.WorkSpeed);
-				that.setMenuVisible(false);
-				that.setMenuVisible(true);
-			}, "Cancel", function() {
+				uiThread(function() {try {
+					view.setText("Asynchronous\n edit speed: " + that.get("WorkSpeed"));
+				}catch(err) {
+					showError(err);
+				}});
+			}, "Cancel", function(view) {
 				this.close();
-			}, Gravity.CENTER)
-
+			}, Gravity.CENTER);
+			dl.show();
 		});
 
 		//기본 메뉴로 전환
@@ -4266,9 +4331,58 @@ WorldEdit.prototype = {
 		//최상위 레이아웃
 		var lo = new sg.rl(ctx);
 		//마인크래프트식 배경
-		var lo_d = new BitmapDrawable(sgAssets.bg32.scaleBitmap);
+		var lo_d = new BitmapDrawable(sgAssets.bg32);
 		lo_d.setTileModeXY(Shader.TileMode.REPEAT, Shader.TileMode.REPEAT);
 		lo.setBackgroundDrawable(lo_d);
+		
+		//나가기 버튼
+		var ex = new ImageButton(ctx);
+		var ex_p = new sg.rlp(sg.px*0x30, sg.px*0x30);
+		ex_p.addRule(sg.rl.ALIGN_PARENT_LEFT);
+		ex_p.addRule(sg.rl.ALIGN_PARENT_TOP);
+		ex.setLayoutParams(ex_p);
+		ex.setBackgroundDrawable(sgAssets.toast.ninePatch());
+		ex.setImageBitmap(sgAssets.weExit.scaleBitmap);
+		ex.setOnClickListener(View.OnClickListener({onClick: function(view) {try {
+			wd.dismiss();
+		}catch(err) {
+			showError(err);
+		}}}));
+		lo.addView(ex);
+		
+		//로고와 스크립트 타이틀 레이아웃
+		var lg = new sg.ll(ctx);
+		var lg_p = new sg.rlp(sg.wc, sg.wc);
+		lg_p.addRule(sg.rl.CENTER_IN_PARENT);
+		lg.setLayoutParams(lg_p);
+		lg.setOrientation(sg.ll.VERTICAL);
+		lg.setGravity(Gravity.CENTER);
+
+		//메인 로고 이미지뷰
+		var iv = sgUtils.io.loadBitmapLayout(sgFiles.logo);
+		iv.setId(sgUtils.math.randomId());
+		var iv_p = new sg.llp(sg.mp, sg.px*0x100);
+		iv.setLayoutParams(iv_p);
+		lg.addView(iv);
+		
+		//메인 타이틀 레이아웃
+		var tlo = new sg.ll(ctx);
+		tlo.setOrientation(sg.ll.HORIZONTAL);
+		tlo.setGravity(Gravity.BOTTOM);
+		var tlo_p = new sg.llp(sg.wc, sg.wc);
+		tlo_p.setMargins(sg.px*0xa, sg.px*0xa, sg.px*0xa, sg.px*0xa);
+		tlo.setLayoutParams(tlo_p);
+		
+		//메인 스크립트 제목 텍스트뷰
+		var tst = sgUtils.gui.mcFastText(NAME, sg.px*0x20, false, Color.WHITE, null, null, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4]);
+		tlo.addView(tst);
+		
+		//메인 스크립트 버전 텍스트뷰
+		var tsv = sgUtils.gui.mcFastText(VERSION, sg.px*0x10, false, Color.YELLOW, null, null, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4]);
+		tlo.addView(tsv);
+		
+		lg.addView(tlo);
+		lo.addView(lg);
 
 		//팝업윈도우
 		var wd = new PopupWindow(lo, sg.ww, sg.wh, true);
@@ -4361,7 +4475,7 @@ we_menu.prototype = {
 				var btn = sgUtils.gui.mcFastButton(con[1], sg.px*0x10, false, Color.WHITE, null, null, null, [sg.px*4, sg.px*8, sg.px*4, sg.px*8], null, sgAssets.weButton.ninePatch(), null, function(view) {try {
 					var func = view.getTag();
 					thread(function() {try {
-						func();
+						func(view);
 					}catch(err) {
 						showError(err);
 					}}).start();
@@ -6247,7 +6361,7 @@ function useItem(x, y, z, itemId, blockId, side) {
 	}
 }
 
-var _destroyBlockHook = false;
+var _destroyBlockHook = sg.ct();
 function startDestroyBlock(x, y, z, side) {
 	if(Player.getCarriedItem() === 271) {
 		highlightBlock(x, y, z);
@@ -6258,16 +6372,14 @@ function startDestroyBlock(x, y, z, side) {
 		}
 		editor.setPos2(new Vector3(x, y, z));
 		we_toast("위치2 지정됨\nx:" + x + " y:" + y + " z:" + z);
-		_destroyBlockHook = true;
+		_destroyBlockHook = sg.ct();
 	}
 }
 
 function destroyBlock(x, y, z, side) {
 	if(Player.getCarriedItem() === 271) {
 		preventDefault();
-		if(_destroyBlockHook) {
-			_destroyBlockHook = false;
-		}else {
+		if(sg.ct() - _destroyBlockHook > 100) {
 			highlightBlock(x, y, z);
 			var editor = main.getLocalEditor();
 			if(editor === false) {
@@ -6277,6 +6389,7 @@ function destroyBlock(x, y, z, side) {
 			editor.setPos2(new Vector3(x, y, z));
 			we_toast("위치2 지정됨\nx:" + x + " y:" + y + " z:" + z);
 		}
+		_destroyBlockHook = sg.ct();
 	}
 }
 
