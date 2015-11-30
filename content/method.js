@@ -15,15 +15,16 @@
  */
 
 const NAME = "Method";
-const VERSION = "0.1";
+const NAME_CODE = "method";
+const VERSION = "0.0.1";
 const VERSION_CODE = 1;
-const TAG = "[Method 0.1]";
+const TAG = "[" + NAME + " " + VERSION + "]";
 
 
 
 var File = java.io.File;
-var BufferdInputStream = java.io.BufferedInputStream;
-var BufferdOutputStream = java.io.BufferedOutputstream;
+var BufferedInputStream = java.io.BufferedInputStream;
+var BufferedOutputStream = java.io.BufferedOutputstream;
 var BufferedReader = java.io.BufferedReader;
 var BufferedWriter = java.io.BufferedWriter;
 var FileInputStream = java.io.FileInputStream;
@@ -42,6 +43,7 @@ var Long = java.lang.Long;
 var Short = java.lang.Short;
 var Thread = java.lang.Thread;
 var Runnable = java.lang.Runnable;
+var System = java.lang.System;
 
 var URL = java.net.URL;
 
@@ -113,6 +115,7 @@ sg.ww = ctx.getScreenWidth();//ctx.getWindowManager().getDefaultDisplay().getWid
 sg.wh = ctx.getScreenHeight();//ctx.getWindowManager().getDefaultDisplay().getHeight();
 sg.dv = ctx.getWindow().getDecorView();
 sg.px = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 1, ctx.getResources().getDisplayMetrics());
+sg.ct = System.currentTimeMillis;
 
 
 
@@ -144,6 +147,12 @@ function showError(e) {
 		}
 		clientMessage(ChatColor.DARK_RED + "[" + NAME + " ERROR LINE: " + e.lineNumber + "]\n" + ChatColor.DARK_RED + c);
 	}
+}
+
+
+
+var sgUrls = {
+	font: "https://www.dropbox.com/s/y1o46b2jkbxwl3o/minecraft.ttf?dl=1";
 }
 
 
@@ -638,7 +647,11 @@ sgUtils.io = {
 			iv.setImageBitmap(bm);
 			lo.addView(iv);
 		}catch(err) {
-			return lo.addView(sgUtils.gui.mcFastText)
+			if(imageFile instanceof File) {
+				lo.addView(sgUtils.gui.mcFastText("Image not found\n\n" + imageFile.getPath(), null, false, Color.RED));
+			}else {
+				lo.addView(sgUtils.gui.mcFastText("File.not found\n\n" + imageFile, null, false, Color.RED));
+			}
 		}
 		return lo;
 	}
