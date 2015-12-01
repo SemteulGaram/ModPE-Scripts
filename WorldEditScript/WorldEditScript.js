@@ -325,7 +325,7 @@ sgUtils.io = {
 	},
 
 	/**
-	 * Set texture (Android)
+	 * Set textrue (Android)
 	 *
 	 * @author SemteulGaram
 	 * @since 2015-04
@@ -334,19 +334,19 @@ sgUtils.io = {
 	 * @param {string} innerPath - ex."images/mob/steve.png"
 	 * @return {boolean} success
 	 */
-	setTexture: function(prototypeFile, innerPath){
+	setTextrue: function(prototypeFile, innerPath){
 		var bl = new File(sgFiles.sdCard, "Android/data/net.zhuoweizhang.mcpelauncher");
 		var blPro = new File(sgFiles.sdCard, "Android/data/net.zhuoweizhang.mcpelauncher.pro");
 		var ex = false;
 		if(bl.exists()) {
-			var dir = new File(bl, "files/textures/" + innerPath);
+			var dir = new File(bl, "files/textrues/" + innerPath);
 			dir.getParentFile().mkdirs();
 			try {
 				ex = this.copyFile(prototypeFile, dir, false);
 			}catch(e) {}
 		}
 		if(blPro.exists()) {
-			var dir = new File(blPro, "files/textures/" + innerPath);
+			var dir = new File(blPro, "files/textrues/" + innerPath);
 			dir.getParentFile().mkdirs();
 			try {
 				ex = this.copyFile(prototypeFile, dir, false);
@@ -1823,13 +1823,13 @@ sgUtils.android = {
 		//int
 		this.type;
 		//long
-		this.lastValidCaptureTimeMs;
+		this.lastValidCaptrueTimeMs;
 
 		this.range = new Array(2);
 		// type, size - @int
-		this.AudioCapture = function(type, size, session) {
+		this.AudioCaptrue = function(type, size, session) {
 			that.Type = type;
-			that.range = android.media.audiofx.Visualizer.getCaptureSizeRange();
+			that.range = android.media.audiofx.Visualizer.getCaptrueSizeRange();
 		 	if(size < that.range[0]) {
 				size = that.range[0];
 			}
@@ -1845,7 +1845,7 @@ sgUtils.android = {
 					if(that.visualizer.getEnabled()) {
 						that.visualizer.setEnabled(false);
 					}
-					that.visualizer.setCaptureSize(that.rawVizData.length);
+					that.visualizer.setCaptrueSize(that.rawVizData.length);
 				}
 			}catch(e) {
 				showError(e);
@@ -1857,7 +1857,7 @@ sgUtils.android = {
 				try {
 					if(!that.visualizer.getEnabled()) {
 						that.visualizer.setEnabled(true);
-						that.lastValidCaptureTimeMs = java.lang.System.currentTimeMillis();
+						that.lastValidCaptrueTimeMs = java.lang.System.currentTimeMillis();
 					}
 				}catch(e) {
 					showError(e);
@@ -1886,7 +1886,7 @@ sgUtils.android = {
 
 		// return - @byte[]
 		this.getRawData = function() {
-			if(that.captureData()) {
+			if(that.captrueData()) {
 				return that.rawVizData;
 			}else {
 				return that.rawNullData;
@@ -1896,7 +1896,7 @@ sgUtils.android = {
 		// num, den - @int
 		// return - @byte[]
 		this.getFormattedData = function(num, den) {
-			if(that.captureData()) {
+			if(that.captrueData()) {
 				if(that.type === that.TYPE_PCM) {
 					for(var i = 0; i < that.formattedVizData.length; i++) {
 						//convert from unsigned 8 bit to signed 16 bit
@@ -1910,7 +1910,7 @@ sgUtils.android = {
 						that.formattedVizData[i] = (that.rawVizData[i]*num)/den;
 					}
 				}else {
-					toast("Unknown AudioCapture Type");
+					toast("Unknown AudioCaptrue Type");
 					return that.formattedNullData;
 				}
 				return that.formattedVizData;
@@ -1920,7 +1920,7 @@ sgUtils.android = {
 		}
 
 		// return - boolen
-		this.captureData = function() {
+		this.captrueData = function() {
 			var status = android.media.audiofx.Visualizer.ERROR;
 			var result = true;
 			try {
@@ -1947,33 +1947,33 @@ sgUtils.android = {
 						if (that.rawVizData[i] !== nullValue) break;
 					}
 					if(i === that.rawVizData.length) {
-						if((java.lang.System.currentTimeMillis() - that.lastValidCaptureTimeMs) > that.MAX_IDLE_TIME_MS) {
+						if((java.lang.System.currentTimeMillis() - that.lastValidCaptrueTimeMs) > that.MAX_IDLE_TIME_MS) {
 							result = false;
 						}
 					}else {
-						that.lastValidCaptureTimeMs = java.lang.System.currentTimeMillis();
+						that.lastValidCaptrueTimeMs = java.lang.System.currentTimeMillis();
 					}
 				}
 			}
 			return result;
 		}
 
-		this.mAudioCapture = null;
+		this.mAudioCaptrue = null;
 		this.mVisible = null;
 
 		this.onVisibilityChanged = function(visible, type, size, audioSessionID) {
 			mVisible = visible;
 			if(visible) {
-				if(that.mAudioCapture === null) {
-					that.mAudioCapture = that.AudioCapture(type, size, audioSessionID);
+				if(that.mAudioCaptrue === null) {
+					that.mAudioCaptrue = that.AudioCaptrue(type, size, audioSessionID);
 					that.mVisData = new Array(size);
 				}
 				that.start();
 			}else {
-				if(that.mAudioCapture !== null) {
+				if(that.mAudioCaptrue !== null) {
 					that.stop();
 					that.release();
-					that.mAudioCapture = null;
+					that.mAudioCaptrue = null;
 				}
 			}
 		}
@@ -1982,7 +1982,7 @@ sgUtils.android = {
 	//ready
 	//vis.onVisibilityChanged(visible, type, size, android.media.MediaPlayer().getAudioSessionId());
 
-	//capture
+	//captrue
 	//vis.mVizData = vis.getFormattedData(1, 1);
 
 	/**
@@ -2268,8 +2268,8 @@ function loadMcpeAssets() {try {
 	sgAssets.mcpeCPC = ctx.createPackageContext("com.mojang.minecraftpe", Context.CONTEXT_IGNORE_SECURITY);
 	sgAssets.nativeAssets = sgAssets.mcpeCPC.getAssets();
 	try {
-		sgAssets.SS = ModPE.openInputStreamFromTexturePack("images/gui/spritesheet.png");
-		sgAssets.TG = ModPE.openInputStreamFromTexturePack("images/gui/touchgui.png");
+		sgAssets.SS = ModPE.openInputStreamFromTextruePack("images/gui/spritesheet.png");
+		sgAssets.TG = ModPE.openInputStreamFromTextruePack("images/gui/touchgui.png");
 	}catch(e) {
 		print("Resource load fail");
 		sgAssets.SS = sgAssets.nativeAssets.open("images/gui/spritesheet.png");
@@ -2317,7 +2317,7 @@ function loadMcpeAssets() {try {
 	b,b,b,b,b,b
 	], 6, 6, sg.px*2, false, 3, 3, 4, 4);
 
-	sgAssets.bg32 = Bitmap.createScaledBitmap(BitmapFactory.decodeStream(ModPE.openInputStreamFromTexturePack("images/gui/bg32.png")), sg.px*64, sg.px*64, false)
+	sgAssets.bg32 = Bitmap.createScaledBitmap(BitmapFactory.decodeStream(ModPE.openInputStreamFromTextruePack("images/gui/bg32.png")), sg.px*64, sg.px*64, false)
 }catch(e) {
 	showError(e);
 }}
@@ -2472,7 +2472,7 @@ p,o,p,
 p,p,p
 ], 3, 3, sg.px*2, false, 2, 2, 2, 2);
 
-sgAssets.bg32 = Bitmap.createScaledBitmap(BitmapFactory.decodeStream(ModPE.openInputStreamFromTexturePack("images/gui/bg32.png")), sg.px*64, sg.px*64, false);
+sgAssets.bg32 = Bitmap.createScaledBitmap(BitmapFactory.decodeStream(ModPE.openInputStreamFromTextruePack("images/gui/bg32.png")), sg.px*64, sg.px*64, false);
 
 
 
@@ -2517,7 +2517,7 @@ BlockImageLoader.init = function(tga) {
         BlockImageLoader.TGA = tga;
 
     if(BlockImageLoader.META == null)
-        BlockImageLoader.META = eval(new java.lang.String(ModPE.getBytesFromTexturePack("images/terrain.meta"))+'');
+        BlockImageLoader.META = eval(new java.lang.String(ModPE.getBytesFromTextruePack("images/terrain.meta"))+'');
 
     if(BlockImageLoader.META_MAPPED == null)
         BlockImageLoader.META_MAPPED = BlockImageLoader.META.map(function(e) {
@@ -2525,7 +2525,7 @@ BlockImageLoader.init = function(tga) {
         });
 
     if(BlockImageLoader.TGA == null)
-        BlockImageLoader.TGA = net.zhuoweizhang.mcpelauncher.texture.tga.TGALoader.load(ModPE.openInputStreamFromTexturePack("images/terrain-atlas.tga"), false);
+        BlockImageLoader.TGA = net.zhuoweizhang.mcpelauncher.textrue.tga.TGALoader.load(ModPE.openInputStreamFromTextruePack("images/terrain-atlas.tga"), false);
 };
 
 /**
@@ -3019,43 +3019,6 @@ function highlightBlock(x, y, z) {
 }
 
 
-var lang = "en_EU";
-function msg(key, replacement, target) {
-	if(replacement === undefined) {
-		replacement = [];
-	}
-	if(target === undefined && !Array.isArray(replacement)) {
-		target = replacement;
-		replacement = [];
-	}
-	var msgstr = findMessage(key);
-	for(var e = 0; e < replacement.length; e++) {
-		msgstr.replace(replacement[e][0], replacement[e][1]);
-	}
-	var tempName = Entity.getNameTag(Player.getEntity());
-	Entity.setNameTag(Player.getEntity(), "");
-	if(target === undefined) {
-		sgUtils.modPE.broadcast(ChatColor.GRAY + "[" + findMessage("tag") + " " + VERSION + "] " + ChatColor.YELLOW + msgstr);
-	}else if(tempName.toLowerCase() === target.toLowerCase()) {
-		we_toast(msgstr);
-	}else {
-		sgUtils.modPE.broadcast(ChatColor.GRAY + "[" + findMessage("tag") + " " + VERSION + "]" + target + " > " + ChatColor.YELLOW + msgstr);
-	}
-	Entity.setNameTag(Player.getEntity(), tempName);
-}
-
-function findMessage(key) {
-	key = key + "";
-	if(messageContainer[lang][key] !== undefined) {
-		return messageContainer[lang][key];
-	}else if(messageContainer["en_EU"][key] !== undefined) {
-		return messageContainer["en_EU"][key];
-	}else {
-		return key;
-	}
-}
-
-
 
 /**
  * Vector3
@@ -3367,6 +3330,46 @@ Piece.prototype = {
 }
 
 
+var lang = "en_EU";
+function msg(key, replacement, target) {
+	if(replacement === undefined) {
+		replacement = [];
+	}
+	if(target === undefined && !Array.isArray(replacement)) {
+		target = replacement;
+		replacement = [];
+	}
+	var msgstr = findMessage(key);
+	for(var e = 0; e < replacement.length; e++) {
+		msgstr.replace(replacement[e][0], replacement[e][1]);
+	}
+	if(target === true) {
+		return msgstr;
+	}
+	var tempName = Entity.getNameTag(Player.getEntity());
+	Entity.setNameTag(Player.getEntity(), "");
+	if(target === undefined) {
+		sgUtils.modPE.broadcast(ChatColor.GRAY + "[" + findMessage("tag") + " " + VERSION + "] " + ChatColor.YELLOW + msgstr);
+	}else if(target === false && tempName.toLowerCase() === target.toLowerCase()) {
+		we_toast(msgstr);
+	}else {
+		sgUtils.modPE.broadcast(ChatColor.GRAY + "[" + findMessage("tag") + " " + VERSION + "]" + target + " > " + ChatColor.YELLOW + msgstr);
+	}
+	Entity.setNameTag(Player.getEntity(), tempName);
+}
+
+function findMessage(key) {
+	key = key + "";
+	if(messageContainer[lang][key] !== undefined) {
+		return messageContainer[lang][key];
+	}else if(messageContainer["en_EU"][key] !== undefined) {
+		return messageContainer["en_EU"][key];
+	}else {
+		return key;
+	}
+}
+
+
 
 //======================
 //WORLD EDIT SCRIPT SIDE
@@ -3376,7 +3379,7 @@ var messageContainer = {
 	en_EU: {
 		tag: "WorldEdit"
 	},
-	
+
 	ko_KR: {
 		tag: "월드에딧",
 		start: "시작",
@@ -3405,18 +3408,25 @@ var messageContainer = {
 		warning: "경고",
 		cirticla: "심각",
 		error: "에러",
-		
+
 		msg_working: "작업중...",
 		msg_pos1: "위치1 지정됨 X:{%x} Y:{%y} Z:{%z}",
 		msg_pos2: "위치2 지정됨 X:{%x} Y:{%y} Z:{%z}",
 		msg_paste_confirm: "정말로 해당지역에 붙여넣기 하시겠습니까?",
-		
+		msg_lang_need_reboot: "언어설정은 재부팅 후 적용됩니다",
+
+		warn_no_player: "플레이어를 찾을 수 없습니다: {%p}",
 		warn_no_pos: "위치1을 지정해 주세요",
 		warn_no_pos2: "위치1,2 지정해 주세요",
 		warn_no_copy: "복사된 영역이 없습니다",
 		warn_no_backup: "백업된 영역이 없습니다",
 		warn_unknown_selected_block: "제대로 된 형식의 블럭을 입력시켜주세요",
-		
+		warn_unknown_type_radious: "반지름은 자연수만 가능합니다",
+		warn_unknown_type_axis: "기준 축은 'X', 'Y', 'Z' 중 하나만 가능합니다",
+		warn_unknown_type_direction: "방향은 'X+', 'X-', 'Y+', 'Y-', 'Z+', 'Z-' 중 하나만 가능합니다",
+		warn_unknown_type_degree: "각도는 '90', '180', '270' 중 하나만 가능합니다",
+		warn_lang_need_reboot: "언어 변경후에는 재부팅하시길 권장합니다"
+
 		cmd_main_usage: "사용법: ",
 		cmd_help: "도움말",
 		cmd_help_usage: "@도움말",
@@ -3489,7 +3499,7 @@ function WorldEdit() {
 		RUN_FUNCTION: 1,
 		TOGGLE: 2
 	}
-	
+
 	this.langName = ["Minecraft setting", "English", "Korean"];
 	this.langType = [null, "en_EU", "ko_KR"];
 
@@ -3846,6 +3856,8 @@ WorldEdit.prototype = {
 		}
 		//설정 불러오기
 		this.loadSetting();
+		//언어 설정
+		this.loadLang();
 		this.asynchEditSpeed = parseInt(this.setting.WorkSpeed);
 		//메뉴와 버튼 빌드
 		this.buildButton();
@@ -3866,14 +3878,16 @@ WorldEdit.prototype = {
 		this.blockIdLayout.setOrientation(sg.ll.HORIZONTAL);
 		this.blockIdLayout.setGravity(Gravity.CENTER);
 		this.blockIdLayout.setPadding(sg.px*4, 0, sg.px*4, 0);
-		var idTitle = sgUtils.gui.mcFastText("Id:", sg.px*0x10, false, Color.WHITE);
+		var idTitle = sgUtils.gui.mcFastText(msg("id") + ":", sg.px*0x10, false, Color.WHITE);
+		idTitle.setGravity(Gravity.CENTER);
 		var idt_p = new sg.llp(sg.px*30, sg.wc);
 		idTitle.setLayoutParams(idt_p);
 		idTitle.setGravity(Gravity.CENTER);
-		var damageTitle = sgUtils.gui.mcFastText(" Damage:", sg.px*0x10, false, Color.WHITE);
-	 var dgt_p = new sg.llp(sg.px*90, sg.wc);
+		var damageTitle = sgUtils.gui.mcFastText(msg("damage") + ":", sg.px*0x10, false, Color.WHITE);
+		damageTitle.setGravity(Gravity.CENTER);
+		var dgt_p = new sg.llp(sg.px*90, sg.wc);
 		damageTitle.setLayoutParams(dgt_p);
-	 damageTitle.setGravity(Gravity.CENTER);
+		damageTitle.setGravity(Gravity.CENTER);
 		this.idEditText = new EditText(ctx);
 		var idet_p = new sg.llp(Math.floor((sg.ww-(sg.px*140))/2), sg.wc);
 		this.idEditText.setLayoutParams(idet_p);
@@ -3963,6 +3977,15 @@ WorldEdit.prototype = {
 		}
 		return true;
 	},
+
+	loadLang: function() {
+		var type =  parseInt(this.get("Lang"));
+		if(type === 0) {
+			lang = sgUtils.io.loadMcpeSetting("");
+		}else {
+			lang = this.langType[type];
+		}
+	}
 
 	getLocalEditor: function() {
 		return this.editorGroup.getEditor();
@@ -4115,39 +4138,39 @@ WorldEdit.prototype = {
 		this.menu = new PopupWindow(this.m_rl, sg.px*0x100, sg.wh, false);
 
 		//메뉴 내용물들 빌드
-		this.mainMenu = new we_menu("WorldEdit");
+		this.mainMenu = new we_menu(msg("tag"));
 		//메인 메뉴 하위메뉴
-		var mm_edit = new we_menu("Edit");
-		var mm_tool =  new we_menu("Tool");
-		var mm_setting = new we_menu("Setting");
+		var mm_edit = new we_menu(msg("edit"));
+		var mm_tool =  new we_menu(msg("tool"));
+		var mm_setting = new we_menu(msg("setting"));
 		//에딧메뉴 하위 메뉴
-		var mme_circular = new we_menu("Circular");
-		var mme_copy = new we_menu("Copy");
+		var mme_circular = new we_menu(msg("circular"));
+		var mme_copy = new we_menu(msg("copy"));
 
 		//메인메뉴 목록
-		this.mainMenu.addMenu(this.contentType.REDIRECT_MENU, "Edit", mm_edit);
-		this.mainMenu.addMenu(this.contentType.REDIRECT_MENU, "Setting", mm_setting);
-		this.mainMenu.addMenu(this.contentType.RUN_FUNCTION, "About", this.about);
+		this.mainMenu.addMenu(this.contentType.REDIRECT_MENU, msg("edit"), mm_edit);
+		this.mainMenu.addMenu(this.contentType.REDIRECT_MENU, msg("setting"), mm_setting);
+		this.mainMenu.addMenu(this.contentType.RUN_FUNCTION, msg("about"), this.about);
 		//에딧메뉴 목록
-		mm_edit.addMenu(this.contentType.RUN_FUNCTION, "Restore", function() {
+		mm_edit.addMenu(this.contentType.RUN_FUNCTION, msg("restore"), function() {
 			we_initEdit(parseInt(that.get("SafeMode")), parseInt(that.get("WorkType")), that.getLocalEditor(), EditType.RESTORE);
 		});
-		mm_edit.addMenu(this.contentType.RUN_FUNCTION, "Fill", function() {
+		mm_edit.addMenu(this.contentType.RUN_FUNCTION, msg("fill"), function() {
 			we_initEdit(parseInt(that.get("SafeMode")), parseInt(that.get("WorkType")), that.getLocalEditor(), EditType.FILL);
 		});
-		mm_edit.addMenu(this.contentType.RUN_FUNCTION, "Clear", function() {
+		mm_edit.addMenu(this.contentType.RUN_FUNCTION, msg("clear"), function() {
 			we_initEdit(parseInt(that.get("SafeMode")), parseInt(that.get("WorkType")), that.getLocalEditor(), EditType.CLEAR);
 		});
-		mm_edit.addMenu(this.contentType.RUN_FUNCTION, "Replace", function() {
+		mm_edit.addMenu(this.contentType.RUN_FUNCTION, msg("replace"), function() {
 			we_initEdit(parseInt(that.get("SafeMode")), parseInt(that.get("WorkType")), that.getLocalEditor(), EditType.REPLACE);
 		});
-		mm_edit.addMenu(this.contentType.RUN_FUNCTION, "Wall", function() {
+		mm_edit.addMenu(this.contentType.RUN_FUNCTION, msg("wall"), function() {
 			we_initEdit(parseInt(that.get("SafeMode")), parseInt(that.get("WorkType")), that.getLocalEditor(), EditType.WALL);
 		});
-		mm_edit.addMenu(this.contentType.REDIRECT_MENU, "Circular", mme_circular);
-		mm_edit.addMenu(this.contentType.REDIRECT_MENU, "Copy", mme_copy);
+		mm_edit.addMenu(this.contentType.REDIRECT_MENU, msg("circular"), mme_circular);
+		mm_edit.addMenu(this.contentType.REDIRECT_MENU, msg("copy"), mme_copy);
 		//원형 생성 에딧메뉴 목록
-		mme_circular.addMenu(this.contentType.TOGGLE, "Hollow Circular", function(bool) {
+		mme_circular.addMenu(this.contentType.TOGGLE, msg("hollow_circular"), function(bool) {
 			if(bool === undefined) {
 				return that.get("HollowCircular") == 1;
 			}else if(bool) {
@@ -4156,32 +4179,32 @@ WorldEdit.prototype = {
 				that.set("HollowCircular", 0, true);
 			}
 		});
-		mme_circular.addMenu(this.contentType.RUN_FUNCTION, "Sphere", function() {
+		mme_circular.addMenu(this.contentType.RUN_FUNCTION, msg("sphere"), function() {
 			we_initEdit(parseInt(that.get("SafeMode")), parseInt(that.get("WorkType")), that.getLocalEditor(), EditType.SPHERE);
 		});
-		mme_circular.addMenu(this.contentType.RUN_FUNCTION, "Hemi-sphere", function() {
+		mme_circular.addMenu(this.contentType.RUN_FUNCTION, msg("hemi_sphere"), function() {
 			we_initEdit(parseInt(that.get("SafeMode")), parseInt(that.get("WorkType")), that.getLocalEditor(), EditType.HEMI_SPHERE);
 		});
-		mme_circular.addMenu(this.contentType.RUN_FUNCTION, "Circle", function() {
+		mme_circular.addMenu(this.contentType.RUN_FUNCTION, msg("circle"), function() {
 			we_initEdit(parseInt(that.get("SafeMode")), parseInt(that.get("WorkType")), that.getLocalEditor(), EditType.CIRCLE);
 		});
-		mme_circular.addMenu(this.contentType.RUN_FUNCTION, "Semi-circle", function() {
+		mme_circular.addMenu(this.contentType.RUN_FUNCTION, msg("semi_circle"), function() {
 			we_initEdit(parseInt(that.get("SafeMode")), parseInt(that.get("WorkType")), that.getLocalEditor(), EditType.SEMI_CIRCLE);
 		});
 		//복사 에딧메뉴 목록
-		mme_copy.addMenu(this.contentType.RUN_FUNCTION, "Copy", function() {
+		mme_copy.addMenu(this.contentType.RUN_FUNCTION, msg("copy"), function() {
 			we_initEdit(parseInt(that.get("SafeMode")), parseInt(that.get("WorkType")), that.getLocalEditor(), EditType.COPY);
 		});
-		mme_copy.addMenu(this.contentType.RUN_FUNCTION, "Cut", function() {
+		mme_copy.addMenu(this.contentType.RUN_FUNCTION, msg("cut"), function() {
 			we_initEdit(parseInt(that.get("SafeMode")), parseInt(that.get("WorkType")), that.getLocalEditor(), EditType.CUT);
 		});
-		mme_copy.addMenu(this.contentType.RUN_FUNCTION, "Paste", function() {
+		mme_copy.addMenu(this.contentType.RUN_FUNCTION, msg("paste"), function() {
 			we_initEdit(parseInt(that.get("SafeMode")), parseInt(that.get("WorkType")), that.getLocalEditor(), EditType.PASTE);
 		});
-		mme_copy.addMenu(this.contentType.RUN_FUNCTION, "Flip", function() {
+		mme_copy.addMenu(this.contentType.RUN_FUNCTION, msg("flip"), function() {
 			we_initEdit(parseInt(that.get("SafeMode")), parseInt(that.get("WorkType")), that.getLocalEditor(), EditType.FLIP);
 		});
-		mme_copy.addMenu(this.contentType.RUN_FUNCTION, "Rotation", function() {
+		mme_copy.addMenu(this.contentType.RUN_FUNCTION, msg("rotation"), function() {
 			we_initEdit(parseInt(that.get("SafeMode")), parseInt(that.get("WorkType")), that.getLocalEditor(), EditType.ROTATION);
 		});
 		//설정메뉴 목록
@@ -4191,7 +4214,10 @@ WorldEdit.prototype = {
 				langIndex = 0;
 			}
 			that.set("Lang", langIndex, true);
-			
+			//현재 설정 변경
+			that.loadLang();
+			//재부팅 후 적용됩니다
+			we_toast(msg("warn_lang_need_reboot"), 1, 5000);
 			return "Language:\n" + that.langName[langIndex];
 		});
 		mm_setting.addMenu(this.contentType.TOGGLE, "Button Visible", function(bool) {
@@ -4493,7 +4519,7 @@ WorldEdit.prototype = {
 		var lo_d = new BitmapDrawable(sgAssets.bg32);
 		lo_d.setTileModeXY(Shader.TileMode.REPEAT, Shader.TileMode.REPEAT);
 		lo.setBackgroundDrawable(lo_d);
-		
+
 		//나가기 버튼
 		var ex = new ImageButton(ctx);
 		var ex_p = new sg.rlp(sg.px*0x30, sg.px*0x30);
@@ -4508,7 +4534,7 @@ WorldEdit.prototype = {
 			showError(err);
 		}}}));
 		lo.addView(ex);
-		
+
 		//로고와 스크립트 타이틀 레이아웃
 		var lg = new sg.ll(ctx);
 		var lg_p = new sg.rlp(sg.wc, sg.wc);
@@ -4523,7 +4549,7 @@ WorldEdit.prototype = {
 		var iv_p = new sg.llp(sg.mp, sg.px*0x100);
 		iv.setLayoutParams(iv_p);
 		lg.addView(iv);
-		
+
 		//메인 타이틀 레이아웃
 		var tlo = new sg.ll(ctx);
 		tlo.setOrientation(sg.ll.HORIZONTAL);
@@ -4531,15 +4557,15 @@ WorldEdit.prototype = {
 		var tlo_p = new sg.llp(sg.wc, sg.wc);
 		tlo_p.setMargins(sg.px*0xa, sg.px*0xa, sg.px*0xa, sg.px*0xa);
 		tlo.setLayoutParams(tlo_p);
-		
+
 		//메인 스크립트 제목 텍스트뷰
 		var tst = sgUtils.gui.mcFastText(NAME, sg.px*0x20, false, Color.WHITE, null, null, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4]);
 		tlo.addView(tst);
-		
+
 		//메인 스크립트 버전 텍스트뷰
 		var tsv = sgUtils.gui.mcFastText(VERSION, sg.px*0x10, false, Color.YELLOW, null, null, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4]);
 		tlo.addView(tsv);
-		
+
 		//네임 스페이스
 		var ns = sgUtils.gui.mcFastText("SemteulGaram©", sg.px*0x10, false, Color.WHITE, null, null, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4]);
 		var ns_p = new sg.rlp(sg.wc, sg.wc);
@@ -4547,7 +4573,7 @@ WorldEdit.prototype = {
 		ns_p.addRule(sg.rl.ALIGN_PARENT_LEFT);
 		ns.setLayoutParams(ns_p);
 		lo.addView(ns);
-		
+
 		//여분의 공간
 		var es = sgUtils.gui.mcFastText("Rococo Edition", sg.px*0x10, false, Color.WHITE, null, null, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4]);
 		var es_p = new sg.rlp(sg.wc, sg.wc);
@@ -4555,7 +4581,7 @@ WorldEdit.prototype = {
 		es_p.addRule(sg.rl.ALIGN_PARENT_RIGHT);
 		es.setLayoutParams(es_p);
 		lo.addView(es);
-		
+
 		lg.addView(tlo);
 		lo.addView(lg);
 
@@ -4860,18 +4886,18 @@ var EditType = {
 function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 	var that = this;
 	if(!editor.isOnline()) {
-		msg("Can't find player entity", editor.getName());
+		msg("warn_cant_find_player", true, editor.getName());
 		return;
 	}
 	if(sgUtils.data.isProcessing) {
-		msg("현재 진행중인 작업이 있습니다\n작업이 끝날때까지 기다려주세요...", editor.getName());
+		msg("warn_already_working", true, editor.getName());
 		return;
 	}
 
 	//현재 작업 상태
 	var atv_m = 0;
 	//작업 이름
-	var workName = "알 수 없음";
+	var workName = msg("unknown");
 	//작업 타입
 	var type = null;
 	//작업 쓰레드 준비
@@ -4880,7 +4906,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 		//로컬작업일 경우 로딩 프로그래스바 쓰레드 생성
 		if(editor.getName().toLowerCase() === (Player.getName(Player.getEntity())+"").toLowerCase()) {
 			loading = new sgUtils.gui.progressBar(3, true);
-			loading.setText("준비 중...");
+			loading.setText(msg("prepareing") + "...");
 			thread(function() {try {
 				loading.show();
 				var pgt;
@@ -4888,15 +4914,15 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 				while(atv_m !== 3 && loading.isShowing()) {
 					pgt = "(" + sgUtils.convert.numberToString(sgUtils.data.progress[0]) + "/" + sgUtils.convert.numberToString(sgUtils.data.progress[1]) + ")";
 					if(atv_m === 0) {
-						loading.setText("준비 중... " + pgt);
+						loading.setText(msg("prepareing") + "..." + pgt);
 						loading.setMax(sgUtils.data.progress[1]);
 						loading.setProgress(sgUtils.data.progress[0]);
 					}else if(atv_m === 1) {
-						loading.setText("백업 중... " + pgt);
+						loading.setText(msg("backuping") + "..." + pgt);
 						loading.setMax(sgUtils.data.progress[1]);
 						loading.setProgress(sgUtils.data.progress[0]);
 					}else if(atv_m === 2) {
-						loading.setText("'" + workName + "' 작업 중... " + pgt);
+						loading.setText("'" + workName + "'" + msg("working") + "..." + pgt);
 						loading.setMax(sgUtils.data.progress[1]);
 						loading.setProgress(sgUtils.data.progress[0]);
 					}
@@ -4941,14 +4967,14 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 		//로컬작업일 경우 로딩 프로그래스바 쓰레드 생성
 		if(editor.getName().toLowerCase() === (Player.getName(Player.getEntity())+"").toLowerCase()) {
 			loading = new sgUtils.gui.progressBar(4, true);
-			loading.setText("준비 중...");
+			loading.setText(msg("prepareing") + "...");
 			thread(function() {try {
 				loading.show();
 				var pgt;
 				//작업 상태가 1이 되면 종료
 				while(atv_m !== 1 && loading.isShowing()) {
 					if(atv_m === 0) {
-						loading.setText("'" + workName + "' 작업 중... ");
+						loading.setText("'" + workName + "'" + msg("working") + "...");
 					}
 					sleep(0x80);
 				}
@@ -4991,7 +5017,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 		case EditType.FILL:
 		//예외 처리
 		if(editor.getPos1() === null || editor.getPos2() === null) {
-			msg("위치1, 2를 지정해 주세요", editor.getName());
+			msg("위치1, 2를 지정해 주세요", true, editor.getName());
 			return;
 		}
 		workName = "채우기";
@@ -5021,7 +5047,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 		case EditType.CLEAR:
 		//예외 처리
 		if(editor.getPos1() === null || editor.getPos2() === null) {
-			msg("위치1, 2를 지정해 주세요", editor.getName());
+			msg("위치1, 2를 지정해 주세요", true, editor.getName());
 			return;
 		}
 		workName = "비우기";
@@ -5037,7 +5063,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 		case EditType.REPLACE:
 		//예외 처리
 		if(editor.getPos1() === null || editor.getPos2() === null) {
-			msg("위치1, 2를 지정해 주세요", editor.getName());
+			msg("위치1, 2를 지정해 주세요", true, editor.getName());
 			return;
 		}
 		workName = "바꾸기";
@@ -5110,7 +5136,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 		case EditType.SPHERE:
 		//예외 처리
 		if(editor.getPos1() === null) {
-			msg("위치1을 지정해 주세요", editor.getName());
+			msg("위치1을 지정해 주세요", true, editor.getName());
 			return;
 		}
 		workName = "구 생성";
@@ -5155,7 +5181,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 		case EditType.HEMI_SPHERE:
 		//예외 처리
 		if(editor.getPos1() === null) {
-			msg("위치1을 지정해 주세요", editor.getName());
+			msg("위치1을 지정해 주세요", true, editor.getName());
 			return;
 		}
 		workName = "반구 생성";
@@ -5261,7 +5287,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 		case EditType.CIRCLE:
 		//예외 처리
 		if(editor.getPos1() === null) {
-			msg("위치1을 지정해 주세요", editor.getName());
+			msg("위치1을 지정해 주세요", true, editor.getName());
 			return;
 		}
 		workName = "원 생성";
@@ -5338,7 +5364,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 		case EditType.SEMI_CIRCLE:
 		//예외 처리
 		if(editor.getPos1() === null) {
-			msg("위치1을 지정해 주세요", editor.getName());
+			msg("위치1을 지정해 주세요", true, editor.getName());
 			return;
 		}
 		workName = "반원 생성";
@@ -5484,7 +5510,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 		case EditType.COPY:
 		//예외 처리
 		if(editor.getPos1() === null || editor.getPos2() === null) {
-			msg("위치1, 2를 지정해 주세요", editor.getName());
+			msg("위치1, 2를 지정해 주세요", true, editor.getName());
 			return;
 		}
 		workName = "복사";
@@ -5518,12 +5544,12 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 		case EditType.PASTE:
 		//예외 처리
 		if(editor.getPos1() === null) {
-			msg("위치1을 지정해 주세요", editor.getName());
+			msg("위치1을 지정해 주세요", true, editor.getName());
 			return;
 		}
 		//예외 처리
 		if(editor.getCopy() === null) {
-			msg("복사된 블럭이 없습니다", editor.getName());
+			msg("복사된 블럭이 없습니다", true, editor.getName());
 			return;
 		}
 		workName = "붙여넣기";
@@ -5547,22 +5573,22 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 			}, Gravity.TOP, false);
 			dl.show();
 		}else {
-			msg("정말로 해당 지역에 붙여넣기 하시겠습니까?", editor.getName());
-			msg("'@예' 또는 '@아니오'를 입력하세요");
+			msg("정말로 해당 지역에 붙여넣기 하시겠습니까?", true, editor.getName());
+			msg("'@예' 또는 '@아니오'를 입력하세요", true, editor.getName());
 			sgUtils.data.commandQueue[editor.getName().toLowerCase()] = function(bool) {
 				if(bool) {
 					holo.close();
-					msg("'붙여넣기' 에딧 요청완료", editor.getName());
+					msg("'붙여넣기' 에딧 요청완료", true, editor.getName());
 					//액티브 스타트!
 					atv.start();
 				}else {
 					holo.close();
-					msg("취소됨", editor.getName());
+					msg("취소됨", true, editor.getName());
 				}
 			}
 		}
 
-		
+
 		break;
 
 
@@ -5571,7 +5597,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 		case EditType.FLIP:
 		//예외 처리
 		if(editor.getCopy() === null) {
-			msg("복사된 블럭이 없습니다", editor.getName());
+			msg("복사된 블럭이 없습니다", true, editor.getName());
 			return;
 		}
 		workName = "대칭";
@@ -5625,7 +5651,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 		case EditType.ROTATION:
 		//예외 처리
 		if(editor.getCopy() === null) {
-			msg("복사된 블럭이 없습니다", editor.getName());
+			msg("복사된 블럭이 없습니다", true, editor.getName());
 			return;
 		}
 		workName = "회전";
@@ -5714,7 +5740,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 		//누군가 잉여력 넘치는 방법으로 호출했다면 작동해주는게 인지상정(테스트 안해봐서 안될지도?)
 		//예외 처리
 		if(editor.getPos1() === null || editor.getPos2() === null) {
-			msg("위치1, 2를 지정해 주세요", editor.getName());
+			msg("위치1, 2를 지정해 주세요", true, editor.getName());
 			return;
 		}
 		workName = "알 수 없는 백업 요청";
@@ -5730,7 +5756,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 		case EditType.RESTORE:
 		//예외 처리
 		if(editor.getBackup() === null) {
-			msg("백업된 조각이 없습니다", editor.getName());
+			msg("백업된 조각이 없습니다", true, editor.getName());
 			return;
 		}
 		workName = "복원";
@@ -6636,12 +6662,12 @@ function modTick() {
 
 	if(main.asynchronousSetTileRequest.length > 0) {
 		if(!main.modTickWorking) {
-			msg("비동기로 에딧을 시작합니다. 전원을 종료하지 마세요...");
+			msg("비동기로 에딧을 시작합니다. 전원을 종료하지 마세요...", true);
 			main.modTickWorking = true;
 		}
 		if(++main.modTickMsgTick >= 200) {
 			main.modTickMsgTick = 0;
-			msg("에딧중... " + ChatColor.AQUA + main.asynchronousSetTileRequest.length + ChatColor.YELLOW + "개 남았습니다");
+			msg("에딧중... " + ChatColor.AQUA + sgUtils.convert.numberToString(main.asynchronousSetTileRequest.length) + ChatColor.YELLOW + "개 남았습니다", true);
 		}
 		for(var e = 0; e < main.asynchEditSpeed; e++) {
 			if(main.asynchronousSetTileRequest.length === 0) break;
@@ -6649,7 +6675,7 @@ function modTick() {
 			Level.setTile(tempData[0], tempData[1], tempData[2], tempData[3], tempData[4]);
 		}
 		if(main.asynchronousSetTileRequest.length === 0) {
-			msg("에딧 완료됨");
+			msg("비동기 에딧 완료됨", true);
 			main.modTickWorking = false;
 		}
 	}
@@ -6720,7 +6746,7 @@ function chatReceiveHook(str, sender) {
 	if(str.substring(0, 1) === "@") {
 		var cmd = str.substring(1, str.length).split(" ");
 		if(!main.editorGroup.isAllow(sender)) {
-			msg("해당 유저는 월드에딧 권한이 없습니다", sender);
+			msg("해당 유저는 월드에딧 권한이 없습니다", true, sender);
 			return;
 		}
 		var editor = main.editorGroup.getEditor(sender);
@@ -6731,10 +6757,10 @@ function chatReceiveHook(str, sender) {
 
 
 			case "":
-			msg("도움말: @도움말", sender);
+			msg("도움말: @도움말", true, sender);
 			break;
-			
-			
+
+
 
 			case "pos1":
 			case "위치1":
@@ -6742,7 +6768,7 @@ function chatReceiveHook(str, sender) {
 			var y = Math.floor(Entity.getY(player));
 			var z = Math.floor(Entity.getZ(player));
 			editor.setPos1(new Vector3(x, y, z));
-			msg("위치1이 지정됨 X:" + x + " Y:" + y + " Z: " + z, sender);
+			msg("위치1이 지정됨 X:" + x + " Y:" + y + " Z: " + z, true, sender);
 			break;
 
 
@@ -6753,15 +6779,15 @@ function chatReceiveHook(str, sender) {
 			var y = Math.floor(Entity.getY(player));
 			var z = Math.floor(Entity.getZ(player));
 			editor.setPos2(new Vector3(x, y, z));
-			msg("위치2이 지정됨 X:" + x + " Y:" + y + " Z: " + z, sender);
+			msg("위치2이 지정됨 X:" + x + " Y:" + y + " Z: " + z, true, sender);
 			break;
-			
-			
+
+
 
 			case "fill":
 			case "채우기":
 			if(cmd.length < 2) {
-				msg("사용법: '@채우기 <블럭아이디>:<데미지값>'", sender);
+				msg("사용법: '@채우기 <블럭아이디>:<데미지값>'", true, sender);
 				return;
 			}
 			var block = cmd[1].split(":");
@@ -6769,7 +6795,7 @@ function chatReceiveHook(str, sender) {
 				block[1] = 0;
 			}
 			if(parseInt(block[0]) != block[0] || parseInt(block[0]) != block[0], block[0] >= 0x80 || block[0] < 0 || block[1] >= 0x10 || block[1] < 0) {
-				msg("알 수 없는 블럭아이디 입니다", sender);
+				msg("알 수 없는 블럭아이디 입니다", true, sender);
 				return;
 			}
 			we_initEdit(1, 1, editor, EditType.FILL, [new Block(block[0], block[1])]);
@@ -6787,7 +6813,7 @@ function chatReceiveHook(str, sender) {
 			case "replace":
 			case "바꾸기":
 			if(cmd.length < 3) {
-				msg("사용법: '@바꾸기 <바꿀블럭아이디>:<데미지값> <블럭아이디>:<데미지>'", sender);
+				msg("사용법: '@바꾸기 <바꿀블럭아이디>:<데미지값> <블럭아이디>:<데미지>'", true, sender);
 				return;
 			}
 			var block1 = cmd[1].split(":");
@@ -6799,11 +6825,11 @@ function chatReceiveHook(str, sender) {
 				block2[1] = 0;
 			}
 			if(parseInt(block1[0]) != block1[0] || parseInt(block1[0]) != block1[0], block1[0] >= 0x80 || block1[0] < 0 || block1[1] >= 0x10 || block1[1] < 0) {
-				msg("알 수 없는 블럭아이디 입니다", sender);
+				msg("알 수 없는 블럭아이디 입니다", true, sender);
 				return;
 			}
 			if(parseInt(block2[0]) != block2[0] || parseInt(block2[0]) != block2[0], block2[0] >= 0x80 || block2[0] < 0 || block2[1] >= 0x10 || block2[1] < 0) {
-				msg("알 수 없는 블럭아이디 입니다", sender);
+				msg("알 수 없는 블럭아이디 입니다", true, sender);
 				return;
 			}
 			we_initEdit(1, 1, editor, EditType.REPLACE, [new Block(block1[0], block1[1], new Block(block2[0], block2[1]))]);
@@ -6814,7 +6840,7 @@ function chatReceiveHook(str, sender) {
 			case "wall":
 			case "벽":
 			if(cmd.length < 2) {
-				msg("사용법: '@벽 <블럭아이디>:<데미지값>'", sender);
+				msg("사용법: '@벽 <블럭아이디>:<데미지값>'", true, sender);
 				return;
 			}
 			var block = cmd[1].split(":");
@@ -6822,7 +6848,7 @@ function chatReceiveHook(str, sender) {
 				block[1] = 0;
 			}
 			if(parseInt(block[0]) != block[0] || parseInt(block[0]) != block[0], block[0] >= 0x80 || block[0] < 0 || block[1] >= 0x10 || block[1] < 0) {
-				msg("알 수 없는 블럭아이디 입니다", sender);
+				msg("알 수 없는 블럭아이디 입니다", true, sender);
 				return;
 			}
 			we_initEdit(1, 1, editor, EditType.WALL, [new Block(block[0], block[1])]);
@@ -6833,14 +6859,14 @@ function chatReceiveHook(str, sender) {
 			case "hollowsphere":
 			case "빈구":
 			if(cmd.length < 3) {
-				msg("사용법: '@빈구 <블럭아이디>:<데미지값> <반지름>'", sender);
+				msg("사용법: '@빈구 <블럭아이디>:<데미지값> <반지름>'", true, sender);
 				return;
 			}
 			isHollow = true;
 			case "sphere":
 			case "구":
 			if(cmd.length < 3) {
-				msg("사용법: '@구 <블럭아이디>:<데미지값> <반지름>'", sender);
+				msg("사용법: '@구 <블럭아이디>:<데미지값> <반지름>'", true, sender);
 				return;
 			}
 			var block = cmd[1].split(":");
@@ -6848,11 +6874,11 @@ function chatReceiveHook(str, sender) {
 				block[1] = 0;
 			}
 			if(parseInt(block[0]) != block[0] || parseInt(block[0]) != block[0], block[0] >= 0x80 || block[0] < 0 || block[1] >= 0x10 || block[1] < 0) {
-				msg("알 수 없는 블럭아이디 입니다", sender);
+				msg("알 수 없는 블럭아이디 입니다", true, sender);
 				return;
 			}
 			if(parseInt(cmd[2]) != cmd[2] || cmd[2] < 1) {
-				msg("반지름 길이는 자연수만 가능합니다", sender);
+				msg("반지름 길이는 자연수만 가능합니다", true, sender);
 				return;
 			}
 			we_initEdit(1, 1, editor, EditType.SPHERE, [isHollow, new Block(block[0], block[1]), cmd[2]]);
@@ -6863,14 +6889,14 @@ function chatReceiveHook(str, sender) {
 			case "hollowhemisphere":
 			case "빈반구":
 			if(cmd.length < 4) {
-				msg("사용법: '@빈반구 <블럭아이디>:<데미지값> <반지름> <방향>'", sender);
+				msg("사용법: '@빈반구 <블럭아이디>:<데미지값> <반지름> <방향>'", true, sender);
 				return;
 			}
 			isHollow = true;
 			case "hemisphere":
 			case "반구":
 			if(cmd.length < 4) {
-				msg("사용법: '@반구 <블럭아이디>:<데미지값> <반지름> <방향>'", sender);
+				msg("사용법: '@반구 <블럭아이디>:<데미지값> <반지름> <방향>'", true, sender);
 				return;
 			}
 			var block = cmd[1].split(":");
@@ -6878,16 +6904,16 @@ function chatReceiveHook(str, sender) {
 				block[1] = 0;
 			}
 			if(parseInt(block[0]) != block[0] || parseInt(block[0]) != block[0], block[0] >= 0x80 || block[0] < 0 || block[1] >= 0x10 || block[1] < 0) {
-				msg("알 수 없는 블럭아이디 입니다", sender);
+				msg("알 수 없는 블럭아이디 입니다", true, sender);
 				return;
 			}
 			if(parseInt(cmd[2]) != cmd[2] || cmd[2] < 1) {
-				msg("반지름 길이는 자연수만 가능합니다", sender);
+				msg("반지름 길이는 자연수만 가능합니다", true, sender);
 				return;
 			}
 			var drc = cmd[3].toLowerCase();
 			if(drc !== "x+" && drc !== "x-" && drc !== "y+" && drc !== "y-" && drc !== "z+" && drc !== "z-") {
-				msg("방향은 'X+', 'X-', 'Y+', 'Y-', 'Z+', 'Z-'중 하나만 가능합니다:", sender);
+				msg("방향은 'X+', 'X-', 'Y+', 'Y-', 'Z+', 'Z-'중 하나만 가능합니다:", true, sender);
 				return;
 			}
 			we_initEdit(1, 1, editor, EditType.HEMI_SPHERE, [isHollow, new Block(block[0], block[1]), cmd[2], drc]);
@@ -6898,14 +6924,14 @@ function chatReceiveHook(str, sender) {
 			case "hollowcircle":
 			case "빈원":
 			if(cmd.length < 4) {
-				msg("사용법: '@빈원 <블럭아이디>:<데미지값> <반지름> <기준축>'", sender);
+				msg("사용법: '@빈원 <블럭아이디>:<데미지값> <반지름> <기준축>'", true, sender);
 				return;
 			}
 			isHollow = true;
 			case "circle":
 			case "원":
 			if(cmd.length < 4) {
-				msg("사용법: '@원 <블럭아이디>:<데미지값> <반지름> <기준축>'", sender);
+				msg("사용법: '@원 <블럭아이디>:<데미지값> <반지름> <기준축>'", true, sender);
 				return;
 			}
 			var block = cmd[1].split(":");
@@ -6913,16 +6939,16 @@ function chatReceiveHook(str, sender) {
 				block[1] = 0;
 			}
 			if(parseInt(block[0]) != block[0] || parseInt(block[0]) != block[0], block[0] >= 0x80 || block[0] < 0 || block[1] >= 0x10 || block[1] < 0) {
-				msg("알 수 없는 블럭아이디 입니다", sender);
+				msg("알 수 없는 블럭아이디 입니다", true, sender);
 				return;
 			}
 			if(parseInt(cmd[2]) != cmd[2] || cmd[2] < 1) {
-				msg("반지름 길이는 자연수만 가능합니다", sender);
+				msg("반지름 길이는 자연수만 가능합니다", true, sender);
 				return;
 			}
 			var axis = cmd[3].toLowerCase();
 			if(axis !== "x" && axis !== "y" && axis !== "z") {
-				msg("기준 축은 'X', 'Y', 'Z'중 하나만 가능합니다:", sender);
+				msg("기준 축은 'X', 'Y', 'Z'중 하나만 가능합니다:", true, sender);
 				return;
 			}
 			we_initEdit(1, 1, editor, EditType.CIRCLE, [isHollow, new Block(block[0], block[1]), cmd[2], axis]);
@@ -6933,13 +6959,13 @@ function chatReceiveHook(str, sender) {
 			case "hollowsemicircle":
 			case "빈반원":
 			if(cmd.length < 5) {
-				msg("사용법: '@빈반원 <블럭아이디>:<데미지값> <반지름> <기준축> <방향>'", sender);
+				msg("사용법: '@빈반원 <블럭아이디>:<데미지값> <반지름> <기준축> <방향>'", true, sender);
 				return;
 			}
 			case "semicircle":
 			case "반원":
 			if(cmd.length < 5) {
-				msg("사용법: '@반원 <블럭아이디>:<데미지값> <반지름> <기준축> <방향>'", sender);
+				msg("사용법: '@반원 <블럭아이디>:<데미지값> <반지름> <기준축> <방향>'", true, sender);
 				return;
 			}
 			var block = cmd[1].split(":");
@@ -6947,21 +6973,21 @@ function chatReceiveHook(str, sender) {
 				block[1] = 0;
 			}
 			if(parseInt(block[0]) != block[0] || parseInt(block[0]) != block[0], block[0] >= 0x80 || block[0] < 0 || block[1] >= 0x10 || block[1] < 0) {
-				msg("알 수 없는 블럭아이디 입니다", sender);
+				msg("알 수 없는 블럭아이디 입니다", true, sender);
 				return;
 			}
 			if(parseInt(cmd[2]) != cmd[2] || cmd[2] < 1) {
-				msg("반지름 길이는 자연수만 가능합니다", sender);
+				msg("반지름 길이는 자연수만 가능합니다", true, sender);
 				return;
 			}
 			var axis = cmd[3].toLowerCase();
 			if(axis !== "x" && axis !== "y" && axis !== "z") {
-				msg("기준 축은 'X', 'Y', 'Z'중 하나만 가능합니다:", sender);
+				msg("기준 축은 'X', 'Y', 'Z'중 하나만 가능합니다:", true, sender);
 				return;
 			}
 			var drc = cmd[4].toLowerCase();
 			if(drc !== "x+" && drc !== "x-" && drc !== "y+" && drc !== "y-" && drc !== "z+" && drc !== "z-") {
-				msg("방향은 'X+', 'X-', 'Y+', 'Y-', 'Z+', 'Z-'중 하나만 가능합니다:", sender);
+				msg("방향은 'X+', 'X-', 'Y+', 'Y-', 'Z+', 'Z-'중 하나만 가능합니다:", true, sender);
 				return;
 			}
 			//TODO 예외처리가 남았습니다! 기준축에 따라서 선택가능한 방향이 제한적입니다!
@@ -6994,12 +7020,12 @@ function chatReceiveHook(str, sender) {
 			case "flip":
 			case "대칭":
 			if(cmd.length < 2) {
-				msg("사용법: '@대칭 <기준축>'", sender);
+				msg("사용법: '@대칭 <기준축>'", true, sender);
 				return;
 			}
 			var axis = cmd[1].toLowerCase();
 			if(axis !== "x" && axis !== "y" && axis !== "z") {
-				msg("기준 축은 'X', 'Y', 'Z'중 하나만 가능합니다:", sender);
+				msg("기준 축은 'X', 'Y', 'Z'중 하나만 가능합니다:", true, sender);
 				return;
 			}
 			we_initEdit(0, 1, editor, EditType.FLIP, [axis]);
@@ -7010,17 +7036,17 @@ function chatReceiveHook(str, sender) {
 			case "rotation":
 			case "회전":
 			if(cmd.length < 3) {
-				msg("사용법: '@회전 <기준축> <각도>'", sender);
+				msg("사용법: '@회전 <기준축> <각도>'", true, sender);
 				return;
 			}
 			var axis = cmd[1].toLowerCase();
 			if(axis !== "x" && axis !== "y" && axis !== "z") {
-				msg("기준 축은 'X', 'Y', 'Z'중 하나만 가능합니다:", sender);
+				msg("기준 축은 'X', 'Y', 'Z'중 하나만 가능합니다:", true, sender);
 				return;
 			}
 			var dgr = parseInt(cmd[2]);
 			if(dgr !== 90 && dgr !== 180 && dgr !== 270) {
-				msg("각도는 '90', '180', '270'중 하나만 가능합니다:", sender);
+				msg("각도는 '90', '180', '270'중 하나만 가능합니다:", true, sender);
 				return;
 			}
 			we_initEdit(0, 1, editor, EditType.ROTATION, [axis, parseInt(Math.floor(dgr/90))]);
@@ -7029,33 +7055,38 @@ function chatReceiveHook(str, sender) {
 
 
 			case "help":
-			case "도움말":
-			msg("===사용가능한 명령어 목록===", sender);
-			msg("@위치1, @위치2, @채우기, @비우기, @바꾸기, @벽, @구, @빈구, @반구, @빈반구, @원, @빈원, @반원, @빈반원, @복사, @잘라내기, @붙여넣기, @대칭, @회전");
-			msg("각각의 명령어를 치면 맞는 형식을 알려줍니다");
+			case msg("cmd_help"):
+			msg("===사용가능한 명령어 목록===", true, sender);
+			msg("@위치1, @위치2, @채우기, @비우기, @바꾸기, @벽, @구, @빈구, @반구, @빈반구, @원, @빈원, @반원, @빈반원, @복사, @잘라내기, @붙여넣기, @대칭, @회전", true);
+			msg("각각의 명령어를 치면 맞는 형식을 알려줍니다", true);
 			break;
-			
-			
-			
+
+
+
 			case "yes":
 			case "y":
-			case "예":
+			case msg("cmd_yes"):
 			if(sgUtils.data.commandQueue[sender.toLowerCase()] !== undefined) {
 				sgUtils.data.commandQueue[sender.toLowerCase()](true);
 				sgUtils.data.commandQueue[sender.toLowerCase()] = undefined;
 			}
 			break;
-			
-			
-			
+
+
+
 			case "no":
 			case "n":
-			case "아니요":
+			case msg("cmd_no"):
 			if(sgUtils.data.commandQueue[sender.toLowerCase()] !== undefined) {
 				sgUtils.data.commandQueue[sender.toLowerCase()](false);
 				sgUtils.data.commandQueue[sender.toLowerCase()] = undefined;
 			}
 			break;
+
+
+
+			default:
+
 		}
 	}
 }
