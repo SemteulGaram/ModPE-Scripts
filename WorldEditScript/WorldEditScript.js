@@ -27,6 +27,7 @@ const TAG = "[" + "WorldEdit" + " " + VERSION + "] ";
  * LangSetting(MessageManager)
  * HelpPage
  * WhiteList
+ * ServerMessage
  * TaskManager
  * InfoPanel
  * QuickBar
@@ -3018,19 +3019,40 @@ function highlightBlock(x, y, z) {
 }
 
 
-
-function msg(str, target) {
-
+var lang = "en_EU";
+function msg(key, replacement, target) {
+	if(replacement === undefined) {
+		replacement = [];
+	}
+	if(target === undefined && !Array.isArray(replacement)) {
+		target = replacement;
+		replacement = [];
+	}
+	var msgstr = findMessage(key);
+	for(var e = 0; e < replacement.length; e++) {
+		msgstr.replace(replacement[e][0], replacement[e][1]);
+	}
 	var tempName = Entity.getNameTag(Player.getEntity());
 	Entity.setNameTag(Player.getEntity(), "");
 	if(target === undefined) {
-		sgUtils.modPE.broadcast(ChatColor.GRAY + TAG + ChatColor.YELLOW + str);
+		sgUtils.modPE.broadcast(ChatColor.GRAY + "[" + findMessage("tag") + " " + VERSION + "] " + ChatColor.YELLOW + msgstr);
 	}else if(tempName.toLowerCase() === target.toLowerCase()) {
-		we_toast(str);
+		we_toast(msgstr);
 	}else {
-		sgUtils.modPE.broadcast(ChatColor.GRAY + TAG + ChatColor.WHITE + "(" + ChatColor.AQUA + target + ChatColor.WHITE + ") " + ChatColor.YELLOW + str);
+		sgUtils.modPE.broadcast(ChatColor.GRAY + "[" + findMessage("tag") + " " + VERSION + "]" + target + " > " + ChatColor.YELLOW + msgstr);
 	}
 	Entity.setNameTag(Player.getEntity(), tempName);
+}
+
+function findMessage(key) {
+	key = key + "";
+	if(messageContainer[lang][key] !== undefined) {
+		return messageContainer[lang][key];
+	}else if(messageContainer["en_EU"][key] !== undefined) {
+		return messageContainer["en_EU"][key];
+	}else {
+		return key;
+	}
 }
 
 
@@ -3350,6 +3372,115 @@ Piece.prototype = {
 //WORLD EDIT SCRIPT SIDE
 //======================
 
+var messageContainer = {
+	en_EU: {
+		tag: "WorldEdit"
+	},
+	
+	ko_KR: {
+		tag: "월드에딧",
+		start: "시작",
+		stop: "중지",
+		cancel: "취소",
+		fill: "채우기",
+		clear: "비우기",
+		replace: "바꾸기",
+		wall: "벽",
+		circle_type: "원형",
+		circle: "원",
+		hollow_circle: "빈원",
+		semi_circle: "반원",
+		hollow_semi_circle: "빈반원",
+		sphere: "구",
+		hollow_sphere: "빈구",
+		hemi_sphere: "반구",
+		hollow_hemi_sphere: "빈반구",
+		copy: "복사",
+		cut: "잘라내기",
+		paste: "붙여넣기",
+		flip: "대칭",
+		rotation: "회전",
+		id: "아이디",
+		data: "데이터",
+		warning: "경고",
+		cirticla: "심각",
+		error: "에러",
+		
+		msg_working: "작업중...",
+		msg_pos1: "위치1 지정됨 X:{%x} Y:{%y} Z:{%z}",
+		msg_pos2: "위치2 지정됨 X:{%x} Y:{%y} Z:{%z}",
+		msg_paste_confirm: "정말로 해당지역에 붙여넣기 하시겠습니까?",
+		
+		warn_no_pos: "위치1을 지정해 주세요",
+		warn_no_pos2: "위치1,2 지정해 주세요",
+		warn_no_copy: "복사된 영역이 없습니다",
+		warn_no_backup: "백업된 영역이 없습니다",
+		warn_unknown_selected_block: "제대로 된 형식의 블럭을 입력시켜주세요",
+		
+		cmd_main_usage: "사용법: ",
+		cmd_help: "도움말",
+		cmd_help_usage: "@도움말",
+		cmd_help_desc: "월드에딧의 명령어에 대한 도움말을 보여줍니다",
+		cmd_pos1: "위치1",
+		cmd_pos1_usage: "@위치1",
+		cmd_pos1_desc: "현재 자신의 위치를 위치1로 지정합니다",
+		cmd_pos2: "위치2",
+		cmd_pos2_usage: "@위치2",
+		cmd_pos2_desc: "현재 자신의 위치를 위치2로 지정합니다",
+		cmd_fill: "채우기",
+		cmd_fill_usage: "@채우기 <아이디:데미지값>",
+		cmd_fill_desc: "위치1,2 사이의 공간을 블럭아이디, 데미지값으로 채웁니다",
+		cmd_clear: "비우기",
+		cmd_clear_usage: "@비우기",
+		cmd_clear_desc: "위치1,2 사이의 공간을 위에서부터 비워나갑니다",
+		cmd_replace: "바꾸기",
+		cmd_replace_usage: "@바꾸기 <아이디:데미지값> <아이디2:데미지값2>",
+		cmd_replace_desc: "위치1,2 사이의 공간에 있는 아이디, 데미지값의 블럭을 아이디2, 데미지값2의 블럭으로 대체합니다",
+		cmd_wall: "벽",
+		cmd_wall_usage: "@벽 <아이디:데미지값>",
+		cmd_wall_desc: "위치1,2 사이의 공간에 4면의 벽을 세웁니다",
+		cmd_circle: "원",
+		cmd_circle_usage: "@원 <아이디:데미지값> <반지름> <기준축>",
+		cmd_circle_desc: "위치1을 아이디, 데미지값의 블럭으로 만들어진 기준축 중심의 반지름 사이즈의 원을 생성합니다",
+		cmd_hollow_circle: "빈원",
+		cmd_hollow_circle_usage: "@빈원 <아이디:데미지값> <반지름> <기준축>",
+		cmd_hollow_circle_desc: "위치1을 중심으로 아이디, 데미지값의 블럭으로 만들어진 기준축 중심의 반지름 사이즈의 속이 빈 원을 만듭니다",
+		cmd_semi_circle: "반원",
+		cmd_semi_circle_usage: "@반원 <아이디:데미지값> <반지름> <기준축> <방향>",
+		cmd_semi_circle_desc: "위치1을 중심으로 아이디, 데미지값의 블럭으로 만들어진 기준축 중심에서 지정된 방향으로 반지름 사이즈의 원을 생성합니다",
+		cmd_hollow_semi_circle: "빈반원",
+		cmd_hollow_semi_circle_usage: "@빈반원 <아이디:데미지값> <반지름> <기준축> <방향>",
+		cmd_hollow_semi_circle_desc: "위치1을 중심으로 아이디, 데미지값의 블럭으로 만들어진 기준축 중심에서 지정된 방향으로 반지름 사이즈의 속이 빈 반원을 생성합니다",
+		cmd_sphere: "구",
+		cmd_sphere_usage: "@구 <아이디:데미지값> <반지름>",
+		cmd_sphere_desc: "위치1을 중심으로 아이디, 데미지값의 블럭으로 만들어진 반지름 사이즈의 구를 생성합니다",
+		cmd_hollow_sphere: "빈구",
+		cmd_hollow_sphere_usage: "@빈구 <아이디:데미지값> <반지름>",
+		cmd_hollow_sphere_desc: "위치1을 중심으로 아이디, 데미지값의 블럭으로 만들어진 반지름 사이즈의 속이 빈 구를 생성합니다",
+		cmd_hemi_sphere: "반구",
+		cmd_hemi_sphere_usage: "@반구 <아이디:데미지값> <반지름> <방향>",
+		cmd_hemi_sphere_desc: "위치1을 중심으로 아이디, 데미지값의 블럭으로 만들어진 지정된 방향의 반지름 사이즈의 반구를 생성합니다",
+		cmd_hollow_hemi_sphere: "빈반구",
+		cmd_hollow_hemi_sphere_usage: "@반구 <아이디:데미지값> <반지름> <방향>",
+		cmd_hollow_hemi_sphere_desc: "위치1을 중심으로 아이디, 데미지값의 블럭으로 만들어진 지정된 방향의 반지름 사이즈의 속이 빈 반구를 생성합니다",
+		cmd_copy: "복사",
+		cmd_copy_usage: "@복사",
+		cmd_copy_desc: "위치1,2 사이의 영역을 복사합니다",
+		cmd_cut: "잘라내기",
+		cmd_cut_usage: "@잘라내기",
+		cmd_cut_desc: "위치1,2 사이의 영역을 잘라냅니다",
+		cmd_paste: "붙여넣기",
+		cmd_paste_usage: "@붙여넣기",
+		cmd_paste_desc: "위치1을 기준으로 현재 복사된 영역을 붙여넣기합니다",
+		cmd_flip: "대칭",
+		cmd_flip_usage: "@대칭 <기준축>",
+		cmd_flip_desc: "복사된 영역을 기준축 방향으로 대칭합니다",
+		cmd_rotation: "회전",
+		cmd_rotation_usage: "@회전 <기준축> <각도>",
+		cmd_rotation_desc: "복사된 영역을 기준축으로 각도만큼 회전시킵니다"
+	}
+}
+
 function WorldEdit() {
 	if (!(this instanceof arguments.callee)) return new arguments.callee();
 
@@ -3358,6 +3489,9 @@ function WorldEdit() {
 		RUN_FUNCTION: 1,
 		TOGGLE: 2
 	}
+	
+	this.langName = ["Minecraft setting", "English", "Korean"];
+	this.langType = [null, "en_EU", "ko_KR"];
 
 	this.settingFile = sgFiles.setting;
 	this.defaultSetting = {
@@ -3370,7 +3504,8 @@ function WorldEdit() {
 		WorkSpeed: 8,
 		SafeMode: 1,
 		WhiteList: [],
-		HollowCircular: 0
+		HollowCircular: 0,
+		Lang: 0
 	}
 	this.setting = null;
 	this.button = null;
@@ -4050,6 +4185,15 @@ WorldEdit.prototype = {
 			we_initEdit(parseInt(that.get("SafeMode")), parseInt(that.get("WorkType")), that.getLocalEditor(), EditType.ROTATION);
 		});
 		//설정메뉴 목록
+		mm_setting.addMenu(this.contentType.RUN_FUNCTION, "Language:\n" + this.langName[parseInt(this.get("Lang"))], function() {
+			var langIndex = parseInt(that.get("Lang"));
+			if(++langIndex >= that.langType.length) {
+				langIndex = 0;
+			}
+			that.set("Lang", langIndex, true);
+			
+			return "Language:\n" + that.langName[langIndex];
+		});
 		mm_setting.addMenu(this.contentType.TOGGLE, "Button Visible", function(bool) {
 			if(bool === undefined) {
 				return that.get("BtnVis") == 1;
