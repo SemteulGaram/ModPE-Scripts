@@ -425,7 +425,7 @@ sgUtils.io = {
 		var content = [], line;
 
 		while((line = br.readLine()) !== null) {
-			content.push(line);
+			content.push(line + "");
 		}
 
 		br.close();
