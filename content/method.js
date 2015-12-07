@@ -1,5 +1,5 @@
 /**
- * Copyright 2015 Semteul
+ * Copyright 2015 SemteulGaram
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -260,7 +260,6 @@ function thread(fc) {
  *   ㄴ saveArticle √
  *   ㄴ loadMcpeSetting
  *   ㄴ saveMcpeSetting √
- *   ㄴ loadBitmapFile
  *   ㄴ zip √
  *   ㄴ unZip √
  *   ㄴ loadZipAsset
@@ -284,6 +283,7 @@ function thread(fc) {
  *   ㄴ customToast
  *   ㄴ customProgressBar
  *   ㄴ loadBitmapLayout
+ *   ㄴ document √
  * ㄴ net
  *   ㄴ download √
  *   ㄴ loadScriptServerData √
@@ -413,7 +413,7 @@ sgUtils.io = {
 	/**
 	 * Read file
 	 *
-	 * @author Semteul
+	 * @author SemteulGaram
 	 * @since 2015-10-25
 	 *
 	 * @param {(File|String|InputStream)} file
@@ -446,7 +446,7 @@ sgUtils.io = {
 	/**
 	 * Write file
 	 *
-	 * @author Semteul
+	 * @author SemteulGaram
 	 * @since 2015-10-25
 	 *
 	 * @param {(File|String)} file
@@ -547,7 +547,7 @@ sgUtils.io = {
 	 * @author SemteulGaram
 	 * @since 2015-02
 	 *
-	 * @param {File|String|InputStream} file
+	 * @param {(File|String|InputStream)} file
 	 * @param {String} article
 	 * @param {String} value
 	 * @return {boolean} success
@@ -638,33 +638,6 @@ sgUtils.io = {
 	},
 
 	/**
-	 * Load Bitmap to Layout
-	 *
-	 * @author SemteulGaram
-	 * @since 2015-11-27
-	 *
-	 * @param {File} imageFile
-	 * @return {Bitmap|false} bitmap
-	 */
-	loadBitmapLayout: function(imageFile) {
-		var lo = new sg.fl(ctx);
-		lo.setGravity(Gravity.CENTER);
-		try {
-			var bm = BitmapFactory.decodeFile(imageFile.getAbsolutePath());
-			var iv = new ImageView(ctx);
-			iv.setImageBitmap(bm);
-			lo.addView(iv);
-		}catch(err) {
-			if(imageFile instanceof File) {
-				lo.addView(sgUtils.gui.mcFastText("Image not found\n\n" + imageFile.getPath(), null, false, Color.RED));
-			}else {
-				lo.addView(sgUtils.gui.mcFastText("File.not found\n\n" + imageFile, null, false, Color.RED));
-			}
-		}
-		return lo;
-	},
-
-	/**
 	 * Zip
 	 * 파일이나 디렉토리(내부의 모든 디렉토리 및 파일을 포함한)를 압축합니다
 	 *
@@ -691,29 +664,29 @@ sgUtils.io = {
 		}else{
 			throw new Error("Illegal argument type");
 	 }
- 	
+
 	 //입력경로의 파일|폴더 존재 확인
 		if(!inputPath.exists()){
 			return 0;
 		}
-		
+
 		//출력경로의 문법 확인
 		if(output instanceof File){
 			var outputPath = output;
 		}else if(output instanceof String){
 			var outputPath = new File(output);
-2		}else{
+		}else{
 			throw new Error("Illegal argument type");
 		}
-	
+
 		//출력경로의 존재안하면 생성
 		if(!outputPath.getParentFile().exists()) {
 			outputPath.mkdirs();
 		}
-	
+
 		//압축할 파일목록
 		var fileList = [];
-	
+
 		//폴더 내부의 파일을 모두 목록에 집어넣기
 		function getFiles(dir){
 			try{
@@ -730,7 +703,7 @@ sgUtils.io = {
 				return -1;
 			}
 		}
-		
+
 		//모든 파일을 등록
 		getFiles(inputPath);
 		if(getTotalMax !== undefined && getTotalMax !== null) {
@@ -739,7 +712,7 @@ sgUtils.io = {
 		if(getTotalProgress !== undefined && getTotalProgress !== null) {
 			sgUtils.data[getTotalProgress] = 0;
 		}
-		
+
 		//압축 개시
 		var fos = new FileOutputStream(outputPath);
 		var zos = new ZipOutputStream(fos);
@@ -792,7 +765,7 @@ sgUtils.io = {
 	 * ]
 	 */
 	unZip: function(input, output) {
-		
+
 		if(input instanceof File) {
 			input = input;
 		}else if(input instanceof String) {
@@ -800,7 +773,7 @@ sgUtils.io = {
 		}else {
 			throw new Error("Illegal argument type");
 		}
-	
+
 		if(output instanceof File) {
 			output = output;
 		}else if(output instanceof String) {
@@ -808,18 +781,18 @@ sgUtils.io = {
 		}else {
 			throw new Error("Illegal argument type");
 		}
-	
+
 		output.getParentFile().mkdirs();
-	
+
 		try {
 			var zip = new ZipFile(input);
 			var entries = zip.entries();
 		}catch(e) {
 			return 0;
 		}
-	
+
 		var entrie, outputFile, bis, bos, buf, count;
-	
+
 		while(entries.hasNextElement()) {
 			entrie = entries.nextElement();
 			outputFile = new File(output, entrie.getName());
@@ -849,10 +822,10 @@ sgUtils.io = {
 	 */
 	loadZipAsset: function(file) {
 		if (!(this instanceof arguments.callee)) return new arguments.callee(file);
-		
+
 		/**
 		 * @param {String} innerPath
-		 * @return {(InputStream|number)} - 
+		 * @return {(InputStream|number)} -
 		 * 	0 = This is not zip file OR This zip is closed
 		 * 	-1 = Something wrong on read zip file
 		 * 	-2 = unknown innerPath
@@ -876,12 +849,12 @@ sgUtils.io = {
 				return -1;
 			}
 		}
-		
+
 		this.close = function() {
 			this.zf.close();
 			this.zf = null;
 		}
-		
+
 		//파일 인식
 		if(file instanceof File) {
 			this.file = file
@@ -890,7 +863,7 @@ sgUtils.io = {
 		}else {
 			throw new Error("Illegal argument type");
 		}
-		
+
 		try {
 			this.zf = new ZipFile(file);
 		}catch(e) {
@@ -1280,15 +1253,15 @@ sgUtils.gui = {
 	 * @author SemteulGaram
 	 * @since 2015-10-24
 	 *
-	 * @param {String|null} str
-	 * @param {number|null} size
-	 * @param {boolean|null} hasShadow
-	 * @param {Color|null} color
-	 * @param {Color|null} shadowColor
-	 * @param {number|null} width
-	 * @param {number|null} height
-	 * @param {Array|null} padding
-	 * @param {Array|null} margins
+	 * @param {(String|null)} str
+	 * @param {(number|null)} size
+	 * @param {(boolean|null)} hasShadow
+	 * @param {(Color|null)} color
+	 * @param {(Color|null)} shadowColor
+	 * @param {(number|null)} width
+	 * @param {(number|null)} height
+	 * @param {(Array|null)} padding
+	 * @param {(Array|null)} margins
 	 * @return {TextView}
 	 */
 	mcFastText: function(str, size, hasShadow, color, shadowColor, width, height, padding, margins) {
@@ -1340,18 +1313,18 @@ sgUtils.gui = {
 	 * @since 2015-10-24
 	 *
 	 * @param {String} str
-	 * @param {number|null} size
-	 * @param {boolean|null} hasShadow
-	 * @param {Color|null} color
-	 * @param {Color|null} shadowColor
-	 * @param {number|null} width
-	 * @param {number|null} height
-	 * @param {Array|null} padding
-	 * @param {Array|null} margins
-	 * @param {Drawable|null} background
-	 * @param {function|null} onTouchFunction - ex.function(view, event){return Boolean}
-	 * @param {function|null} onClickFunction - function(view, event)
-	 * @param {function|null} onLongClickFunction - function(view, event){return Boolean}
+	 * @param {(number|null)} size
+	 * @param {(boolean|null)} hasShadow
+	 * @param {(Color|null)} color
+	 * @param {(Color|null)} shadowColor
+	 * @param {(number|null)} width
+	 * @param {(number|null)} height
+	 * @param {(Array|null)} padding
+	 * @param {(Array|null)} margins
+	 * @param {(Drawable|null)} background
+	 * @param {(function|null)} onTouchFunction - ex.function(view, event){return Boolean}
+	 * @param {(function|null)} onClickFunction - function(view, event)
+	 * @param {(function|null)} onLongClickFunction - function(view, event){return Boolean}
 	 * @return {Button}
 	 */
 	mcFastButton: function(str, size, hasShadow, color, shadowColor, width, height, padding, margins, background, onTouchFunction, onClickFunction, onLongClickFunction) {
@@ -1765,9 +1738,7 @@ sgUtils.gui = {
 			throw new Error("Undefined custom progress bar type: " + type);
 		}
 	},
-	
-	
-	
+
 	/**
 	 * Load Bitmap to Layout
 	 *
@@ -1780,11 +1751,11 @@ sgUtils.gui = {
 	loadBitmapLayout: function(image) {
 		var lo = new sg.rl(ctx);
 		lo.setGravity(Gravity.CENTER);
-		
+
 		if(image instanceof String) {
 			image = new File(image);
 		}
-		
+
 		if(image instanceof File) {
 			if(!image.exists()) {
 				var er = sgUtils.gui.mcFastText("Image not found\n\n" + imageFile.getPath(), sg.px*0x8, false, Color.RED);
@@ -1807,6 +1778,55 @@ sgUtils.gui = {
 			lo.addView(er);
 		}
 		return lo;
+	},
+
+	/**
+	 * Document
+	 * 간단한 레이아웃 생성
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-12-07
+	 *
+	 * @param {String[]} documents
+	 * @return {LinearLayout} layout
+	 */
+	document: function(documents, gravity, padding) {
+		if(gravity === undefined) {
+			gravity = Gravity.LEFT;
+		}
+		if(padding === undefined) {
+			padding = [0, 0, 0, 0];
+		}
+
+		var layout = new sg.ll(ctx);
+		layout.setOrientation(sg.ll.VERTICAL);
+		layout.setGravity(gravity);
+
+		var doc;
+		while((doc = documents.shift()) !== undefined) {
+			if(!Array.isArray(doc)) {
+				doc = doc.split("|");
+			}
+			switch(doc[0]) {
+				case "t"://Text
+				var size = sg.px*0x10, color = Color.WHITE, shadow = false;
+				if(doc.lenth > 2) {
+					size = parseInt(doc[2]);
+					color = Color.parseColor(doc[3]);
+					shadow = doc[4] == true;
+				}
+				var tv = new sgUtils.gui.mcFastText(doc[1], size, shadow, color, null, null, null, padding);
+				layout.addView(tv);
+				break;
+				case "i"://Image(path, File, InputStream)
+				var iv = sgUtils.gui.loadBitmapLayout(doc[1]);
+				iv.setPadding(padding[0], padding[1], padding[2], padding[3]);
+				layout.addView(iv);
+				break;
+				default:
+				continue;
+			}
+		}
 	}
 }
 
@@ -2025,7 +2045,7 @@ sgUtils.android = {
 	/**
 	 * Battery Checker
   *
-  * @author Semteul
+  * @author SemteulGaram
   * @since 2015-04
   */
 	battery: function() {
@@ -2131,7 +2151,7 @@ sgUtils.android = {
 	 * limitations under the License.
 	 */
 
-	//convert Java to Javascript by [Semteul]
+	//convert Java to Javascript by [SemteulGaram]
 
 	visualizer: function() {
 		var that = this;
@@ -2318,7 +2338,7 @@ sgUtils.android = {
 	/**
 	 * Stereo BGS
 	 *
-	 * @author Semteul
+	 * @author SemteulGaram
 	 * @since 2015-06
 	 *
 	 * @param (Int|nill) x
@@ -2452,7 +2472,7 @@ sgUtils.android = {
 	/**
 	 * Vibrator
 	 *
-	 * @author Semteul
+	 * @author SemteulGaram
 	 * @since 2015-10-29
 	 *
 	 * @param <Long|Array|null> pattern
@@ -2517,7 +2537,7 @@ sgUtils.android = {
 	/**
 	 * Screenshot
 	 *
-	 * @author Semteul
+	 * @author SemteulGaram
 	 * @since 2015-10-30
 	 *
 	 * @param <File> file
@@ -2547,7 +2567,7 @@ sgUtils.android = {
 		/**
 	 * ScreenBitmap
 	 *
-	 * @author Semteul
+	 * @author SemteulGaram
 	 * @since 2015-10-30
 	 *
 	 * @param <View|undefined> view
@@ -2569,7 +2589,7 @@ sgUtils.android = {
 	/**
 	 * Screen brightness
 	 *
-	 * @author Semteul
+	 * @author SemteulGaram
 	 * @since 2015-10-30
 	 *
 	 * @param <Float> bright (0~1)
