@@ -65,6 +65,10 @@ var ArrayList = java.util.ArrayList;
 var Calendar = java.util.Calendar;
 var GregorianCalendar = java.util.GregorianCalendar;
 
+var ZipFile = java.util.zip.ZipFile;
+var ZipEntry = java.util.zip.ZipEntry;
+var ZipOutputStream = java.util.zip.ZipOutputStream;
+
 var Activity = android.app.Activity;
 var AlertDialog = android.app.AlertDialog;
 var Context = android.content.Context;
@@ -317,7 +321,7 @@ sgUtils.io = {
 		while((len = bis.read(buffer)) != null) {
 			bos.write(buffer, 0, len);
 		 if(getProgress !== null && getProgress !== undefined) {
-				sgUtils.data[getProgress] += content;
+				sgUtils.data[getProgress] += parseInt(len);
 			}
 		}
 		input.close();
@@ -334,7 +338,7 @@ sgUtils.io = {
 	 * @since 2015-04
 	 *
 	 * @param {File} prototypeFile
-	 * @param {string} innerPath - ex."images/mob/steve.png"
+	 * @param {String} innerPath - ex."images/mob/steve.png"
 	 * @return {boolean} success
 	 */
 	setTexture: function(prototypeFile, innerPath){
@@ -361,11 +365,11 @@ sgUtils.io = {
 	/**
 	 * Read file
 	 *
-	 * @author Semteul
+	 * @author SemteulGaram
 	 * @since 2015-10-25
 	 *
-	 * @param {(File|string|InputStream)} file
-	 * @return {string[]} lines
+	 * @param {(File|String|InputStream)} file
+	 * @return {String[]} lines
 	 */
 	readFile: function(file) {
 		if(typeof file === "string") {
@@ -394,11 +398,11 @@ sgUtils.io = {
 	/**
 	 * Write file
 	 *
-	 * @author Semteul
+	 * @author SemteulGaram
 	 * @since 2015-10-25
 	 *
-	 * @param {(File|string)} file
-	 * @param {(string[]|string)} value
+	 * @param {(File|String)} file
+	 * @param {(String[]|String)} value
 	 * @param {boolean} mkDir
 	 * @return {boolean} success
 	 */
@@ -442,7 +446,7 @@ sgUtils.io = {
 	 * @author SemteulGaram
 	 * @since 2015-09
 	 *
-	 * @param {(File|string|InputStream)} file
+	 * @param {(File|String|InputStream)} file
 	 * @return {Object} value
 	 */
 	loadJSON: function(file) {
@@ -457,7 +461,7 @@ sgUtils.io = {
 	 * @author SemteulGaram
 	 * @since 2015-09
 	 *
-	 * @param {(File|string|InputStream)} file
+	 * @param {(File|String|InputStream)} file
 	 * @param {Object} obj
 	 * @return {boolean} success
 	 */
@@ -471,9 +475,9 @@ sgUtils.io = {
 	 * @author SemteulGaram
 	 * @since 2015-02
 	 *
-	 * @param {(File|string|InputStream)} file
-	 * @param {string} article
-	 * @return {string} value
+	 * @param {(File|String|InputStream)} file
+	 * @param {String} article
+	 * @return {String} value
 	 */
 	loadArticle: function(file, article) {
 		var values = this.readFile(file);
@@ -495,9 +499,9 @@ sgUtils.io = {
 	 * @author SemteulGaram
 	 * @since 2015-02
 	 *
-	 * @param {File|string|InputStream} file
-	 * @param {string} article
-	 * @param {string} value
+	 * @param {File|String|InputStream} file
+	 * @param {String} article
+	 * @param {String} value
 	 * @return {boolean} success
 	 */
 	saveArticle: function(file, article, value) {
@@ -526,8 +530,8 @@ sgUtils.io = {
 	 * @author SemteulGaram
 	 * @since 2015-11-13
 	 *
-	 * @param {string} article
-	 * @return {string} value
+	 * @param {String} article
+	 * @return {String} value
 	 */
 	loadMcpeSetting: function(article) {
 		article += "";
@@ -552,8 +556,8 @@ sgUtils.io = {
 	 * @author SemteulGaram
 	 * @since 2015-11-13
 	 *
-	 * @param {string} article
-	 * @param {string} value
+	 * @param {String} article
+	 * @param {String} value
 	 * @return {true} success
 	 */
 	saveMcpeSetting: function(article, value) {
@@ -586,32 +590,237 @@ sgUtils.io = {
 	},
 
 	/**
-	 * Load Bitmap to Layout
+	 * Zip
+	 * 파일이나 디렉토리(내부의 모든 디렉토리 및 파일을 포함한)를 압축합니다
 	 *
 	 * @author SemteulGaram
-	 * @since 2015-11-27
-	 *
-	 * @param {File} imageFile
-	 * @return {Bitmap|false} bitmap
+   * @since 2015-03-08
+	 * @param {(String|File)} inputPath - 압축을 할 파일 및 폴더
+	 * @param {(String|File)} outputPath - 출력할 zip 파일
+	 * @param {(String|null|undefined)} getTotalMax - 전체 파일의 갯수 sgUtils.data pointer
+	 * @param {(String|null|undefined)} getTotalProgress - 작업완료한 파일의 갯수 sgUtils.data pointer
+	 * @param {(String|null|undefined)} getCrtMax - 현재 작업중인 파일의 크기 sgUtils.data pointer
+	 * @param {(String|null|undefined)} getCrtProgress - 현재 진행중인 파일의 작업완료 크기 sgUtils.data pointer
+	 * @return {Int} - [
+	 * 	1 = 성공
+	 * 	0 = 입력경로에 파일이 존재하지 않음
+	 * 	-1 = 입력경로의 파일들을 읽는데 실패함
+	 * ]
 	 */
-	loadBitmapLayout: function(imageFile) {
-		var lo = new sg.rl(ctx);
-		lo.setGravity(Gravity.CENTER);
-		if(!(imageFile instanceof File)) {
-			var er = sgUtils.gui.mcFastText("This isn't instance of File\n\n" + imageFile, sg.px*0x8, false, Color.RED);
-			er.setGravity(Gravity.CENTER);
-			lo.addView(er);
-		}else if(!imageFile.exists()) {
-			var er = sgUtils.gui.mcFastText("Image not found\n\n" + imageFile.getPath(), sg.px*0x8, false, Color.RED);
-			er.setGravity(Gravity.CENTER);
-			lo.addView(er);
-		}else {
-			var bm = BitmapFactory.decodeFile(imageFile.getAbsolutePath());
-			var iv = new ImageView(ctx);
-			iv.setImageBitmap(bm);
-			lo.addView(iv);
+	zip: function(input, output, getTotalMax, getTotalProgress, getCrtMax, getCrtProgress) {
+		//입력경로의 문법 확인
+		if(input instanceof File){
+			var inputPath = input;
+		}else if(input instanceof String){
+			var inputPath = new File(input);
+		}else{
+			throw new Error("Illegal argument type");
+	 }
+
+	 //입력경로의 파일|폴더 존재 확인
+		if(!inputPath.exists()){
+			return 0;
 		}
-		return lo;
+
+		//출력경로의 문법 확인
+		if(output instanceof File){
+			var outputPath = output;
+		}else if(output instanceof String){
+			var outputPath = new File(output);
+		}else{
+			throw new Error("Illegal argument type");
+		}
+
+		//출력경로의 존재안하면 생성
+		if(!outputPath.getParentFile().exists()) {
+			outputPath.mkdirs();
+		}
+
+		//압축할 파일목록
+		var fileList = [];
+
+		//폴더 내부의 파일을 모두 목록에 집어넣기
+		function getFiles(dir){
+			try{
+				if(dir.isFile()) {
+					fileList.push(dir.getAbsolutePath());
+					return;
+				}
+				var files = dir.listFiles();
+				for(var e in files){
+					//재귀 함수
+					getFiles(files[e]);
+				}
+			}catch(e){
+				return -1;
+			}
+		}
+
+		//모든 파일을 등록
+		getFiles(inputPath);
+		if(getTotalMax !== undefined && getTotalMax !== null) {
+			sgUtils.data[getTotalMax] = fileList.length;
+		}
+		if(getTotalProgress !== undefined && getTotalProgress !== null) {
+			sgUtils.data[getTotalProgress] = 0;
+		}
+
+		//압축 개시
+		var fos = new FileOutputStream(outputPath);
+		var zos = new ZipOutputStream(fos);
+		for(var e in fileList){
+			//파일의 절대경로로부터 상대경로를 구해서 ZipEntry생성
+			var ze = new ZipEntry(fileList[e].substring(inputPath.getAbsolutePath().length()+1, fileList[e].getAbsolutePath().length()));
+			//ZipOutputStream의 새로운 Entry의 경로 등록
+			zos.putNextEntry(ze);
+			var fis = new FileInputStream(fileList[e]);
+			if(getCrtMax !== undefined && getCrtMax !== null) {
+				sgUtils.data[getCrtMax] = fis.available();
+			}
+			if(getCrtProgress !== undefined && getCrtProgress !== null) {
+				sgUtils.data[getCrtProgress] = 0;
+			}
+			//1024바이트씩 읽어오기
+			var buffer = sg.ai(Byte.TYPE, 1024);
+			var content;
+			while((content = fis.read(buffer)) > 0){
+				//ZipOutputStream에다가 파일 쓰기
+				zos.write(buffer, 0, content);
+				if(getCrtProgress !== undefined && getCrtProgress !== null) {
+					sgUtils.data[getCrtProgress] += parseInt(content);
+				}
+			}
+			//다음 파일로
+			zos.closeEntry();
+			fis.close();
+			if(getTotalProgress !== undefined && getTotalProgress !== null) {
+				sgUtils.data[getTotalProgress]++;
+			}
+		}
+		//닫기
+		zos.close();
+		fos.close();
+		return 1;
+	},
+
+	/**
+	 * UnZip
+	 * 주어진 압축 파일을 압축 해제 합니다
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-10-16
+	 * @param {(String|File)} input - zip 파일의 경로 혹은 파일 객체
+	 * @param {(String|File)} output - 압축을 풀 폴더의 경로
+	 * @return [
+	 * 	1 = 성공
+	 * 	0 = 압축파일이 아닙니다
+	 * ]
+	 */
+	unZip: function(input, output) {
+
+		if(input instanceof File) {
+			input = input;
+		}else if(input instanceof String) {
+			input = new File(input);
+		}else {
+			throw new Error("Illegal argument type");
+		}
+
+		if(output instanceof File) {
+			output = output;
+		}else if(output instanceof String) {
+			output = new File(output);
+		}else {
+			throw new Error("Illegal argument type");
+		}
+
+		output.getParentFile().mkdirs();
+
+		try {
+			var zip = new ZipFile(input);
+			var entries = zip.entries();
+		}catch(e) {
+			return 0;
+		}
+
+		var entrie, outputFile, bis, bos, buf, count;
+
+		while(entries.hasNextElement()) {
+			entrie = entries.nextElement();
+			outputFile = new File(output, entrie.getName());
+			bis = new BufferedInputStream(zip.getInputStream(entrie));
+	   bos = new BufferedOutputStream(new FileOutputStream(outputFile));
+			buf = sg.ai(Byte.TYPE, 1024);
+			count = 0;
+			while((count = bis.read(buf)) >= 0){
+				bos.write(buf, 0, count);
+			}
+			bis.close();
+			bos.close();
+		}
+		zip.close();
+		return 1;
+	},
+
+	/**
+	 * LoadZipAsset
+	 * 압축파일에서 자료를 빼옵니다
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-12-06
+	 *
+	 * @param {(File|String)} file
+	 * return this
+	 */
+	loadZipAsset: function(file) {
+		if (!(this instanceof arguments.callee)) return new arguments.callee(file);
+
+		/**
+		 * @param {String} innerPath
+		 * @return {(InputStream|number)} -
+		 * 	0 = This is not zip file OR This zip is closed
+		 * 	-1 = Something wrong on read zip file
+		 * 	-2 = unknown innerPath
+		 */
+		this.getStream = function(innerPath) {
+			if(this.zf === null) {
+				return 0;
+			}
+			try {
+				var ent = this.zf.entries();
+				var entrie;
+				while(ent.hasMoreElements()) {
+					entrie = ent.nextElement();
+					if(entrie.getName() == innerPath) {
+						return this.zf.getInputStream(entrie);
+					}ent.getNextElement
+				}
+				return -2;
+			}catch(err) {
+				showError(err);
+				return -1;
+			}
+		}
+
+		this.close = function() {
+			this.zf.close();
+			this.zf = null;
+		}
+
+		//파일 인식
+		if(file instanceof File) {
+			this.file = file
+		}else if(input instanceof String) {
+			this.file = new File(file);
+		}else {
+			throw new Error("Illegal argument type");
+		}
+
+		try {
+			this.zf = new ZipFile(file);
+		}catch(e) {
+			this.zf = null;
+		}
 	}
 }
 
@@ -629,9 +838,9 @@ sgUtils.convert = {
 	 * @author SemteulGaram
 	 * @since 2015-10-24
 	 *
-	 * @param {string} cutter
-	 * @param {string} content
-	 * @return {string}
+	 * @param {String} cutter
+	 * @param {String} content
+	 * @return {String}
 	 */
 	splitLine: function(cutter, content){
 		return content.split(cutter).join(String.fromCharCode(10));
@@ -728,7 +937,7 @@ sgUtils.convert = {
 	 * @since 2015-04
 	 *
 	 * @param {float} yaw
-	 * @return {string} direction
+	 * @return {String} direction
 	 */
 	viewSide: function(yaw) {
 		var temp = sgUtils.math.leftOver(yaw, 0, 360);
@@ -775,7 +984,7 @@ sgUtils.convert = {
 	 * @since 2015-09
 	 *
 	 * @param number
-	 * @return {string}
+	 * @return {String}
 	 */
 	numberToString: function(number) {
 		number += "";
@@ -811,7 +1020,7 @@ sgUtils.convert = {
 	 * @since 2015-09
 	 *
 	 * @param size
-	 * @return {string}
+	 * @return {String}
 	 */
  dataSizeToString: function(size) {
 		if(size < 1000) {
@@ -890,7 +1099,7 @@ sgUtils.math = {
 	 * @author SemteulGaram
 	 * @since 2015-11-23
 	 *
-	 * @param {string} number
+	 * @param {String} number
 	 * @return {boolean} isNumber
 	 */
 	 isNumber: function(number) {
@@ -996,16 +1205,16 @@ sgUtils.gui = {
 	 * @author SemteulGaram
 	 * @since 2015-10-24
 	 *
-	 * @param {string|null} str
-	 * @param {number|null} size
-	 * @param {boolean|null} hasShadow
-	 * @param {Color|null} color
-	 * @param {Color|null} shadowColor
-	 * @param {number|null} width
-	 * @param {number|null} height
-	 * @param {Array|null} padding
-	 * @param {Array|null} margins
-	 * @return {TextView}
+	 * @param {(String|null)} str
+	 * @param {(number|null)} size
+	 * @param {(boolean|null)} hasShadow
+	 * @param {(Color|null)} color
+	 * @param {(Color|null)} shadowColor
+	 * @param {(number|null)} width
+	 * @param {(number|null)} height
+	 * @param {(Array|null)} padding
+	 * @param {(Array|null)} margins
+	 * @return {(TextView)}
 	 */
 	mcFastText: function(str, size, hasShadow, color, shadowColor, width, height, padding, margins) {
 		var tv = new TextView(ctx);
@@ -1055,19 +1264,19 @@ sgUtils.gui = {
 	 * @author SemteulGaram
 	 * @since 2015-10-24
 	 *
-	 * @param {string} str
-	 * @param {number|null} size
-	 * @param {boolean|null} hasShadow
-	 * @param {Color|null} color
-	 * @param {Color|null} shadowColor
-	 * @param {number|null} width
-	 * @param {number|null} height
-	 * @param {Array|null} padding
-	 * @param {Array|null} margins
-	 * @param {Drawable|null} background
-	 * @param {function|null} onTouchFunction - ex.function(view, event){return Boolean}
-	 * @param {function|null} onClickFunction - function(view, event)
-	 * @param {function|null} onLongClickFunction - function(view, event){return Boolean}
+	 * @param {String} str
+	 * @param {(number|null)} size
+	 * @param {(boolean|null)} hasShadow
+	 * @param {(Color|null)} color
+	 * @param {(Color|null)} shadowColor
+	 * @param {(number|null)} width
+	 * @param {(number|null)} height
+	 * @param {(Array|null)} padding
+	 * @param {(Array|null)} margins
+	 * @param {(Drawable|null)} background
+	 * @param {(function|null)} onTouchFunction - ex.function(view, event){return Boolean}
+	 * @param {(function|null)} onClickFunction - function(view, event)
+	 * @param {(function|null)} onLongClickFunction - function(view, event){return Boolean}
 	 * @return {Button}
 	 */
 	mcFastButton: function(str, size, hasShadow, color, shadowColor, width, height, padding, margins, background, onTouchFunction, onClickFunction, onLongClickFunction) {
@@ -1144,7 +1353,7 @@ sgUtils.gui = {
 	 * @author SemteulGaram
 	 * @since 2015-11-13
 	 *
-	 * @param {string} text
+	 * @param {String} text
 	 * @param {(Drawable|null)} drawable
 	 * @param {(long|null)} duration
 	 * @param {(boolean|null)} isImportant
@@ -1480,6 +1689,96 @@ sgUtils.gui = {
 			default:
 			throw new Error("Undefined custom progress bar type: " + type);
 		}
+	},
+
+	/**
+	 * Load Bitmap to Layout
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-11-27
+	 *
+	 * @param {(File|String|InputStream)} image
+	 * @return {RelativeLayout} bitmap
+	 */
+	loadBitmapLayout: function(image) {
+		var lo = new sg.rl(ctx);
+		lo.setGravity(Gravity.CENTER);
+
+		if(image instanceof String) {
+			image = new File(image);
+		}
+
+		if(image instanceof File) {
+			if(!image.exists()) {
+				var er = sgUtils.gui.mcFastText("Image not found\n\n" + imageFile.getPath(), sg.px*0x8, false, Color.RED);
+				er.setGravity(Gravity.CENTER);
+				lo.addView(er);
+			}else {
+				var bm = BitmapFactory.decodeFile(image.getAbsolutePath());
+				var iv = new ImageView(ctx);
+				iv.setImageBitmap(bm);
+				lo.addView(iv);
+			}
+		}else if(image instanceof InputStream) {
+			var bm = BitmapFactory.decodeStream(image);
+			var iv = new ImageView(ctx);
+			iv.setImageBitmap(bm);
+			lo.addView(iv);
+		}else {
+			var er = sgUtils.gui.mcFastText("This isn't instance of Image\n\n" + imageFile, sg.px*0x8, false, Color.RED);
+			er.setGravity(Gravity.CENTER);
+			lo.addView(er);
+		}
+		return lo;
+	},
+
+	/**
+	 * Document
+	 * 간단한 레이아웃 생성
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-12-07
+	 *
+	 * @param {String[]} documents
+	 * @return {LinearLayout} layout
+	 */
+	document: function(documents, gravity, padding) {
+		if(gravity === undefined) {
+			gravity = Gravity.LEFT;
+		}
+		if(padding === undefined) {
+			padding = [0, 0, 0, 0];
+		}
+
+		var layout = new sg.ll(ctx);
+		layout.setOrientation(sg.ll.VERTICAL);
+		layout.setGravity(gravity);
+
+		var doc;
+		while((doc = documents.shift()) !== undefined) {
+			if(!Array.isArray(doc)) {
+				doc = doc.split("|");
+			}
+			switch(doc[0]) {
+				case "t"://Text
+				var size = sg.px*0x10, color = Color.WHITE, shadow = false;
+				if(doc.lenth > 2) {
+					size = parseInt(doc[2]);
+					color = Color.parseColor(doc[3]);
+					shadow = doc[4] == true;
+				}
+				var tv = new sgUtils.gui.mcFastText(doc[1], size, shadow, color, null, null, null, padding);
+				layout.addView(tv);
+				break;
+				case "i"://Image(path, File, InputStream)
+				var iv = sgUtils.gui.loadBitmapLayout(doc[1]);
+				iv.setPadding(padding[0], padding[1], padding[2], padding[3]);
+				layout.addView(iv);
+				break;
+				default:
+				continue;
+			}
+		}
 	}
 }
 
@@ -1498,7 +1797,7 @@ sgUtils.net = {
 	 * @since 2015-01
 	 *
 	 * @param {File} path
-	 * @param {string} url
+	 * @param {String} url
 	 * @param getMax - sgUtils.data pointer
 	 * @param getProgress - sgUtils.data pointer
 	 * @return {boolean} success
@@ -1538,14 +1837,14 @@ sgUtils.net = {
 	 * @since 2015-01
 	 *
 	 * =>loadScriptServerData
-	 * @param {string} url
+	 * @param {String} url
 	 * @param savePointer - sgUtils.data pointer
 	 * @return {boolean} success
 	 *
 	 * =>ReadContent
 	 * @param savePointer - sgUtils.data pointer
-	 * @param {string} article
-	 * @return {string|null}
+	 * @param {String} article
+	 * @return {(String|null)}
 	 */
 	loadScriptServerData: function(updateServerUrl, savePointer) {
 		try{
@@ -1698,7 +1997,7 @@ sgUtils.android = {
 	/**
 	 * Battery Checker
   *
-  * @author Semteul
+  * @author SemteulGaram
   * @since 2015-04
   */
 	battery: function() {
@@ -1804,7 +2103,7 @@ sgUtils.android = {
 	 * limitations under the License.
 	 */
 
-	//convert Java to Javascript by [Semteul]
+	//convert Java to Javascript by [SemteulGaram]
 
 	visualizer: function() {
 		var that = this;
@@ -1826,13 +2125,13 @@ sgUtils.android = {
 		//int
 		this.type;
 		//long
-		this.lastValidCaptrueTimeMs;
+		this.lastValidCaptureTimeMs;
 
 		this.range = new Array(2);
 		// type, size - @int
-		this.AudioCaptrue = function(type, size, session) {
+		this.AudioCapture = function(type, size, session) {
 			that.Type = type;
-			that.range = android.media.audiofx.Visualizer.getCaptrueSizeRange();
+			that.range = android.media.audiofx.Visualizer.getCaptureSizeRange();
 		 	if(size < that.range[0]) {
 				size = that.range[0];
 			}
@@ -1848,7 +2147,7 @@ sgUtils.android = {
 					if(that.visualizer.getEnabled()) {
 						that.visualizer.setEnabled(false);
 					}
-					that.visualizer.setCaptrueSize(that.rawVizData.length);
+					that.visualizer.setCaptureSize(that.rawVizData.length);
 				}
 			}catch(e) {
 				showError(e);
@@ -1860,7 +2159,7 @@ sgUtils.android = {
 				try {
 					if(!that.visualizer.getEnabled()) {
 						that.visualizer.setEnabled(true);
-						that.lastValidCaptrueTimeMs = java.lang.System.currentTimeMillis();
+						that.lastValidCaptureTimeMs = java.lang.System.currentTimeMillis();
 					}
 				}catch(e) {
 					showError(e);
@@ -1889,7 +2188,7 @@ sgUtils.android = {
 
 		// return - @byte[]
 		this.getRawData = function() {
-			if(that.captrueData()) {
+			if(that.captureData()) {
 				return that.rawVizData;
 			}else {
 				return that.rawNullData;
@@ -1899,7 +2198,7 @@ sgUtils.android = {
 		// num, den - @int
 		// return - @byte[]
 		this.getFormattedData = function(num, den) {
-			if(that.captrueData()) {
+			if(that.captureData()) {
 				if(that.type === that.TYPE_PCM) {
 					for(var i = 0; i < that.formattedVizData.length; i++) {
 						//convert from unsigned 8 bit to signed 16 bit
@@ -1913,7 +2212,7 @@ sgUtils.android = {
 						that.formattedVizData[i] = (that.rawVizData[i]*num)/den;
 					}
 				}else {
-					toast("Unknown AudioCaptrue Type");
+					toast("Unknown AudioCapture Type");
 					return that.formattedNullData;
 				}
 				return that.formattedVizData;
@@ -1923,7 +2222,7 @@ sgUtils.android = {
 		}
 
 		// return - boolen
-		this.captrueData = function() {
+		this.captureData = function() {
 			var status = android.media.audiofx.Visualizer.ERROR;
 			var result = true;
 			try {
@@ -1950,33 +2249,33 @@ sgUtils.android = {
 						if (that.rawVizData[i] !== nullValue) break;
 					}
 					if(i === that.rawVizData.length) {
-						if((java.lang.System.currentTimeMillis() - that.lastValidCaptrueTimeMs) > that.MAX_IDLE_TIME_MS) {
+						if((java.lang.System.currentTimeMillis() - that.lastValidCaptureTimeMs) > that.MAX_IDLE_TIME_MS) {
 							result = false;
 						}
 					}else {
-						that.lastValidCaptrueTimeMs = java.lang.System.currentTimeMillis();
+						that.lastValidCaptureTimeMs = java.lang.System.currentTimeMillis();
 					}
 				}
 			}
 			return result;
 		}
 
-		this.mAudioCaptrue = null;
+		this.mAudioCapture = null;
 		this.mVisible = null;
 
 		this.onVisibilityChanged = function(visible, type, size, audioSessionID) {
 			mVisible = visible;
 			if(visible) {
-				if(that.mAudioCaptrue === null) {
-					that.mAudioCaptrue = that.AudioCaptrue(type, size, audioSessionID);
+				if(that.mAudioCapture === null) {
+					that.mAudioCapture = that.AudioCapture(type, size, audioSessionID);
 					that.mVisData = new Array(size);
 				}
 				that.start();
 			}else {
-				if(that.mAudioCaptrue !== null) {
+				if(that.mAudioCapture !== null) {
 					that.stop();
 					that.release();
-					that.mAudioCaptrue = null;
+					that.mAudioCapture = null;
 				}
 			}
 		}
@@ -1985,13 +2284,13 @@ sgUtils.android = {
 	//ready
 	//vis.onVisibilityChanged(visible, type, size, android.media.MediaPlayer().getAudioSessionId());
 
-	//captrue
+	//capture
 	//vis.mVizData = vis.getFormattedData(1, 1);
 
 	/**
 	 * Stereo BGS
 	 *
-	 * @author Semteul
+	 * @author SemteulGaram
 	 * @since 2015-06
 	 *
 	 * @param (Int|nill) x
@@ -2125,7 +2424,7 @@ sgUtils.android = {
 	/**
 	 * Vibrator
 	 *
-	 * @author Semteul
+	 * @author SemteulGaram
 	 * @since 2015-10-29
 	 *
 	 * @param <Long|Array|null> pattern
@@ -2190,7 +2489,7 @@ sgUtils.android = {
 	/**
 	 * Screenshot
 	 *
-	 * @author Semteul
+	 * @author SemteulGaram
 	 * @since 2015-10-30
 	 *
 	 * @param <File> file
@@ -2220,7 +2519,7 @@ sgUtils.android = {
 		/**
 	 * ScreenBitmap
 	 *
-	 * @author Semteul
+	 * @author SemteulGaram
 	 * @since 2015-10-30
 	 *
 	 * @param <View|undefined> view
@@ -2242,7 +2541,7 @@ sgUtils.android = {
 	/**
 	 * Screen brightness
 	 *
-	 * @author Semteul
+	 * @author SemteulGaram
 	 * @since 2015-10-30
 	 *
 	 * @param <Float> bright (0~1)
@@ -3364,7 +3663,7 @@ function findMessage(key) {
 			return messageContainer[lang][key];
 		}
 	}
-	
+
 	if(messageContainer["en_EU"][key] !== undefined) {
 		return messageContainer["en_EU"][key];
 	}else {
@@ -3388,6 +3687,7 @@ var messageContainer = {
 		load: "Load",
 		next: "Next",
 		prev: "Previous",
+    close: "Close",
 		fill: "Fill",
 		clear: "Clear",
 		replace: "Replace",
@@ -3416,6 +3716,7 @@ var messageContainer = {
 		edit: "Edit",
 		tool: "Tool",
 		setting: "Setting",
+    help: "Help",
 		about: "About",
 		btn_vis: "Main button visible",
 		menu_loc: "Menu location",
@@ -3428,7 +3729,7 @@ var messageContainer = {
 		cirtical: "Critical",
 		error: "Error",
 		unknown: "Unknown",
-		
+
 		msg_preparing: "Preparing...",
 		msg_backuping: "Backup...",
 		msg_working: "Working...",
@@ -3448,7 +3749,7 @@ var messageContainer = {
 		msg_async_start: "Async edit start... do not turn off",
 		msg_async_work: "Async editing... {%l}left",
 		msg_async_end: "Async edit finish",
-		 
+
 		warn_no_player: "Can't find player: {%p}",
 		warn_no_pos: "Please set 'Pos1' first",
 		warn_no_pos2: "Please set 'pos1' or 'pos2' first",
@@ -3539,6 +3840,7 @@ var messageContainer = {
 		load: "불러오기",
 		next: "다음",
 		prev: "이전",
+    close: "닫기",
 		fill: "채우기",
 		clear: "비우기",
 		replace: "바꾸기",
@@ -3567,6 +3869,7 @@ var messageContainer = {
 		edit: "에딧",
 		tool: "도구",
 		setting: "설정",
+    help: "도움말",
 		about: "대하여...",
 		btn_vis: "메인버튼 보이기",
 		menu_loc: "메뉴 위치",
@@ -3579,7 +3882,7 @@ var messageContainer = {
 		cirtical: "심각",
 		error: "에러",
 		unknown: "알 수 없음",
-		
+
 		msg_preparing: "준비 중...",
 		msg_backuping: "백업 중...",
 		msg_working: "작업 중...",
@@ -3599,7 +3902,7 @@ var messageContainer = {
 		msg_async_start: "비동기 작업 시작됨... 전원을 종료하지 마세요",
 		msg_async_work: "비동기 에딧중... {%l}개 남음",
 		msg_async_end: "비동기 에딧 완료",
-		 
+
 		warn_no_player: "플레이어를 찾을 수 없습니다: {%p}",
 		warn_no_pos: "위치1을 지정해 주세요",
 		warn_no_pos2: "위치1,2 지정해 주세요",
@@ -3678,7 +3981,12 @@ var messageContainer = {
 		cmd_flip_desc: "복사된 영역을 기준축 방향으로 대칭합니다",
 		cmd_rotation: "회전",
 		cmd_rotation_usage: "@회전 <기준축> <각도>",
-		cmd_rotation_desc: "복사된 영역을 기준축으로 각도만큼 회전시킵니다"
+		cmd_rotation_desc: "복사된 영역을 기준축으로 각도만큼 회전시킵니다",
+
+    help_pos: "위치 설정법",
+    help_pos_content: "위치 설정법에는 크게 2가지가 있습니다.\n\n첫번째는 나무도끼(271:0)를 들고 블럭을 터치하면 '위치1'이 지정되고\n블럭을 길게 누르면 '위치2'가 지정됩니다.\n\n다른 방법으로는 명령어를 입력할 수 있습니다.\n채팅창에 '@위치1'이라고 치면 당신의 발 부분이 '위치1'로 지정되고\n'@위치2'라고 치면 당신의 발 부분이 '위치2'로 지정됩니다.\n\n명령어 기능을 잘 활용하면 공중에서도 위치 지정이 가능합니다.",
+    help_edit: "에딧 하는법",
+    help_edit_fill: "- - -"
 	}
 }
 
@@ -4334,6 +4642,7 @@ WorldEdit.prototype = {
 		var mm_edit = new we_menu(msg("edit"));
 		var mm_tool =  new we_menu(msg("tool"));
 		var mm_setting = new we_menu(msg("setting"));
+    var mm_help = new we_menu(msg("help"));
 		//에딧메뉴 하위 메뉴
 		var mme_circular = new we_menu(msg("circular"));
 		var mme_copy = new we_menu(msg("copy"));
@@ -4341,6 +4650,7 @@ WorldEdit.prototype = {
 		//메인메뉴 목록
 		this.mainMenu.addMenu(this.contentType.REDIRECT_MENU, msg("edit"), mm_edit);
 		this.mainMenu.addMenu(this.contentType.REDIRECT_MENU, msg("setting"), mm_setting);
+    this.mainMenu.addMenu(this.contentType.REDIRECT_MENU, msg("help"), mm_help);
 		this.mainMenu.addMenu(this.contentType.RUN_FUNCTION, msg("about"), this.about);
 		//에딧메뉴 목록
 		mm_edit.addMenu(this.contentType.RUN_FUNCTION, msg("restore"), function() {
@@ -4479,6 +4789,13 @@ WorldEdit.prototype = {
 			}, Gravity.CENTER, true);
 			dl.show();
 		});
+    //도움말 메뉴목록
+    mm_help.addMenu(this.contentType.RUN_FUNCTION, msg("help_pos"), function(view) {
+      var dl = new we_dialog(msg("help_pos"), new sgUtils.gui.document([
+        ["t", msg("help_pos_content")]
+      ], Gravity.CENTER, [sg.px*4, sg.px*4, sg.px*4, sg.px*4]), null, null, msg("close"), function() {this.close()});
+      dl.show();
+    });
 
 		//기본 메뉴로 전환
 		this.changeMenu(this.mainMenu);
@@ -5267,7 +5584,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 		if(editDetail === undefined) {//추가 정보가 없으면(로컬)
 			//bs(블럭선택)창이 먼저 뜨고나서 bs2(블럭선택)창이 뜹니다
 			//bs = 바꿀 블럭 선택 / bs2 = 바꿔질 블럭 선택
-			var bs2 = new we_blockSelect(msg("msg_select_block", false, null, [["w", msg("replace2")]]), msg("start"), function(id, data) {
+			var bs2 = new we_blockSelect(msg("msg_select_block", false, null, [["w", msg("replace") + 2]]), msg("start"), function(id, data) {
 				//긍정 버튼을 누를때
 				this.close();
 				editDetail.push(new Block(id, data));
@@ -5277,7 +5594,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 				//정 버튼을 누를때
 				this.close();
 			});
-			var bs = new we_blockSelect(msg("msg_select_block", false, null, [["w", msg("replace3")]]), msg("next"), function(id, data) {
+			var bs = new we_blockSelect(msg("msg_select_block", false, null, [["w", msg("replace")]]), msg("next"), function(id, data) {
 				//긍정버튼을 누를때
 				this.close();
 				editDetail = [new Block(id, data)];
