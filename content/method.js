@@ -51,6 +51,10 @@ var ArrayList = java.util.ArrayList;
 var Calendar = java.util.Calendar;
 var GregorianCalendar = java.util.GregorianCalendar;
 
+var ZipFile = java.util.zip.ZipFile;
+var ZipEntry = java.util.zip.ZipEntry;
+var ZipOutputStream = java.util.zip.ZipOutputStream;
+
 var Activity = android.app.Activity;
 var AlertDialog = android.app.AlertDialog;
 var Context = android.content.Context;
@@ -105,7 +109,7 @@ sg.wc = ViewGroup.LayoutParams.WRAP_CONTENT;
 sg.ai = java.lang.reflect.Array.newInstance;
 sg.rl = RelativeLayout;
 sg.ll = LinearLayout;
-sh.fl = FrameLayout;
+sg.fl = FrameLayout;
 sg.rlp = RelativeLayout.LayoutParams;
 sg.llp = LinearLayout.LayoutParams;
 sg.flp = FrameLayout.LayoutParams;
@@ -152,7 +156,7 @@ function showError(e) {
 
 
 var sgUrls = {
-	font: "https://www.dropbox.com/s/y1o46b2jkbxwl3o/minecraft.ttf?dl=1";
+	font: "https://www.dropbox.com/s/y1o46b2jkbxwl3o/minecraft.ttf?dl=1"
 }
 
 
@@ -254,15 +258,18 @@ function thread(fc) {
  *   ㄴ saveJSON
  *   ㄴ loadArticle √
  *   ㄴ saveArticle √
- *   ㄴ loadMcpeSetting √
+ *   ㄴ loadMcpeSetting
  *   ㄴ saveMcpeSetting √
  *   ㄴ loadBitmapFile
+ *   ㄴ zip √
+ *   ㄴ unZip √
+ *   ㄴ loadZipAsset
  * ㄴ convert
  *   ㄴ splitLines √
  *   ㄴ margeArray √
  *   ㄴ viewSide √
- *   ㄴ numberToString √
- *   ㄴ dataSizeToString √
+ *   ㄴ numberToString
+ *   ㄴ dataSizeToString
  * ㄴ math
  *   ㄴ randomId
  *   ㄴ leftOver
@@ -276,12 +283,13 @@ function thread(fc) {
  *   ㄴ mcButton √
  *   ㄴ customToast
  *   ㄴ customProgressBar
+ *   ㄴ loadBitmapLayout
  * ㄴ net
  *   ㄴ download √
  *   ㄴ loadScriptServerData √
  *   ㄴ readContent √
  * ㄴ modPE
- *   ㄴ broadcast √
+ *   ㄴ broadcast
  * ㄴ android
  *   ㄴ battery √
  *   ㄴ visualizer √
@@ -361,7 +369,7 @@ sgUtils.io = {
 		while((len = bis.read(buffer)) != null) {
 			bos.write(buffer, 0, len);
 		 if(getProgress !== null && getProgress !== undefined) {
-				sgUtils.data[getProgress] += content;
+				sgUtils.data[getProgress] += parseInt(len);
 			}
 		}
 		input.close();
@@ -378,7 +386,7 @@ sgUtils.io = {
 	 * @since 2015-04
 	 *
 	 * @param {File} prototypeFile
-	 * @param {string} innerPath - ex."images/mob/steve.png"
+	 * @param {String} innerPath - ex."images/mob/steve.png"
 	 * @return {boolean} success
 	 */
 	setTexture: function(prototypeFile, innerPath){
@@ -408,8 +416,8 @@ sgUtils.io = {
 	 * @author Semteul
 	 * @since 2015-10-25
 	 *
-	 * @param {(File|string|InputStream)} file
-	 * @return {string[]} lines
+	 * @param {(File|String|InputStream)} file
+	 * @return {String[]} lines
 	 */
 	readFile: function(file) {
 		if(typeof file === "string") {
@@ -441,8 +449,8 @@ sgUtils.io = {
 	 * @author Semteul
 	 * @since 2015-10-25
 	 *
-	 * @param {(File|string)} file
-	 * @param {(string[]|string)} value
+	 * @param {(File|String)} file
+	 * @param {(String[]|String)} value
 	 * @param {boolean} mkDir
 	 * @return {boolean} success
 	 */
@@ -486,7 +494,7 @@ sgUtils.io = {
 	 * @author SemteulGaram
 	 * @since 2015-09
 	 *
-	 * @param {(File|string|InputStream)} file
+	 * @param {(File|String|InputStream)} file
 	 * @return {Object} value
 	 */
 	loadJSON: function(file) {
@@ -501,7 +509,7 @@ sgUtils.io = {
 	 * @author SemteulGaram
 	 * @since 2015-09
 	 *
-	 * @param {(File|string|InputStream)} file
+	 * @param {(File|String|InputStream)} file
 	 * @param {Object} obj
 	 * @return {boolean} success
 	 */
@@ -515,9 +523,9 @@ sgUtils.io = {
 	 * @author SemteulGaram
 	 * @since 2015-02
 	 *
-	 * @param {(File|string|InputStream)} file
-	 * @param {string} article
-	 * @return {string} value
+	 * @param {(File|String|InputStream)} file
+	 * @param {String} article
+	 * @return {String} value
 	 */
 	loadArticle: function(file, article) {
 		var values = this.readFile(file);
@@ -539,9 +547,9 @@ sgUtils.io = {
 	 * @author SemteulGaram
 	 * @since 2015-02
 	 *
-	 * @param {File|string|InputStream} file
-	 * @param {string} article
-	 * @param {string} value
+	 * @param {File|String|InputStream} file
+	 * @param {String} article
+	 * @param {String} value
 	 * @return {boolean} success
 	 */
 	saveArticle: function(file, article, value) {
@@ -570,8 +578,8 @@ sgUtils.io = {
 	 * @author SemteulGaram
 	 * @since 2015-11-13
 	 *
-	 * @param {string} article
-	 * @return {string} value
+	 * @param {String} article
+	 * @return {String} value
 	 */
 	loadMcpeSetting: function(article) {
 		article += "";
@@ -596,8 +604,8 @@ sgUtils.io = {
 	 * @author SemteulGaram
 	 * @since 2015-11-13
 	 *
-	 * @param {string} article
-	 * @param {string} value
+	 * @param {String} article
+	 * @param {String} value
 	 * @return {true} success
 	 */
 	saveMcpeSetting: function(article, value) {
@@ -654,6 +662,240 @@ sgUtils.io = {
 			}
 		}
 		return lo;
+	},
+
+	/**
+	 * Zip
+	 * 파일이나 디렉토리(내부의 모든 디렉토리 및 파일을 포함한)를 압축합니다
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-03-08
+	 * @param {(String|File)} inputPath - 압축을 할 파일 및 폴더
+	 * @param {(String|File)} outputPath - 출력할 zip 파일
+	 * @param {(String|null|undefined)} getTotalMax - 전체 파일의 갯수 sgUtils.data pointer
+	 * @param {(String|null|undefined)} getTotalProgress - 작업완료한 파일의 갯수 sgUtils.data pointer
+	 * @param {(String|null|undefined)} getCrtMax - 현재 작업중인 파일의 크기 sgUtils.data pointer
+	 * @param {(String|null|undefined)} getCrtProgress - 현재 진행중인 파일의 작업완료 크기 sgUtils.data pointer
+	 * @return {Int} - [
+	 * 	1 = 성공
+	 * 	0 = 입력경로에 파일이 존재하지 않음
+	 * 	-1 = 입력경로의 파일들을 읽는데 실패함
+	 * ]
+	 */
+	zip: function(input, output, getTotalMax, getTotalProgress, getCrtMax, getCrtProgress) {
+		//입력경로의 문법 확인
+		if(input instanceof File){
+			var inputPath = input;
+		}else if(input instanceof String){
+			var inputPath = new File(input);
+		}else{
+			throw new Error("Illegal argument type");
+	 }
+ 	
+	 //입력경로의 파일|폴더 존재 확인
+		if(!inputPath.exists()){
+			return 0;
+		}
+		
+		//출력경로의 문법 확인
+		if(output instanceof File){
+			var outputPath = output;
+		}else if(output instanceof String){
+			var outputPath = new File(output);
+2		}else{
+			throw new Error("Illegal argument type");
+		}
+	
+		//출력경로의 존재안하면 생성
+		if(!outputPath.getParentFile().exists()) {
+			outputPath.mkdirs();
+		}
+	
+		//압축할 파일목록
+		var fileList = [];
+	
+		//폴더 내부의 파일을 모두 목록에 집어넣기
+		function getFiles(dir){
+			try{
+				if(dir.isFile()) {
+					fileList.push(dir.getAbsolutePath());
+					return;
+				}
+				var files = dir.listFiles();
+				for(var e in files){
+					//재귀 함수
+					getFiles(files[e]);
+				}
+			}catch(e){
+				return -1;
+			}
+		}
+		
+		//모든 파일을 등록
+		getFiles(inputPath);
+		if(getTotalMax !== undefined && getTotalMax !== null) {
+			sgUtils.data[getTotalMax] = fileList.length;
+		}
+		if(getTotalProgress !== undefined && getTotalProgress !== null) {
+			sgUtils.data[getTotalProgress] = 0;
+		}
+		
+		//압축 개시
+		var fos = new FileOutputStream(outputPath);
+		var zos = new ZipOutputStream(fos);
+		for(var e in fileList){
+			//파일의 절대경로로부터 상대경로를 구해서 ZipEntry생성
+			var ze = new ZipEntry(fileList[e].substring(inputPath.getAbsolutePath().length()+1, fileList[e].getAbsolutePath().length()));
+			//ZipOutputStream의 새로운 Entry의 경로 등록
+			zos.putNextEntry(ze);
+			var fis = new FileInputStream(fileList[e]);
+			if(getCrtMax !== undefined && getCrtMax !== null) {
+				sgUtils.data[getCrtMax] = fis.available();
+			}
+			if(getCrtProgress !== undefined && getCrtProgress !== null) {
+				sgUtils.data[getCrtProgress] = 0;
+			}
+			//1024바이트씩 읽어오기
+			var buffer = sg.ai(Byte.TYPE, 1024);
+			var content;
+			while((content = fis.read(buffer)) > 0){
+				//ZipOutputStream에다가 파일 쓰기
+				zos.write(buffer, 0, content);
+				if(getCrtProgress !== undefined && getCrtProgress !== null) {
+					sgUtils.data[getCrtProgress] += parseInt(content);
+				}
+			}
+			//다음 파일로
+			zos.closeEntry();
+			fis.close();
+			if(getTotalProgress !== undefined && getTotalProgress !== null) {
+				sgUtils.data[getTotalProgress]++;
+			}
+		}
+		//닫기
+		zos.close();
+		fos.close();
+		return 1;
+	},
+
+	/**
+	 * UnZip
+	 * 주어진 압축 파일을 압축 해제 합니다
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-10-16
+	 * @param {(String|File)} input - zip 파일의 경로 혹은 파일 객체
+	 * @param {(String|File)} output - 압축을 풀 폴더의 경로
+	 * @return [
+	 * 	1 = 성공
+	 * 	0 = 압축파일이 아닙니다
+	 * ]
+	 */
+	unZip: function(input, output) {
+		
+		if(input instanceof File) {
+			input = input;
+		}else if(input instanceof String) {
+			input = new File(input);
+		}else {
+			throw new Error("Illegal argument type");
+		}
+	
+		if(output instanceof File) {
+			output = output;
+		}else if(output instanceof String) {
+			output = new File(output);
+		}else {
+			throw new Error("Illegal argument type");
+		}
+	
+		output.getParentFile().mkdirs();
+	
+		try {
+			var zip = new ZipFile(input);
+			var entries = zip.entries();
+		}catch(e) {
+			return 0;
+		}
+	
+		var entrie, outputFile, bis, bos, buf, count;
+	
+		while(entries.hasNextElement()) {
+			entrie = entries.nextElement();
+			outputFile = new File(output, entrie.getName());
+			bis = new BufferedInputStream(zip.getInputStream(entrie));
+	   bos = new BufferedOutputStream(new FileOutputStream(outputFile));
+			buf = sg.ai(Byte.TYPE, 1024);
+			count = 0;
+			while((count = bis.read(buf)) >= 0){
+				bos.write(buf, 0, count);
+			}
+			bis.close();
+			bos.close();
+		}
+		zip.close();
+		return 1;
+	},
+
+	/**
+	 * LoadZipAsset
+	 * 압축파일에서 자료를 빼옵니다
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-12-06
+	 *
+	 * @param {(File|String)} file
+	 * return this
+	 */
+	loadZipAsset: function(file) {
+		if (!(this instanceof arguments.callee)) return new arguments.callee(file);
+		
+		/**
+		 * @param {String} innerPath
+		 * @return {(InputStream|number)} - 
+		 * 	0 = This is not zip file OR This zip is closed
+		 * 	-1 = Something wrong on read zip file
+		 * 	-2 = unknown innerPath
+		 */
+		this.getStream = function(innerPath) {
+			if(this.zf === null) {
+				return 0;
+			}
+			try {
+				var ent = this.zf.entries();
+				var entrie;
+				while(ent.hasMoreElements()) {
+					entrie = ent.nextElement();
+					if(entrie.getName() == innerPath) {
+						return this.zf.getInputStream(entrie);
+					}ent.getNextElement
+				}
+				return -2;
+			}catch(err) {
+				showError(err);
+				return -1;
+			}
+		}
+		
+		this.close = function() {
+			this.zf.close();
+			this.zf = null;
+		}
+		
+		//파일 인식
+		if(file instanceof File) {
+			this.file = file
+		}else if(input instanceof String) {
+			this.file = new File(file);
+		}else {
+			throw new Error("Illegal argument type");
+		}
+		
+		try {
+			this.zf = new ZipFile(file);
+		}catch(e) {
+			this.zf = null;
+		}
 	}
 }
 
@@ -671,9 +913,9 @@ sgUtils.convert = {
 	 * @author SemteulGaram
 	 * @since 2015-10-24
 	 *
-	 * @param {string} cutter
-	 * @param {string} content
-	 * @return {string}
+	 * @param {String} cutter
+	 * @param {String} content
+	 * @return {String}
 	 */
 	splitLine: function(cutter, content){
 		return content.split(cutter).join(String.fromCharCode(10));
@@ -770,7 +1012,7 @@ sgUtils.convert = {
 	 * @since 2015-04
 	 *
 	 * @param {float} yaw
-	 * @return {string} direction
+	 * @return {String} direction
 	 */
 	viewSide: function(yaw) {
 		var temp = sgUtils.math.leftOver(yaw, 0, 360);
@@ -817,7 +1059,7 @@ sgUtils.convert = {
 	 * @since 2015-09
 	 *
 	 * @param number
-	 * @return {string}
+	 * @return {String}
 	 */
 	numberToString: function(number) {
 		number += "";
@@ -853,7 +1095,7 @@ sgUtils.convert = {
 	 * @since 2015-09
 	 *
 	 * @param size
-	 * @return {string}
+	 * @return {String}
 	 */
  dataSizeToString: function(size) {
 		if(size < 1000) {
@@ -932,7 +1174,7 @@ sgUtils.math = {
 	 * @author SemteulGaram
 	 * @since 2015-11-23
 	 *
-	 * @param {string} number
+	 * @param {String} number
 	 * @return {boolean} isNumber
 	 */
 	 isNumber: function(number) {
@@ -1038,7 +1280,7 @@ sgUtils.gui = {
 	 * @author SemteulGaram
 	 * @since 2015-10-24
 	 *
-	 * @param {string|null} str
+	 * @param {String|null} str
 	 * @param {number|null} size
 	 * @param {boolean|null} hasShadow
 	 * @param {Color|null} color
@@ -1097,7 +1339,7 @@ sgUtils.gui = {
 	 * @author SemteulGaram
 	 * @since 2015-10-24
 	 *
-	 * @param {string} str
+	 * @param {String} str
 	 * @param {number|null} size
 	 * @param {boolean|null} hasShadow
 	 * @param {Color|null} color
@@ -1186,7 +1428,7 @@ sgUtils.gui = {
 	 * @author SemteulGaram
 	 * @since 2015-11-13
 	 *
-	 * @param {string} text
+	 * @param {String} text
 	 * @param {(Drawable|null)} drawable
 	 * @param {(long|null)} duration
 	 * @param {(boolean|null)} isImportant
@@ -1522,6 +1764,49 @@ sgUtils.gui = {
 			default:
 			throw new Error("Undefined custom progress bar type: " + type);
 		}
+	},
+	
+	
+	
+	/**
+	 * Load Bitmap to Layout
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-11-27
+	 *
+	 * @param {(File|String|InputStream)} image
+	 * @return {RelativeLayout} bitmap
+	 */
+	loadBitmapLayout: function(image) {
+		var lo = new sg.rl(ctx);
+		lo.setGravity(Gravity.CENTER);
+		
+		if(image instanceof String) {
+			image = new File(image);
+		}
+		
+		if(image instanceof File) {
+			if(!image.exists()) {
+				var er = sgUtils.gui.mcFastText("Image not found\n\n" + imageFile.getPath(), sg.px*0x8, false, Color.RED);
+				er.setGravity(Gravity.CENTER);
+				lo.addView(er);
+			}else {
+				var bm = BitmapFactory.decodeFile(image.getAbsolutePath());
+				var iv = new ImageView(ctx);
+				iv.setImageBitmap(bm);
+				lo.addView(iv);
+			}
+		}else if(image instanceof InputStream) {
+			var bm = BitmapFactory.decodeStream(image);
+			var iv = new ImageView(ctx);
+			iv.setImageBitmap(bm);
+			lo.addView(iv);
+		}else {
+			var er = sgUtils.gui.mcFastText("This isn't instance of Image\n\n" + imageFile, sg.px*0x8, false, Color.RED);
+			er.setGravity(Gravity.CENTER);
+			lo.addView(er);
+		}
+		return lo;
 	}
 }
 
@@ -1540,7 +1825,7 @@ sgUtils.net = {
 	 * @since 2015-01
 	 *
 	 * @param {File} path
-	 * @param {string} url
+	 * @param {String} url
 	 * @param getMax - sgUtils.data pointer
 	 * @param getProgress - sgUtils.data pointer
 	 * @return {boolean} success
@@ -1580,14 +1865,14 @@ sgUtils.net = {
 	 * @since 2015-01
 	 *
 	 * =>loadScriptServerData
-	 * @param {string} url
+	 * @param {String} url
 	 * @param savePointer - sgUtils.data pointer
 	 * @return {boolean} success
 	 *
 	 * =>ReadContent
 	 * @param savePointer - sgUtils.data pointer
-	 * @param {string} article
-	 * @return {string|null}
+	 * @param {String} article
+	 * @return {String|null}
 	 */
 	loadScriptServerData: function(updateServerUrl, savePointer) {
 		try{
@@ -2470,14 +2755,27 @@ function ttsIt(str, pitch, speed) {
 
 thread(function() {try {
 	sleep(3000);
-	sgUtils.gui.customToast("Hello");
+	sgUtils.gui.toast("Hello");
 	sleep(1000);
-	sgUtils.gui.customToast("World", null, null, true);
+	sgUtils.gui.toast("World", null, null, true);
 	sleep(500);
-	sgUtils.gui.customToast(":p");
+	sgUtils.gui.toast(":p");
 }catch(err) {
 	showError(err);
-}}).start();
+}});
+
+uiThread(function() {try {
+	var za = sgUtils.io.loadZipAsset(new File(sgFiles.sdcard, "test.zip"));
+	var bm = za.getStream("image.png");
+	if(typeof bm === "number") {
+		sgUtils.gui.toast(bm);
+	}else {
+		var wd = new PopupWindow(sgUtils.gui.loadBitmapLayout(bm), sg.wc, sg.wc, false);
+		wd.showAtLocation(sg.dv, 0, 0, 0);
+	}
+}catch(err) {
+	showError(err);
+}});
 
 /*
 var vt = null;
