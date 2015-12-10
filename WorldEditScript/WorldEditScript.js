@@ -17,8 +17,8 @@
 const NAME = "WorldEdit script";
 const NAME_CODE = "WorldEdit";
 //Season . Release Number . Commits
-const VERSION = "0.5.0";
-const VERSION_CODE = 110;
+const VERSION = "0.5.1";
+const VERSION_CODE = 112;
 const ASSETS_VERSION = 1;
 const TAG = "[" + "WorldEdit" + " " + VERSION + "] ";
 
@@ -4493,6 +4493,8 @@ WorldEdit.prototype = {
 			this.loading.setText("Download assets...");
 			try {
 				sgUtils.net.download(sgFiles.pkg, sgUrls.pkg);
+				var ast = new sgUtils.io.loadZipAsset(sgFiles.pkg);
+				this.assets = ast;
 			}catch(err) {
 				we_toast(msg("warn_net_connection"), 1, 5000, true);
 			}
