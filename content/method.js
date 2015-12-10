@@ -1773,7 +1773,7 @@ sgUtils.gui = {
 			iv.setImageBitmap(bm);
 			lo.addView(iv);
 		}else {
-			var er = sgUtils.gui.mcFastText("This isn't instance of Image\n\n" + imageFile, sg.px*0x8, false, Color.RED);
+			var er = sgUtils.gui.mcFastText("This isn't instance of Image\n\n" + image, sg.px*0x8, false, Color.RED);
 			er.setGravity(Gravity.CENTER);
 			lo.addView(er);
 		}
@@ -1810,7 +1810,7 @@ sgUtils.gui = {
 			switch(doc[0]) {
 				case "t"://Text
 				var size = sg.px*0x10, color = Color.WHITE, shadow = false;
-				if(doc.lenth > 2) {
+				if(doc.length > 2) {
 					size = parseInt(doc[2]);
 					color = Color.parseColor(doc[3]);
 					shadow = doc[4] == true;
@@ -1827,6 +1827,7 @@ sgUtils.gui = {
 				continue;
 			}
 		}
+		return layout;
 	}
 }
 
@@ -2791,7 +2792,7 @@ uiThread(function() {try {
 		sgUtils.gui.toast(bm);
 	}else {
 		var wd = new PopupWindow(sgUtils.gui.loadBitmapLayout(bm), sg.wc, sg.wc, false);
-		wd.showAtLocation(sg.dv, 0, 0, 0);
+		//wd.showAtLocation(sg.dv, 0, 0, 0);
 	}
 }catch(err) {
 	showError(err);
