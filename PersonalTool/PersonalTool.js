@@ -843,7 +843,7 @@ function modTick() {
 		ctn += (hour < 12 ? "MAM " : "MPM ") + hour % 12 + ":" + minc + "\n";
 	}
 	if(Pt.isOn[2]) {
-		ctn += Battery.Level() + "% " + Battery.temp() + "C° \n";
+		//ctn += Battery.Level() + "% " + Battery.temp() + "C° \n";
 	}
 }
 
@@ -853,17 +853,17 @@ Pt.isOn = [true, false, true];
 
 Pt.btn = new android.widget.Button(ctx);
 Pt.btn.setText("CI");
-Pt.btn.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, DIP*2);
+Pt.btn.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, DIP*8);
 Pt.btn.setTextColor(android.graphics.Color.WHITE);
 Pt.btn.setPadding(0, 0, 0, 0);
 
 Pt.btn_draw = new android.graphics.drawable.GradientDrawable();
-//Pt.btn_draw.mutate().setStroke(PIXEL*2, android.graphics.Color.rgb(30, 30, 30));
+Pt.btn_draw.mutate().setStroke(PIXEL*2, android.graphics.Color.rgb(30, 30, 30));
 Pt.btn_draw.mutate().setGradientType(android.graphics.drawable.GradientDrawable.RADIAL_GRADIENT);
 Pt.btn_draw.mutate().setGradientRadius(PIXEL*20);
-Pt.btn_draw.mutate().setColor(android.graphics.Color.argb(10, 30, 150, 255));
+Pt.btn_draw.mutate().setColor(android.graphics.Color.rgb(30, 150, 255));
 Pt.btn_draw.setCornerRadius(PIXEL*25);
-Pt.btn_draw.setAlpha(150);
+Pt.btn_draw.setAlpha(20);
 Pt.btn.setBackgroundDrawable(Pt.btn_draw);
 
 Pt.btn.setOnClickListener(new android.view.View.OnClickListener({onClick: function(view, event) {try {
@@ -885,14 +885,20 @@ Pt.btn.setOnLongClickListener(new android.view.View.OnLongClickListener({onLong
 	Pt.dl_et.setText(Pt.mod + "");
 	//Pt.dl_et.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
 	Pt.dl.setPositiveButton("Done",new android.content.DialogInterface.OnClickListener({onClick:function(){try {
-		Pt.mod = parseInt(Pt.dl_et.getText() + "");
+		var tst = Pt.dl_et.getText() + "";
+		var tst2 = tst.split(":");
+		if(tst2.length === 3) {
+			Player.addItemInventory(tst2[0], tst2[2], tst2[1]);
+			return;
+		}
+		Pt.mod = parseInt(tst);
 		if(Pt.mod < 0 && Pt.btn.getText() + "" != "Debug") {
 			Pt.btn.setText("Debug");
-			Pt.btn_draw.mutate().setColor(android.graphics.Color.argb(10, 255, 30, 50));
+			Pt.btn_draw.mutate().setColor(android.graphics.Color.rgb(255, 30, 50));
 			toast(TAG + "Debug Mod");
 		}else if(Pt.btn.getText() + "" != "CI") {
 			Pt.btn.setText("CI");
-			Pt.btn_draw.mutate().setColor(android.graphics.Color.argb(10, 30, 150, 255));
+			Pt.btn_draw.mutate().setColor(android.graphics.Color.rgb(30, 150, 255));
 		}
 	}catch(e) {
 		showError(e);
@@ -906,7 +912,7 @@ Pt.btn.setOnLongClickListener(new android.view.View.OnLongClickListener({onLong
 	return true;
 }}}));
 
-Pt.wd = new android.widget.PopupWindow(Pt.btn, PIXEL*50, PIXEL*50, false);
+Pt.wd = new android.widget.PopupWindow(Pt.btn, PIXEL*25, PIXEL*25, false);
 
 uiThread(function() {
 Pt.wd.showAtLocation(ctx.getWindow().getDecorView(), android.view.Gravity.RIGHT, PIXEL*2, -PIXEL*50);
