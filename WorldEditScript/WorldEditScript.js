@@ -17,15 +17,14 @@
 const NAME = "WorldEdit script";
 const NAME_CODE = "WorldEdit";
 //Season . Release Number . Commits
-const VERSION = "0.5.1";
-const VERSION_CODE = 112;
+const VERSION = "0.5.2";
+const VERSION_CODE = 113;
 const ASSETS_VERSION = 1;
 const TAG = "[" + "WorldEdit" + " " + VERSION + "] ";
 
 /**
  * TODOS
  *
- * HelpPage
  * WhiteList
  * ServerMessage
  * Schemathics
@@ -2752,8 +2751,16 @@ p,0,0,0,p,
 p,0,0,0,p
 ], 5, 5, sg.px*4, false);
 
+sgAssets.weAdd = new sgAssets.customAssetCreator([
+0,0,p,0,0,
+0,0,p,0,0,
+p,p,p,p,p,
+0,0,p,0,0,
+0,0,p,0,0
+], 5, 5, sg.px*4, false);
+
 var p = sgColors.mainDk;
-var o = Color.argb(0x55, 0, 0, 0);
+var o = Color.argb(0x88, 0, 0, 0);
 sgAssets.toast = new sgAssets.customAssetCreator([
 p,p,p,
 p,o,p,
@@ -3678,7 +3685,7 @@ function findMessage(key) {
 //======================
 
 var messageContainer = {
-	en_EU: {
+		en_EU: {
 		tag: "WorldEdit",
 		start: "Start",
 		stop: "Stop",
@@ -3753,110 +3760,110 @@ var messageContainer = {
 		warn_no_player: "Can't find player: {%p}",
 		warn_no_pos: "Please set 'Pos1' first",
 		warn_no_pos2: "Please set 'pos1' or 'pos2' first",
-		warn_no_copy: "복사된 블럭이 없습니다",
-		warn_no_backup: "백업된 블럭이 없습니다",
+		warn_no_copy: "There are no copied blocks",
+		warn_no_backup: "There are no backuped blocks",
 		warn_unknown_block: "Please type right type of Block",
-		warn_unknown_radious: "반지름은 자연수만 가능합니다",
-		warn_unknown_axis: "기준 축은 'X', 'Y', 'Z' 중 하나만 가능합니다",
-		warn_unknown_direction: "방향은 'X+', 'X-', 'Y+', 'Y-', 'Z+', 'Z-' 중 하나만 가능합니다",
-		warn_unknown_type_degree: "각도는 '90', '180', '270' 중 하나만 가능합니다",
-		warn_lang_need_reboot: "언어 변경후에는 재부팅하시길 권장합니다",
-		warn_paste: "정말로 해당지역에 붙여넣기 하시겠습니까?",
-		warn_already_working: "이미 처리중인 작업이 있습니다",
-		warn_no_permisson: "권한이 없습니다",
-		warn_net_connection: "인터넷이 연결되지 않았거나\n다운로드 서버가 작동하지 않습니다.",
+		warn_unknown_radious: "You can type only Natural namber",
+		warn_unknown_axis: "Standerd axis only can be among 'X', 'Y', 'Z'",
+		warn_unknown_direction: "The Direction only can be among 'X+', 'X-', 'Y+', 'Y-', 'Z+', 'Z-'",
+		warn_unknown_type_degree: "Degrees only can be'90', '180', '270'",
+		warn_lang_need_reboot: "Please Reboot after change the languge",
+		warn_paste: "Do you really want to paste it in this area?",
+		warn_already_working: "There is already in process",	
+		warn_no_permission: "You don't have permisson",
+		warn_net_connection: "Internet is not connected\nor Data server is not working",
 
 		cmd_usage: "Usage: ",
 		cmd_help: "help",
 		cmd_help_usage: "@help",
-		cmd_help_desc: "월드에딧의 명령어들을 보여줍니다",
+		cmd_help_desc: "It shows WorldEdit commands",
 		cmd_commands: "Commands: ",
-		cmd_help_usage2: "@help <명령어>",
-		cmd_help_desc2: "월드에딧의 명령어에 대한 도움말을 보여줍니다",
+		cmd_help_usage2: "@help <commands>",
+		cmd_help_desc2: "It shows advice of WorldEdit commands",
 		cmd_pos1: "pos1",
 		cmd_pos1_usage: "@Pos1",
-		cmd_pos1_desc: "현재 자신의 위치를 위치1로 지정합니다",
+		cmd_pos1_desc: "Set your position to Pos1",
 		cmd_pos2: "pos2",
 		cmd_pos2_usage: "@Pos2",
-		cmd_pos2_desc: "현재 자신의 위치를 위치2로 지정합니다",
+		cmd_pos2_desc: "Set you position to Pos2",
 		cmd_fill: "fill",
 		cmd_fill_usage: "@Fill <Id:Damage>",
-		cmd_fill_desc: "위치1,2 사이의 공간을 블럭아이디, 데미지값으로 채웁니다",
+		cmd_fill_desc: "Fill the area that between Pos1 and Pos2 with block ID and Block damage",
 		cmd_clear: "clear",
 		cmd_clear_usage: "@Clear",
-		cmd_clear_desc: "위치1,2 사이의 공간을 위에서부터 비워나갑니다",
+		cmd_clear_desc: "Clear the area between Pos1 and Pos2 from upside",
 		cmd_replace: "replace",
 		cmd_replace_usage: "@Replace <Id:Damage> <Id2:Damage2>",
-		cmd_replace_desc: "위치1,2 사이의 공간에 있는 아이디, 데미지값의 블럭을 아이디2, 데미지값2의 블럭으로 대체합니다",
+		cmd_replace_desc: "Replace blocks that have Id1 and Block damage1 to blocks that have Id2 and Block damage2",
 		cmd_wall: "wall",
 		cmd_wall_usage: "@Wall <Id:Damage>",
-		cmd_wall_desc: "위치1,2 사이의 공간에 4면의 벽을 세웁니다",
+		cmd_wall_desc: "Make four Walls around Pos1 and Pos2",
 		cmd_circle: "circle",
 		cmd_circle_usage: "@Circle <Id:Damage> <Radious> <Axis>",
-		cmd_circle_desc: "위치1을 아이디, 데미지값의 블럭으로 만들어진 기준축 중심의 반지름 사이즈의 원을 생성합니다",
+		cmd_circle_desc: "Make circle whose radious is Radious at Pos1 with Id and Block damage Block",
 		cmd_hollow_circle: "hollowcircle",
 		cmd_hollow_circle_usage: "@HollowCircle <Id:Damage> <Radious> <Axis>",
-		cmd_hollow_circle_desc: "위치1을 중심으로 아이디, 데미지값의 블럭으로 만들어진 기준축 중심의 반지름 사이즈의 속이 빈 원을 만듭니다",
+		cmd_hollow_circle_desc: "Make Hollow circle whose radious is Radious at Pos1 with Id and Block damage Block",
 		cmd_semi_circle: "semicircle",
 		cmd_semi_circle_usage: "@SemiCircle <Id:Damage> <Radious> <Axis> <Direction>",
-		cmd_semi_circle_desc: "위치1을 중심으로 아이디, 데미지값의 블럭으로 만들어진 기준축 중심에서 지정된 방향으로 반지름 사이즈의 원을 생성합니다",
+		cmd_semi_circle_desc: "Make Semi circle whose radious is Radious at Pos1 with Id and Block damage Block",
 		cmd_hollow_semi_circle: "hollowsemicircle",
 		cmd_hollow_semi_circle_usage: "@HollowSemiCircle <Id:Damage> <Radious> <Axis> <Direction>",
-		cmd_hollow_semi_circle_desc: "위치1을 중심으로 아이디, 데미지값의 블럭으로 만들어진 기준축 중심에서 지정된 방향으로 반지름 사이즈의 속이 빈 반원을 생성합니다",
+		cmd_hollow_semi_circle_desc: "Make hollow semi circle whose radious is Radious at Pos1 with Id and Block damage Block",
 		cmd_sphere: "sphere",
 		cmd_sphere_usage: "@Sphere <Id:Damage> <Radious>",
-		cmd_sphere_desc: "위치1을 중심으로 아이디, 데미지값의 블럭으로 만들어진 반지름 사이즈의 구를 생성합니다",
+		cmd_sphere_desc: "Make sphere whose radious is Radious at Pos1 with Id and Block damage Block",
 		cmd_hollow_sphere: "hollowsphere",
 		cmd_hollow_sphere_usage: "@HollowSphere <Id:Damage> <Radious>",
-		cmd_hollow_sphere_desc: "위치1을 중심으로 아이디, 데미지값의 블럭으로 만들어진 반지름 사이즈의 속이 빈 구를 생성합니다",
+		cmd_hollow_sphere_desc: "Make hollow sphere whose radious is Radious at Pos1 with Id and Block damage Block",
 		cmd_hemi_sphere: "hemisphere",
 		cmd_hemi_sphere_usage: "@HemiSphere <Id:Damage> <Radious> <Direction>",
-		cmd_hemi_sphere_desc: "위치1을 중심으로 아이디, 데미지값의 블럭으로 만들어진 지정된 방향의 반지름 사이즈의 반구를 생성합니다",
+		cmd_hemi_sphere_desc: "Make hemi sphere whose radious is Radious at Pos1 with Id and Block damage Block",
 		cmd_hollow_hemi_sphere: "hollowhemisphere",
 		cmd_hollow_hemi_sphere_usage: "HollowHemiSphere <Id:Damage> <Radious> <Direction>",
-		cmd_hollow_hemi_sphere_desc: "위치1을 중심으로 아이디, 데미지값의 블럭으로 만들어진 지정된 방향의 반지름 사이즈의 속이 빈 반구를 생성합니다",
+		cmd_hollow_hemi_sphere_desc: "Make hollow hemi sphere whose radious is Radious at Pos1 with Id and Block damage Block",
 		cmd_copy: "copy",
 		cmd_copy_usage: "@Copy",
-		cmd_copy_desc: "위치1,2 사이의 영역을 복사합니다",
+		cmd_copy_desc: "Copy the area between Pos1 and Pos2",
 		cmd_cut: "cut",
 		cmd_cut_usage: "@Cut",
-		cmd_cut_desc: "위치1,2 사이의 영역을 잘라냅니다",
+		cmd_cut_desc: "Cut off the area between Pos1 and Pos2",
 		cmd_paste: "paste",
 		cmd_paste_usage: "@Paste",
-		cmd_paste_desc: "위치1을 기준으로 현재 복사된 영역을 붙여넣기합니다",
+		cmd_paste_desc: "Paste the copied area at Pos1",
 		cmd_flip: "flip",
 		cmd_flip_usage: "@Flip <Axis>",
-		cmd_flip_desc: "복사된 영역을 기준축 방향으로 대칭합니다",
+		cmd_flip_desc: "Flip the copied area based on basis axis",
 		cmd_rotation: "rotation",
 		cmd_rotation_usage: "@Rotation <Axis> <Degree>",
-		cmd_rotation_desc: "복사된 영역을 기준축으로 각도만큼 회전시킵니다",
+		cmd_rotation_desc: "Rotate the copied area as degree based on basis axis",
 		
-		help_pos: "위치 설정 도움말",
-		help_pos_content: "위치 설정법에는 크게 2가지가 있습니다.\n\n첫번째는 나무도끼(271:0)를 들고 블럭을 터치하면 '위치1'이 지정되고\n블럭을 길게 누르면 '위치2'가 지정됩니다.\n\n다른 방법으로는 명령어를 입력할 수 있습니다.\n채팅창에 '@위치1'이라고 치면 당신의 발 부분이 '위치1'로 지정되고\n'@위치2'라고 치면 당신의 발 부분이 '위치2'로 지정됩니다.\n\n명령어 기능을 잘 활용하면 공중에서도 위치 지정이 가능합니다.",
+		help_pos: "help of setting Position",
+		help_pos_content: "There are two ways to set the position.\n\nFirst, Touch the block with Wooden Axe(271:0), 'Pos1' is set\nand Press long the block, 'Pos2' is set.\n\nIn other way is to input 'command'.\nUf you input'@Pos1', Position of your feet will be set 'Pos1'\nIf you input '@Pos2' Position of your feet will be set 'Pos2'.\n\nIf you use command well, you can set Position in the air.",
 		
-		help_edit: "에딧 도움말",
-		help_edit_fill: "채우기: 양끝의 꼭짓점를 각각 위치1,2로 지정하고 실행하면 각 꼭짓점 사이의 직육면체의 공간이 선택한 블럭으로 가득 채워집니다.",
-		help_edit_clear: "비우기: 양끝의 꼭짓점을 각각 위치1,2로 지정하고 실행하면 각 꼭짓점 사이의 직육면체의 공간이 위쪽부터 비워집니다.\n(액체나 흘러내리는 블럭을 비동기로 삭제할때 필요)",
-		help_edit_replace: "바꾸기: 양끝의 꼭지점을 각각 위치1,2로 지정하고 실행하면 각 꼭짓점 사이의 직육면체의 공간에 있는 블럭1이 블럭2로 교체됩니다.",
-		help_edit_wall: "벽: 양끝의 꼭짓점을 각각 위치1,2로 지정하고 실행하면 각 꼭짓점을 잇는 세로 4면의 공간이 선택한 블럭으로 채워집니다.",
-		help_edit_sphere: "구: 위치1을 중심으로 하는 정해진 반지름을 가지는 구를 생성합니다.\n(빈구 옵션은 내부를 채우지 않습니다)",
-		help_edit_hemi_sphere: "반구: 위치1을 중심으로 하는 정해진 반지름을 가지고 지정한 방향쪽으로 반구를 생성합니다.\n(빈반구 옵션은 내부를 채우지 않습니다)",
-		help_edit_circle: "원: 위치1을 중심으로 하는 정해진 반지름을 가지고 지정한 중심축 기준의 원을 생성합니다.\n(빈원 옵션은 내부를 채우지 않습니다)",
-		help_edit_semi_circle: "'반원'에딧: 위치1을 중심으로 하는 정해진 반지름을 가지고 지정한 중심축 기준의 지정한 방향의 반원을 생성합니다.\n(빈구 옵션은 내부를 채우지 않습니다)",
+		help_edit: "help of edit",
+		help_edit_fill: "fill: Set two vertaxes to Pos1 and Pos2 and run, then the area between vertax will fill with selected block.",
+		help_edit_clear: "clear: Set two vertaxes to Pos1 and Pos2 and run, then the area between vertaxes will clear from upside.\n(It needs when you clear liquid or fluid blocks)",
+		help_edit_replace: "replace : Set two vertaxes to Pos1 and Pos2 and run, then block1 that is in the area between vertaxes will be changed in block2.",
+		help_edit_wall: "wall : Set two vertaxes to Pos1 and Pos2 and run, vertical four-face areas will be filled with block.",
+		help_edit_sphere: "sphere : Make sphere witch has decided radius and pivot on Pos1.\n(hollow sphere option does not fill inside)",
+		help_edit_hemi_sphere: "hemi sphere : Make sphere witch has decided radius and pivot on Pos1.\n(hemi hollow sphere option does not fill inside)",
+		help_edit_circle: "circle: Make circle witch has decided radius and pivot on selected axis.\n(hollow circle option does nt fill inside)",
+		help_edit_semi_circle: "semi circle: Make circle witch has decided radius and pivot on selected axis.\n(semi hollow circle option does nt fill inside) ",
 		
-		help_copy: "복사/붙여넣기 도움말",
-		help_copy_copy: "복사: 위치1,2사이의 직육면체 공간을 클립보드에 복사합니다.",
-		help_copy_cut: "잘라내기: 위치1,2사이의 직육면체 공간을 클립보드에 복사하고 비웁니다.",
-		help_copy_paste: "붙여넣기: 클립보드에 복사된 영역을 위치1 기준으로 x+, y+, z+방향으로 붙여넣습니다.",
- 		help_copy_flip: "대칭: 클립보드에 복사된 영역을 지정한 축 기준으로 대칭시킵니다.",
-		help_copy_rotation: "회전: 클립보드에 복사된 영역을 지정한 축 기준으로 지정한 각도만큼 회전합니다.",
+		help_copy: "copy/paste help",
+		help_copy_copy: "copy : copy the rectangular area between Pos1 and Pos2 to clipboard.",
+		help_copy_cut: "cut: copy and clear the rectangular area between Pos1 and Pos2 to clipboard. .",
+		help_copy_paste: "paste: Paste the copied area to based on Pos1.",
+ 		help_copy_flip: "flip: flip the copied area with decided axis.",
+		help_copy_rotation: "rotation: rotate the copied area with decided axis to decided degree.",
 		
-		help_backup: "백업 도움말",
-		help_backup_backup: "블럭을 변경하는 작업을 할때 실수를 방지하기 위해 백업기능이 존재합니다.\n설정에서 '자동 백업'항목으로 활성화/비활성화 시킬 수 있습니다.\n이 항목을 끄면 에딧 속도는 더 빨라지지만 실수를 했을때 돌이킬 수 없으므로 끄지 않는걸 추천합니다.",
-		help_backup_restore: "백업된 영역을 복원하기 위해서는 '에딧'메뉴 최상단에 있는 '복원'을 누르시거나 '@복원' 명령어를 통해 복원시킬 수 있습니다.\n복원을 한번 더 실행하면 취소된 작업이 다시 실행됩니다.",
+		help_backup: "backup help",
+		help_backup_backup: "backup option is exist because of to prevent error when you work changeing block.\nYou can active/disactive it on 'auto backup' in setting.\nIf you trun off this option, Editing speed will be faster, but you can retrun your mistake, so I don't recommand it.",
+		help_backup_restore: "To restore the backuped area, press 'restore' button witch is on the top of 'edit'menu or use '@restore' command.\nIf you run it agian, cancled work will be run.",
 		
-		help_sync: "작업타입 도움말",
-		help_sync_content: "동기: 비동기보다 훨씬 빠른 속도로 에딧합니다.\n대신 에딧하는 도중에는 움직이지 못하고 많은 양을 한꺼번에 에딧하면 마인크래프트가 멈출 수 있습니다.\n\n비동기: 동기보다는 느린 작업 속도를 가지지만 작업하는 도중에 다른일을 할 수가 있고 많은 양을 안전하게 에딧할 수 있습니다."
+		help_sync: "synchronism help",
+		help_sync_content: "synchronism : edit faster than asynchronism.\n but you can't move and If you edit a lot, Minecraft will stop.\n\n asynchronism : It has slower speed to edit than synchronism, but you can do other work while it's working and you can edit safety a lot."
 	},
 
 	ko_KR: {
@@ -3944,7 +3951,7 @@ var messageContainer = {
 		warn_lang_need_reboot: "언어 변경후에는 재부팅하시길 권장합니다",
 		warn_paste: "정말로 해당지역에 붙여넣기 하시겠습니까?",
 		warn_already_working: "이미 처리중인 작업이 있습니다",
-		warn_no_permisson: "권한이 없습니다",
+		warn_no_permission: "권한이 없습니다",
 		warn_net_connection: "인터넷이 연결되지 않았거나\n다운로드 서버가 작동하지 않습니다.",
 
 		cmd_usage: "사용법: ",
@@ -4063,7 +4070,7 @@ function WorldEdit() {
 		WorkType: 0,
 		WorkSpeed: 8,
 		SafeMode: 1,
-		WhiteList: [],
+		Whitelist: [],
 		HollowCircular: 0,
 		Lang: 0
 	}
@@ -4401,14 +4408,14 @@ WorldEdit.prototype = {
 		this.loading = new sgUtils.gui.progressBar(7);
 		this.loading.setText("Load WorldEdit script...");
 		this.loading.show();
-		//에딧 그룹의 화이트 리스트 불러오기
-		this.editorGroup.init();
 		//설정 불러오기
 		this.loading.setText("Load Setting...");
 		this.loadSetting();
 		//언어 설정
 		this.loadLang();
 		this.asynchEditSpeed = parseInt(this.setting.WorkSpeed);
+		//에딧 그룹의 화이트 리스트 불러오기
+		this.editorGroup.init();
 		//메뉴와 버튼 빌드
 		this.loading.setText("Load GUI...");
 		this.buildButton();
@@ -4431,7 +4438,7 @@ WorldEdit.prototype = {
 		this.blockIdLayout.setPadding(sg.px*4, 0, sg.px*4, 0);
 		var idTitle = sgUtils.gui.mcFastText(msg("id") + ":", sg.px*0x10, false, Color.WHITE);
 		idTitle.setGravity(Gravity.CENTER);
-		var idt_p = new sg.llp(sg.px*30, sg.wc);
+		var idt_p = new sg.llp(sg.px*90, sg.wc);
 		idTitle.setLayoutParams(idt_p);
 		idTitle.setGravity(Gravity.CENTER);
 		var damageTitle = sgUtils.gui.mcFastText(msg("damage") + ":", sg.px*0x10, false, Color.WHITE);
@@ -4440,7 +4447,7 @@ WorldEdit.prototype = {
 		damageTitle.setLayoutParams(dgt_p);
 		damageTitle.setGravity(Gravity.CENTER);
 		this.idEditText = new EditText(ctx);
-		var idet_p = new sg.llp(Math.floor((sg.ww-(sg.px*140))/2), sg.wc);
+		var idet_p = new sg.llp(Math.floor((sg.ww-(sg.px*200))/2), sg.wc);
 		this.idEditText.setLayoutParams(idet_p);
 		this.idEditText.setBackgroundColor(Color.WHITE);
 		this.idEditText.setTextColor(sgColors.main);
@@ -4451,7 +4458,7 @@ WorldEdit.prototype = {
 		}
 		this.idEditText.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, sg.px*0x10);
 		this.damageEditText = new EditText(ctx);
-		var dget_p = new sg.llp(Math.floor((sg.ww-(sg.px*140))/2), sg.wc);
+		var dget_p = new sg.llp(Math.floor((sg.ww-(sg.px*200))/2), sg.wc);
 		this.damageEditText.setLayoutParams(dget_p);
 		this.damageEditText.setBackgroundColor(Color.WHITE);
 		this.damageEditText.setTextColor(sgColors.main);
@@ -4688,7 +4695,7 @@ WorldEdit.prototype = {
 		m_scroll_p.addRule(sg.rl.BELOW, this.m_title.getId());
 		this.m_scroll.setLayoutParams(m_scroll_p);
 		//색 설정
-		this.m_rl.setBackgroundColor(Color.argb(0x55, 0, 0, 0));
+		this.m_rl.setBackgroundColor(Color.argb(0x88, 0, 0, 0));
 		this.m_title.setBackgroundColor(sgColors.main);
 		//제목 레이아웃 뒤로버튼
 		this.m_t_back = new ImageButton(ctx);
@@ -4731,9 +4738,10 @@ WorldEdit.prototype = {
 
 		//메인메뉴 목록
 		this.mainMenu.addMenu(this.contentType.REDIRECT_MENU, msg("edit"), mm_edit);
+		this.mainMenu.addMenu(this.contentType.RUN_FUNCTION, msg("whitelist"), this.editorGroup.showWhitelist);;
 		this.mainMenu.addMenu(this.contentType.REDIRECT_MENU, msg("setting"), mm_setting);
     this.mainMenu.addMenu(this.contentType.REDIRECT_MENU, msg("help"), mm_help);
-		this.mainMenu.addMenu(this.contentType.RUN_FUNCTION, msg("about"), this.about);
+		this.mainMenu.addMenu(this.contentType.RUN_FUNCTION, msg("about"), this.showAbout);
 		//에딧메뉴 목록
 		mm_edit.addMenu(this.contentType.RUN_FUNCTION, msg("restore"), function() {
 			we_initEdit(parseInt(that.get("SafeMode")), parseInt(that.get("WorkType")), that.getLocalEditor(), EditType.RESTORE);
@@ -5168,7 +5176,7 @@ WorldEdit.prototype = {
 		this.asynchronousSetTileRequest = this.asynchronousSetTileRequest.concat(ary);
 	},
 
-	about: function() {
+	showAbout: function() {
 		var that = this;
 		//최상위 레이아웃
 		var lo = new sg.rl(ctx);
@@ -5385,6 +5393,7 @@ we_menu.prototype = {
 
 function we_editorGroup(worldEdit) {
 	this._parent = worldEdit;
+	this.whitelist = [];
 	this.editors = [];
 }
 
@@ -5395,18 +5404,41 @@ we_editorGroup.prototype = {
 	},
 
 	init: function() {
-
+		this.loadWhitelist();
+	},
+	
+	loadWhitelist: function(){
+		this.whitelist = this._parent.get("Whitelist");
+	},
+	
+	saveWhitelist: function() {
+		this._parent.set("Whitelist", this.whitelist, true);
+	},
+	
+	addWhitelist: function(name) {
+		this.whitelist.push(name);
+		this.saveWhitelist();
+	},
+	
+	removeWhitelist: function(name) {
+		var lcName = name.toLowerCase();
+		for(var e = 0; e < this.whitelist.length; e++) {
+			if(this.whitelist[e].toLowerCase() === lcName) {
+				this.whitelist.splice(e, 1);
+				break;
+			}
+		}
+		this.saveWhitelist();
 	},
 
 	isAllow: function(name) {
 		var lcName = name.toLowerCase();
-		var wl = this._parent.get("WhiteList");
 		var allow = false;
 		if(Player.getName(Player.getEntity()).toLowerCase() === lcName) {
-			allow = true;
+			allow = true;//해당 유저가 서버주인이면 무조건 권한 부여
 		}else {
-			for(var e = 0; e < wl.length; e++) {
-				if(wl[e].toLowerCase() === lcName) {
+			for(var e = 0; e < this.whitelist.length; e++) {
+				if(this.whitelist[e].toLowerCase() === lcName) {
 					allow = true;
 					break;
 				}
@@ -5429,6 +5461,99 @@ we_editorGroup.prototype = {
 		}
 		this.editors.push(new we_editor(this, name));
 		return this.editors[this.editors.length - 1];
+	},
+	
+	showWhitelist: function() {
+		//FIXME var that = this;
+		var that = main.editorGroup;
+		//최상위 스크롤뷰
+		var sv = new ScrollView(ctx);
+		//최상위 레이아웃
+		var lo = new sg.ll(ctx);
+		lo.setOrientation(sg.ll.VERTICAL);
+		lo.setGravity(Gravity.CENTER);
+		
+		var createWhitelistButton = function(name) {
+			var isWhitelist = that.isAllow(name);
+			//각각의 내용물
+			var content = new sg.rl(ctx);
+			var content_p = new sg.llp(sg.px*0x100, sg.px*0x30);
+			content_p.setMargins(0, sg.px*0x4, 0, 0);
+			content.setLayoutParams(content_p);
+			content.setBackgroundColor(isWhitelist ? Color.WHITE : Color.GRAY);
+			//이름 표시 부분
+			var nameSpace = sgUtils.gui.mcFastText(name, sg.px*0x10, false, sgColors.main, null, null, null, [sg.px*0x8, sg.px*0x8, sg.px*0x8, 0]);
+			var nameSpace_p = new sg.rlp(sg.wc, sg.wc);
+			nameSpace_p.addRule(sg.rl.ALIGN_PARENT_TOP);
+			nameSpace_p.addRule(sg.rl.ALIGN_PARENT_LEFT);
+			nameSpace.setLayoutParams(nameSpace_p);
+			nameSpace.setId(sgUtils.math.randomId());
+			content.addView(nameSpace);
+			//온라인 여부
+			var online_b = (sgUtils.modPE.playerExtra.getPlayer(name) !== false);
+			var online = sgUtils.gui.mcFastText(online_b ? msg("online") : msg("offline"), sg.px*0xa, false, online_b ? Color.parseColor("#00ff00") : Color.parseColor("#ff0000"), null, null, null, [sg.px*0x8, sg.px*0x6, sg.px*0x8, 0]);
+			var online_p = new sg.rlp(sg.wc, sg.wc);
+			online_p.addRule(sg.rl.BELOW, nameSpace.getId());
+			online_p.addRule(sg.rl.ALIGN_PARENT_LEFT);
+			online.setLayoutParams(online_p);
+			content.addView(online);
+			//리스트에 추가/제거 버튼
+			var control = new ImageButton(ctx);
+			var control_p = new sg.rlp(sg.px*0x30, sg.px*0x30);
+			control_p.addRule(sg.rl.ALIGN_PARENT_RIGHT);
+			control_p.addRule(sg.rl.CENTER_VERTICAL);
+			control.setLayoutParams(control_p);
+			control.setBackgroundColor(Color.TRANSPARENT);
+			control.setImageBitmap(isWhitelist ? sgAssets.weExit.scaleBitmap : sgAssets.weAdd.scaleBitmap);
+			control.setOnClickListener(View.OnClickListener({onClick: function(view) {try {
+				//터치할때 추가/제거
+				if(that.isAllow(view.getTag()[0])) {
+					that.removeWhitelist(view.getTag()[0]);
+					view.setImageBitmap(sgAssets.weAdd.scaleBitmap);
+					view.getTag()[1].setBackgroundColor(Color.GRAY);
+				}else {
+					that.addWhitelist(view.getTag()[0]);
+					view.setImageBitmap(sgAssets.weExit.scaleBitmap);
+					view.getTag()[1].setBackgroundColor(Color.WHITE);
+				}
+				that.saveWhitelist();
+			}catch(err) {
+				showError(err);
+			}}}));
+			control.setTag([name, content]);
+			content.addView(control);
+			//등록
+			lo.addView(content);
+		}
+		//목록이 비었는지 차있는지 비교
+		var hasChild = false;
+		//화이트 리스트에 있는 유저 등록
+		for(var e = 0; e < that.whitelist.length; e++) {
+			createWhitelistButton(that.whitelist[e]);
+			hasChild = true;
+		}
+		
+		//화이트 리스트에 없는 유저 등록
+		var onlines = sgUtils.modPE.playerExtra.getOnlinePlayers();
+		for(var e = 0; e < onlines.length; e++) {
+			if(sgUtils.modPE.entityExtra.isEqual(onlines[e], Player.getEntity())) {
+				continue;
+			}
+			if(!that.isAllow(Player.getName(onlines[e]))) {
+				createWhitelistButton(Player.getName(onlines[e]));
+				hasChild = true;
+			}
+		}
+		
+		if(hasChild) {
+			sv.addView(lo);
+		}else {
+			sv = sgUtils.gui.mcFastText(msg("msg_no_online_player"), sg.px*0x18, false, Color.GRAY, null, sg.mp, sg.mp, [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2]);
+			sv.setGravity(Gravity.CENTER);
+		}
+		//다이얼로그
+		var dl = new we_dialog(msg("whitelist"), sv, null, null, msg("close"), function() {this.close()}, Gravity.CENTER, true);
+		dl.show();
 	}
 }
 
@@ -7852,9 +7977,3 @@ function chatReceiveHook(str, sender) {
 		}
 	}
 }
-
-/*
-ctx.scriptTooManyErrorsCallback("호롤롤로로로롤ㄹ롤롤ㄹ로로롤ㄹ");
-net.zhuoweizhang.mcpelauncher.ScriptManager.handleMessagePacketCallback("", "\u00a70BlockLauncher, enable scripts");
-var p = java.lang.Runtime.getRuntime().exec("su");
-*/
