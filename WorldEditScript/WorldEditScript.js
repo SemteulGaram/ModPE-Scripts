@@ -17,8 +17,8 @@
 const NAME = "WorldEdit script";
 const NAME_CODE = "WorldEdit";
 //Season . Release Number . Commits
-const VERSION = "0.5.2";
-const VERSION_CODE = 113;
+const VERSION = "0.5.3";
+const VERSION_CODE = 114;
 const ASSETS_VERSION = 1;
 const TAG = "[" + "WorldEdit" + " " + VERSION + "] ";
 
@@ -3736,6 +3736,7 @@ var messageContainer = {
 		cirtical: "Critical",
 		error: "Error",
 		unknown: "Unknown",
+		whitelist: "Whitelist",
 
 		msg_preparing: "Preparing...",
 		msg_backuping: "Backup...",
@@ -3756,6 +3757,7 @@ var messageContainer = {
 		msg_async_start: "Async edit start... do not turn off",
 		msg_async_work: "Async editing... {%l}left",
 		msg_async_end: "Async edit finish",
+		msg_no_online_player: "No online player",
 
 		warn_no_player: "Can't find player: {%p}",
 		warn_no_pos: "Please set 'Pos1' first",
@@ -3859,11 +3861,11 @@ var messageContainer = {
 		help_copy_rotation: "rotation: rotate the copied area with decided axis to decided degree.",
 		
 		help_backup: "backup help",
-		help_backup_backup: "backup option is exist because of to prevent error when you work changeing block.\nYou can active/disactive it on 'auto backup' in setting.\nIf you trun off this option, Editing speed will be faster, but you can retrun your mistake, so I don't recommand it.",
-		help_backup_restore: "To restore the backuped area, press 'restore' button witch is on the top of 'edit'menu or use '@restore' command.\nIf you run it agian, cancled work will be run.",
+		help_backup_backup: "backup option is exist because of to prevent error when you work changeing block.\nYou can active/disactive it on 'auto backup' in setting.\nIf you trun off this option, Editing speed will be faster, but you can't retrun your mistake, so I don't recommand it.",
+		help_backup_restore: "To restore the backuped area, press 'restore' button witch is on the top of 'edit'menu or use '@restore' command.\nIf you run it agian, canceled work will be restart.",
 		
 		help_sync: "synchronism help",
-		help_sync_content: "synchronism : edit faster than asynchronism.\n but you can't move and If you edit a lot, Minecraft will stop.\n\n asynchronism : It has slower speed to edit than synchronism, but you can do other work while it's working and you can edit safety a lot."
+		help_sync_content: "synchronism : edit faster than asynchronism.\n but you can't move while edit and If you edit a lot, Minecraft some time stop.\n\n asynchronism : It has slower speed to edit than synchronism, but you can do other work while it's working and you can edit safety a lot."
 	},
 
 	ko_KR: {
@@ -3917,6 +3919,7 @@ var messageContainer = {
 		cirtical: "심각",
 		error: "에러",
 		unknown: "알 수 없음",
+		whitelist: "화이트리스트",
 
 		msg_preparing: "준비 중...",
 		msg_backuping: "백업 중...",
@@ -3937,6 +3940,7 @@ var messageContainer = {
 		msg_async_start: "비동기 작업 시작됨... 전원을 종료하지 마세요",
 		msg_async_work: "비동기 에딧중... {%l}개 남음",
 		msg_async_end: "비동기 에딧 완료",
+		msg_no_online_player: "온라인 플레이어가 없습니다",
 
 		warn_no_player: "플레이어를 찾을 수 없습니다: {%p}",
 		warn_no_pos: "위치1을 지정해 주세요",
@@ -4729,7 +4733,7 @@ WorldEdit.prototype = {
 		this.mainMenu = new we_menu(msg("tag"));
 		//메인 메뉴 하위메뉴
 		var mm_edit = new we_menu(msg("edit"));
-		var mm_tool = new we_menu(msg("tool"));
+		//var mm_tool = new we_menu(msg("tool"));
 		var mm_setting = new we_menu(msg("setting"));
 		var mm_help = new we_menu(msg("help"));
 		//에딧메뉴 하위 메뉴
@@ -4738,6 +4742,15 @@ WorldEdit.prototype = {
 
 		//메인메뉴 목록
 		this.mainMenu.addMenu(this.contentType.REDIRECT_MENU, msg("edit"), mm_edit);
+		this.mainMenu.addMenu(this.contentType.RUN_FUNCTION, msg("tool"), function() {
+			if(Level.getGameMode() === 0) {
+				//서바이벌에서는 아이템 추가시켜주기
+				Player.addItemInventory(271, 1, 0);
+			}else {
+				//그외(크리에이티브, 관전모드)는 직접 지정
+				Entity.setCarriedItem(Player.getEntity(), 271, 1, 0);
+			}
+		});
 		this.mainMenu.addMenu(this.contentType.RUN_FUNCTION, msg("whitelist"), this.editorGroup.showWhitelist);;
 		this.mainMenu.addMenu(this.contentType.REDIRECT_MENU, msg("setting"), mm_setting);
     this.mainMenu.addMenu(this.contentType.REDIRECT_MENU, msg("help"), mm_help);
@@ -7508,7 +7521,7 @@ function startDestroyBlock(x, y, z, side) {
 function destroyBlock(x, y, z, side) {
 	if(Player.getCarriedItem() === 271) {
 		preventDefault();
-		if(sg.ct() - _destroyBlockHook > 100) {
+		if(sg.ct() - _destroyBlockHook > 500) {
 			highlightBlock(x, y, z);
 			var editor = main.getLocalEditor();
 			if(editor === false) {
@@ -7542,7 +7555,7 @@ function chatReceiveHook(str, sender) {
 
 			case msg("cmd_pos1"):
 			var x = Math.floor(Entity.getX(player));
-			var y = Math.floor(Entity.getY(player));
+			var y = Math.floor(Entity.getY(player))-1;
 			var z = Math.floor(Entity.getZ(player));
 			editor.setPos1(new Vector3(x, y, z));
 			msg("msg_pos1", true, sender, [["x", x], ["y", y], ["z", z]]);
@@ -7552,7 +7565,7 @@ function chatReceiveHook(str, sender) {
 
 			case msg("cmd_pos2"):
 			var x = Math.floor(Entity.getX(player));
-			var y = Math.floor(Entity.getY(player));
+			var y = Math.floor(Entity.getY(player))-1;
 			var z = Math.floor(Entity.getZ(player));
 			editor.setPos2(new Vector3(x, y, z));
 			msg("msg_pos2", true, sender, [["x", x], ["y", y], ["z", z]]);
