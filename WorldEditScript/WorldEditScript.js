@@ -17,8 +17,8 @@
 const NAME = "WorldEdit script";
 const NAME_CODE = "WorldEdit";
 //Season . Release Number . Commits
-const VERSION = "0.5.3";
-const VERSION_CODE = 114;
+const VERSION = "0.5.4";
+const VERSION_CODE = 115;
 const ASSETS_VERSION = 1;
 const TAG = "[" + "WorldEdit" + " " + VERSION + "] ";
 
@@ -3754,10 +3754,12 @@ var messageContainer = {
 		msg_degree: "Degree '{%d}' selected...",
 		msg_cancel: "'{%w}' work canceled",
 		msg_request: "'{%w}' work requested",
+		msg_finish: "'{%w}' work finish",
 		msg_async_start: "Async edit start... do not turn off",
 		msg_async_work: "Async editing... {%l}left",
 		msg_async_end: "Async edit finish",
 		msg_no_online_player: "No online player",
+		msg_command_queue_info: "Please type '@yes' or '@no'",
 
 		warn_no_player: "Can't find player: {%p}",
 		warn_no_pos: "Please set 'Pos1' first",
@@ -3788,6 +3790,9 @@ var messageContainer = {
 		cmd_pos2: "pos2",
 		cmd_pos2_usage: "@Pos2",
 		cmd_pos2_desc: "Set you position to Pos2",
+		cmd_restore: "restore",
+		cmd_restore_usage: "@Restore",
+		cmd_restore_desc: "Restore recent task",
 		cmd_fill: "fill",
 		cmd_fill_usage: "@Fill <Id:Damage>",
 		cmd_fill_desc: "Fill the area that between Pos1 and Pos2 with block ID and Block damage",
@@ -3839,6 +3844,8 @@ var messageContainer = {
 		cmd_rotation: "rotation",
 		cmd_rotation_usage: "@Rotation <Axis> <Degree>",
 		cmd_rotation_desc: "Rotate the copied area as degree based on basis axis",
+		cmd_yes: "yes",
+		cmd_no: "no",
 		
 		help_pos: "help of setting Position",
 		help_pos_content: "There are two ways to set the position.\n\nFirst, Touch the block with Wooden Axe(271:0), 'Pos1' is set\nand Press long the block, 'Pos2' is set.\n\nIn other way is to input 'command'.\nUf you input'@Pos1', Position of your feet will be set 'Pos1'\nIf you input '@Pos2' Position of your feet will be set 'Pos2'.\n\nIf you use command well, you can set Position in the air.",
@@ -3937,10 +3944,12 @@ var messageContainer = {
 		msg_degree: "각도 '{%d}'도 로 선택됨...",
 		msg_cancel: "'{%w}' 작업 취소됨",
 		msg_request: "'{%w}' 작업 요청됨",
+		msg_finish: "'{%w}' 작업 완료",
 		msg_async_start: "비동기 작업 시작됨... 전원을 종료하지 마세요",
 		msg_async_work: "비동기 에딧중... {%l}개 남음",
 		msg_async_end: "비동기 에딧 완료",
 		msg_no_online_player: "온라인 플레이어가 없습니다",
+		msg_command_queue_info: "'@동의', '@거부' 중 하나를 입력해 주세요",
 
 		warn_no_player: "플레이어를 찾을 수 없습니다: {%p}",
 		warn_no_pos: "위치1을 지정해 주세요",
@@ -3971,6 +3980,9 @@ var messageContainer = {
 		cmd_pos2: "위치2",
 		cmd_pos2_usage: "@위치2",
 		cmd_pos2_desc: "현재 자신의 위치를 위치2로 지정합니다",
+		cmd_restore: "복원",
+		cmd_restore_usage: "@복원",
+		cmd_restore_desc: "최근의 작업을 복원합니다",
 		cmd_fill: "채우기",
 		cmd_fill_usage: "@채우기 <아이디:데미지값>",
 		cmd_fill_desc: "위치1,2 사이의 공간을 블럭아이디, 데미지값으로 채웁니다",
@@ -4022,6 +4034,8 @@ var messageContainer = {
 		cmd_rotation: "회전",
 		cmd_rotation_usage: "@회전 <기준축> <각도>",
 		cmd_rotation_desc: "복사된 영역을 기준축으로 각도만큼 회전시킵니다",
+		cmd_yes: "동의",
+		cmd_no: "거부",
 
 		help_pos: "위치 설정 도움말",
 		help_pos_content: "위치 설정법에는 크게 2가지가 있습니다.\n\n첫번째는 나무도끼(271:0)를 들고 블럭을 터치하면 '위치1'이 지정되고\n블럭을 길게 누르면 '위치2'가 지정됩니다.\n\n다른 방법으로는 명령어를 입력할 수 있습니다.\n채팅창에 '@위치1'이라고 치면 당신의 발 부분이 '위치1'로 지정되고\n'@위치2'라고 치면 당신의 발 부분이 '위치2'로 지정됩니다.\n\n명령어 기능을 잘 활용하면 공중에서도 위치 지정이 가능합니다.",
@@ -5695,6 +5709,14 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 	var workName = msg("unknown");
 	//작업 타입
 	var type = null;
+	//작업 완료를 채팅 메시지로 알림?
+	var broadcast = false;
+	//종료시 할것
+	function fin() {
+		if(broadcast && editor.getName().toLowerCase() == (Player.getName(Player.getEntity())+"").toLowerCase()) {
+			msg("msg_finish", true, editor.getName(), [["w", workName]]);
+		}
+	}
 	//작업 쓰레드 준비
 	var loading = null;
 	var atv = thread(function() {try{
@@ -5733,6 +5755,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 		var blocks = we_edit(type, editor, editDetail);
 		if(!Array.isArray(blocks) || blocks.length === 0) {
 			atv_m = 3;
+			fin();
 			return;
 		}else {
 			atv_m = 1;
@@ -5754,6 +5777,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 		}else {
 			main.asynchSetTileRequest(editor.getTempBlocks());
 		}
+		fin();
 	}catch(err) {
 		showError(err);
 	}});
@@ -5783,6 +5807,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 		var blocks = we_edit(type, editor, editDetail);
 		if(!Array.isArray(blocks) || blocks.length === 0) {
 			atv_m = 1;
+			fin();
 			return;
 		}else {
 			editor.setTempBlocks(blocks);
@@ -5802,6 +5827,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 		}else {
 			main.asynchSetTileRequest(editor.getTempBlocks());
 		}
+		fin();
 	}catch(err) {
 		showError(err);
 	}});
@@ -6310,6 +6336,8 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 		type = EditType.COPY;
 		//복사만 할때는 백업을 하지 않습니다
 		safeMode = 0;
+		//작업완료를 알림
+		broadcast = true;
 
 		//액티브 스타트!
 		atv.start();
@@ -6326,6 +6354,8 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 		}
 		workName = msg("cut");
 		type = EditType.CUT;
+		//작업완료를 알림
+		broadcast = true;
 
 		//액티브 스타트!
 		atv.start();
@@ -6372,6 +6402,8 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 				if(bool) {
 					holo.close();
 					msg("msg_request", true, editor.getName(), [["w", msg("paste")]]);
+					//작업완료를 알림
+					broadcast = true;
 					//액티브 스타트!
 					atv.start();
 				}else {
@@ -6433,6 +6465,8 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 
 			dl3.show();
 		}else {//추가 정보가 있으면(서버원)
+			//작업완료를 알림
+			broadcast = true;
 			//액티브 스타트!
 			uatv.start();
 		}
@@ -6520,6 +6554,8 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 
 			dl3.show();
 		}else {//추가 정보가 있으면(서버원)
+			//작업완료를 알림
+			broadcast = true;
 			//액티브 스타트!
 			uatv.start();
 		}
@@ -6538,7 +6574,9 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 		}
 		workName = msg("unknown") + " " + msg("backup");
 		type = EditType.BACKUP;
-
+		
+		//작업완료를 알림
+		broadcast = true;
 		//액티브 스타트!
 		atv.start();
 		break;
@@ -7455,9 +7493,9 @@ function modTick() {
 
 	if(main.asynchronousSetTileRequest.length > 0) {
 		if(!main.modTickWorking) {
-			msg("msg_async_start", true);
+			//msg("msg_async_start", true);
 			main.modTickWorking = true;
-			main.modTickMsgTick = 200;
+			main.modTickMsgTick = 0;
 		}
 		if(++main.modTickMsgTick >= 200) {
 			main.modTickMsgTick = 0;
@@ -7570,6 +7608,12 @@ function chatReceiveHook(str, sender) {
 			editor.setPos2(new Vector3(x, y, z));
 			msg("msg_pos2", true, sender, [["x", x], ["y", y], ["z", z]]);
 			break;
+			
+			
+			
+			case msg("cmd_restore"):
+			we_initEdit(1, 1, editor, EditType.RESTORE);
+			break;
 
 
 
@@ -7579,7 +7623,7 @@ function chatReceiveHook(str, sender) {
 				return;
 			}
 			var block = cmd[1].split(":");
-			if(block.length === 0) {
+			if(block.length === 1) {
 				block[1] = 0;
 			}
 			if(parseInt(block[0]) != block[0] || parseInt(block[0]) != block[0], block[0] >= 0x80 || block[0] < 0 || block[1] >= 0x10 || block[1] < 0) {
@@ -7605,11 +7649,11 @@ function chatReceiveHook(str, sender) {
 				return;
 			}
 			var block1 = cmd[1].split(":");
-			if(block1.length === 0) {
+			if(block1.length === 1) {
 				block1[1] = 0;
 			}
-			var block2 = cmd[1].split(":");
-			if(block2.length === 0) {
+			var block2 = cmd[2].split(":");
+			if(block2.length === 1) {
 				block2[1] = 0;
 			}
 			if(parseInt(block1[0]) != block1[0] || parseInt(block1[0]) != block1[0], block1[0] >= 0x80 || block1[0] < 0 || block1[1] >= 0x10 || block1[1] < 0) {
@@ -7620,7 +7664,7 @@ function chatReceiveHook(str, sender) {
 				msg("warn_unknown_block", true, sender);
 				return;
 			}
-			we_initEdit(1, 1, editor, EditType.REPLACE, [new Block(block1[0], block1[1], new Block(block2[0], block2[1]))]);
+			we_initEdit(1, 1, editor, EditType.REPLACE, [new Block(block1[0], block1[1]), new Block(block2[0], block2[1])]);
 			msg("msg_request", true, sender, [["w", msg("replace")]]);
 			break;
 
@@ -7632,7 +7676,7 @@ function chatReceiveHook(str, sender) {
 				return;
 			}
 			var block = cmd[1].split(":");
-			if(block.length === 0) {
+			if(block.length === 1) {
 				block[1] = 0;
 			}
 			if(parseInt(block[0]) != block[0] || parseInt(block[0]) != block[0], block[0] >= 0x80 || block[0] < 0 || block[1] >= 0x10 || block[1] < 0) {
@@ -7657,7 +7701,7 @@ function chatReceiveHook(str, sender) {
 				return;
 			}
 			var block = cmd[1].split(":");
-			if(block.length === 0) {
+			if(block.length === 1) {
 				block[1] = 0;
 			}
 			if(parseInt(block[0]) != block[0] || parseInt(block[0]) != block[0], block[0] >= 0x80 || block[0] < 0 || block[1] >= 0x10 || block[1] < 0) {
@@ -7690,7 +7734,7 @@ function chatReceiveHook(str, sender) {
 				return;
 			}
 			var block = cmd[1].split(":");
-			if(block.length === 0) {
+			if(block.length === 1) {
 				block[1] = 0;
 			}
 			if(parseInt(block[0]) != block[0] || parseInt(block[0]) != block[0], block[0] >= 0x80 || block[0] < 0 || block[1] >= 0x10 || block[1] < 0) {
@@ -7728,7 +7772,7 @@ function chatReceiveHook(str, sender) {
 				return;
 			}
 			var block = cmd[1].split(":");
-			if(block.length === 0) {
+			if(block.length === 1) {
 				block[1] = 0;
 			}
 			if(parseInt(block[0]) != block[0] || parseInt(block[0]) != block[0], block[0] >= 0x80 || block[0] < 0 || block[1] >= 0x10 || block[1] < 0) {
@@ -7765,7 +7809,7 @@ function chatReceiveHook(str, sender) {
 				return;
 			}
 			var block = cmd[1].split(":");
-			if(block.length === 0) {
+			if(block.length === 1) {
 				block[1] = 0;
 			}
 			if(parseInt(block[0]) != block[0] || parseInt(block[0]) != block[0], block[0] >= 0x80 || block[0] < 0 || block[1] >= 0x10 || block[1] < 0) {
@@ -7813,7 +7857,6 @@ function chatReceiveHook(str, sender) {
 
 			case msg("cmd_paste"):
 			we_initEdit(1, 1, editor, EditType.PASTE);
-			msg("msg_request", true, sender, [["w", msg("paste")]]);
 			break;
 
 
@@ -7870,6 +7913,11 @@ function chatReceiveHook(str, sender) {
 				case msg("cmd_pos2"):
 				msg(msg("cmd_usage") + msg("cmd_pod2_usage"), true, sender);
 				msg("cmd_pos2_desc", true, sender);
+				break;
+				
+				case msg("cmd_restore"):
+				msg(msg("cmd_usage") + msg("cmd_restore_usage"), true, sender);
+				msg("cmd_restore_desc", true, sender);
 				break;
 
 				case msg("cmd_fill"):
@@ -7958,7 +8006,7 @@ function chatReceiveHook(str, sender) {
 				break;
 
 				default:
-				var cmds = [msg("cmd_help"), msg("cmd_pos1"), msg("cmd_pos2"), msg("cmd_fill"), msg("cmd_clear"), msg("cmd_replace"), msg("cmd_wall"), msg("cmd_sphere"), msg("cmd_hollow_sphere"), msg("cmd_hemi_sphere"), msg("cmd_hollow_hemi_sphere"), msg("cmd_circle"), msg("cmd_hollow_circle"), msg("cmd_semi_circle"), msg("cmd_hollow_semi_circle"), msg("cmd_copy"), msg("cmd_cut"), msg("cmd_paste"), msg("cmd_flip"), msg("cmd_rotation")];
+				var cmds = [msg("cmd_help"), msg("cmd_pos1"), msg("cmd_pos2"), msg("cmd_restore"), msg("cmd_fill"), msg("cmd_clear"), msg("cmd_replace"), msg("cmd_wall"), msg("cmd_sphere"), msg("cmd_hollow_sphere"), msg("cmd_hemi_sphere"), msg("cmd_hollow_hemi_sphere"), msg("cmd_circle"), msg("cmd_hollow_circle"), msg("cmd_semi_circle"), msg("cmd_hollow_semi_circle"), msg("cmd_copy"), msg("cmd_cut"), msg("cmd_paste"), msg("cmd_flip"), msg("cmd_rotation")];
 				msg(msg("cmd_commands") + cmds.join(", "), true, sender);
 				msg("cmd_help_usage2", true, sender);
 				msg("cmd_help_desc2", true, sender);
