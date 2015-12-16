@@ -7803,6 +7803,7 @@ function chatReceiveHook(str, sender) {
 				msg(msg("cmd_usage") + msg("cmd_hollow_semi_circle_usage"), true, sender);
 				return;
 			}
+			isHollow = true;
 			case msg("cmd_semi_circle"):
 			if(cmd.length < 5) {
 				msg(msg("cmd_usage") + msg("cmd_semi_circle_usage"), true, sender);
