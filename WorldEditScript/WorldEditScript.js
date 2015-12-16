@@ -17,8 +17,8 @@
 const NAME = "WorldEdit script";
 const NAME_CODE = "WorldEdit";
 //Season . Release Number . Commits
-const VERSION = "0.5.4";
-const VERSION_CODE = 115;
+const VERSION = "0.5.5";
+const VERSION_CODE = 116;
 const ASSETS_VERSION = 1;
 const TAG = "[" + "WorldEdit" + " " + VERSION + "] ";
 
@@ -3776,6 +3776,7 @@ var messageContainer = {
 		warn_already_working: "There is already in process",	
 		warn_no_permission: "You don't have permisson",
 		warn_net_connection: "Internet is not connected\nor Data server is not working",
+		warn_wooden_axe_only_admin: "Wooden Axe pos setting is only available for Server admin",
 
 		cmd_usage: "Usage: ",
 		cmd_help: "help",
@@ -3966,6 +3967,7 @@ var messageContainer = {
 		warn_already_working: "이미 처리중인 작업이 있습니다",
 		warn_no_permission: "권한이 없습니다",
 		warn_net_connection: "인터넷이 연결되지 않았거나\n다운로드 서버가 작동하지 않습니다.",
+		warn_wooden_axe_only_admin: "나무도끼를 이용한 위치지정은 서버장만 가능합니다",
 
 		cmd_usage: "사용법: ",
 		cmd_help: "도움말",
@@ -7528,7 +7530,12 @@ function modTick() {
 }
 
 function useItem(x, y, z, itemId, blockId, side) {
-	if(Player.getCarriedItem() === 271) {
+	if(itemId === 271 && Player.getCarriedItem() === 271) {
+		if(Math.sqrt(Math.pow((Player.getX() - x), 2) + Math.pow((Player.getY() - y), 2) + Math.pow((Player.getZ() - z), 2)) > 12) {
+			var np = sgUtils.modPE.playerExtra.getNearPlayers(x, y, z);
+			msg("warn_wooden_axe_only_admin", true, Player.getName(np[0]));
+			return;
+		}
 		preventDefault();
 		highlightBlock(x, y, z);
 		var editor = main.getLocalEditor();
