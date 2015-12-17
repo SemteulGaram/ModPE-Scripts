@@ -17,8 +17,8 @@
 const NAME = "WorldEdit script";
 const NAME_CODE = "WorldEdit";
 //Season . Release Number . Commits
-const VERSION = "0.5.5";
-const VERSION_CODE = 116;
+const VERSION = "0.6.0";
+const VERSION_CODE = 117;
 const ASSETS_VERSION = 1;
 const SERVER_VERSION = 1;
 const TAG = "[" + "WorldEdit" + " " + VERSION + "] ";
@@ -4300,6 +4300,18 @@ function WorldEdit() {
 	this.mainMenu = null;
 	this.loadingLayout = null;
 	this.loading = null;
+	this.blockImagesData = null;
+	this.blockImagesLayout = null;
+	this.currentSelectedBlock = null;
+	this.blockIdLayout = null;
+	this.synchronizationSetTileRequest = [];
+	this.asynchronousSetTileRequest = [];
+	this.modTickWorking = false;
+	this.modTickMsgTick = 0;
+	this.server = null;
+
+	sgUtils.data.isProcessing = false;
+	sgUtils.data.progress = [0, 1];
 
 	this.assets = {
 		getStream: function() {},
@@ -4599,18 +4611,6 @@ function WorldEdit() {
 ["248:0", BlockTypes.CUBE, [["missing_tile", 0]], true],
 ["249:0", BlockTypes.CUBE, [["missing_tile", 0]], true]
 	];
-	this.blockImagesData = null;
-	this.blockImagesLayout = null;
-	this.currentSelectedBlock = null;
-	this.blockIdLayout = null;
-
-	this.synchronizationSetTileRequest = [];
-	this.asynchronousSetTileRequest = [];
-	this.modTickWorking = false;
-	this.modTickMsgTick = 0;
-
-	sgUtils.data.isProcessing = false;
-	sgUtils.data.progress = [0, 1];
 }
 
 WorldEdit.prototype = {
@@ -5260,7 +5260,7 @@ WorldEdit.prototype = {
 		pb_p.addRule(sg.rl.CENTER_IN_PARENT);
 		pb.setLayoutParams(pb_p);
 		this.loadingLayout.addView(pb);
-	}
+	},
 
 	buildBlockEditText: function() {
 		//블럭 아이디를 입력할 레이아웃
@@ -5304,6 +5304,7 @@ WorldEdit.prototype = {
 		this.blockIdLayout.addView(this.idEditText);
 		this.blockIdLayout.addView(damageTitle);
 		this.blockIdLayout.addView(this.damageEditText);
+	},
 
 	buildBlockImages: function() {
 		var that = this;
@@ -5634,7 +5635,7 @@ we_menu.prototype = {
 
 
 
-var we_server(data) {
+function we_server(data) {
 	try {//try parsing
 		if(data === false) {
 			this.pdata = {}
@@ -7903,7 +7904,7 @@ function chatReceiveHook(str, sender) {
 			if(block.length === 1) {
 				block[1] = 0;
 			}
-			if(parseInt(block[0]) != block[0] || parseInt(block[0]) != block[0], block[0] >= 0x80 || block[0] < 0 || block[1] >= 0x10 || block[1] < 0) {
+			if(parseInt(block[0]) != block[0] || parseInt(block[0]) != block[0], block[0] >= 0x100 || block[0] < 0 || block[1] >= 0x10 || block[1] < 0) {
 				msg("warn_unknown_block", true, sender);
 				return;
 			}
@@ -7933,11 +7934,11 @@ function chatReceiveHook(str, sender) {
 			if(block2.length === 1) {
 				block2[1] = 0;
 			}
-			if(parseInt(block1[0]) != block1[0] || parseInt(block1[0]) != block1[0], block1[0] >= 0x80 || block1[0] < 0 || block1[1] >= 0x10 || block1[1] < 0) {
+			if(parseInt(block1[0]) != block1[0] || parseInt(block1[0]) != block1[0], block1[0] >= 0x100 || block1[0] < 0 || block1[1] >= 0x10 || block1[1] < 0) {
 				msg("warn_unknown_block", true, sender);
 				return;
 			}
-			if(parseInt(block2[0]) != block2[0] || parseInt(block2[0]) != block2[0], block2[0] >= 0x80 || block2[0] < 0 || block2[1] >= 0x10 || block2[1] < 0) {
+			if(parseInt(block2[0]) != block2[0] || parseInt(block2[0]) != block2[0], block2[0] >= 0x100 || block2[0] < 0 || block2[1] >= 0x10 || block2[1] < 0) {
 				msg("warn_unknown_block", true, sender);
 				return;
 			}
@@ -7956,7 +7957,7 @@ function chatReceiveHook(str, sender) {
 			if(block.length === 1) {
 				block[1] = 0;
 			}
-			if(parseInt(block[0]) != block[0] || parseInt(block[0]) != block[0], block[0] >= 0x80 || block[0] < 0 || block[1] >= 0x10 || block[1] < 0) {
+			if(parseInt(block[0]) != block[0] || parseInt(block[0]) != block[0], block[0] >= 0x100 || block[0] < 0 || block[1] >= 0x10 || block[1] < 0) {
 				msg("warn_unknown_block", true, sender);
 				return;
 			}
@@ -7981,7 +7982,7 @@ function chatReceiveHook(str, sender) {
 			if(block.length === 1) {
 				block[1] = 0;
 			}
-			if(parseInt(block[0]) != block[0] || parseInt(block[0]) != block[0], block[0] >= 0x80 || block[0] < 0 || block[1] >= 0x10 || block[1] < 0) {
+			if(parseInt(block[0]) != block[0] || parseInt(block[0]) != block[0], block[0] >= 0x100 || block[0] < 0 || block[1] >= 0x10 || block[1] < 0) {
 				msg("warn_unknown_block", true, sender);
 				return;
 			}
@@ -8014,7 +8015,7 @@ function chatReceiveHook(str, sender) {
 			if(block.length === 1) {
 				block[1] = 0;
 			}
-			if(parseInt(block[0]) != block[0] || parseInt(block[0]) != block[0], block[0] >= 0x80 || block[0] < 0 || block[1] >= 0x10 || block[1] < 0) {
+			if(parseInt(block[0]) != block[0] || parseInt(block[0]) != block[0], block[0] >= 0x100 || block[0] < 0 || block[1] >= 0x10 || block[1] < 0) {
 				msg("warn_unknown_block", true, sender);
 				return;
 			}
@@ -8052,7 +8053,7 @@ function chatReceiveHook(str, sender) {
 			if(block.length === 1) {
 				block[1] = 0;
 			}
-			if(parseInt(block[0]) != block[0] || parseInt(block[0]) != block[0], block[0] >= 0x80 || block[0] < 0 || block[1] >= 0x10 || block[1] < 0) {
+			if(parseInt(block[0]) != block[0] || parseInt(block[0]) != block[0], block[0] >= 0x100 || block[0] < 0 || block[1] >= 0x10 || block[1] < 0) {
 				msg("warn_unknown_block", true, sender);
 				return;
 			}
@@ -8090,7 +8091,7 @@ function chatReceiveHook(str, sender) {
 			if(block.length === 1) {
 				block[1] = 0;
 			}
-			if(parseInt(block[0]) != block[0] || parseInt(block[0]) != block[0], block[0] >= 0x80 || block[0] < 0 || block[1] >= 0x10 || block[1] < 0) {
+			if(parseInt(block[0]) != block[0] || parseInt(block[0]) != block[0], block[0] >= 0x100 || block[0] < 0 || block[1] >= 0x10 || block[1] < 0) {
 				msg("warn_unknown_block", true, sender);
 				return;
 			}
