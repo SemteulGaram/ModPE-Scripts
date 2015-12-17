@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-const NAME = "Method";
-const NAME_CODE = "method";
-const VERSION = "0.0.1";
-const VERSION_CODE = 1;
+const NAME = "Creative chest filler";
+const NAME_CODE = "CreativeChestFiller";
+const VERSION = "1.0.0";
+const VERSION_CODE = 100;
 const TAG = "[" + NAME + " " + VERSION + "]";
 
 
@@ -66,6 +66,7 @@ var MediaPlayer = android.media.MediaPlayer;
 var Environment = android.os.Environment;
 var Process = android.os.Process;
 var Handler = android.os.Handler;
+var InputType = android.text.InputType;
 var View = android.view.View;
 var ViewGroup = android.view.ViewGroup;
 var MotionEvent = android.view.MotionEvent;
@@ -252,60 +253,6 @@ function thread(fc) {
 
 
 
-/**
- * SemteulGaram Utils
- *
- * sgUtils
- * ㄴ io
- *   ㄴ copyFile √
- *   ㄴ setTexture √
- *   ㄴ readFile
- *   ㄴ writeFile
- *   ㄴ loadJSON
- *   ㄴ saveJSON
- *   ㄴ loadArticle √
- *   ㄴ saveArticle √
- *   ㄴ loadMcpeSetting
- *   ㄴ saveMcpeSetting √
- *   ㄴ zip √
- *   ㄴ unZip √
- *   ㄴ loadZipAsset
- * ㄴ convert
- *   ㄴ splitLines √
- *   ㄴ margeArray √
- *   ㄴ viewSide √
- *   ㄴ numberToString
- *   ㄴ dataSizeToString
- * ㄴ math
- *   ㄴ randomId
- *   ㄴ leftOver
- *   ㄴ isNumber
- * ㄴ vector
- *   ㄴ DerectionToVector √
- *   ㄴ VectorToDirection
- *   ㄴ absoluteRange √
- * ㄴ gui
- *   ㄴ mcText √
- *   ㄴ mcButton √
- *   ㄴ customToast
- *   ㄴ customProgressBar
- *   ㄴ loadBitmapLayout
- *   ㄴ document √
- * ㄴ net
- *   ㄴ download √
- *   ㄴ loadServerData √
- * ㄴ modPE
- *   ㄴ broadcast
- * ㄴ android
- *   ㄴ battery √
- *   ㄴ visualizer √
- *   ㄴ bgs √
- *   ㄴ vibrate
- *   ㄴ screenshot (CAN'T FIX)
- *   ㄴ screenBitmap (CAN'T FIX)
- *   ㄴ screenBrightness √
- * (√: Need test)
- */
 var sgUtils =  {
 
 	toString: function() {
@@ -2803,6 +2750,20 @@ public Bitmap decodeFile(File f) {  //FUNCTION BY Arshad Parwez
 
 
 
+var p = Color.WHITE;
+sgAssets.underline = new sgAssets.customAssetCreator([
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,p,p,0,0,0,
+], 8, 8, sg.px*2, false, 4, 4, 5, 5);
+
+
+
 if(!sgFiles.font.exists()) {
 	sgFiles.font.getParentFile().mkdirs();
 	thread(function() {try {
@@ -2870,13 +2831,14 @@ chestDialog.prototype = {
 		}
 		//메인 레이아웃
 		this.layout = new sg.rl(ctx);
-		this.layout.setBackgroundColor(Color.WHITE);
+		this.layout.setBackgroundColor(sgColors.main);
 		//제목
-		this.title = sgUtils.gui.mcFastText("Chest Item List", sg.px*0x10, false, sgColors.main, null, null, null, [sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4]);
+		this.title = sgUtils.gui.mcFastText("Chest Item List", sg.px*0x10, false, Color.WHITE, null, null, null, [sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4]);
 		this.title.setId(sgUtils.math.randomId());
 		var title_p = new sg.rlp(sg.wc, sg.wc);
 		title_p.addRule(sg.rl.ALIGN_PARENT_TOP);
 		this.title.setLayoutParams(title_p);
+		this.title.setBackground(sgAsset.underline.ninePatch());
 		this.layout.addView(this.title);
 		//내용물들 스크롤
 		this.c_scroll = new ScrollView(ctx);
@@ -2890,7 +2852,7 @@ chestDialog.prototype = {
 		var isContent = false;
 		for(var e = 0; e < this.list.length; e++) {
 			isContent = true;
-			var btn = sgUtils.gui.mcFastButton("슬롯<" + (parseInt(this.list[e][0]) + 1) + "> 아이템<" + parseInt(this.list[e][1]) + ":" + parseInt(this.list[e][2]) + "> 수량<" + parseInt(this.list[e][3]) + ">", sg.px*0xa, false, sgColors.main, null, null, null, [sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4], null, null, null, function(view) {
+			var btn = sgUtils.gui.mcFastButton("Slot<" + (parseInt(this.list[e][0]) + 1) + "> Item<" + parseInt(this.list[e][1]) + ":" + parseInt(this.list[e][2]) + "> Count<" + parseInt(this.list[e][3]) + ">", sg.px*0xa, false, Color.WHITE, null, null, null, [sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4], null, sgAsset.underline.ninePatch(), null, function(view) {
 				var fd = fillerDialog(that, that.x, that.y, that.z, parseInt(this.getTag()));
 				fd.show();
 			}, null);
@@ -2898,6 +2860,7 @@ chestDialog.prototype = {
 			btn.setLayoutParams(btn_p);
 			btn.setTag(e);
 			btn.setBackgroundColor(Color.TRANSPARENT);
+			btn.setGravity(Gravity.LEFT);
 			this.c_layout.addView(btn);
 		}
 		if(!isContent) {
@@ -2917,13 +2880,14 @@ chestDialog.prototype = {
 		this.b_layout.setGravity(Gravity.CENTER);
 		this.b_layout.setPadding(sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4);
 		//닫기 버튼
-		this.b_close = sgUtils.gui.mcFastButton("닫기", sg.px*0xa, false, sgColors.main, null, sg.px*0x40, sg.wc, [sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4], null, null, null, function() {
+		this.b_close = sgUtils.gui.mcFastButton("Close", sg.px*0xa, false, sgColors.main, null, sg.px*0x40, sg.wc, null, [sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4], null, null, function() {
 			that.close();
 		}, null);
 		this.b_close.setGravity(Gravity.CENTER);
+		this.b_close.setBackgroundColor(Color.WHITE);
 		this.b_layout.addView(this.b_close);
 		//추가 버튼
-		this.b_add = sgUtils.gui.mcFastButton("추가", sg.px*0xa, false, sgColors.main, null, sg.px*0x40, sg.wc, [sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4], null, null, null, function() {
+		this.b_add = sgUtils.gui.mcFastButton("Add", sg.px*0xa, false, sgColors.main, null, sg.px*0x40, sg.wc, null, [sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4], null, null, function() {
 			var slot = that.getBlankIndex();
 			if(slot === -1) {
 				toast("상자에 빈 슬롯이 없습니다");
@@ -2933,6 +2897,7 @@ chestDialog.prototype = {
 			fd.show();
 		}, null);
 		this.b_add.setGravity(Gravity.CENTER);
+		this.b_add.setBackgroundColor(Color.WHITE);
 		this.b_layout.addView(this.b_add);
 		this.layout.addView(this.b_layout);
 		//윈도우
@@ -2952,7 +2917,7 @@ chestDialog.prototype = {
 			showError(err);
 		}});
 	},
-	
+
 	close: function() {
 		var that = this;
 		if(this.wd === null) {
@@ -2986,6 +2951,18 @@ function fillerDialog(parent, x, y, z, slot) {
 	this.y = y;
 	this.z = z;
 	this.slot = slot;
+	if(Level.getChestSlot(x, y, z) === 0) {
+		this.titleText = "Add item";
+		this.itemId = "";
+		this.itemDamage = "0";
+		this.itemDamage = "1";
+	}else {
+		this.titleText = "Edit item";
+		this.itemId = Level.getChestSlot(x, y, z);
+		this.itemDamage = Level.getChestSlotData(x, y, z);
+		this.itemDamage = Level.getChestSlotCount(x, t, z);
+	}
+	this.wd = null;
 }
 
 fillerDialog.prototype = {
@@ -2995,10 +2972,223 @@ fillerDialog.prototype = {
 	},
 
 	build: function() {
-
+		//최상위 배경 레이아웃
+		this.backLayout = new sg.rl(ctx);
+		this.backLayout.setBackgroundColor(Color.argb(0x88, 0, 0, 0));
+		//최상위 레이아웃
+		this.layout = new sg.rl(ctx);
+		var layoutP = new sg.rlp(sg.wc, sg.wc);
+		layoutP.addRule(sg.rl.CENTER_IN_PARENT);
+		this.layout.setLayoutParams(layoutP);
+		this.layout.setBackgroundColor(sgColors.main);
+		//제목
+		this.title = mcFastText(this.titleText, sg.px*0x10, false, Color.WHITE, null, null, null, [sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4]);
+		this.title.setId(sgUtils.math.randomId());
+		var titleP = new sg.rlp(sg.mp, sg.wc);
+		titleP.addRule(sg.rl.ALIGN_PARENT_TOP);
+		this.title.setLayoutParams(titleP);
+		this.title.setBackground(sgAssets.underline.ninePatch());
+		this.layout.addView(this.title);
+		//내용물들 스크롤
+		this.c_scroll = new ScrollView(ctx);
+		this.c_scroll.setId(sgUtils.math.randomId());
+		var c_scroll_p = new sg.rlp(sg.mp, sg.wc);
+		c_scroll_p.addRule(sg.rl.BELOW, this.title.getId());
+		this.c_scroll.setLayoutParams(c_scroll_p);
+		//내용물 레이아웃
+		this.c_layout = new sg.ll(ctx);
+		this.c_layout.setOrientation(sg.ll.VERTICAL);
+		this.c_layout.setGravity(Gravity.CENTER);
+		//슬롯 레이아웃
+		this.slotLayout = new sg.ll(ctx);
+		this.slotLayout.setOrientation(sg.ll.HORIZONTAL);
+		this.slotLayout.setPadding(null, sg.px*0x8, null, sg.px*0x8);
+		//슬롯 - 제목
+		this.slotTitle = new sgUtils.gui.mcFastText("Slot number ", sg.px*0xa, false, Color.WHTIE, null, null, null, [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2], [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2]);
+		this.slotLayout.addView(this.slotTitle);
+		//슬롯 - 에딧텍스트
+		this.slotEt = new EditText(ctx);
+		this.slotEt.setInputType(InputType.TYPE_CLASS_NUMBER);
+		this.slotEt.setText(this.slot);
+		this.slotEt.addTextChangedListener(android.text.TextWatcher({onTextChanged: function(charSequence, start, before, count) {try {
+			//TODO
+			//FIXME
+		}catch(err) {
+			showError(err);
+		}}}));
+		var slotEtP = new sg.llp(Math.floor(sg.px*0x20, sg.wc);
+		this.slotEt.setLayoutParams(slotEtP);
+		this.slotEt.setBackgroundColor(Color.WHITE);
+		this.slotEt.setTextColor(sgColors.main);
+		this.slotEt.setGravity(Gravity.CENTER|Gravity.RIGHT);
+		this.slotEt.setPadding(sg.px*4, sg.px*4, sg.px*4, sg.px*4);
+		if(sgFiles.font.exists()) {
+			this.slotEt.setTypeface(android.graphics.Typeface.createFromFile(sgFiles.font));
+		}
+		this.slotEt.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, sg.px*0x10);
+		this.slotLayout.addView(this.slotEt);
+		this.c_layout.addView(this.slotLayout);
+		//아이템 아이디 레이아웃
+		this.idLayout = new sg.ll(ctx);
+		this.idLayout.setOrientation(sg.ll.HORIZONTAL);
+		this.idLayout.setPadding(null, sg.px*0x8, null, sg.px*0x8);
+		//아이디 - 아이디 제목
+		this.idTitle = new sgUtils.gui.mcFastText("Item ", sg.px*0xa, false, Color.WHTIE, null, null, null, [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2], [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2]);
+		this.idLayout.addView(this.idTitle);
+		//아이디 - 아이디 에딧텍스트
+		this.idIdEt = new EditText(ctx);
+		this.idIdEt.setInputType(InputType.TYPE_CLASS_NUMBER);
+		this.idIdEt.setText(this.itemId);
+		var idIdEtP = new sg.llp(Math.floor(sg.px*0x20, sg.wc);
+		this.idIdEt.setLayoutParams(idIdEtP);
+		this.idIdEt.setBackgroundColor(Color.WHITE);
+		this.idIdEt.setTextColor(sgColors.main);
+		this.idIdEt.setGravity(Gravity.CENTER|Gravity.RIGHT);
+		this.idIdEt.setPadding(sg.px*4, sg.px*4, sg.px*4, sg.px*4);
+		if(sgFiles.font.exists()) {
+			this.idIdEt.setTypeface(android.graphics.Typeface.createFromFile(sgFiles.font));
+		}
+		this.idIdEt.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, sg.px*0x10);
+		this.idLayout.addView(this.idIdEt);
+		//아이디 - 점선
+		this.idSub = new sgUtils.gui.mcFastText(":", sg.px*0xa, false, Color.WHTIE, null, null, null, [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2], [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2]);
+		this.idLayout.addView(this.idSub);
+		//아이디 - 데이타 에딧텍스트
+		this.idDatEt = new EditText(ctx);
+		this.idDatEt.setInputType(InputType.TYPE_CLASS_NUMBER);
+		this.idDatEt.setText(this.itemId);
+		var idDatEtP = new sg.llp(Math.floor(sg.px*0x20, sg.wc);
+		this.idDatEt.setLayoutParams(idDatEtP);
+		this.idDatEt.setBackgroundColor(Color.WHITE);
+		this.idDatEt.setTextColor(sgColors.main);
+		this.idDatEt.setGravity(Gravity.CENTER|Gravity.RIGHT);
+		this.idDatEt.setPadding(sg.px*4, sg.px*4, sg.px*4, sg.px*4);
+		if(sgFiles.font.exists()) {
+			this.idDatEt.setTypeface(android.graphics.Typeface.createFromFile(sgFiles.font));
+		}
+		this.idDatEt.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, sg.px*0x10);
+		this.idLayout.addView(this.idDatEt);
+		this.c_layout.addView(this.idLayout);
+		//수량 레이아웃
+		this.countLayout = new sg.ll(ctx);
+		this.countLayout.setOrientation(sg.ll.HORIZONTAL);
+		this.countLayout.setPadding(null, sg.px*0x8, null, sg.px*0x8);
+		//수량 - 제목
+		this.countTitle = new sgUtils.gui.mcFastText("Count ", sg.px*0xa, false, Color.WHTIE, null, null, null, [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2], [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2]);
+		this.countLayout.addView(this.countTitle);
+		//수량 - 에딧텍스트
+		this.countEt = new EditText(ctx);
+		this.countEt.setInputType(InputType.TYPE_CLASS_NUMBER);
+		this.countEt.setText(this.itemId);
+		var countEtP = new sg.llp(Math.floor(sg.px*0x20, sg.wc);
+		this.countEt.setLayoutParams(countEtP);
+		this.countEt.setBackgroundColor(Color.WHITE);
+		this.countEt.setTextColor(sgColors.main);
+		this.countEt.setGravity(Gravity.CENTER|Gravity.RIGHT);
+		this.countEt.setPadding(sg.px*4, sg.px*4, sg.px*4, sg.px*4);
+		if(sgFiles.font.exists()) {
+			this.countEt.setTypeface(android.graphics.Typeface.createFromFile(sgFiles.font));
+		}
+		this.countEt.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, sg.px*0x10);
+		this.countLayout.addView(this.countEt);
+		this.c_layout.addView(this.countLayout);
+		this.c_scroll.addView(this.c_layout);
+		this.layout.addView(this.c_scroll);
+		//버튼 레이아웃
+		this.b_layout = new sg.ll(ctx);
+		var b_layout_p = new sg.rlp(sg.wc, sg.wc);
+		b_layout_p.addRule(sg.rl.CENTER_HORIZONTAL);
+		b_layout_p.addRule(sg.rl.BELOW, this.c_scroll.getId());
+		this.b_layout.setLayoutParams(b_layout_p);
+		this.b_layout.setOrientation(sg.ll.HORIZONTAL);
+		this.b_layout.setGravity(Gravity.CENTER);
+		this.b_layout.setPadding(sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4);
+		//닫기 버튼
+		this.b_close = sgUtils.gui.mcFastButton("Close", sg.px*0xa, false, sgColors.main, null, sg.px*0x40, sg.wc, null, [sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4], null, null, function() {
+			that.close();
+		}, null);
+		this.b_close.setGravity(Gravity.CENTER);
+		this.b_close.setBackgroundColor(Color.WHITE);
+		this.b_layout.addView(this.b_close);
+		//제거 버튼
+		this.b_delete = sgUtils.gui.mcFastButton("Delete", sg.px*0xa, false, Color.RED, null, sg.px*0x40, sg.wc, null, [sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4], null, null, function() {
+			that.close();
+		}, null);
+		this.b_delete.setGravity(Gravity.CENTER);
+		this.b_delete.setBackgroundColor(Color.WHITE);
+		this.b_layout.addView(this.b_delete);
+		//추가 버튼
+		this.b_add = sgUtils.gui.mcFastButton("Set", sg.px*0xa, false, sgColors.main, null, sg.px*0x40, sg.wc, null, [sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4], null, null, function() {
+			var slot = that.slotEt.getText() + "";
+			var id = that.idIdEt.getText() + "";
+			var damage = that.idDatEt.getText() + "";
+			var count = that.countEt.getText() + "";
+			if(!(sgUtils.math.isNumber(slot) || sgUtils.math.isNumber(id) || sgUtils.math.isNumber(damage) || sgUtils.math.isNumber(count))) {
+				toast("모든 칸은 숫자만 써야 합니다");
+				return;
+			}
+			if(slot < 1) {
+				toast("슬롯은 1보다 커야합니다");
+				return;
+			}
+			if(id < 0) {
+				toast("아이디는 0보다 커야합니다");
+				return;
+			}
+			if(damage < 0) {
+				toast("데미지는 0보다 커야합니다");
+				return;
+			}
+			if(count < 1)  {
+				toast("수량은 1보다 커야합니다");
+				toast("칸을 비우고 싶으시면 'Delete'버튼을 누르세요");
+				return;
+			}
+			Level.setChestSlot(that.x, that.y, that.z, slot, id, damage, count);
+			that._parent.refresh();
+			that.close();
+		}, null);
+		this.b_add.setGravity(Gravity.CENTER);
+		this.b_add.setBackgroundColor(Color.WHITE);
+		this.b_layout.addView(this.b_add);
+		this.layout.addView(this.b_layout);
+		//윈도우
+		this.backLayout.addView(this.layout);
+		this.wd = new PopupWindow(this.backLayout, sg.px*0x100, sg.wc, true);
 	},
 
 	show: function() {
+		var that = this;
+		if(this.wd === null) {
+			this.build();
+		}
+		uiThread(function() {try {
+			if(!that.wd.isShowing()) {
+				that.wd.showAtLocation(sg.dv, Gravity.CENTER, 0, 0);
+			}
+		}catch(err) {
+			showError(err);
+		}});
+	},
 
+	close: function() {
+		var that = this;
+		if(this.wd === null) {
+			this.build();
+		}
+		uiThread(function() {try {
+			if(that.wd.isShowing()) {
+				that.wd.dismiss();
+			}
+		}catch(err) {
+			showError(err);
+		}});
+	},
+
+	refresh: function() {
+		if(this.wd !== null && this.wd.isShowing()) {
+			this.close();
+			this.show();
+		}
 	}
 }

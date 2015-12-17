@@ -66,6 +66,7 @@ var MediaPlayer = android.media.MediaPlayer;
 var Environment = android.os.Environment;
 var Process = android.os.Process;
 var Handler = android.os.Handler;
+var InputType = android.text.InputType;
 var View = android.view.View;
 var ViewGroup = android.view.ViewGroup;
 var MotionEvent = android.view.MotionEvent;
