@@ -20,12 +20,12 @@ const NAME_CODE = "WorldEdit";
 const VERSION = "0.5.5";
 const VERSION_CODE = 116;
 const ASSETS_VERSION = 1;
+const SERVER_VERSION = 1;
 const TAG = "[" + "WorldEdit" + " " + VERSION + "] ";
 
 /**
  * TODOS
  *
- * WhiteList
  * ServerMessage
  * Schemathics
  * TaskManager
@@ -66,6 +66,10 @@ var ZipFile = java.util.zip.ZipFile;
 var ZipEntry = java.util.zip.ZipEntry;
 var ZipOutputStream = java.util.zip.ZipOutputStream;
 
+var NoSuchMethodError = java.lang.NoSuchMethodError;
+var UnknownError = java.lang.UnknownError;
+
+var R = android.R;
 var Activity = android.app.Activity;
 var AlertDialog = android.app.AlertDialog;
 var Context = android.content.Context;
@@ -77,6 +81,8 @@ var View = android.view.View;
 var ViewGroup = android.view.ViewGroup;
 var MotionEvent = android.view.MotionEvent;
 var Gravity = android.view.Gravity;
+var SurfaceView = android.view.SurfaceView;
+var SurfaceHolder = android.view.SurfaceHolder;
 var TypedValue = android.util.TypedValue;
 
 var Drawable = android.graphics.drawable;
@@ -95,6 +101,7 @@ var Path = android.graphics.Path;
 var Shader = android.graphics.Shader;
 var Matrix = android.graphics.Matrix;
 var Typeface = android.graphics.Typeface;
+var Camera = android.graphics.Camera;
 
 var FrameLayout = android.widget.FrameLayout;
 var RelativeLayout = android.widget.RelativeLayout;
@@ -168,7 +175,8 @@ function showError(e) {
 
 var sgUrls = {
 	font: "https://www.dropbox.com/s/y1o46b2jkbxwl3o/minecraft.ttf?dl=1",
-	pkg: "https://www.dropbox.com/s/0vdmuiyvhtlv2bj/wes1.pkg?dl=1"
+	pkg: "https://www.dropbox.com/s/0vdmuiyvhtlv2bj/wes1.pkg?dl=1",
+	server: "https://raw.githubusercontent.com/Semteul/ModPE-Scripts/master/content/scriptData/WorldEditScript.json"
 }
 
 
@@ -497,7 +505,7 @@ sgUtils.io = {
 	 * @author SemteulGaram
 	 * @since 2015-02
 	 *
-	 * @param {File|String|InputStream} file
+	 * @param {(File|String|InputStream)} file
 	 * @param {String} article
 	 * @param {String} value
 	 * @return {boolean} success
@@ -592,7 +600,7 @@ sgUtils.io = {
 	 * 파일이나 디렉토리(내부의 모든 디렉토리 및 파일을 포함한)를 압축합니다
 	 *
 	 * @author SemteulGaram
-   * @since 2015-03-08
+	 * @since 2015-03-08
 	 * @param {(String|File)} inputPath - 압축을 할 파일 및 폴더
 	 * @param {(String|File)} outputPath - 출력할 zip 파일
 	 * @param {(String|null|undefined)} getTotalMax - 전체 파일의 갯수 sgUtils.data pointer
@@ -1212,7 +1220,7 @@ sgUtils.gui = {
 	 * @param {(number|null)} height
 	 * @param {(Array|null)} padding
 	 * @param {(Array|null)} margins
-	 * @return {(TextView)}
+	 * @return {TextView}
 	 */
 	mcFastText: function(str, size, hasShadow, color, shadowColor, width, height, padding, margins) {
 		var tv = new TextView(ctx);
@@ -1830,47 +1838,33 @@ sgUtils.net = {
 	},
 
 	/**
-	 * Script server data
+	 * Server data
 	 *
 	 * @author SemteulGaram
 	 * @since 2015-01
 	 *
-	 * =>loadScriptServerData
-	 * @param {String} url
+	 * @param {String} serverUrl
 	 * @param savePointer - sgUtils.data pointer
 	 * @return {boolean} success
-	 *
-	 * =>ReadContent
-	 * @param savePointer - sgUtils.data pointer
-	 * @param {String} article
-	 * @return {(String|null)}
 	 */
-	loadScriptServerData: function(updateServerUrl, savePointer) {
+	loadServerData: function(serverUrl, savePointer) {
 		try{
-			var url = new URL(updateServerUrl);
+			var url = new URL(serverUrl);
 			var netStream = url.openStream();
 			var br = new BufferedReader(new InputStreamReader(netStream));
-			sgUtils.data[pointer] = [];
+			sgUtils.data[pointer] = "";
 			var content;
 			while ((content = br.readLine()) != null) {
-				sUtil.data[savePointer].push(content);
+				if (sgUtils.data[pointer] !== "") {
+					sgUtils.data[pointer] += "\n";
+				}
+				sUtil.data[savePointer] += content;
 			}
 			br.close();
 			return true;
 		}catch(e) {
 			return false;
 		}
-	},
-
-	readContent: function(savePointer, article){
-		var data = sgUtils.data[savePointer];
-		var content;
-		for(var e = 0; e < data.length; e++){
-			if(data[e].split(":")[0] == article) {
-				return data[e].subString(data[e].strPos(":")+1, data[e].length);
-			}
-		}
-		return null;
 	}
 }
 
@@ -2497,10 +2491,196 @@ sgUtils.android = {
 	 */
 	//THIS METHOD ISN'T WORK ON FULL SCREEN
 	screenshot: function(file, view) {
+		
+		/*public class Cam_View extends Activity implements SurfaceHolder.Callback {
+
+
+    ctx.setContentView(R.layout.camera);
+
+    CamView = ctx.findViewById(R.id.camview);//RELATIVELAYOUT OR 
+                                                          //ANY LAYOUT OF YOUR XML
+
+    var SurView = ctx.findViewById(R.id.sview);
+    //SURFACEVIEW FOR THE PREVIEW 
+			//OF THE CAMERA FEED
+    var camHolder = SurView.getHolder();
+    //NEEDED FOR THE PREVIEW
+    camHolder.addCallback(this);
+    //NEEDED FOR THE PREVIEW
+    camHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+    //NEEDED FOR THE PREVIEW
+    var camera_image = ctx.findViewById(R.id.camera_image);
+    //NEEDED FOR THE PREVIEW
+
+    camera.takePicture(null, null, mPicture);
+
+@Override
+public void surfaceChanged(SurfaceHolder holder, int format, int width,//NEEDED FOR THE PREVIEW
+    int height) {
+    if(previewRunning) {
+        camera.stopPreview();
+    }
+    Camera.Parameters camParams = camera.getParameters();
+    Camera.Size size = camParams.getSupportedPreviewSizes().get(0);
+    camParams.setPreviewSize(size.width, size.height);
+    camera.setParameters(camParams);
+    try {
+        camera.setPreviewDisplay(holder);
+        camera.startPreview();
+        previewRunning=true;
+    } catch(IOException e) {
+        e.printStackTrace();
+    }
+}
+
+public void surfaceCreated(SurfaceHolder holder) {                  //NEEDED FOR THE PREVIEW
+    try {
+        camera=Camera.open();
+    } catch(Exception e) {
+        e.printStackTrace();
+        Toast.makeText(getApplicationContext(),"Error",Toast.LENGTH_LONG).show();
+        finish();
+    }
+}
+
+@Override
+public void surfaceDestroyed(SurfaceHolder holder) {             //NEEDED FOR THE PREVIEW
+    camera.stopPreview();
+    camera.release();
+    camera=null;
+}
+
+public void TakeScreenshot(){    //THIS METHOD TAKES A SCREENSHOT AND SAVES IT AS .jpg
+    Random num = new Random();
+    int nu=num.nextInt(1000); //PRODUCING A RANDOM NUMBER FOR FILE NAME
+    CamView.setDrawingCacheEnabled(true); //CamView OR THE NAME OF YOUR LAYOUR
+    CamView.buildDrawingCache(true);
+    Bitmap bmp = Bitmap.createBitmap(CamView.getDrawingCache());
+    CamView.setDrawingCacheEnabled(false); // clear drawing cache
+    ByteArrayOutputStream bos = new ByteArrayOutputStream(); 
+    bmp.compress(CompressFormat.JPEG, 100, bos); 
+    byte[] bitmapdata = bos.toByteArray();
+    ByteArrayInputStream fis = new ByteArrayInputStream(bitmapdata);
+
+    String picId=String.valueOf(nu);
+    String myfile="Ghost"+picId+".jpeg";
+
+    File dir_image = new  File(Environment.getExternalStorageDirectory()+//<---
+                    File.separator+"Ultimate Entity Detector");          //<---
+    dir_image.mkdirs();                                                  //<---
+    //^IN THESE 3 LINES YOU SET THE FOLDER PATH/NAME . HERE I CHOOSE TO SAVE
+    //THE FILE IN THE SD CARD IN THE FOLDER "Ultimate Entity Detector"
+
+    try {
+        File tmpFile = new File(dir_image,myfile); 
+        FileOutputStream fos = new FileOutputStream(tmpFile);
+
+        byte[] buf = new byte[1024];
+        int len;
+        while ((len = fis.read(buf)) > 0) {
+            fos.write(buf, 0, len);
+        }
+        fis.close();
+        fos.close();
+        Toast.makeText(getApplicationContext(),
+                       "The file is saved at :SD/Ultimate Entity Detector",Toast.LENGTH_LONG).show();
+        bmp1 = null;
+        camera_image.setImageBitmap(bmp1); //RESETING THE PREVIEW
+        camera.startPreview();             //RESETING THE PREVIEW
+    } catch (FileNotFoundException e) {
+        e.printStackTrace();
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
+}
+
+private PictureCallback mPicture = new PictureCallback() {   //THIS METHOD AND THE METHOD BELOW
+                             //CONVERT THE CAPTURED IMAGE IN A JPG FILE AND SAVE IT
+
+    @Override
+    public void onPictureTaken(byte[] data, Camera camera) {
+
+        File dir_image2 = new  File(Environment.getExternalStorageDirectory()+
+                        File.separator+"Ultimate Entity Detector");
+        dir_image2.mkdirs();  //AGAIN CHOOSING FOLDER FOR THE PICTURE(WHICH IS LIKE A SURFACEVIEW
+                              //SCREENSHOT)
+
+        File tmpFile = new File(dir_image2,"TempGhost.jpg"); //MAKING A FILE IN THE PATH
+                        //dir_image2(SEE RIGHT ABOVE) AND NAMING IT "TempGhost.jpg" OR ANYTHING ELSE
+        try { //SAVING
+            FileOutputStream fos = new FileOutputStream(tmpFile);
+            fos.write(data);
+            fos.close();
+            //grabImage();
+        } catch (FileNotFoundException e) {
+            Toast.makeText(getApplicationContext(),"Error",Toast.LENGTH_LONG).show();
+        } catch (IOException e) {
+            Toast.makeText(getApplicationContext(),"Error",Toast.LENGTH_LONG).show();
+        }
+
+        String path = (Environment.getExternalStorageDirectory()+
+                        File.separator+"Ultimate EntityDetector"+
+                                            File.separator+"TempGhost.jpg");//<---
+
+        BitmapFactory.Options options = new BitmapFactory.Options();//<---
+            options.inPreferredConfig = Bitmap.Config.ARGB_8888;//<---
+        bmp1 = BitmapFactory.decodeFile(path, options);//<---     *********(SEE BELOW)
+        //THE LINES ABOVE READ THE FILE WE SAVED BEFORE AND CONVERT IT INTO A BitMap
+        camera_image.setImageBitmap(bmp1); //SETTING THE BitMap AS IMAGE IN AN IMAGEVIEW(SOMETHING
+                                    //LIKE A BACKGROUNG FOR THE LAYOUT)
+
+        tmpFile.delete();
+        TakeScreenshot();//CALLING THIS METHOD TO TAKE A SCREENSHOT
+        //********* THAT LINE MIGHT CAUSE A CRASH ON SOME PHONES (LIKE XPERIA T)<----(SEE HERE)
+        //IF THAT HAPPENDS USE THE LINE "bmp1 =decodeFile(tmpFile);" WITH THE METHOD BELOW
+
+    }
+};
+
+public Bitmap decodeFile(File f) {  //FUNCTION BY Arshad Parwez
+    Bitmap b = null;
+    try {
+        // Decode image size
+        BitmapFactory.Options o = new BitmapFactory.Options();
+        o.inJustDecodeBounds = true;
+
+        FileInputStream fis = new FileInputStream(f);
+        BitmapFactory.decodeStream(fis, null, o);
+        fis.close();
+        int IMAGE_MAX_SIZE = 1000;
+        int scale = 1;
+        if (o.outHeight > IMAGE_MAX_SIZE || o.outWidth > IMAGE_MAX_SIZE) {
+            scale = (int) Math.pow(
+                    2,
+                    (int) Math.round(Math.log(IMAGE_MAX_SIZE
+                            / (double) Math.max(o.outHeight, o.outWidth))
+                            / Math.log(0.5)));
+        }
+
+        // Decode with inSampleSize
+        BitmapFactory.Options o2 = new BitmapFactory.Options();
+        o2.inSampleSize = scale;
+        fis = new FileInputStream(f);
+        b = BitmapFactory.decodeStream(fis, null, o2);
+        fis.close();
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
+    return b;
+}
+}
+		
+		if(sgUtils.data._mediaProjectionManager === undefined) {
+			sgUtils.data._mediaProjectionManager = ctx.getSystemService(Context.MEDIA_PROJECTION_SERVICE);
+		}
+		ctx.startActivityForResult(sgUtils.data._mediaProjectionManager.createScreenCaptureIntent(), 1);
+
+		
 		if(view === undefined) {
 			view = ctx.getWindow().getDecorView();
 		}
 		view.setDrawingCacheEnabled(true);
+		view.buildDrawingCache(true);
 		//Bitmap
 		var drawingCache = view.getDrawingCache();
 		if(file.exists()) {
@@ -2513,9 +2693,11 @@ sgUtils.android = {
 		drawingCache.compress(Bitmap.CompressFormat.PNG, 100, fos);
 		fos.close();
 		view.setDrawingCacheEnabled(false);
+		*/
+		throw new NoSuchMethodError("This method isn't implement");
 	},
 
-		/**
+	/**
 	 * ScreenBitmap
 	 *
 	 * @author SemteulGaram
@@ -2527,6 +2709,7 @@ sgUtils.android = {
 	 */
 	//THIS METHOD ISN'T WORK ON FULL SCREEM
 	screenBitmap: function(view) {
+		/*
 		if(view === undefined) {
 			view = ctx.getWindow().getDecorView();
 		}
@@ -2535,6 +2718,8 @@ sgUtils.android = {
 		var drawingCache = Bitmap.createBitmap(view.getDrawingCache());
 		view.setDrawingCacheEnabled(false);
 		return drawingCache;
+		*/
+		throw new NoSuchMethodError("This method isn't implement");
 	},
 
 	/**
