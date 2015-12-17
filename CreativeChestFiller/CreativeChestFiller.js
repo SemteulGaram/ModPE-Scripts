@@ -2814,22 +2814,18 @@ if(!sgFiles.font.exists()) {
 
 function useItem(x, y, z, iid, bid, side) {
   if(Level.getGameMode() === 1 && Level.getTile(x, y, z) === 54) {
-		var cd = chestDialog(x, y, z);
+		var cd = new chestDialog(x, y, z);
 		cd.show();
 	}
 }
 
-Level.getTile(x, y, z)
-Level.getChestSlotCount(x, y, z, slotNumber)
-Level.getChestSlotData(x, y, z, slotNumber)
-Level.setChestSlot(x, y, z, slot, id, data, count)
 
 
 function chestDialog(x, y, z) {
 	this.x = x;
 	this.y = y;
 	this.z = z;
-  this.list = null;
+	this.list = null;
 	this.wd = null;
 }
 
@@ -2898,6 +2894,8 @@ chestDialog.prototype = {
 				var fd = fillerDialog(that, that.x, that.y, that.z, parseInt(this.getTag()));
 				fd.show();
 			}, null);
+			var btn_p = new sg.llp(sg.mp, sg.px*0x18);
+			btn.setLayoutParams(btn_p);
 			btn.setTag(e);
 			btn.setBackgroundColor(Color.TRANSPARENT);
 			this.c_layout.addView(btn);
@@ -2923,6 +2921,7 @@ chestDialog.prototype = {
 			that.close();
 		}, null);
 		this.b_close.setGravity(Gravity.CENTER);
+		this.b_layout.addView(this.b_close);
 		//추가 버튼
 		this.b_add = sgUtils.gui.mcFastButton("추가", sg.px*0xa, false, sgColors.main, null, sg.px*0x40, sg.wc, [sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4], null, null, null, function() {
 			var slot = that.getBlankIndex();
@@ -2934,23 +2933,34 @@ chestDialog.prototype = {
 			fd.show();
 		}, null);
 		this.b_add.setGravity(Gravity.CENTER);
+		this.b_layout.addView(this.b_add);
+		this.layout.addView(this.b_layout);
 		//윈도우
+		this.wd = new PopupWindow(this.layout, sg.px*0x100, sg.wc, false);
 	},
 
-	show: function(vis) {
+	show: function() {
 		var that = this;
 		if(this.wd === null) {
 			this.build();
 		}
 		uiThread(function() {try {
-			if(vis) {
-				if(!that.wd.isShowing()) {
-					that.wd.showAtLocation(sg.dv, Gravity.CENTER, 0, 0);
-				}
-			}else {
-				if(that.wd.isShowing()) {
-					that.wd.dismiss();
-				}
+			if(!that.wd.isShowing()) {
+				that.wd.showAtLocation(sg.dv, Gravity.CENTER, 0, 0);
+			}
+		}catch(err) {
+			showError(err);
+		}});
+	},
+	
+	close: function() {
+		var that = this;
+		if(this.wd === null) {
+			this.build();
+		}
+		uiThread(function() {try {
+			if(that.wd.isShowing()) {
+				that.wd.dismiss();
 			}
 		}catch(err) {
 			showError(err);
@@ -2959,8 +2969,8 @@ chestDialog.prototype = {
 
 	refresh: function() {
 		if(this.wd !== null && this.wd.isShowing()) {
-			this.show(false);
-			this.show(true);
+			this.close();
+			this.show();
 		}
 	}
 }
