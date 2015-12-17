@@ -1,0 +1,5 @@
+Level.getChestSlot(x, y, z, slotNumber)
+Level.getTile(x, y, z)
+Level.getChestSlotCount(x, y, z, slotNumber)
+Level.getChestSlotData(x, y, z, slotNumber)
+Level.setChestSlot(x, y, z, slot, id, data, count)
