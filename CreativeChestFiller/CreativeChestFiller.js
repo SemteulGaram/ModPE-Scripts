@@ -16,8 +16,8 @@
 
 const NAME = "Creative chest filler";
 const NAME_CODE = "CreativeChestFiller";
-const VERSION = "1.0.0";
-const VERSION_CODE = 100;
+const VERSION = "1.0.1";
+const VERSION_CODE = 101;
 const TAG = "[" + NAME + " " + VERSION + "]";
 
 
@@ -2750,6 +2750,88 @@ public Bitmap decodeFile(File f) {  //FUNCTION BY Arshad Parwez
 
 
 
+//==============================
+//-NinePatch JS
+//Copyright® 2015 affogatoman(colombia2)
+//==============================
+/**
+ * Nine Patch
+ *
+ * @since 2015
+ * @author affogatoman
+ */
+
+function ninePatch1(bitmap, top, left, bottom, right, width, height) {
+	var getByteBuffer = function(top, left, bottom, right) {
+		var NO_COLOR = 0x00000001;
+		var buffer = java.nio.ByteBuffer.allocate(84).order(java.nio.ByteOrder.nativeOrder());
+		buffer.put(0x01);
+		buffer.put(0x02);
+		buffer.put(0x02);
+		buffer.put(0x09);
+		buffer.putInt(0);
+		buffer.putInt(0);
+		buffer.putInt(0);
+		buffer.putInt(0);
+		buffer.putInt(0);
+		buffer.putInt(0);
+		buffer.putInt(0);
+		buffer.putInt(left);
+		buffer.putInt(right);
+		buffer.putInt(top);
+		buffer.putInt(bottom);
+		buffer.putInt(NO_COLOR);
+		buffer.putInt(NO_COLOR);
+		buffer.putInt(NO_COLOR);
+		buffer.putInt(NO_COLOR);
+		buffer.putInt(NO_COLOR);
+		buffer.putInt(NO_COLOR);
+		buffer.putInt(NO_COLOR);
+		buffer.putInt(NO_COLOR);
+		buffer.putInt(NO_COLOR);
+		return buffer;
+	};
+	var buffer = getByteBuffer(top, left, bottom, right);
+    return new android.graphics.drawable.NinePatchDrawable(ctx.getResources(), bitmap, buffer.array(), new android.graphics.Rect(), "");
+}
+function ninePatch2(bitmap, top, left, bottom, right, width, height) {
+	var getByteBuffer = function(top, left, bottom, right) {
+		var NO_COLOR = 0x00000001;
+		var buffer = java.nio.ByteBuffer.allocate(84).order(java.nio.ByteOrder.nativeOrder());
+		buffer.put(0x01);
+		buffer.put(0x02);
+		buffer.put(0x02);
+		buffer.put(0x09);
+		buffer.putInt(0);
+		buffer.putInt(0);
+		buffer.putInt(0);
+		buffer.putInt(0);
+		buffer.putInt(0);
+		buffer.putInt(0);
+		buffer.putInt(0);
+		buffer.putInt(left);
+		buffer.putInt(right);
+		buffer.putInt(top);
+		buffer.putInt(bottom);
+		buffer.putInt(NO_COLOR);
+		buffer.putInt(NO_COLOR);
+		buffer.putInt(NO_COLOR);
+		buffer.putInt(NO_COLOR);
+		buffer.putInt(NO_COLOR);
+		buffer.putInt(NO_COLOR);
+		buffer.putInt(NO_COLOR);
+		buffer.putInt(NO_COLOR);
+		buffer.putInt(NO_COLOR);
+		return buffer;
+	};
+	var buffer = getByteBuffer(top, left, bottom, right);
+	var patch = new android.graphics.drawable.NinePatchDrawable(ctx.getResources(), bitmap, buffer.array(), new android.graphics.Rect(), "");
+	//var bm = android.graphics.Bitmap.createBitmap(width, height, android.graphics.Bitmap.Config.ARGB_8888);
+	return patch;
+}
+
+
+
 var p = Color.WHITE;
 sgAssets.underline = new sgAssets.customAssetCreator([
 0,0,0,0,0,0,0,0,
@@ -2835,15 +2917,15 @@ chestDialog.prototype = {
 		//제목
 		this.title = sgUtils.gui.mcFastText("Chest Item List", sg.px*0x10, false, Color.WHITE, null, null, null, [sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4]);
 		this.title.setId(sgUtils.math.randomId());
-		var title_p = new sg.rlp(sg.wc, sg.wc);
+		var title_p = new sg.rlp(sg.mp, sg.wc);
 		title_p.addRule(sg.rl.ALIGN_PARENT_TOP);
 		this.title.setLayoutParams(title_p);
-		this.title.setBackground(sgAsset.underline.ninePatch());
+		this.title.setBackground(sgAssets.underline.ninePatch());
 		this.layout.addView(this.title);
 		//내용물들 스크롤
 		this.c_scroll = new ScrollView(ctx);
 		this.c_scroll.setId(sgUtils.math.randomId());
-		var c_scroll_p = new sg.rlp(sg.mp, sg.wc);
+		var c_scroll_p = new sg.rlp(sg.mp, sg.wh - sg.px*0x60);
 		c_scroll_p.addRule(sg.rl.BELOW, this.title.getId());
 		this.c_scroll.setLayoutParams(c_scroll_p);
 		//내용물 레이아웃
@@ -2852,19 +2934,18 @@ chestDialog.prototype = {
 		var isContent = false;
 		for(var e = 0; e < this.list.length; e++) {
 			isContent = true;
-			var btn = sgUtils.gui.mcFastButton("Slot<" + (parseInt(this.list[e][0]) + 1) + "> Item<" + parseInt(this.list[e][1]) + ":" + parseInt(this.list[e][2]) + "> Count<" + parseInt(this.list[e][3]) + ">", sg.px*0xa, false, Color.WHITE, null, null, null, [sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4], null, sgAsset.underline.ninePatch(), null, function(view) {
-				var fd = fillerDialog(that, that.x, that.y, that.z, parseInt(this.getTag()));
+			var btn = sgUtils.gui.mcFastButton("Slot<" + (parseInt(this.list[e][0]) + 1) + "> Item<" + parseInt(this.list[e][1]) + ":" + parseInt(this.list[e][2]) + "> Count<" + parseInt(this.list[e][3]) + ">", sg.px*0xa, false, Color.WHITE, null, null, null, [sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4], null, sgAssets.underline.ninePatch(), null, function(view) {
+				var fd = new fillerDialog(that, that.x, that.y, that.z, parseInt(view.getTag()));
 				fd.show();
 			}, null);
 			var btn_p = new sg.llp(sg.mp, sg.px*0x18);
 			btn.setLayoutParams(btn_p);
-			btn.setTag(e);
-			btn.setBackgroundColor(Color.TRANSPARENT);
+			btn.setTag(this.list[e][0]);
 			btn.setGravity(Gravity.LEFT);
 			this.c_layout.addView(btn);
 		}
 		if(!isContent) {
-			var noItem = sgUtils.gui.mcFastText("아이템이 없습니다", sg.px*0xa, false, Color.GRAY, null, sg.mp, sg.mp, [sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4]);
+			var noItem = sgUtils.gui.mcFastText("아이템이 없습니다", sg.px*0xa, false, Color.LTGRAY, null, sg.mp, sg.mp, [sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4]);
 			noItem.setGravity(Gravity.CENTER);
 			this.c_layout.addView(noItem);
 		}
@@ -2880,20 +2961,20 @@ chestDialog.prototype = {
 		this.b_layout.setGravity(Gravity.CENTER);
 		this.b_layout.setPadding(sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4);
 		//닫기 버튼
-		this.b_close = sgUtils.gui.mcFastButton("Close", sg.px*0xa, false, sgColors.main, null, sg.px*0x40, sg.wc, null, [sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4], null, null, function() {
+		this.b_close = sgUtils.gui.mcFastButton("Close", sg.px*0xa, false, sgColors.main, null, sg.px*0x40, sg.px*0x20, null, [sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4], null, null, function() {
 			that.close();
 		}, null);
 		this.b_close.setGravity(Gravity.CENTER);
 		this.b_close.setBackgroundColor(Color.WHITE);
 		this.b_layout.addView(this.b_close);
 		//추가 버튼
-		this.b_add = sgUtils.gui.mcFastButton("Add", sg.px*0xa, false, sgColors.main, null, sg.px*0x40, sg.wc, null, [sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4], null, null, function() {
+		this.b_add = sgUtils.gui.mcFastButton("Add", sg.px*0xa, false, sgColors.main, null, sg.px*0x40, sg.px*0x20, null, [sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4], null, null, function() {
 			var slot = that.getBlankIndex();
 			if(slot === -1) {
 				toast("상자에 빈 슬롯이 없습니다");
 				return;
 			}
-			var fd = fillerDialog(that, that.x, that.y, that.z, slot);
+			var fd = new fillerDialog(that, that.x, that.y, that.z, slot);
 			fd.show();
 		}, null);
 		this.b_add.setGravity(Gravity.CENTER);
@@ -2935,6 +3016,8 @@ chestDialog.prototype = {
 	refresh: function() {
 		if(this.wd !== null && this.wd.isShowing()) {
 			this.close();
+			this.buildList();
+			this.build();
 			this.show();
 		}
 	}
@@ -2950,17 +3033,17 @@ function fillerDialog(parent, x, y, z, slot) {
 	this.x = x;
 	this.y = y;
 	this.z = z;
-	this.slot = slot;
-	if(Level.getChestSlot(x, y, z) === 0) {
+	this.slot = (slot + 1) + "";
+	if(Level.getChestSlot(x, y, z, slot) === 0) {
 		this.titleText = "Add item";
 		this.itemId = "";
 		this.itemDamage = "0";
-		this.itemDamage = "1";
+		this.itemCount = "1";
 	}else {
 		this.titleText = "Edit item";
-		this.itemId = Level.getChestSlot(x, y, z);
-		this.itemDamage = Level.getChestSlotData(x, y, z);
-		this.itemDamage = Level.getChestSlotCount(x, t, z);
+		this.itemId = Level.getChestSlot(x, y, z, slot) + "";
+		this.itemDamage = Level.getChestSlotData(x, y, z, slot) + "";
+		this.itemCount = Level.getChestSlotCount(x, y, z, slot) + "";
 	}
 	this.wd = null;
 }
@@ -2972,17 +3055,18 @@ fillerDialog.prototype = {
 	},
 
 	build: function() {
+		var that = this;
 		//최상위 배경 레이아웃
 		this.backLayout = new sg.rl(ctx);
 		this.backLayout.setBackgroundColor(Color.argb(0x88, 0, 0, 0));
 		//최상위 레이아웃
 		this.layout = new sg.rl(ctx);
-		var layoutP = new sg.rlp(sg.wc, sg.wc);
+		var layoutP = new sg.rlp(sg.px*0x100, sg.wc);
 		layoutP.addRule(sg.rl.CENTER_IN_PARENT);
 		this.layout.setLayoutParams(layoutP);
 		this.layout.setBackgroundColor(sgColors.main);
 		//제목
-		this.title = mcFastText(this.titleText, sg.px*0x10, false, Color.WHITE, null, null, null, [sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4]);
+		this.title = sgUtils.gui.mcFastText(this.titleText, sg.px*0x10, false, Color.WHITE, null, null, null, [sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4]);
 		this.title.setId(sgUtils.math.randomId());
 		var titleP = new sg.rlp(sg.mp, sg.wc);
 		titleP.addRule(sg.rl.ALIGN_PARENT_TOP);
@@ -3002,9 +3086,9 @@ fillerDialog.prototype = {
 		//슬롯 레이아웃
 		this.slotLayout = new sg.ll(ctx);
 		this.slotLayout.setOrientation(sg.ll.HORIZONTAL);
-		this.slotLayout.setPadding(null, sg.px*0x8, null, sg.px*0x8);
+		this.slotLayout.setPadding(0, sg.px*0x8, 0, sg.px*0x8);
 		//슬롯 - 제목
-		this.slotTitle = new sgUtils.gui.mcFastText("Slot number ", sg.px*0xa, false, Color.WHTIE, null, null, null, [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2], [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2]);
+		this.slotTitle = new sgUtils.gui.mcFastText("Slot number ", sg.px*0x10, false, Color.WHITE, null, null, null, [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2], [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2]);
 		this.slotLayout.addView(this.slotTitle);
 		//슬롯 - 에딧텍스트
 		this.slotEt = new EditText(ctx);
@@ -3016,7 +3100,7 @@ fillerDialog.prototype = {
 		}catch(err) {
 			showError(err);
 		}}}));
-		var slotEtP = new sg.llp(Math.floor(sg.px*0x20, sg.wc);
+		var slotEtP = new sg.llp(sg.px*0x24, sg.wc);
 		this.slotEt.setLayoutParams(slotEtP);
 		this.slotEt.setBackgroundColor(Color.WHITE);
 		this.slotEt.setTextColor(sgColors.main);
@@ -3031,15 +3115,15 @@ fillerDialog.prototype = {
 		//아이템 아이디 레이아웃
 		this.idLayout = new sg.ll(ctx);
 		this.idLayout.setOrientation(sg.ll.HORIZONTAL);
-		this.idLayout.setPadding(null, sg.px*0x8, null, sg.px*0x8);
+		this.idLayout.setPadding(0, sg.px*0x8, 0, sg.px*0x8);
 		//아이디 - 아이디 제목
-		this.idTitle = new sgUtils.gui.mcFastText("Item ", sg.px*0xa, false, Color.WHTIE, null, null, null, [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2], [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2]);
+		this.idTitle = new sgUtils.gui.mcFastText("Item ", sg.px*0x10, false, Color.WHITE, null, null, null, [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2], [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2]);
 		this.idLayout.addView(this.idTitle);
 		//아이디 - 아이디 에딧텍스트
 		this.idIdEt = new EditText(ctx);
 		this.idIdEt.setInputType(InputType.TYPE_CLASS_NUMBER);
 		this.idIdEt.setText(this.itemId);
-		var idIdEtP = new sg.llp(Math.floor(sg.px*0x20, sg.wc);
+		var idIdEtP = new sg.llp(sg.px*0x30, sg.wc);
 		this.idIdEt.setLayoutParams(idIdEtP);
 		this.idIdEt.setBackgroundColor(Color.WHITE);
 		this.idIdEt.setTextColor(sgColors.main);
@@ -3051,13 +3135,13 @@ fillerDialog.prototype = {
 		this.idIdEt.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, sg.px*0x10);
 		this.idLayout.addView(this.idIdEt);
 		//아이디 - 점선
-		this.idSub = new sgUtils.gui.mcFastText(":", sg.px*0xa, false, Color.WHTIE, null, null, null, [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2], [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2]);
+		this.idSub = new sgUtils.gui.mcFastText(":", sg.px*0x10, false, Color.WHITE, null, null, null, [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2], [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2]);
 		this.idLayout.addView(this.idSub);
 		//아이디 - 데이타 에딧텍스트
 		this.idDatEt = new EditText(ctx);
 		this.idDatEt.setInputType(InputType.TYPE_CLASS_NUMBER);
-		this.idDatEt.setText(this.itemId);
-		var idDatEtP = new sg.llp(Math.floor(sg.px*0x20, sg.wc);
+		this.idDatEt.setText(this.itemDamage);
+		var idDatEtP = new sg.llp(sg.px*0x24, sg.wc);
 		this.idDatEt.setLayoutParams(idDatEtP);
 		this.idDatEt.setBackgroundColor(Color.WHITE);
 		this.idDatEt.setTextColor(sgColors.main);
@@ -3072,15 +3156,15 @@ fillerDialog.prototype = {
 		//수량 레이아웃
 		this.countLayout = new sg.ll(ctx);
 		this.countLayout.setOrientation(sg.ll.HORIZONTAL);
-		this.countLayout.setPadding(null, sg.px*0x8, null, sg.px*0x8);
+		this.countLayout.setPadding(0, sg.px*0x8, 0, sg.px*0x8);
 		//수량 - 제목
-		this.countTitle = new sgUtils.gui.mcFastText("Count ", sg.px*0xa, false, Color.WHTIE, null, null, null, [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2], [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2]);
+		this.countTitle = new sgUtils.gui.mcFastText("Count ", sg.px*0x10, false, Color.WHITE, null, null, null, [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2], [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2]);
 		this.countLayout.addView(this.countTitle);
 		//수량 - 에딧텍스트
 		this.countEt = new EditText(ctx);
 		this.countEt.setInputType(InputType.TYPE_CLASS_NUMBER);
-		this.countEt.setText(this.itemId);
-		var countEtP = new sg.llp(Math.floor(sg.px*0x20, sg.wc);
+		this.countEt.setText(this.itemCount);
+		var countEtP = new sg.llp(sg.px*0x24, sg.wc);
 		this.countEt.setLayoutParams(countEtP);
 		this.countEt.setBackgroundColor(Color.WHITE);
 		this.countEt.setTextColor(sgColors.main);
@@ -3104,21 +3188,32 @@ fillerDialog.prototype = {
 		this.b_layout.setGravity(Gravity.CENTER);
 		this.b_layout.setPadding(sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4);
 		//닫기 버튼
-		this.b_close = sgUtils.gui.mcFastButton("Close", sg.px*0xa, false, sgColors.main, null, sg.px*0x40, sg.wc, null, [sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4], null, null, function() {
+		this.b_close = sgUtils.gui.mcFastButton("Close", sg.px*0xa, false, sgColors.main, null, sg.px*0x40, sg.px*0x20, null, [sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4], null, null, function() {
 			that.close();
 		}, null);
 		this.b_close.setGravity(Gravity.CENTER);
 		this.b_close.setBackgroundColor(Color.WHITE);
 		this.b_layout.addView(this.b_close);
 		//제거 버튼
-		this.b_delete = sgUtils.gui.mcFastButton("Delete", sg.px*0xa, false, Color.RED, null, sg.px*0x40, sg.wc, null, [sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4], null, null, function() {
+		this.b_delete = sgUtils.gui.mcFastButton("Delete", sg.px*0xa, false, Color.RED, null, sg.px*0x40, sg.px*0x20, null, [sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4], null, null, function() {
+			var slot = that.slotEt.getText() + "";
+			if(!(sgUtils.math.isNumber(slot))) {
+				toast("슬롯은 숫자만 써야 합니다");
+				return;
+			}
+			if(slot < 1) {
+				toast("슬롯은 1보다 커야합니다");
+				return;
+			}
+			Level.setChestSlot(that.x, that.y, that.z, slot - 1, 0, 0, 0);
+			that._parent.refresh();
 			that.close();
 		}, null);
 		this.b_delete.setGravity(Gravity.CENTER);
 		this.b_delete.setBackgroundColor(Color.WHITE);
 		this.b_layout.addView(this.b_delete);
 		//추가 버튼
-		this.b_add = sgUtils.gui.mcFastButton("Set", sg.px*0xa, false, sgColors.main, null, sg.px*0x40, sg.wc, null, [sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4], null, null, function() {
+		this.b_add = sgUtils.gui.mcFastButton("Set", sg.px*0xa, false, sgColors.main, null, sg.px*0x40, sg.px*0x20, null, [sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4], null, null, function() {
 			var slot = that.slotEt.getText() + "";
 			var id = that.idIdEt.getText() + "";
 			var damage = that.idDatEt.getText() + "";
@@ -3144,7 +3239,7 @@ fillerDialog.prototype = {
 				toast("칸을 비우고 싶으시면 'Delete'버튼을 누르세요");
 				return;
 			}
-			Level.setChestSlot(that.x, that.y, that.z, slot, id, damage, count);
+			Level.setChestSlot(that.x, that.y, that.z, slot - 1, id, damage, count);
 			that._parent.refresh();
 			that.close();
 		}, null);
@@ -3154,7 +3249,7 @@ fillerDialog.prototype = {
 		this.layout.addView(this.b_layout);
 		//윈도우
 		this.backLayout.addView(this.layout);
-		this.wd = new PopupWindow(this.backLayout, sg.px*0x100, sg.wc, true);
+		this.wd = new PopupWindow(this.backLayout, sg.ww, sg.wh, true);
 	},
 
 	show: function() {
@@ -3188,6 +3283,7 @@ fillerDialog.prototype = {
 	refresh: function() {
 		if(this.wd !== null && this.wd.isShowing()) {
 			this.close();
+			this.build();
 			this.show();
 		}
 	}
