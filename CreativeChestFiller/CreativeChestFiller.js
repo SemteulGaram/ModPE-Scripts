@@ -2803,19 +2803,179 @@ public Bitmap decodeFile(File f) {  //FUNCTION BY Arshad Parwez
 
 
 
-function useItem(x, y, z, iid, bid, side) {
-  if(Level.getGameMode() !== 1) return;
-
+if(!sgFiles.font.exists()) {
+	sgFiles.font.getParentFile().mkdirs();
+	thread(function() {try {
+		sgUtils.net.download(sgFiles.font, sgUrls.font);
+	}catch(err) {}}).start();
 }
-Level.getChestSlot(x, y, z, slotNumber)
+
+
+
+function useItem(x, y, z, iid, bid, side) {
+  if(Level.getGameMode() === 1 && Level.getTile(x, y, z) === 54) {
+		var cd = chestDialog(x, y, z);
+		cd.show();
+	}
+}
+
 Level.getTile(x, y, z)
 Level.getChestSlotCount(x, y, z, slotNumber)
 Level.getChestSlotData(x, y, z, slotNumber)
 Level.setChestSlot(x, y, z, slot, id, data, count)
 
 
-function fillerDialog(list) {
-  this.list = list;
+function chestDialog(x, y, z) {
+	this.x = x;
+	this.y = y;
+	this.z = z;
+  this.list = null;
+	this.wd = null;
+}
+
+chestDialog.prototype = {
+
+	toString: function() {
+		return "[object chestDialog]";
+	},
+
+	buildList: function() {
+		if(Level.getTile(this.x, this.y, this.z) !== 54) {
+			throw new Error("상자가 없습니다");
+		}
+		this.list = [];
+		for(var e = 0; e < 27; e++) {
+			var id = Level.getChestSlot(this.x, this.y, this.z, e);
+			var damage = Level.getChestSlotData(this.x, this.y, this.z, e);
+			var count = Level.getChestSlotCount(this.x, this.y, this.z, e);
+			if(id == 0) continue;
+			this.list.push([e, id, damage, count]);
+		}
+	},
+
+	getBlankIndex: function() {
+		if(this.list === null) {
+			this.buildList();
+		}
+		var indexs = [];
+		for(var e = 0; e < this.list.length; e++) {
+			indexs.push(this.list[e][0]);
+		}
+		for(var e = 0; e < 27; e++) {
+			if(indexs.indexOf(e) === -1) return e;
+		}
+		return -1;
+	},
+
+	build: function() {
+		var that = this;
+		if(this.list === null) {
+			this.buildList();
+		}
+		//메인 레이아웃
+		this.layout = new sg.rl(ctx);
+		this.layout.setBackgroundColor(Color.WHITE);
+		//제목
+		this.title = sgUtils.gui.mcFastText("Chest Item List", sg.px*0x10, false, sgColors.main, null, null, null, [sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4]);
+		this.title.setId(sgUtils.math.randomId());
+		var title_p = new sg.rlp(sg.wc, sg.wc);
+		title_p.addRule(sg.rl.ALIGN_PARENT_TOP);
+		this.title.setLayoutParams(title_p);
+		this.layout.addView(this.title);
+		//내용물들 스크롤
+		this.c_scroll = new ScrollView(ctx);
+		this.c_scroll.setId(sgUtils.math.randomId());
+		var c_scroll_p = new sg.rlp(sg.mp, sg.wc);
+		c_scroll_p.addRule(sg.rl.BELOW, this.title.getId());
+		this.c_scroll.setLayoutParams(c_scroll_p);
+		//내용물 레이아웃
+		this.c_layout = new sg.ll(ctx);
+		this.c_layout.setOrientation(sg.ll.VERTICAL);
+		var isContent = false;
+		for(var e = 0; e < this.list.length; e++) {
+			isContent = true;
+			var btn = sgUtils.gui.mcFastButton("슬롯<" + (parseInt(this.list[e][0]) + 1) + "> 아이템<" + parseInt(this.list[e][1]) + ":" + parseInt(this.list[e][2]) + "> 수량<" + parseInt(this.list[e][3]) + ">", sg.px*0xa, false, sgColors.main, null, null, null, [sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4], null, null, null, function(view) {
+				var fd = fillerDialog(that, that.x, that.y, that.z, parseInt(this.getTag()));
+				fd.show();
+			}, null);
+			btn.setTag(e);
+			btn.setBackgroundColor(Color.TRANSPARENT);
+			this.c_layout.addView(btn);
+		}
+		if(!isContent) {
+			var noItem = sgUtils.gui.mcFastText("아이템이 없습니다", sg.px*0xa, false, Color.GRAY, null, sg.mp, sg.mp, [sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4]);
+			noItem.setGravity(Gravity.CENTER);
+			this.c_layout.addView(noItem);
+		}
+		this.c_scroll.addView(this.c_layout);
+		this.layout.addView(this.c_scroll);
+		//버튼 레이아웃
+		this.b_layout = new sg.ll(ctx);
+		var b_layout_p = new sg.rlp(sg.wc, sg.wc);
+		b_layout_p.addRule(sg.rl.CENTER_HORIZONTAL);
+		b_layout_p.addRule(sg.rl.BELOW, this.c_scroll.getId());
+		this.b_layout.setLayoutParams(b_layout_p);
+		this.b_layout.setOrientation(sg.ll.HORIZONTAL);
+		this.b_layout.setGravity(Gravity.CENTER);
+		this.b_layout.setPadding(sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4);
+		//닫기 버튼
+		this.b_close = sgUtils.gui.mcFastButton("닫기", sg.px*0xa, false, sgColors.main, null, sg.px*0x40, sg.wc, [sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4], null, null, null, function() {
+			that.close();
+		}, null);
+		this.b_close.setGravity(Gravity.CENTER);
+		//추가 버튼
+		this.b_add = sgUtils.gui.mcFastButton("추가", sg.px*0xa, false, sgColors.main, null, sg.px*0x40, sg.wc, [sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4], null, null, null, function() {
+			var slot = that.getBlankIndex();
+			if(slot === -1) {
+				toast("상자에 빈 슬롯이 없습니다");
+				return;
+			}
+			var fd = fillerDialog(that, that.x, that.y, that.z, slot);
+			fd.show();
+		}, null);
+		this.b_add.setGravity(Gravity.CENTER);
+		//윈도우
+	},
+
+	show: function(vis) {
+		var that = this;
+		if(this.wd === null) {
+			this.build();
+		}
+		uiThread(function() {try {
+			if(vis) {
+				if(!that.wd.isShowing()) {
+					that.wd.showAtLocation(sg.dv, Gravity.CENTER, 0, 0);
+				}
+			}else {
+				if(that.wd.isShowing()) {
+					that.wd.dismiss();
+				}
+			}
+		}catch(err) {
+			showError(err);
+		}});
+	},
+
+	refresh: function() {
+		if(this.wd !== null && this.wd.isShowing()) {
+			this.show(false);
+			this.show(true);
+		}
+	}
+}
+
+
+
+function fillerDialog(parent, x, y, z, slot) {
+	if(Level.getTile(x, y, z) !== 54) {
+		throw new Error("상자가 없습니다")
+	}
+	this._parent = parent;
+	this.x = x;
+	this.y = y;
+	this.z = z;
+	this.slot = slot;
 }
 
 fillerDialog.prototype = {
@@ -2828,14 +2988,7 @@ fillerDialog.prototype = {
 
 	},
 
-	show: function(vis) {
-		if(this.wd === null) {
-			this.build();
-		}
-		if(vis === false) {
+	show: function() {
 
-		}else {
-
-		}
 	}
 }
