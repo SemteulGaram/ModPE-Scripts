@@ -991,45 +991,59 @@ sgUtils.convert = {
 	 * @author SemteulGaram
 	 * @since 2015-04
 	 *
-	 * @param {float} yaw
-	 * @return {String} direction
+	 * @param {number} yaw
+	 * @param {number} type
+	 * @return {string} direction
 	 */
-	viewSide: function(yaw) {
+	viewSide: function(yaw, type) {
 		var temp = sgUtils.math.leftOver(yaw, 0, 360);
-		if((temp >= 0 && temp < 11.25) || (temp >= 348.75 && temp < 360))
-			return "북(Z+)";
-		else if(temp >= 11.25 && temp < 33.75)
-			return "북북동";
-		else if(temp >= 33.75 && temp < 56.25)
-			return "북동";
-		else if(temp >= 56.25 && temp < 78.75)
-			return "북동동";
-		else if(temp >= 78.75 && temp < 101.25)
-			return "동(-X)";
-		else if(temp >= 101.25 && temp < 123.75)
-			return "남동동";
-		else if(temp >= 123.75 && temp < 146.25)
-			return "남동";
-		else if(temp >= 146.25 && temp < 168.75)
-			return "남남동";
-		else if(temp >= 168.75 && temp < 191.25)
-			return "남(Z-)";
-		else if(temp >= 191.25 && temp < 213.75)
-			return "남남서";
-		else if(temp >= 213.75 && temp < 236.25)
-			return "남서";
-		else if(temp >= 236.25 && temp < 258.75)
-			return "남서서";
-		else if(temp >= 258.75 && temp < 281.25)
-			return "서(X+)";
-		else if(temp >= 281.25 && temp < 303.75)
-			return "북서서";
-		else if(temp >= 303.75 && temp < 326.25)
-			return "북서";
-		else if(temp >= 326.25 && temp < 348.75)
-			return "북북서";
-		else
-			return "NaY";
+		switch(type) {
+			case 1:
+			if((temp >= 0 && temp < 11.25) || (temp >= 348.75 && temp < 360))
+				return "북";
+			else if(temp >= 11.25 && temp < 33.75)
+				return "북북동";
+			else if(temp >= 33.75 && temp < 56.25)
+				return "북동";
+			else if(temp >= 56.25 && temp < 78.75)
+				return "북동동";
+			else if(temp >= 78.75 && temp < 101.25)
+				return "동";
+			else if(temp >= 101.25 && temp < 123.75)
+				return "남동동";
+			else if(temp >= 123.75 && temp < 146.25)
+				return "남동";
+			else if(temp >= 146.25 && temp < 168.75)
+				return "남남동";
+			else if(temp >= 168.75 && temp < 191.25)
+				return "남";
+			else if(temp >= 191.25 && temp < 213.75)
+				return "남남서";
+			else if(temp >= 213.75 && temp < 236.25)
+				return "남서";
+			else if(temp >= 236.25 && temp < 258.75)
+				return "남서서";
+			else if(temp >= 258.75 && temp < 281.25)
+				return "서";
+			else if(temp >= 281.25 && temp < 303.75)
+				return "북서서";
+			else if(temp >= 303.75 && temp < 326.25)
+				return "북서";
+			else if(temp >= 326.25 && temp < 348.75)
+				return "북북서";
+			break;
+
+			default:
+			if((temp >= 0 && temp < 45) || (temp >= 315 && temp < 360))
+				return "Z+";
+			else if(temp >= 45 && temp < 135)
+				return "X-";
+			else if(temp >= 135 && temp < 225)
+				return "Z-";
+			else if(temp >= 225 && temp < 315)
+				return "X+";
+		}
+		return "NaY";
 	},
 
 	/**
@@ -1893,25 +1907,24 @@ sgUtils.net = {
 	 * @since 2015-01
 	 *
 	 * @param {String} serverUrl
-	 * @param savePointer - sgUtils.data pointer
-	 * @return {boolean} success
+	 * @return {(boolean|string)} success
 	 */
-	loadServerData: function(serverUrl, savePointer) {
+	loadServerData: function(serverUrl) {
 		try{
 			var url = new URL(serverUrl);
 			var netStream = url.openStream();
 			var br = new BufferedReader(new InputStreamReader(netStream));
-			sgUtils.data[pointer] = "";
+			var dat = "";
 			var content;
 			while ((content = br.readLine()) != null) {
-				if (sgUtils.data[pointer] !== "") {
-					sgUtils.data[pointer] += "\n";
+				if (dat !== "") {
+					dat += "\n";
 				}
-				sUtil.data[savePointer] += content;
+				dat += content;
 			}
 			br.close();
-			return true;
-		}catch(e) {
+			return dat;
+		}catch(err) {
 			return false;
 		}
 	}
@@ -2540,17 +2553,17 @@ sgUtils.android = {
 	 */
 	//THIS METHOD ISN'T WORK ON FULL SCREEN
 	screenshot: function(file, view) {
-		
+
 		/*public class Cam_View extends Activity implements SurfaceHolder.Callback {
 
 
     ctx.setContentView(R.layout.camera);
 
-    CamView = ctx.findViewById(R.id.camview);//RELATIVELAYOUT OR 
+    CamView = ctx.findViewById(R.id.camview);//RELATIVELAYOUT OR
                                                           //ANY LAYOUT OF YOUR XML
 
     var SurView = ctx.findViewById(R.id.sview);
-    //SURFACEVIEW FOR THE PREVIEW 
+    //SURFACEVIEW FOR THE PREVIEW
 			//OF THE CAMERA FEED
     var camHolder = SurView.getHolder();
     //NEEDED FOR THE PREVIEW
@@ -2606,8 +2619,8 @@ public void TakeScreenshot(){    //THIS METHOD TAKES A SCREENSHOT AND SAVES IT A
     CamView.buildDrawingCache(true);
     Bitmap bmp = Bitmap.createBitmap(CamView.getDrawingCache());
     CamView.setDrawingCacheEnabled(false); // clear drawing cache
-    ByteArrayOutputStream bos = new ByteArrayOutputStream(); 
-    bmp.compress(CompressFormat.JPEG, 100, bos); 
+    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+    bmp.compress(CompressFormat.JPEG, 100, bos);
     byte[] bitmapdata = bos.toByteArray();
     ByteArrayInputStream fis = new ByteArrayInputStream(bitmapdata);
 
@@ -2621,7 +2634,7 @@ public void TakeScreenshot(){    //THIS METHOD TAKES A SCREENSHOT AND SAVES IT A
     //THE FILE IN THE SD CARD IN THE FOLDER "Ultimate Entity Detector"
 
     try {
-        File tmpFile = new File(dir_image,myfile); 
+        File tmpFile = new File(dir_image,myfile);
         FileOutputStream fos = new FileOutputStream(tmpFile);
 
         byte[] buf = new byte[1024];
@@ -2718,13 +2731,13 @@ public Bitmap decodeFile(File f) {  //FUNCTION BY Arshad Parwez
     return b;
 }
 }
-		
+
 		if(sgUtils.data._mediaProjectionManager === undefined) {
 			sgUtils.data._mediaProjectionManager = ctx.getSystemService(Context.MEDIA_PROJECTION_SERVICE);
 		}
 		ctx.startActivityForResult(sgUtils.data._mediaProjectionManager.createScreenCaptureIntent(), 1);
 
-		
+
 		if(view === undefined) {
 			view = ctx.getWindow().getDecorView();
 		}

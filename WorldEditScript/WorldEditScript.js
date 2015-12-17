@@ -942,45 +942,59 @@ sgUtils.convert = {
 	 * @author SemteulGaram
 	 * @since 2015-04
 	 *
-	 * @param {float} yaw
-	 * @return {String} direction
+	 * @param {number} yaw
+	 * @param {number} type
+	 * @return {string} direction
 	 */
-	viewSide: function(yaw) {
+	viewSide: function(yaw, type) {
 		var temp = sgUtils.math.leftOver(yaw, 0, 360);
-		if((temp >= 0 && temp < 11.25) || (temp >= 348.75 && temp < 360))
-			return "북(Z+)";
-		else if(temp >= 11.25 && temp < 33.75)
-			return "북북동";
-		else if(temp >= 33.75 && temp < 56.25)
-			return "북동";
-		else if(temp >= 56.25 && temp < 78.75)
-			return "북동동";
-		else if(temp >= 78.75 && temp < 101.25)
-			return "동(-X)";
-		else if(temp >= 101.25 && temp < 123.75)
-			return "남동동";
-		else if(temp >= 123.75 && temp < 146.25)
-			return "남동";
-		else if(temp >= 146.25 && temp < 168.75)
-			return "남남동";
-		else if(temp >= 168.75 && temp < 191.25)
-			return "남(Z-)";
-		else if(temp >= 191.25 && temp < 213.75)
-			return "남남서";
-		else if(temp >= 213.75 && temp < 236.25)
-			return "남서";
-		else if(temp >= 236.25 && temp < 258.75)
-			return "남서서";
-		else if(temp >= 258.75 && temp < 281.25)
-			return "서(X+)";
-		else if(temp >= 281.25 && temp < 303.75)
-			return "북서서";
-		else if(temp >= 303.75 && temp < 326.25)
-			return "북서";
-		else if(temp >= 326.25 && temp < 348.75)
-			return "북북서";
-		else
-			return "NaY";
+		switch(type) {
+			case 1:
+			if((temp >= 0 && temp < 11.25) || (temp >= 348.75 && temp < 360))
+				return "북";
+			else if(temp >= 11.25 && temp < 33.75)
+				return "북북동";
+			else if(temp >= 33.75 && temp < 56.25)
+				return "북동";
+			else if(temp >= 56.25 && temp < 78.75)
+				return "북동동";
+			else if(temp >= 78.75 && temp < 101.25)
+				return "동";
+			else if(temp >= 101.25 && temp < 123.75)
+				return "남동동";
+			else if(temp >= 123.75 && temp < 146.25)
+				return "남동";
+			else if(temp >= 146.25 && temp < 168.75)
+				return "남남동";
+			else if(temp >= 168.75 && temp < 191.25)
+				return "남";
+			else if(temp >= 191.25 && temp < 213.75)
+				return "남남서";
+			else if(temp >= 213.75 && temp < 236.25)
+				return "남서";
+			else if(temp >= 236.25 && temp < 258.75)
+				return "남서서";
+			else if(temp >= 258.75 && temp < 281.25)
+				return "서";
+			else if(temp >= 281.25 && temp < 303.75)
+				return "북서서";
+			else if(temp >= 303.75 && temp < 326.25)
+				return "북서";
+			else if(temp >= 326.25 && temp < 348.75)
+				return "북북서";
+			break;
+
+			default:
+			if((temp >= 0 && temp < 45) || (temp >= 315 && temp < 360))
+				return "Z+";
+			else if(temp >= 45 && temp < 135)
+				return "X-";
+			else if(temp >= 135 && temp < 225)
+				return "Z-";
+			else if(temp >= 225 && temp < 315)
+				return "X+";
+		}
+		return "NaY";
 	},
 
 	/**
@@ -1844,25 +1858,24 @@ sgUtils.net = {
 	 * @since 2015-01
 	 *
 	 * @param {String} serverUrl
-	 * @param savePointer - sgUtils.data pointer
-	 * @return {boolean} success
+	 * @return {(boolean|string)} success
 	 */
-	loadServerData: function(serverUrl, savePointer) {
+	loadServerData: function(serverUrl) {
 		try{
 			var url = new URL(serverUrl);
 			var netStream = url.openStream();
 			var br = new BufferedReader(new InputStreamReader(netStream));
-			sgUtils.data[pointer] = "";
+			var dat = "";
 			var content;
 			while ((content = br.readLine()) != null) {
-				if (sgUtils.data[pointer] !== "") {
-					sgUtils.data[pointer] += "\n";
+				if (dat !== "") {
+					dat += "\n";
 				}
-				sUtil.data[savePointer] += content;
+				dat += content;
 			}
 			br.close();
-			return true;
-		}catch(e) {
+			return dat;
+		}catch(err) {
 			return false;
 		}
 	}
@@ -2491,17 +2504,17 @@ sgUtils.android = {
 	 */
 	//THIS METHOD ISN'T WORK ON FULL SCREEN
 	screenshot: function(file, view) {
-		
+
 		/*public class Cam_View extends Activity implements SurfaceHolder.Callback {
 
 
     ctx.setContentView(R.layout.camera);
 
-    CamView = ctx.findViewById(R.id.camview);//RELATIVELAYOUT OR 
+    CamView = ctx.findViewById(R.id.camview);//RELATIVELAYOUT OR
                                                           //ANY LAYOUT OF YOUR XML
 
     var SurView = ctx.findViewById(R.id.sview);
-    //SURFACEVIEW FOR THE PREVIEW 
+    //SURFACEVIEW FOR THE PREVIEW
 			//OF THE CAMERA FEED
     var camHolder = SurView.getHolder();
     //NEEDED FOR THE PREVIEW
@@ -2557,8 +2570,8 @@ public void TakeScreenshot(){    //THIS METHOD TAKES A SCREENSHOT AND SAVES IT A
     CamView.buildDrawingCache(true);
     Bitmap bmp = Bitmap.createBitmap(CamView.getDrawingCache());
     CamView.setDrawingCacheEnabled(false); // clear drawing cache
-    ByteArrayOutputStream bos = new ByteArrayOutputStream(); 
-    bmp.compress(CompressFormat.JPEG, 100, bos); 
+    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+    bmp.compress(CompressFormat.JPEG, 100, bos);
     byte[] bitmapdata = bos.toByteArray();
     ByteArrayInputStream fis = new ByteArrayInputStream(bitmapdata);
 
@@ -2572,7 +2585,7 @@ public void TakeScreenshot(){    //THIS METHOD TAKES A SCREENSHOT AND SAVES IT A
     //THE FILE IN THE SD CARD IN THE FOLDER "Ultimate Entity Detector"
 
     try {
-        File tmpFile = new File(dir_image,myfile); 
+        File tmpFile = new File(dir_image,myfile);
         FileOutputStream fos = new FileOutputStream(tmpFile);
 
         byte[] buf = new byte[1024];
@@ -2669,13 +2682,13 @@ public Bitmap decodeFile(File f) {  //FUNCTION BY Arshad Parwez
     return b;
 }
 }
-		
+
 		if(sgUtils.data._mediaProjectionManager === undefined) {
 			sgUtils.data._mediaProjectionManager = ctx.getSystemService(Context.MEDIA_PROJECTION_SERVICE);
 		}
 		ctx.startActivityForResult(sgUtils.data._mediaProjectionManager.createScreenCaptureIntent(), 1);
 
-		
+
 		if(view === undefined) {
 			view = ctx.getWindow().getDecorView();
 		}
@@ -3958,7 +3971,7 @@ var messageContainer = {
 		warn_unknown_type_degree: "Degrees only can be'90', '180', '270'",
 		warn_lang_need_reboot: "Please Reboot after change the languge",
 		warn_paste: "Do you really want to paste it in this area?",
-		warn_already_working: "There is already in process",	
+		warn_already_working: "There is already in process",
 		warn_no_permission: "You don't have permisson",
 		warn_net_connection: "Internet is not connected\nor Data server is not working",
 		warn_wooden_axe_only_admin: "Wooden Axe pos setting is only available for Server admin",
@@ -4032,10 +4045,10 @@ var messageContainer = {
 		cmd_rotation_desc: "Rotate the copied area as degree based on basis axis",
 		cmd_yes: "yes",
 		cmd_no: "no",
-		
+
 		help_pos: "help of setting Position",
 		help_pos_content: "There are two ways to set the position.\n\nFirst, Touch the block with Wooden Axe(271:0), 'Pos1' is set\nand Press long the block, 'Pos2' is set.\n\nIn other way is to input 'command'.\nUf you input'@Pos1', Position of your feet will be set 'Pos1'\nIf you input '@Pos2' Position of your feet will be set 'Pos2'.\n\nIf you use command well, you can set Position in the air.",
-		
+
 		help_edit: "help of edit",
 		help_edit_fill: "fill: Set two vertaxes to Pos1 and Pos2 and run, then the area between vertax will fill with selected block.",
 		help_edit_clear: "clear: Set two vertaxes to Pos1 and Pos2 and run, then the area between vertaxes will clear from upside.\n(It needs when you clear liquid or fluid blocks)",
@@ -4045,18 +4058,18 @@ var messageContainer = {
 		help_edit_hemi_sphere: "hemi sphere : Make sphere witch has decided radius and pivot on Pos1.\n(hemi hollow sphere option does not fill inside)",
 		help_edit_circle: "circle: Make circle witch has decided radius and pivot on selected axis.\n(hollow circle option does nt fill inside)",
 		help_edit_semi_circle: "semi circle: Make circle witch has decided radius and pivot on selected axis.\n(semi hollow circle option does nt fill inside) ",
-		
+
 		help_copy: "copy/paste help",
 		help_copy_copy: "copy : copy the rectangular area between Pos1 and Pos2 to clipboard.",
 		help_copy_cut: "cut: copy and clear the rectangular area between Pos1 and Pos2 to clipboard. .",
 		help_copy_paste: "paste: Paste the copied area to based on Pos1.",
  		help_copy_flip: "flip: flip the copied area with decided axis.",
 		help_copy_rotation: "rotation: rotate the copied area with decided axis to decided degree.",
-		
+
 		help_backup: "backup help",
 		help_backup_backup: "backup option is exist because of to prevent error when you work changeing block.\nYou can active/disactive it on 'auto backup' in setting.\nIf you trun off this option, Editing speed will be faster, but you can't retrun your mistake, so I don't recommand it.",
 		help_backup_restore: "To restore the backuped area, press 'restore' button witch is on the top of 'edit'menu or use '@restore' command.\nIf you run it agian, canceled work will be restart.",
-		
+
 		help_sync: "synchronism help",
 		help_sync_content: "synchronism : edit faster than asynchronism.\n but you can't move while edit and If you edit a lot, Minecraft some time stop.\n\n asynchronism : It has slower speed to edit than synchronism, but you can do other work while it's working and you can edit safety a lot."
 	},
@@ -4226,7 +4239,7 @@ var messageContainer = {
 
 		help_pos: "위치 설정 도움말",
 		help_pos_content: "위치 설정법에는 크게 2가지가 있습니다.\n\n첫번째는 나무도끼(271:0)를 들고 블럭을 터치하면 '위치1'이 지정되고\n블럭을 길게 누르면 '위치2'가 지정됩니다.\n\n다른 방법으로는 명령어를 입력할 수 있습니다.\n채팅창에 '@위치1'이라고 치면 당신의 발 부분이 '위치1'로 지정되고\n'@위치2'라고 치면 당신의 발 부분이 '위치2'로 지정됩니다.\n\n명령어 기능을 잘 활용하면 공중에서도 위치 지정이 가능합니다.",
-		
+
 		help_edit: "에딧 도움말",
 		help_edit_fill: "채우기: 양끝의 꼭짓점를 각각 위치1,2로 지정하고 실행하면 각 꼭짓점 사이의 직육면체의 공간이 선택한 블럭으로 가득 채워집니다.",
 		help_edit_clear: "비우기: 양끝의 꼭짓점을 각각 위치1,2로 지정하고 실행하면 각 꼭짓점 사이의 직육면체의 공간이 위쪽부터 비워집니다.\n(액체나 흘러내리는 블럭을 비동기로 삭제할때 필요)",
@@ -4236,18 +4249,18 @@ var messageContainer = {
 		help_edit_hemi_sphere: "반구: 위치1을 중심으로 하는 정해진 반지름을 가지고 지정한 방향쪽으로 반구를 생성합니다.\n(빈반구 옵션은 내부를 채우지 않습니다)",
 		help_edit_circle: "원: 위치1을 중심으로 하는 정해진 반지름을 가지고 지정한 중심축 기준의 원을 생성합니다.\n(빈원 옵션은 내부를 채우지 않습니다)",
 		help_edit_semi_circle: "'반원'에딧: 위치1을 중심으로 하는 정해진 반지름을 가지고 지정한 중심축 기준의 지정한 방향의 반원을 생성합니다.\n(빈구 옵션은 내부를 채우지 않습니다)",
-		
+
 		help_copy: "복사/붙여넣기 도움말",
 		help_copy_copy: "복사: 위치1,2사이의 직육면체 공간을 클립보드에 복사합니다.",
 		help_copy_cut: "잘라내기: 위치1,2사이의 직육면체 공간을 클립보드에 복사하고 비웁니다.",
 		help_copy_paste: "붙여넣기: 클립보드에 복사된 영역을 위치1 기준으로 x+, y+, z+방향으로 붙여넣습니다.",
  		help_copy_flip: "대칭: 클립보드에 복사된 영역을 지정한 축 기준으로 대칭시킵니다.",
 		help_copy_rotation: "회전: 클립보드에 복사된 영역을 지정한 축 기준으로 지정한 각도만큼 회전합니다.",
-		
+
 		help_backup: "백업 도움말",
 		help_backup_backup: "블럭을 변경하는 작업을 할때 실수를 방지하기 위해 백업기능이 존재합니다.\n설정에서 '자동 백업'항목으로 활성화/비활성화 시킬 수 있습니다.\n이 항목을 끄면 에딧 속도는 더 빨라지지만 실수를 했을때 돌이킬 수 없으므로 끄지 않는걸 추천합니다.",
 		help_backup_restore: "백업된 영역을 복원하기 위해서는 '에딧'메뉴 최상단에 있는 '복원'을 누르시거나 '@복원' 명령어를 통해 복원시킬 수 있습니다.\n복원을 한번 더 실행하면 취소된 작업이 다시 실행됩니다.",
-		
+
 		help_sync: "작업타입 도움말",
 		help_sync_content: "동기: 비동기보다 훨씬 빠른 속도로 에딧합니다.\n대신 에딧하는 도중에는 움직이지 못하고 많은 양을 한꺼번에 에딧하면 마인크래프트가 멈출 수 있습니다.\n\n비동기: 동기보다는 느린 작업 속도를 가지지만 작업하는 도중에 다른일을 할 수가 있고 많은 양을 안전하게 에딧할 수 있습니다."
 	}
@@ -4286,7 +4299,7 @@ function WorldEdit() {
 	this.mainMenu = null;
 	this.loadingLayout = null;
 	this.loading = null;
-	
+
 	this.assets = {
 		getStream: function() {},
 		close: function() {}
@@ -4621,62 +4634,17 @@ WorldEdit.prototype = {
 		this.asynchEditSpeed = parseInt(this.setting.WorkSpeed);
 		//에딧 그룹의 화이트 리스트 불러오기
 		this.editorGroup.init();
+		//알림 서버 연결 시도
+		this.loading.setText("Read info server...");
+		this.server = new we_server(sgUtils.net.loadServerData(sgUrls.server));
 		//메뉴와 버튼 빌드
 		this.loading.setText("Load GUI...");
 		this.buildButton();
 		this.buildMenu();
-		//메뉴 내부에서 나타나는 프로그래스바 미리 그리기
-		this.loadingLayout = new sg.rl(ctx);
-		var pb = new ProgressBar(ctx);
-		var pb_p = new sg.rl.LayoutParams(sg.px*40, sg.px*40);
-		pb_p.addRule(sg.rl.CENTER_IN_PARENT);
-		pb.setLayoutParams(pb_p);
-		this.loadingLayout.addView(pb);
-		//블럭 이미지를 보관할 레이아웃 미리 생성
-		this.blockImagesLayout = new sg.ll(ctx);
-		this.blockImagesLayout.setOrientation(sg.ll.VERTICAL);
-		this.blockImagesLayout.setGravity(Gravity.CENTER);
-		//블럭 아이디를 입력할 레이아웃
-		this.blockIdLayout = new sg.ll(ctx);
-		this.blockIdLayout.setOrientation(sg.ll.HORIZONTAL);
-		this.blockIdLayout.setGravity(Gravity.CENTER);
-		this.blockIdLayout.setPadding(sg.px*4, 0, sg.px*4, 0);
-		var idTitle = sgUtils.gui.mcFastText(msg("id") + ":", sg.px*0x10, false, Color.WHITE);
-		idTitle.setGravity(Gravity.CENTER);
-		var idt_p = new sg.llp(sg.px*90, sg.wc);
-		idTitle.setLayoutParams(idt_p);
-		idTitle.setGravity(Gravity.CENTER);
-		var damageTitle = sgUtils.gui.mcFastText(msg("damage") + ":", sg.px*0x10, false, Color.WHITE);
-		damageTitle.setGravity(Gravity.CENTER);
-		var dgt_p = new sg.llp(sg.px*90, sg.wc);
-		damageTitle.setLayoutParams(dgt_p);
-		damageTitle.setGravity(Gravity.CENTER);
-		this.idEditText = new EditText(ctx);
-		var idet_p = new sg.llp(Math.floor((sg.ww-(sg.px*200))/2), sg.wc);
-		this.idEditText.setLayoutParams(idet_p);
-		this.idEditText.setBackgroundColor(Color.WHITE);
-		this.idEditText.setTextColor(sgColors.main);
-		this.idEditText.setGravity(Gravity.CENTER|Gravity.RIGHT);
-		this.idEditText.setPadding(sg.px*4, sg.px*4, sg.px*4, sg.px*4);
-		if(sgFiles.font.exists()) {
-			this.idEditText.setTypeface(android.graphics.Typeface.createFromFile(sgFiles.font));
-		}
-		this.idEditText.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, sg.px*0x10);
-		this.damageEditText = new EditText(ctx);
-		var dget_p = new sg.llp(Math.floor((sg.ww-(sg.px*200))/2), sg.wc);
-		this.damageEditText.setLayoutParams(dget_p);
-		this.damageEditText.setBackgroundColor(Color.WHITE);
-		this.damageEditText.setTextColor(sgColors.main);
-		this.damageEditText.setGravity(Gravity.CENTER|Gravity.RIGHT);
-		this.damageEditText.setPadding(sg.px*4, sg.px*4, sg.px*4, sg.px*4);
-		if(sgFiles.font.exists()) {
-			this.damageEditText.setTypeface(android.graphics.Typeface.createFromFile(sgFiles.font));
-		}
-		this.damageEditText.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, sg.px*0x10);
-		this.blockIdLayout.addView(idTitle);
-		this.blockIdLayout.addView(this.idEditText);
-		this.blockIdLayout.addView(damageTitle);
-		this.blockIdLayout.addView(this.damageEditText);
+		//메뉴 이동시 보이는 로딩 프로그래스바 빌드
+		this.buildLoadingProgressBar();
+		//블럭 아이디를 입력할 레이아웃 빌드
+		this.buildBlockEditText();
 		this.loading.setText("Load BlockImage...");
 		//블럭 이미지 빌드
 		this.buildBlockImages();
@@ -4751,7 +4719,7 @@ WorldEdit.prototype = {
 		}
 		var value = this.setting[article];
 		if(value === undefined) {
-			we_toast("[Warning] try to read undefined setting article: " + article, 1, 5000, true);
+			//we_toast("[Warning] try to read undefined setting article: " + article, 1, 5000, true);
 			value = this.defaultSetting[article];
 		}
 		return value;
@@ -4762,7 +4730,7 @@ WorldEdit.prototype = {
 			this.loadSetting();
 		}
 		if(this.setting[article] === undefined) {
-			we_toast("[Warning] try to save undefined setting article: " + article, 2, 5000, true);
+			//we_toast("[Warning] try to save undefined setting article: " + article, 2, 5000, true);
 		}
 		this.setting[article] = value;
 		if(save) {
@@ -5280,8 +5248,68 @@ WorldEdit.prototype = {
 		return dat[4];
 	},
 
+	buildLoadingProgressBar: function() {
+		//메뉴 내부에서 나타나는 프로그래스바 미리 그리기
+		this.loadingLayout = new sg.rl(ctx);
+		var loadingLayout_p = new sg.rlp(sg.mp, sg.mp);
+		loadingLayout_p.setMargins(sg.px*0x8, sg.px*0x8, sg.px*0x8, sg.px*0x8);
+		this.loadingLayout.setLayoutParams(loadingLayout_p);
+		var pb = new ProgressBar(ctx);
+		var pb_p = new sg.rl.LayoutParams(sg.px*40, sg.px*40);
+		pb_p.addRule(sg.rl.CENTER_IN_PARENT);
+		pb.setLayoutParams(pb_p);
+		this.loadingLayout.addView(pb);
+	}
+
+	buildBlockEditText: function() {
+		//블럭 아이디를 입력할 레이아웃
+		this.blockIdLayout = new sg.ll(ctx);
+		this.blockIdLayout.setOrientation(sg.ll.HORIZONTAL);
+		this.blockIdLayout.setGravity(Gravity.CENTER);
+		this.blockIdLayout.setPadding(sg.px*4, 0, sg.px*4, 0);
+		var idTitle = sgUtils.gui.mcFastText(msg("id") + ":", sg.px*0x10, false, Color.WHITE);
+		idTitle.setGravity(Gravity.CENTER);
+		var idt_p = new sg.llp(sg.px*90, sg.wc);
+		idTitle.setLayoutParams(idt_p);
+		idTitle.setGravity(Gravity.CENTER);
+		var damageTitle = sgUtils.gui.mcFastText(msg("damage") + ":", sg.px*0x10, false, Color.WHITE);
+		damageTitle.setGravity(Gravity.CENTER);
+		var dgt_p = new sg.llp(sg.px*90, sg.wc);
+		damageTitle.setLayoutParams(dgt_p);
+		damageTitle.setGravity(Gravity.CENTER);
+		this.idEditText = new EditText(ctx);
+		var idet_p = new sg.llp(Math.floor((sg.ww-(sg.px*200))/2), sg.wc);
+		this.idEditText.setLayoutParams(idet_p);
+		this.idEditText.setBackgroundColor(Color.WHITE);
+		this.idEditText.setTextColor(sgColors.main);
+		this.idEditText.setGravity(Gravity.CENTER|Gravity.RIGHT);
+		this.idEditText.setPadding(sg.px*4, sg.px*4, sg.px*4, sg.px*4);
+		if(sgFiles.font.exists()) {
+			this.idEditText.setTypeface(android.graphics.Typeface.createFromFile(sgFiles.font));
+		}
+		this.idEditText.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, sg.px*0x10);
+		this.damageEditText = new EditText(ctx);
+		var dget_p = new sg.llp(Math.floor((sg.ww-(sg.px*200))/2), sg.wc);
+		this.damageEditText.setLayoutParams(dget_p);
+		this.damageEditText.setBackgroundColor(Color.WHITE);
+		this.damageEditText.setTextColor(sgColors.main);
+		this.damageEditText.setGravity(Gravity.CENTER|Gravity.RIGHT);
+		this.damageEditText.setPadding(sg.px*4, sg.px*4, sg.px*4, sg.px*4);
+		if(sgFiles.font.exists()) {
+			this.damageEditText.setTypeface(android.graphics.Typeface.createFromFile(sgFiles.font));
+		}
+		this.damageEditText.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, sg.px*0x10);
+		this.blockIdLayout.addView(idTitle);
+		this.blockIdLayout.addView(this.idEditText);
+		this.blockIdLayout.addView(damageTitle);
+		this.blockIdLayout.addView(this.damageEditText);
+
 	buildBlockImages: function() {
 		var that = this;
+		//블럭 이미지를 보관할 레이아웃 미리 생성
+		this.blockImagesLayout = new sg.ll(ctx);
+		this.blockImagesLayout.setOrientation(sg.ll.VERTICAL);
+		this.blockImagesLayout.setGravity(Gravity.CENTER);
 		//블럭 이미지 레이아웃 정보를 저장하는 배열
 		this.blockImagesData = [];
 		uiThread(function() {try {
@@ -5605,6 +5633,62 @@ we_menu.prototype = {
 
 
 
+var we_server(data) {
+	try {//try parsing
+		if(data === false) {
+			this.pdata = {}
+		}else {
+			this.pdata = parseJSON(data);
+		}
+	}catch(err) {
+		this.pdata = {}
+	}
+
+	if(!sgUtils.math.isNumber(this.pdata.stat)) {
+		this.pdata.stat = -1;
+	}
+}
+
+we_server.prototype = {
+
+	toString: function() {
+		return "[object we_server]";
+	},
+
+	needUpdate: function() {
+		return (this.isAvailavle() && this.pdata.scriptVersionCode > VERSION_CODE);
+	},
+
+	get: function(article) {
+		return this.pdata[article];
+	},
+
+	isAvailavle: function() {
+		return this.pdata.stat > 0;
+		//0 = unavailable
+		//-1 = disavailable
+	},
+
+	getStatus: function() {
+		return this.pdata.stat;
+	},
+
+	event: function(name, args) {
+		if(this.pdata.event[name] === undefined) {
+			return false;
+		}else {
+			try {
+				eval(this.pdata.event[name]);
+			}catch(err) {
+				return err;
+			}
+			return true;
+		}
+	}
+}
+
+
+
 function we_editorGroup(worldEdit) {
 	this._parent = worldEdit;
 	this.whitelist = [];
@@ -5620,20 +5704,20 @@ we_editorGroup.prototype = {
 	init: function() {
 		this.loadWhitelist();
 	},
-	
+
 	loadWhitelist: function(){
 		this.whitelist = this._parent.get("Whitelist");
 	},
-	
+
 	saveWhitelist: function() {
 		this._parent.set("Whitelist", this.whitelist, true);
 	},
-	
+
 	addWhitelist: function(name) {
 		this.whitelist.push(name);
 		this.saveWhitelist();
 	},
-	
+
 	removeWhitelist: function(name) {
 		var lcName = name.toLowerCase();
 		for(var e = 0; e < this.whitelist.length; e++) {
@@ -5676,7 +5760,7 @@ we_editorGroup.prototype = {
 		this.editors.push(new we_editor(this, name));
 		return this.editors[this.editors.length - 1];
 	},
-	
+
 	showWhitelist: function() {
 		//FIXME var that = this;
 		var that = main.editorGroup;
@@ -5686,7 +5770,7 @@ we_editorGroup.prototype = {
 		var lo = new sg.ll(ctx);
 		lo.setOrientation(sg.ll.VERTICAL);
 		lo.setGravity(Gravity.CENTER);
-		
+
 		var createWhitelistButton = function(name) {
 			var isWhitelist = that.isAllow(name);
 			//각각의 내용물
@@ -5746,7 +5830,7 @@ we_editorGroup.prototype = {
 			createWhitelistButton(that.whitelist[e]);
 			hasChild = true;
 		}
-		
+
 		//화이트 리스트에 없는 유저 등록
 		var onlines = sgUtils.modPE.playerExtra.getOnlinePlayers();
 		for(var e = 0; e < onlines.length; e++) {
@@ -5758,7 +5842,7 @@ we_editorGroup.prototype = {
 				hasChild = true;
 			}
 		}
-		
+
 		if(hasChild) {
 			sv.addView(lo);
 		}else {
@@ -6761,7 +6845,7 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail) {
 		}
 		workName = msg("unknown") + " " + msg("backup");
 		type = EditType.BACKUP;
-		
+
 		//작업완료를 알림
 		broadcast = true;
 		//액티브 스타트!
@@ -7800,9 +7884,9 @@ function chatReceiveHook(str, sender) {
 			editor.setPos2(new Vector3(x, y, z));
 			msg("msg_pos2", true, sender, [["x", x], ["y", y], ["z", z]]);
 			break;
-			
-			
-			
+
+
+
 			case msg("cmd_restore"):
 			we_initEdit(1, 1, editor, EditType.RESTORE);
 			break;
@@ -8107,7 +8191,7 @@ function chatReceiveHook(str, sender) {
 				msg(msg("cmd_usage") + msg("cmd_pod2_usage"), true, sender);
 				msg("cmd_pos2_desc", true, sender);
 				break;
-				
+
 				case msg("cmd_restore"):
 				msg(msg("cmd_usage") + msg("cmd_restore_usage"), true, sender);
 				msg("cmd_restore_desc", true, sender);
