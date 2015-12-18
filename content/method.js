@@ -277,6 +277,8 @@ function thread(fc) {
  *   ㄴ viewSide √
  *   ㄴ numberToString
  *   ㄴ dataSizeToString
+ *   ㄴ getCharCodes
+ *   ㄴ sort
  * ㄴ math
  *   ㄴ randomId
  *   ㄴ leftOver
@@ -1106,6 +1108,111 @@ sgUtils.convert = {
 		}else {
 			return numberToString(parseInt(Math.round(size*100/(1099511627776*1024)), 10)/100) + "PB";
 		}
+	},
+	
+	/**
+	 * Get CharCodes
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-12-19
+	 *
+	 * @param {String[]} str
+	 * @return {Int[]}
+	 */
+	getCharCodes: function(str) {
+		str = str + "";
+		var sResult = [];
+		for(var e = 0; e < str.length; e++) {
+			sResult.push(str.charCodeAt(e));
+		}
+		return sResult;
+	},
+	
+	/**
+	 * Sort
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-12-19
+	 *
+	 * @param {(String[]|File[])} elements
+	 * @param {int} sortType - [
+	 * 	0: CharCode
+	 * 	1: Alphabet
+	 * 	]
+	 * @return {(String[]|File[])}
+	 */
+	sort: function(elements, sortType) {
+		var sResult = []; //최종결과
+		var _sort = function(ary, pos) { //내부 재귀함수
+			while(ary.length > 0) { //없어질때까지 반복
+				var tempCode = [];
+				var tempIndex = [];
+				var min = null;
+				for(var e = 0; e < ary.length; e++) {
+					if(ary[e][0][pos] === undefined) { //파일 이름길이가 끝이면 그냥 최종결과로 넘기기
+						sResult.push(ary[e][1]);
+						ary.splice(e, 1);
+						e--;
+						continue;
+					}else if(min === null) { //만약 루프의 처음이면 최초 설정
+						min = ary[e][0][pos];
+						tempCode.push(ary[e]);
+						tempIndex.push(e);
+					}else if(min === ary[e][0][pos]) { //등록된 값이랑 같은 코드의 문자열이면
+						tempCode.push(ary[e]);
+						tempIndex.push(e);
+					}else if(min > ary[e][0][pos]) { //등록된 값보다 작은(우선순위의) 코드의 문자열이면
+						min = ary[e][0][pos];
+						tempCode = []; //초기화 후 우선순위 먼저 등록
+						tempIndex = [];
+						tempCode.push(ary[e]);
+						tempIndex.push(e);
+					}
+				}
+				for(var e = tempIndex.length - 1; e >= 0; e--) { //뒤에서부터 반복 (그래야 인덱스가 안꼬임)
+					ary.splice(tempIndex[e], 1); //사용된 번호들을 삭제
+				}
+				tempIndex = [];
+				if(tempCode.length === 0) {
+					if(ary.length !== 0) {
+						throw new Error("Sort Error: Unknown error"); //Never happen
+					}
+				}else if(tempCode.length === 1) { //결과가 하나면 최종결과에 등록
+					sResult.push(tempCode[0][1]);
+					tempCode = [];
+				}else { //결과가 여러개면
+					_sort(tempCode, pos + 1); //재귀함수
+					tempCode = [];
+				}
+			}
+		}
+		var dat = [], name;
+		switch(sortType) {
+			
+			case 1:
+			for(var e = 0; e < elements.length; e++) {
+				if(elements[e] instanceof File) {
+					name = (elements[e].getName() + "").toLowerCase();
+				}else {
+					name = (elements[e] + "").toLowerCase();
+				}
+				dat.push([sgUtils.convert.getCharCodes(name), elements[e]]);
+			}
+			_sort(dat, 0);
+			break;
+				
+			default:
+			for(var e = 0; e < elements.length; e++) {
+				if(elements[e] instanceof File) { //문자열로 변환
+					name = elements[e].getName() + "";
+				}else {
+					name = elements[e] + "";
+				}
+				dat.push([sgUtils.convert.getCharCodes(name), elements[e]]); //배열에 Char 배열과 내용물들을 등록
+			}
+			_sort(dat, 0);
+		}
+		return sResult;
 	}
 }
 
