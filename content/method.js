@@ -1118,7 +1118,7 @@ sgUtils.convert = {
 			return numberToString(parseInt(Math.round(size*100/(1099511627776*1024)), 10)/100) + "PB";
 		}
 	},
-	
+
 	/**
 	 * Get CharCodes
 	 *
@@ -1136,7 +1136,7 @@ sgUtils.convert = {
 		}
 		return sResult;
 	},
-	
+
 	/**
 	 * Sort
 	 *
@@ -1197,7 +1197,7 @@ sgUtils.convert = {
 		}
 		var dat = [], name;
 		switch(sortType) {
-			
+
 			case 1:
 			for(var e = 0; e < elements.length; e++) {
 				if(elements[e] instanceof File) {
@@ -1209,7 +1209,7 @@ sgUtils.convert = {
 			}
 			_sort(dat, 0);
 			break;
-				
+
 			default:
 			for(var e = 0; e < elements.length; e++) {
 				if(elements[e] instanceof File) { //문자열로 변환
@@ -2916,21 +2916,21 @@ public Bitmap decodeFile(File f) {  //FUNCTION BY Arshad Parwez
 			ctx.getWindow().setAttributes(p);
 		}
 	},
-	
+
 	explore: function(dir, rootDir, fileFilter) {
-		
+
 		this.getName = function() {
 			return this.currentDir.getName();
 		}
-		
+
 		this.getDir = function() {
 			return this.currentDir;
 		}
-		
+
 		this.getFileList = function() {
 			return sgUtils.convert.sort(this.currentDir.getFileList(), 1);
 		}
-		
+
 		this.goParent = function() {
 			if(this.currentDir.getAbsolutePath() == this.rootDir.getAbsolutePath()) {
 				return false;
@@ -2938,7 +2938,7 @@ public Bitmap decodeFile(File f) {  //FUNCTION BY Arshad Parwez
 			this.currentDir = this.currentDir.getParentFile();
 			return true;
 		}
-		
+
 		this.move = function(dir) {
 			if(!dir.isDirectory()) {
 				return false;
@@ -2946,7 +2946,7 @@ public Bitmap decodeFile(File f) {  //FUNCTION BY Arshad Parwez
 			this.currentDir = dir;
 			return true;
 		}
-		
+
 		this.currentDir = dir;
 		this.rootDir = rootDir;
 		this.filter = fileFilter;
@@ -2954,11 +2954,11 @@ public Bitmap decodeFile(File f) {  //FUNCTION BY Arshad Parwez
 }
 
 sgUtils.openGL = {
-	
+
 	toString: function() {
 		return "[sgUtils - OpenGL]";
 	},
-	
+
 	getFloatBuffer: function(ary) {
 		var buffer = new ByteBuffer.allocateDirect(ary.length*4);
 		buffer.order(ByteOrder.nativeOrder());
@@ -2967,16 +2967,16 @@ sgUtils.openGL = {
 		buffer.position(0);
 		return buffer;
 	},
-	
+
 	getByteBuffer: function(ary) {
 		var buffer = new ByteBuffer.allocateDirect(ary.length);
 		buffer.put(array);
 		buffer.position(0);
 		return buffer;
 	},
-	
+
 	area: function() {
-		
+
 		//Type 0
 		this.addNative: function(vertexAry, indiceAry, colorAry) {
 			this.blocks.push([0, vertexAry, indiceAry, colorAry]);
@@ -2987,14 +2987,14 @@ sgUtils.openGL = {
 			this.removeBlock(x, y, z);
 			this.blocks.push([x, y, z]);
 		}
-		
+
 		this.removeBlock = function(x, y, z) {
 			var index = this.getIndex(x, y, z);
 			if(index !== -1) {
 				this.blocks.splice(index, 1);
 			}
 		}
-		
+
 		this.searchBlock = function(type, value) {
 			var result = [];
 			switch(type) {
@@ -3011,7 +3011,7 @@ sgUtils.openGL = {
 				default:
 				throw new Error("Unknown sgUtils.openGL.area.searchBlock - type");
 			}
-			
+
 			for(var e = 0; e < this.blocks.length; e++) {
 				if(this.blocks[e][type] === value) {
 					result.push(e);
@@ -3019,7 +3019,7 @@ sgUtils.openGL = {
 			}
 			return result;
 		}
-		
+
 		this.getIndex = function(x, y, z) {
 			return this.blocks.indexOf([x, y, z]);
 		}
@@ -3030,28 +3030,28 @@ sgUtils.openGL = {
 			}
 			return this.vertices;
 		}
-   
+
    this.getIndices = function() {
    	if(!this.ready) {
 				this.build();
 			}
 			return this.indeces;
    }
-   
+
    this.getColors = function() {
    	if(!this.ready) {
 				this.build();
 			}
 			return this.colors;
    }
-   
+
    this.geyIndicesLength = function() {
    	if(!this.ready) {
    		this.build();
    	}
    	return this.idcAry.length;
    }
-   
+
    this.build = function() {
    	var vtx = [];
    	var idc = [];
@@ -3075,7 +3075,7 @@ sgUtils.openGL = {
    	this.colors = sgUtils.openGL.getFloatBuffer(clr);
    	this.ready = true;
    }
-		
+
 		this.ready = false;
 		this.blocks = [];
 		this.vertexs = null;
@@ -3084,6 +3084,27 @@ sgUtils.openGL = {
 		this.vtxAry = [];
 		this.incAry = [];
 		this.clrAry = [];
+	},
+
+	camera: function(area) {
+		if(!(area instanceof sgUtils.openGL.area)) {
+			throw new Error("sgUtils.openGL.camera - area parameter must instance of sgUtils.openGL.area");
+		}
+
+		this.rot = function(x, y, z) {
+			this.xRot = x;
+			this.yRot = y;
+			this.zRot = z;
+		}
+
+		this.move = function(x, y, z) {
+
+		}
+
+		this.area = area;
+		this.xRot = 0;
+		this.yRot = 0;
+		this.zRot = 0;
 	}
 }
 
