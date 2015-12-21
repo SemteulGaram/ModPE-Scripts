@@ -22,6 +22,9 @@ const TAG = "[" + NAME + " " + VERSION + "]";
 
 
 
+var ByteBuffer = java.nio.ByteBuffer;
+var ByteOrder = java.nio.ByteOrder;
+
 var File = java.io.File;
 var BufferedInputStream = java.io.BufferedInputStream;
 var BufferedOutputStream = java.io.BufferedOutputstream;
@@ -107,6 +110,11 @@ var ProgressBar = android.widget.ProgressBar;
 var SeekBar = android.widget.SeekBar;
 var NumberPicker = android.widget.NumberPicker;
 var PopupWindow = android.widget.PopupWindow;
+
+var GL10 = javax.microedition.khronos.opengles.GL10;
+var GLU = android.opengl.GLU;
+var GLUtils = android.opengl.GLUtils;
+var GLSurfaceView = android.opengl.GLSurfaceView;
 
 var ctx = com.mojang.minecraftpe.MainActivity.currentMainActivity.get();
 
@@ -307,6 +315,7 @@ function thread(fc) {
  *   ㄴ screenshot (CAN'T FIX)
  *   ㄴ screenBitmap (CAN'T FIX)
  *   ㄴ screenBrightness √
+ *   ㄴ explore
  * (√: Need test)
  */
 var sgUtils =  {
@@ -2906,6 +2915,175 @@ public Bitmap decodeFile(File f) {  //FUNCTION BY Arshad Parwez
 			p.screenBrightness = bright;
 			ctx.getWindow().setAttributes(p);
 		}
+	},
+	
+	explore: function(dir, rootDir, fileFilter) {
+		
+		this.getName = function() {
+			return this.currentDir.getName();
+		}
+		
+		this.getDir = function() {
+			return this.currentDir;
+		}
+		
+		this.getFileList = function() {
+			return sgUtils.convert.sort(this.currentDir.getFileList(), 1);
+		}
+		
+		this.goParent = function() {
+			if(this.currentDir.getAbsolutePath() == this.rootDir.getAbsolutePath()) {
+				return false;
+			}
+			this.currentDir = this.currentDir.getParentFile();
+			return true;
+		}
+		
+		this.move = function(dir) {
+			if(!dir.isDirectory()) {
+				return false;
+			}
+			this.currentDir = dir;
+			return true;
+		}
+		
+		this.currentDir = dir;
+		this.rootDir = rootDir;
+		this.filter = fileFilter;
+	}
+}
+
+sgUtils.openGL = {
+	
+	toString: function() {
+		return "[sgUtils - OpenGL]";
+	},
+	
+	getFloatBuffer: function(ary) {
+		var buffer = new ByteBuffer.allocateDirect(ary.length*4);
+		buffer.order(ByteOrder.nativeOrder());
+		var buffer = buffer.asFloatBuffer();
+		buffer.put(ary);
+		buffer.position(0);
+		return buffer;
+	},
+	
+	getByteBuffer: function(ary) {
+		var buffer = new ByteBuffer.allocateDirect(ary.length);
+		buffer.put(array);
+		buffer.position(0);
+		return buffer;
+	},
+	
+	area: function() {
+		
+		//Type 0
+		this.addNative: function(vertexAry, indiceAry, colorAry) {
+			this.blocks.push([0, vertexAry, indiceAry, colorAry]);
+			this.ready = false;
+		}
+		/*
+		this.addBlock = function(x, y, z) {
+			this.removeBlock(x, y, z);
+			this.blocks.push([x, y, z]);
+		}
+		
+		this.removeBlock = function(x, y, z) {
+			var index = this.getIndex(x, y, z);
+			if(index !== -1) {
+				this.blocks.splice(index, 1);
+			}
+		}
+		
+		this.searchBlock = function(type, value) {
+			var result = [];
+			switch(type) {
+				case "x":
+				case 0:
+				type = 0;
+				case "y":
+				case 1:
+				type = 1;
+				case "z":
+				case 2:
+				type = 2;
+				break;
+				default:
+				throw new Error("Unknown sgUtils.openGL.area.searchBlock - type");
+			}
+			
+			for(var e = 0; e < this.blocks.length; e++) {
+				if(this.blocks[e][type] === value) {
+					result.push(e);
+				}
+			}
+			return result;
+		}
+		
+		this.getIndex = function(x, y, z) {
+			return this.blocks.indexOf([x, y, z]);
+		}
+		*/
+		this.getVertices = function() {
+			if(!this.ready) {
+				this.build();
+			}
+			return this.vertices;
+		}
+   
+   this.getIndices = function() {
+   	if(!this.ready) {
+				this.build();
+			}
+			return this.indeces;
+   }
+   
+   this.getColors = function() {
+   	if(!this.ready) {
+				this.build();
+			}
+			return this.colors;
+   }
+   
+   this.geyIndicesLength = function() {
+   	if(!this.ready) {
+   		this.build();
+   	}
+   	return this.idcAry.length;
+   }
+   
+   this.build = function() {
+   	var vtx = [];
+   	var idc = [];
+   	var clr = [];
+   	for(var e = 0; e < this.blocks.length; e++) {
+   		var bl = this.blocks[e];
+   		switch(bl[0]) {
+   			case 0:
+   			vtx.concat(bl[1]);
+   			idc.concat(bl[2]);
+   			clr.concat(bl[3]);
+   			break;
+   			default: throw new Error("Unknown sgUtils.openGL.area.build - type (index: " + e + ")");
+   		}
+   	}
+   	this.vtxAry = vtx;
+   	this.idcAry = idc;
+   	this.clrAry = clr;
+   	this.vertexs = sgUtils.openGL.getFloatBuffer(vtx);
+   	this.indices = sgUtils.openGL.getByteBuffer(idc);
+   	this.colors = sgUtils.openGL.getFloatBuffer(clr);
+   	this.ready = true;
+   }
+		
+		this.ready = false;
+		this.blocks = [];
+		this.vertexs = null;
+		this.indices = null;
+		this.colors = null;
+		this.vtxAry = [];
+		this.incAry = [];
+		this.clrAry = [];
 	}
 }
 
@@ -3113,6 +3291,30 @@ uiThread(function() {try {
 }catch(err) {
 	showError(err);
 }});
+
+var cDir = new sgUtils.android.explore(sgFiles.sdcard, sgFiles.sdcard, null);
+
+function procCmd(cmd) {
+	if(cmd === "/") {
+		if(cDir.goParent()) {
+			clientMessage("PATH: " + (cDir.getDir().getAbsolutePath()));
+		}else {
+			clientMessage("This is root");
+		}
+		return;
+	}
+	var file = new File(cDir.getDir(), cmd);
+	if(file.exists()) {
+		if(cDir.move(file)) {
+			clientMessage("PATH: " + (cDir.getDir().getAbsolutePath()));
+		}else {
+			clientMessage("Can't");
+		}
+		return;
+	}else {
+		clientMessage("no exists");
+	}
+}
 
 /*
 var vt = null;
