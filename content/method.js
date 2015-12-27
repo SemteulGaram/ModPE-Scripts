@@ -178,27 +178,55 @@ var sgUrls = {
 
 
 var sgFiles = {}
+sgFiles.native = ctx.getFilesDir();
+sgFiles.nativeMod = new File(sgFiles.native, "mods");
+sgFiles.nativeData = new File(sgFiles.nativeMod, NAME_CODE);
+sgFiles.nativeSetting = new File(sgFiles.nativeData, "setting.json");
 sgFiles.sdcard = Environment.getExternalStorageDirectory();
 sgFiles.mcpe = new File(sgFiles.sdcard, "games/com.mojang");
 sgFiles.world = new File(sgFiles.mcpe, "minecraftWorlds");
 sgFiles.mod = new File(sgFiles.mcpe, "minecraftpe/mods");
-sgFiles.font = new File(sgFiles.mod, "minecraft.ttf");
-sgFiles.script = new File(sgFiles.mod, NAME);
+sgFiles.font = new File(sgFiles.nativeMod, "minecraft.ttf");
+sgFiles.script = new File(sgFiles.mod, NAME_CODE);
 sgFiles.setting = new File(sgFiles.script, "setting.json");
 sgFiles.test = new File(sgFiles.script, "log.txt");
 sgFiles.noMedia = new File(sgFiles.script, ".nomedia");
 sgFiles.map = function() {return new File(mfiles.map, Level.getWorldDir())};
 sgFiles.mapMod = function() {return new File(sgFiles.map, Level.getWorldDir() + "/mods")}
-sgFiles.mapSetting = function() {return new File(sgFiles.map, Level.getWorldDir() + "/mods/" + NAME + ".json")}
+sgFiles.mapData = function() {return new File(sgFiles.mapMod(), NAME_CODE)}
+sgFiles.mapSetting = function() {return new File(sgFiles.mapData(), "setting.json")}
 
 
 
 var sgColors = {
-	main: Color.parseColor("#348893"),
-	mainBr: Color.parseColor("#3cbca4"),
-	mainDk: Color.parseColor("#31878b"),
-	warning: Color.parseColor("#ffab00"),
-	critical: Color.parseColor("#ab0000")
+	re50: Color.parseColor("#FFEBEE"),
+	re100: Color.parseColor("#FFCDD2"),
+	re200: Color.parseColor("#EF9A9A"),
+	re300: Color.parseColor("#E57373"),
+	re400: Color.parseColor("#EF5350"),
+	re500: Color.parseColor("#F44336"),
+	re600: Color.parseColor("#E53935"),
+	re700: Color.parseColor("#D32F2F"),
+	re800: Color.parseColor("#C62828"),
+	re900: Color.parseColor("#B71C1C"),
+	reA100: Color.parseColor("#FF8A80"),
+	reA200: Color.parseColor("#FF5252"),
+	reA400: Color.parseColor("#FF1744"),
+	reA700: Color.parseColor("#D50000"),
+	lg50: Color.parseColor("#F1F8E9"),
+	lg100: Color.parseColor("#DCEDC8"),
+	lg200: Color.parseColor("#C5E1A5"),
+	lg300: Color.parseColor("#AED581"),
+	lg400: Color.parseColor("#9CCC65"),
+	lg500: Color.parseColor("#8BC34A"),
+	lg600: Color.parseColor("#7CB342"),
+	lg700: Color.parseColor("#689F38"),
+	lg800: Color.parseColor("#558B2F"),
+	lg900: Color.parseColor("#33691E"),
+	lgA100: Color.parseColor("#CCFF90"),
+	lgA200: Color.parseColor("#B2FF59"),
+	lgA400: Color.parseColor("#76FF03"),
+	lgA700: Color.parseColor("#64DD17")
 }
 
 
@@ -287,6 +315,7 @@ function thread(fc) {
  *   ㄴ dataSizeToString
  *   ㄴ getCharCodes
  *   ㄴ sort
+ *   ㄴ filter
  * ㄴ math
  *   ㄴ randomId
  *   ㄴ leftOver
@@ -1222,6 +1251,63 @@ sgUtils.convert = {
 			_sort(dat, 0);
 		}
 		return sResult;
+	},
+
+	/**
+	 * Filter
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-12-27
+	 *
+	 * @param {(String[]|File[])} list
+	 * @param {Int} type -
+	 * {
+	 * 1: Contain
+	 * 2: Contain in front
+	 * 3: Contain in Back
+ 	 * }
+	 * @param {String} str
+	 */
+	filter: function(list, type, str) {
+
+		var names = [];
+		var result = [];
+
+		for(var e = 0; e < list.length; e++) {
+			if(list[e] instanceof File) {
+				names[e] = list[e].getName();
+			}else {
+				names[e] = list[e] + "";
+			}
+		}
+
+		switch(type) {
+			case 1:
+				for(var e = 0; e < names.length; e++) {
+					if(names[e].indexOf(str) >= 0) {
+						result.push(list[e]);
+					}
+				}
+				break;
+			case 2:
+				for(var e = 0; e < names.length; e++) {
+					if(names[e].indexOf(str) === 0) {
+						result.push(list[e]);
+					}
+				}
+				break;
+			case 3:
+				for(var e = 0; e < names.length; e++) {
+					var index = names[e].indexOf(str);
+					if(index >= 0 && index === (names[e].length - str.length)) {
+						result.push(list[e]);
+					}
+				}
+				break;
+			default: throw new Error("sgUtils.convert.filter - type parameter is unknown: " + type);
+		}
+
+		return result;
 	}
 }
 
@@ -1382,6 +1468,175 @@ sgUtils.gui = {
 
 	toString: function() {
 		return "[object sgUtils - GUI]";
+	},
+
+	/**
+	 * TextView
+	 * 메소드 하나로 끝내는 텍스트뷰 생성
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-12-27
+	 *
+	 * @param {(String|null)} str
+	 * @param {(number|null)} size
+	 * @param {(boolean|null)} hasShadow
+	 * @param {(Color|null)} color
+	 * @param {(Color|null)} shadowColor
+	 * @param {(Int|null)} gravity
+	 * @param {(File|null)} font
+	 * @param {(number|null)} width
+	 * @param {(number|null)} height
+	 * @param {(Array|null)} padding
+	 * @param {(Array|null)} margins
+	 * @param {(Drawable|Color|null)} background
+	 * @return {TextView}
+	 */
+	textView: function(str, size, hasShadow, color, shadowColor, gravity, font, width, height, padding, margins, background) {
+		var tv = new TextView(ctx);
+		tv.setTransformationMethod(null);
+		tv.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+		if(font !== null && font !== undefined) {
+			if(font.exists()) {
+				tv.setTypeface(android.graphics.Typeface.createFromFile(font));
+			}
+		}
+		if(str !== null && str !== undefined) {
+			tv.setText((str + ""));
+		}
+		if(size !== null && size !== undefined) {
+			tv.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, size);
+		}else {
+			tv.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, sg.px*0x10);
+		}
+		if(color !== null && color !== undefined) {
+			tv.setTextColor(color);
+		}
+		if(hasShadow) {
+			if(shadowColor !== null && shadowColor !== undefined) {
+				tv.setShadowLayer(1/0xffffffff, sg.px*1.3, sg.px*1.3, shadowColor);
+			}else {
+				tv.setShadowLayer(1/0xffffffff, sg.px*1.3, sg.px*1.3, Color.DKGRAY);
+			}
+		}
+		if(padding !== null && padding !== undefined) {
+			tv.setPadding(padding[0], padding[1], padding[2], padding[3]);
+		}
+		if(gravity !== null && gravity !== undefined) {
+			tv.setGravity(gravity);
+		}
+		if(background instanceof Drawable) {
+			tv.setBackground(background);
+		}else if(background instanceof Color) {
+			tv.setBackgroundColor(background);
+		}
+		var tv_p;
+		if(width !== null && height !== null && width !== undefined && height !== undefined) {
+			tv_p = new sg.ll.LayoutParams(width, height);
+		}else {
+			tv_p = new sg.ll.LayoutParams(sg.wc, sg.wc);
+		}
+		if(margins !== null && margins !== undefined) {
+			tv_p.setMargins(margins[0], margins[1], margins[2], margins[3]);
+		}
+		tv.setLayoutParams(tv_p);
+		return tv;
+	},
+
+	/**
+	 * Button
+	 * 메소드 하나로 끝내는 버튼 생성
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-10-24
+	 *
+	 * @param {String} str
+	 * @param {(number|null)} size
+	 * @param {(boolean|null)} hasShadow
+	 * @param {(Color|null)} color
+	 * @param {(Color|null)} shadowColor
+	 * @param {(Int|null)} gravity
+	 * @param {(File|null)} font
+	 * @param {(number|null)} width
+	 * @param {(number|null)} height
+	 * @param {(Array|null)} padding
+	 * @param {(Array|null)} margins
+	 * @param {(Drawable|Color|null)} background
+	 * @param {(function|null)} onTouchFunction - ex.function(view, event){return Boolean}
+	 * @param {(function|null)} onClickFunction - ex.function(view)
+	 * @param {(function|null)} onLongClickFunction - ex.function(view){return Boolean}
+	 * @return {Button}
+	 */
+	button: function(str, size, hasShadow, color, shadowColor, gravity, font, width, height, padding, margins, background, onTouchFunction, onClickFunction, onLongClickFunction) {
+		var btn = new Button(ctx);
+		btn.setTransformationMethod(null);	btn.setLayerType(android.view.View.LAYER_TYPE_SOFTWARE, null);
+		if(font !== null && font !== undefined) {
+			if(font.exists()) {
+				tv.setTypeface(android.graphics.Typeface.createFromFile(font));
+			}
+		}
+		if(str !== null && str !== undefined) {
+			btn.setText((str + ""));
+		}
+		if(size !== null && size !== undefined) {
+			btn.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, size);
+		}else {
+			btn.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, sg.px*0x10);
+		}
+		if(color !== null && color !== undefined) {
+			btn.setTextColor(color);
+		}
+		if(hasShadow) {
+			if(shadowColor !== null && shadowColor !== undefined) {
+				btn.setShadowLayer(1/0xffffffff, sg.px*1.3, sg.px*1.3, shadowColor);
+			}else {
+				btn.setShadowLayer(1/0xffffffff, sg.px*1.3, sg.px*1.3, Color.DKGRAY);
+			}
+		}
+		if(padding !== null && padding !== undefined) {
+			btn.setPadding(padding[0], padding[1], padding[2], padding[3]);
+		}
+		var btn_p;
+		if(width !== null && height !== null && width !== undefined && height !== undefined) {
+			btn_p = new sg.ll.LayoutParams(width, height);
+		}else {
+			btn_p = new sg.ll.LayoutParams(sg.wc, sg.wc);
+		}
+		if(margins !== null && margins !== undefined) {
+			btn_p.setMargins(margins[0], margins[1], margins[2], margins[3]);
+		}
+		btn.setLayoutParams(btn_p);
+		if(gravity !== null && gravity !== undefined) {
+			btn.setGravity(gravity);
+		}
+		if(background instanceof Drawable) {
+			btn.setBackground(background);
+		}else if(background instanceof Color) {
+			btn.setBackgroundColor(background);
+		}
+		if(onTouchFunction !== null && onTouchFunction !== undefined) {
+			btn.setOnTouchListener(View.OnTouchListener({onTouch: function(view, event) {try {
+				return onTouchFunction(view, event);
+			}catch(err) {
+				showError(err);
+				return false;
+			}}}));
+		}
+		if(onClickFunction !== null && onClickFunction !== undefined) {
+			btn.setOnClickListener(View.OnClickListener({onClick: function(view) {try {
+				onClickFunction(view);
+			}catch(err) {
+				showError(err);
+			}}}));
+		}
+		if(onLongClickFunction !== null && onLongClickFunction !== undefined) {
+					btn.setOnLongClickListener(View.OnLongClickListener({onLongClick: function(view) {try {
+				return onLongClickFunction(view);
+			}catch(err) {
+				showError(err);
+				return false;
+			}}}));
+		}
+		return btn;
 	},
 
 	/**
@@ -2670,209 +2925,6 @@ sgUtils.android = {
 	 */
 	//THIS METHOD ISN'T WORK ON FULL SCREEN
 	screenshot: function(file, view) {
-
-		/*public class Cam_View extends Activity implements SurfaceHolder.Callback {
-
-
-    ctx.setContentView(R.layout.camera);
-
-    CamView = ctx.findViewById(R.id.camview);//RELATIVELAYOUT OR
-                                                          //ANY LAYOUT OF YOUR XML
-
-    var SurView = ctx.findViewById(R.id.sview);
-    //SURFACEVIEW FOR THE PREVIEW
-			//OF THE CAMERA FEED
-    var camHolder = SurView.getHolder();
-    //NEEDED FOR THE PREVIEW
-    camHolder.addCallback(this);
-    //NEEDED FOR THE PREVIEW
-    camHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-    //NEEDED FOR THE PREVIEW
-    var camera_image = ctx.findViewById(R.id.camera_image);
-    //NEEDED FOR THE PREVIEW
-
-    camera.takePicture(null, null, mPicture);
-
-@Override
-public void surfaceChanged(SurfaceHolder holder, int format, int width,//NEEDED FOR THE PREVIEW
-    int height) {
-    if(previewRunning) {
-        camera.stopPreview();
-    }
-    Camera.Parameters camParams = camera.getParameters();
-    Camera.Size size = camParams.getSupportedPreviewSizes().get(0);
-    camParams.setPreviewSize(size.width, size.height);
-    camera.setParameters(camParams);
-    try {
-        camera.setPreviewDisplay(holder);
-        camera.startPreview();
-        previewRunning=true;
-    } catch(IOException e) {
-        e.printStackTrace();
-    }
-}
-
-public void surfaceCreated(SurfaceHolder holder) {                  //NEEDED FOR THE PREVIEW
-    try {
-        camera=Camera.open();
-    } catch(Exception e) {
-        e.printStackTrace();
-        Toast.makeText(getApplicationContext(),"Error",Toast.LENGTH_LONG).show();
-        finish();
-    }
-}
-
-@Override
-public void surfaceDestroyed(SurfaceHolder holder) {             //NEEDED FOR THE PREVIEW
-    camera.stopPreview();
-    camera.release();
-    camera=null;
-}
-
-public void TakeScreenshot(){    //THIS METHOD TAKES A SCREENSHOT AND SAVES IT AS .jpg
-    Random num = new Random();
-    int nu=num.nextInt(1000); //PRODUCING A RANDOM NUMBER FOR FILE NAME
-    CamView.setDrawingCacheEnabled(true); //CamView OR THE NAME OF YOUR LAYOUR
-    CamView.buildDrawingCache(true);
-    Bitmap bmp = Bitmap.createBitmap(CamView.getDrawingCache());
-    CamView.setDrawingCacheEnabled(false); // clear drawing cache
-    ByteArrayOutputStream bos = new ByteArrayOutputStream();
-    bmp.compress(CompressFormat.JPEG, 100, bos);
-    byte[] bitmapdata = bos.toByteArray();
-    ByteArrayInputStream fis = new ByteArrayInputStream(bitmapdata);
-
-    String picId=String.valueOf(nu);
-    String myfile="Ghost"+picId+".jpeg";
-
-    File dir_image = new  File(Environment.getExternalStorageDirectory()+//<---
-                    File.separator+"Ultimate Entity Detector");          //<---
-    dir_image.mkdirs();                                                  //<---
-    //^IN THESE 3 LINES YOU SET THE FOLDER PATH/NAME . HERE I CHOOSE TO SAVE
-    //THE FILE IN THE SD CARD IN THE FOLDER "Ultimate Entity Detector"
-
-    try {
-        File tmpFile = new File(dir_image,myfile);
-        FileOutputStream fos = new FileOutputStream(tmpFile);
-
-        byte[] buf = new byte[1024];
-        int len;
-        while ((len = fis.read(buf)) > 0) {
-            fos.write(buf, 0, len);
-        }
-        fis.close();
-        fos.close();
-        Toast.makeText(getApplicationContext(),
-                       "The file is saved at :SD/Ultimate Entity Detector",Toast.LENGTH_LONG).show();
-        bmp1 = null;
-        camera_image.setImageBitmap(bmp1); //RESETING THE PREVIEW
-        camera.startPreview();             //RESETING THE PREVIEW
-    } catch (FileNotFoundException e) {
-        e.printStackTrace();
-    } catch (IOException e) {
-        e.printStackTrace();
-    }
-}
-
-private PictureCallback mPicture = new PictureCallback() {   //THIS METHOD AND THE METHOD BELOW
-                             //CONVERT THE CAPTURED IMAGE IN A JPG FILE AND SAVE IT
-
-    @Override
-    public void onPictureTaken(byte[] data, Camera camera) {
-
-        File dir_image2 = new  File(Environment.getExternalStorageDirectory()+
-                        File.separator+"Ultimate Entity Detector");
-        dir_image2.mkdirs();  //AGAIN CHOOSING FOLDER FOR THE PICTURE(WHICH IS LIKE A SURFACEVIEW
-                              //SCREENSHOT)
-
-        File tmpFile = new File(dir_image2,"TempGhost.jpg"); //MAKING A FILE IN THE PATH
-                        //dir_image2(SEE RIGHT ABOVE) AND NAMING IT "TempGhost.jpg" OR ANYTHING ELSE
-        try { //SAVING
-            FileOutputStream fos = new FileOutputStream(tmpFile);
-            fos.write(data);
-            fos.close();
-            //grabImage();
-        } catch (FileNotFoundException e) {
-            Toast.makeText(getApplicationContext(),"Error",Toast.LENGTH_LONG).show();
-        } catch (IOException e) {
-            Toast.makeText(getApplicationContext(),"Error",Toast.LENGTH_LONG).show();
-        }
-
-        String path = (Environment.getExternalStorageDirectory()+
-                        File.separator+"Ultimate EntityDetector"+
-                                            File.separator+"TempGhost.jpg");//<---
-
-        BitmapFactory.Options options = new BitmapFactory.Options();//<---
-            options.inPreferredConfig = Bitmap.Config.ARGB_8888;//<---
-        bmp1 = BitmapFactory.decodeFile(path, options);//<---     *********(SEE BELOW)
-        //THE LINES ABOVE READ THE FILE WE SAVED BEFORE AND CONVERT IT INTO A BitMap
-        camera_image.setImageBitmap(bmp1); //SETTING THE BitMap AS IMAGE IN AN IMAGEVIEW(SOMETHING
-                                    //LIKE A BACKGROUNG FOR THE LAYOUT)
-
-        tmpFile.delete();
-        TakeScreenshot();//CALLING THIS METHOD TO TAKE A SCREENSHOT
-        //********* THAT LINE MIGHT CAUSE A CRASH ON SOME PHONES (LIKE XPERIA T)<----(SEE HERE)
-        //IF THAT HAPPENDS USE THE LINE "bmp1 =decodeFile(tmpFile);" WITH THE METHOD BELOW
-
-    }
-};
-
-public Bitmap decodeFile(File f) {  //FUNCTION BY Arshad Parwez
-    Bitmap b = null;
-    try {
-        // Decode image size
-        BitmapFactory.Options o = new BitmapFactory.Options();
-        o.inJustDecodeBounds = true;
-
-        FileInputStream fis = new FileInputStream(f);
-        BitmapFactory.decodeStream(fis, null, o);
-        fis.close();
-        int IMAGE_MAX_SIZE = 1000;
-        int scale = 1;
-        if (o.outHeight > IMAGE_MAX_SIZE || o.outWidth > IMAGE_MAX_SIZE) {
-            scale = (int) Math.pow(
-                    2,
-                    (int) Math.round(Math.log(IMAGE_MAX_SIZE
-                            / (double) Math.max(o.outHeight, o.outWidth))
-                            / Math.log(0.5)));
-        }
-
-        // Decode with inSampleSize
-        BitmapFactory.Options o2 = new BitmapFactory.Options();
-        o2.inSampleSize = scale;
-        fis = new FileInputStream(f);
-        b = BitmapFactory.decodeStream(fis, null, o2);
-        fis.close();
-    } catch (IOException e) {
-        e.printStackTrace();
-    }
-    return b;
-}
-}
-
-		if(sgUtils.data._mediaProjectionManager === undefined) {
-			sgUtils.data._mediaProjectionManager = ctx.getSystemService(Context.MEDIA_PROJECTION_SERVICE);
-		}
-		ctx.startActivityForResult(sgUtils.data._mediaProjectionManager.createScreenCaptureIntent(), 1);
-
-
-		if(view === undefined) {
-			view = ctx.getWindow().getDecorView();
-		}
-		view.setDrawingCacheEnabled(true);
-		view.buildDrawingCache(true);
-		//Bitmap
-		var drawingCache = view.getDrawingCache();
-		if(file.exists()) {
-			file["delete"]();//file.delete();
-		}
-		file.getParentFile().mkdirs();
-		file.createNewFile();
-
-		var fos = new FileOutputStream(file);
-		drawingCache.compress(Bitmap.CompressFormat.PNG, 100, fos);
-		fos.close();
-		view.setDrawingCacheEnabled(false);
-		*/
 		throw new NoSuchMethodError("This method isn't implement");
 	},
 
@@ -2888,16 +2940,6 @@ public Bitmap decodeFile(File f) {  //FUNCTION BY Arshad Parwez
 	 */
 	//THIS METHOD ISN'T WORK ON FULL SCREEM
 	screenBitmap: function(view) {
-		/*
-		if(view === undefined) {
-			view = ctx.getWindow().getDecorView();
-		}
-		view.setDrawingCacheEnabled(true);
-		//Bitmap
-		var drawingCache = Bitmap.createBitmap(view.getDrawingCache());
-		view.setDrawingCacheEnabled(false);
-		return drawingCache;
-		*/
 		throw new NoSuchMethodError("This method isn't implement");
 	},
 
@@ -3288,7 +3330,7 @@ function ttsIt(str, pitch, speed) {
 
 
 //TEST AREA
-
+/*
 thread(function() {try {
 	sleep(3000);
 	sgUtils.gui.toast("Hello");
@@ -3337,7 +3379,7 @@ function procCmd(cmd) {
 	}
 }
 
-/*
+
 var vt = null;
 function modTick() {
 	var yh = Player.getY();
