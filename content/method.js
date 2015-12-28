@@ -47,6 +47,7 @@ var Short = java.lang.Short;
 var Thread = java.lang.Thread;
 var Runnable = java.lang.Runnable;
 var System = java.lang.System;
+var Throwable = java.lang.Throwable;
 
 var URL = java.net.URL;
 
@@ -167,6 +168,40 @@ function showError(e) {
 		}
 		clientMessage(ChatColor.DARK_RED + "[" + NAME + " ERROR LINE: " + e.lineNumber + "]\n" + ChatColor.DARK_RED + c);
 	}
+}
+
+
+
+function sgError(err) {try {
+	if(sgUtils.data.error === undefined) {
+		sgUtils.data.error = [];
+		sgUtils.data.errorCount = 0;
+
+		var layout = new sg.rl(ctx);
+		layout.setBackgroundColor(sgColor.re500);
+
+		var title = new sg.rl(ctx);
+		title.setId(sgUtils.math.randomId());
+		title.setBackgroundColor(sgColor.re800);
+		var titleP = new sg.rlp(sg.mp, sg.px*0x30);
+		titleP.addRule(sg.rl.ALIGN_PARENT_TOP);
+		title.setLayoutParams(titleP);
+
+		var titleExit = sgUtils.gui.textView("←", sg.px*0x10, false, sgColors.re500, null, Gravity.CENTER, null, null, null, [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2], null, sgColors.re50);
+		titleExit.setId(sgUtils.math.randomId());
+		var titleExitP = new sg.rlp(sg.px*0x30, sg.mp);
+
+		var titleText = sgUtils.gui.textView(NAME + " Error " + (++sgUtils.data.errorCount), sg.px*0x10, false, sgColors.re50, null, Gravity.CENTER, null, null, null, [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2]);
+		var titleTextP = new sg.rlp(sg.mp, sg.wc);
+		titleTextP.addRule(sg.rl.CENTER_IN_PARENT);
+		titleText.setLayoutParams(titleTextP);
+
+
+
+		sgUtils.data.errorLayout = [wd, titleText, contentText];
+	}
+}catch(err) {
+	showError(err);
 }
 
 
@@ -321,12 +356,14 @@ function thread(fc) {
  *   ㄴ leftOver
  *   ㄴ isNumber
  * ㄴ vector
- *   ㄴ DerectionToVector √
+ *   ㄴ DerectionToVector
  *   ㄴ VectorToDirection
- *   ㄴ absoluteRange √
+ *   ㄴ absoluteRange
  * ㄴ gui
- *   ㄴ mcText √
- *   ㄴ mcButton √
+ *   ㄴ textView
+ *   ㄴ button
+ *   ㄴ mcFastText
+ *   ㄴ mcFastButton
  *   ㄴ customToast
  *   ㄴ customProgressBar
  *   ㄴ loadBitmapLayout
