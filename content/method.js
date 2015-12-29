@@ -177,59 +177,65 @@ function sgError(err) {try {
 		sgUtils.data.error = [];
 
 		var layout = new sg.rl(ctx);
-		layout.setBackgroundColor(sgColor.re500);
+		layout.setBackgroundColor(sgColors.re500);
 
 		var title = new sg.rl(ctx);
 		title.setId(sgUtils.math.randomId());
-		title.setBackgroundColor(sgColor.re800);
+		title.setBackgroundColor(sgColors.re800);
 		var titleP = new sg.rlp(sg.mp, sg.px*0x30);
 		titleP.addRule(sg.rl.ALIGN_PARENT_TOP);
 		title.setLayoutParams(titleP);
 
 		var titleExit = sgUtils.gui.button("Ignore", sg.px*0x10, false, sgColors.re500, null, Gravity.CENTER, null, null, null, [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2], null, sgColors.re50, null, function(view) {
-			sgUtils.errorLayout[0].dismiss();
+			sgUtils.data.errorLayout[0].dismiss();
 		});
 		titleExit.setId(sgUtils.math.randomId());
 		var titleExitP = new sg.rlp(sg.px*0x40, sg.mp);
+		titleExitP.addRule(sg.rl.ALIGN_PARENT_RIGHT);
+		titleExit.setLayoutParams(titleExitP);
+		title.addView(titleExit);
 
 		var titleText = sgUtils.gui.textView(NAME + " Error", sg.px*0x10, false, sgColors.re50, null, Gravity.CENTER, null, null, null, [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2]);
 		var titleTextP = new sg.rlp(sg.mp, sg.wc);
 		titleTextP.addRule(sg.rl.CENTER_VERTICAL);
 		titleTextP.addRule(sg.rl.LEFT_OF, titleExit.getId());
 		titleText.setLayoutParams(titleTextP);
+		title.addView(titleText);
+		
+		layout.addView(title);
 
 		var contentScroll = new ScrollView(ctx);
-		var contentScrollP = new sg.rl(sg.mp, sg.wc);
+		var contentScrollP = new sg.rlp(sg.mp, sg.wc);
 		contentScrollP.addRule(sg.rl.BELOW, title.getId());
 		contentScroll.setLayoutParams(contentScrollP);
 		var contentLayout = new sg.ll(ctx);
 		contentLayout.setOrientation(sg.ll.VERTICAL);
 
-		var contentText = sgUtils.gui.textView("", sg.px*0x8, false, sgColor.re50, null, Gravity.LEFT, null, null, null, [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2]);
+		var contentText = sgUtils.gui.textView("", sg.px*0xa, false, sgColors.re50, null, Gravity.LEFT, null, null, null, [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2]);
 
 		contentLayout.addView(contentText);
 		contentScroll.addView(contentLayout);
 		layout.addView(contentScroll);
+		
+		var wd = new PopupWindow(layout, sg.wc, sg.wc, false);
 
 		sgUtils.data.errorLayout = [wd, titleText, contentText];
 	}
-
 	sgUtils.data.error.push(err);
 
-	var index = sgUtils.data.error.length;
-
 	uiThread(function() {try {
+		var index = sgUtils.data.error.length;
 		sgUtils.data.errorLayout[1].setText(NAME + " Error " + index);
-		sgUtils.data.errorLayout[2].setText(getSgErrorMsg(10));
+		sgUtils.data.errorLayout[2].setText(getSgErrorMsg(10) + '');
 		if(!sgUtils.data.errorLayout[0].isShowing()) {
 			sgUtils.data.errorLayout[0].showAtLocation(sg.dv, Gravity.CENTER, 0, 0);
 		}
 	}catch(err) {
-		toast(err);
+		toast(err + '');
 	}});
 }catch(err) {
-	toast(err);
-}
+	toast(err + '');
+}}
 
 function getSgErrorMsg(count) {
 	var str = "";
@@ -246,13 +252,14 @@ function getSgErrorMsg(count) {
 			var sts = "";
 			var st = err.getStackTrace();
 			for(var e = 0; e < st.length; e++) {
-				sts += st[e].getFileName()  + "/" + st[e].getClassName() + "/" + st[e].getMethodName() + "[#" + st[e].getLineNumber + "]" + "\n" + st[e].toString() "\n";
+				sts += st[e].getFileName() + "/" + st[e].getClassName() + "/" + st[e].getMethodName() + "[#" + st[e].getLineNumber + "]" + "\n" + st[e].toString() + "\n";
 			}
 			str += "No." + (index--) + " [Java]\n" + sts + "\n\n";
 		}else {
 			str += "No." + (index--) + " [Undefined]\n" + err + "\n\n";
 		}
 	}
+	return str;
 }
 
 
@@ -1614,7 +1621,7 @@ sgUtils.gui = {
 		}
 		if(background instanceof Drawable) {
 			tv.setBackground(background);
-		}else if(background instanceof Color) {
+		}else if(sgUtils.math.isNumber(background)) {
 			tv.setBackgroundColor(background);
 		}
 		var tv_p;
@@ -1698,7 +1705,7 @@ sgUtils.gui = {
 		}
 		if(background instanceof Drawable) {
 			btn.setBackground(background);
-		}else if(background instanceof Color) {
+		}else if(sgUtils.math.isNumber(background)) {
 			btn.setBackgroundColor(background);
 		}
 		if(onTouchFunction !== null && onTouchFunction !== undefined) {
@@ -3108,52 +3115,11 @@ sgUtils.openGL = {
 	area: function() {
 
 		//Type 0
-		this.addNative: function(vertexAry, indiceAry, colorAry) {
+		this.addNative = function(vertexAry, indiceAry, colorAry) {
 			this.blocks.push([0, vertexAry, indiceAry, colorAry]);
 			this.ready = false;
 		}
-		/*
-		this.addBlock = function(x, y, z) {
-			this.removeBlock(x, y, z);
-			this.blocks.push([x, y, z]);
-		}
 
-		this.removeBlock = function(x, y, z) {
-			var index = this.getIndex(x, y, z);
-			if(index !== -1) {
-				this.blocks.splice(index, 1);
-			}
-		}
-
-		this.searchBlock = function(type, value) {
-			var result = [];
-			switch(type) {
-				case "x":
-				case 0:
-				type = 0;
-				case "y":
-				case 1:
-				type = 1;
-				case "z":
-				case 2:
-				type = 2;
-				break;
-				default:
-				throw new Error("Unknown sgUtils.openGL.area.searchBlock - type");
-			}
-
-			for(var e = 0; e < this.blocks.length; e++) {
-				if(this.blocks[e][type] === value) {
-					result.push(e);
-				}
-			}
-			return result;
-		}
-
-		this.getIndex = function(x, y, z) {
-			return this.blocks.indexOf([x, y, z]);
-		}
-		*/
 		this.getVertices = function() {
 			if(!this.ready) {
 				this.build();
@@ -3418,18 +3384,33 @@ function ttsIt(str, pitch, speed) {
 
 
 //TEST AREA
-/*
+
 thread(function() {try {
-	sleep(3000);
+	sleep(2000);
 	sgUtils.gui.toast("Hello");
-	sleep(1000);
-	sgUtils.gui.toast("World", null, null, true);
-	sleep(500);
-	sgUtils.gui.toast(":p");
-	ctx.scriptErrorCallback("System", new java.lang.Error("관리자가 이탈했습니다"));
+	try {
+		throw new Error('Where am I?');
+	}catch(err) {
+		sgError(err);
+	}
+	sleep(2000);
+	try {
+		if(crash.hijihi.jrjdhxi) {}
+	}catch(err) {
+		sgError(err);
+	}
+	sleep(2000);
+	try {
+		Button.javaError('');
+	}catch(err) {
+		sgError(err);
+	}
+	//ctx.scriptErrorCallback("System", new java.lang.Error("관리자가 이탈했습니다"));
 }catch(err) {
-	showError(err);
-}});
+	sgError(err);
+}}).start();
+
+/*
 uiThread(function() {try {
 	var za = sgUtils.io.loadZipAsset(new File(sgFiles.sdcard, "test.zip"));
 	var bm = za.getStream("image.png");
