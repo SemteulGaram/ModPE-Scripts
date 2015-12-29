@@ -175,7 +175,6 @@ function showError(e) {
 function sgError(err) {try {
 	if(sgUtils.data.error === undefined) {
 		sgUtils.data.error = [];
-		sgUtils.data.errorCount = 0;
 
 		var layout = new sg.rl(ctx);
 		layout.setBackgroundColor(sgColor.re500);
@@ -187,21 +186,73 @@ function sgError(err) {try {
 		titleP.addRule(sg.rl.ALIGN_PARENT_TOP);
 		title.setLayoutParams(titleP);
 
-		var titleExit = sgUtils.gui.textView("←", sg.px*0x10, false, sgColors.re500, null, Gravity.CENTER, null, null, null, [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2], null, sgColors.re50);
+		var titleExit = sgUtils.gui.button("Ignore", sg.px*0x10, false, sgColors.re500, null, Gravity.CENTER, null, null, null, [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2], null, sgColors.re50, null, function(view) {
+			sgUtils.errorLayout[0].dismiss();
+		});
 		titleExit.setId(sgUtils.math.randomId());
-		var titleExitP = new sg.rlp(sg.px*0x30, sg.mp);
+		var titleExitP = new sg.rlp(sg.px*0x40, sg.mp);
 
-		var titleText = sgUtils.gui.textView(NAME + " Error " + (++sgUtils.data.errorCount), sg.px*0x10, false, sgColors.re50, null, Gravity.CENTER, null, null, null, [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2]);
+		var titleText = sgUtils.gui.textView(NAME + " Error", sg.px*0x10, false, sgColors.re50, null, Gravity.CENTER, null, null, null, [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2]);
 		var titleTextP = new sg.rlp(sg.mp, sg.wc);
-		titleTextP.addRule(sg.rl.CENTER_IN_PARENT);
+		titleTextP.addRule(sg.rl.CENTER_VERTICAL);
+		titleTextP.addRule(sg.rl.LEFT_OF, titleExit.getId());
 		titleText.setLayoutParams(titleTextP);
 
+		var contentScroll = new ScrollView(ctx);
+		var contentScrollP = new sg.rl(sg.mp, sg.wc);
+		contentScrollP.addRule(sg.rl.BELOW, title.getId());
+		contentScroll.setLayoutParams(contentScrollP);
+		var contentLayout = new sg.ll(ctx);
+		contentLayout.setOrientation(sg.ll.VERTICAL);
 
+		var contentText = sgUtils.gui.textView("", sg.px*0x8, false, sgColor.re50, null, Gravity.LEFT, null, null, null, [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2]);
+
+		contentLayout.addView(contentText);
+		contentScroll.addView(contentLayout);
+		layout.addView(contentScroll);
 
 		sgUtils.data.errorLayout = [wd, titleText, contentText];
 	}
+
+	sgUtils.data.error.push(err);
+
+	var index = sgUtils.data.error.length;
+
+	uiThread(function() {try {
+		sgUtils.data.errorLayout[1].setText(NAME + " Error " + index);
+		sgUtils.data.errorLayout[2].setText(getSgErrorMsg(10));
+		if(!sgUtils.data.errorLayout[0].isShowing()) {
+			sgUtils.data.errorLayout[0].showAtLocation(sg.dv, Gravity.CENTER, 0, 0);
+		}
+	}catch(err) {
+		toast(err);
+	}});
 }catch(err) {
-	showError(err);
+	toast(err);
+}
+
+function getSgErrorMsg(count) {
+	var str = "";
+	var index = sgUtils.data.error.length;
+
+	for(var e = 0; e < count; e++) {
+		if(index < 1) {
+			break;
+		}
+		var err = sgUtils.data.error[index - 1];
+		if(err instanceof Error) {
+			str += "No." + (index--) + " [JavaScript#" + err.lineNumber + "] " + err.name + "\n" + err.message + "\n\n";
+		}else if(err instanceof java.lang.Error) {
+			var sts = "";
+			var st = err.getStackTrace();
+			for(var e = 0; e < st.length; e++) {
+				sts += st[e].getFileName()  + "/" + st[e].getClassName() + "/" + st[e].getMethodName() + "[#" + st[e].getLineNumber + "]" + "\n" + st[e].toString() "\n";
+			}
+			str += "No." + (index--) + " [Java]\n" + sts + "\n\n";
+		}else {
+			str += "No." + (index--) + " [Undefined]\n" + err + "\n\n";
+		}
+	}
 }
 
 
