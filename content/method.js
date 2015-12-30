@@ -247,17 +247,18 @@ function getSgErrorMsg(count) {
 		}
 		var err = sgUtils.data.error[index - 1];
 		if(err instanceof Error) {
-			str += "No." + (index--) + " [JavaScript#" + err.lineNumber + "] " + err.name + "\n" + err.message + "\n\n";
+			str += "No." + index + " [JavaScript] " + err.name + "\n" + err.message + "\n" + err.stack + "\n\n";
 		}else if(err instanceof java.lang.Error) {
-			var sts = "";
+			var sts = '\n' + err.toString();
 			var st = err.getStackTrace();
 			for(var e = 0; e < st.length; e++) {
-				sts += st[e].getFileName() + "/" + st[e].getClassName() + "/" + st[e].getMethodName() + "[#" + st[e].getLineNumber + "]" + "\n" + st[e].toString() + "\n";
+				sts += "\n" + st[e].toString();
 			}
-			str += "No." + (index--) + " [Java]\n" + sts + "\n\n";
+			str += "No." + index + " [Java]" + sts + "\n\n";
 		}else {
-			str += "No." + (index--) + " [Undefined]\n" + err + "\n\n";
+			str += "No." + index + " [Undefined]\n" + err + "\n\n";
 		}
+		index--;
 	}
 	return str;
 }
@@ -3389,7 +3390,8 @@ thread(function() {try {
 	sleep(2000);
 	sgUtils.gui.toast("Hello");
 	try {
-		throw new Error('Where am I?');
+		var e = new java.lang.Error('HelloError');
+		throw e;
 	}catch(err) {
 		sgError(err);
 	}
