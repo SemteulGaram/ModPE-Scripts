@@ -201,7 +201,7 @@ function sgError(err) {try {
 		titleTextP.addRule(sg.rl.LEFT_OF, titleExit.getId());
 		titleText.setLayoutParams(titleTextP);
 		title.addView(titleText);
-		
+
 		layout.addView(title);
 
 		var contentScroll = new ScrollView(ctx);
@@ -216,7 +216,7 @@ function sgError(err) {try {
 		contentLayout.addView(contentText);
 		contentScroll.addView(contentLayout);
 		layout.addView(contentScroll);
-		
+
 		var wd = new PopupWindow(layout, sg.wc, sg.wc, false);
 
 		sgUtils.data.errorLayout = [wd, titleText, contentText];
@@ -426,7 +426,7 @@ function thread(fc) {
  *   ㄴ customToast
  *   ㄴ customProgressBar
  *   ㄴ loadBitmapLayout
- *   ㄴ document √
+ *   ㄴ document
  *   ㄴ dialog
  * ㄴ net
  *   ㄴ download √
@@ -2320,7 +2320,7 @@ sgUtils.gui = {
 		}
 		return layout;
 	},
-	
+
 	/**
 	 * Dialog
 	 *
@@ -2353,7 +2353,7 @@ sgUtils.gui = {
 		this.gravity = gravity || Gravity.CENTER;
 		this.margins = margins || [0, 0];
 		this.wd = null;
-		
+
 		this.close = function() {
 			uiThread(function() {try {
 				if(that.wd !== null && that.wd.isShowing()) {
@@ -2363,7 +2363,7 @@ sgUtils.gui = {
 				sgError(err);
 			}});
 		}
-		
+
 		this.show = function() {
 			if(that.wd === null) {
 				that.build();
@@ -2376,7 +2376,7 @@ sgUtils.gui = {
 				sgError(err);
 			}});
 		}
-			
+
 		this.build = function() {
 			//main Layout
 			var rl = new sg.rl(ctx);
@@ -2408,7 +2408,7 @@ sgUtils.gui = {
 					cf.setBackgroundColor(sgColors.lg50);
 				title.addView(cf);
 			}
-			
+
 			if(that.btn2Text) {
 				cc = sgUtils.gui.mcFastButton(that.btn2Text, sg.px*0xa, false, sgColors.lg500, null, null, null, [sg.px*8, sg.px*8, sg.px*8, sg.px*8], null, null, null, function(view) {
 					that.btn2Func();
@@ -2436,7 +2436,7 @@ sgUtils.gui = {
 
 			that.wd = new PopupWindow(rl, that.isFullscreen ? sg.ww : sg.wc, that.isFullscreen ? sg.wh : sg.wc, that.focus == true);
 		}
-			
+
 		this.setLayout = function(layout) {
 			that.layout = layout;
 			uiThread(function() {try {
@@ -2446,7 +2446,7 @@ sgUtils.gui = {
 				sgError(err);
 			}});
 		}
-		
+
 		this.setTitle = function(str) {
 			that.name = str;
 			uiThread(function() {try {
@@ -3207,7 +3207,7 @@ sgUtils.android = {
 	 * @param {Boolean} showHideFiles
 	 */
 	explore: function(dir, rootDir, fileFilter, showHideFiles) {
-		
+
 		this.toString = function() {
 			return '[object Explore(' + this.currentDir.toString() + ')]';
 		}
@@ -3277,6 +3277,7 @@ sgUtils.android = {
 	 * @author SemteulGaram
 	 * @since 2015-12-31
 	 *
+	 * @param {String} title
 	 * @param {File} dir
 	 * @param {File} rootDir
 	 * @param {String[]} fileFilter
@@ -3284,10 +3285,13 @@ sgUtils.android = {
 	 * @param {function} func
 	 * - ex.function(File) {}
 	 */
-	fileChooser: function(dir, rootDir, fileFilter, showHideFiles, func) {
-		this.explore = sgUtils.android.explore(dir, rootDir, fileFilter, showHideFiles);
-		this.func = func;
-		
+	fileChooser: function(title, closeText, dir, rootDir, fileFilter, showHideFiles, func) {
+		var explore = sgUtils.android.explore(dir, rootDir, fileFilter, showHideFiles);
+		var dialog = new sgUtils.gui.dialog(title, sgUtils.gui.textView("Loading..."), closeText || "Close", function() {this.close()});
+
+		var changeLayout = function (name) {
+
+		}
 	}
 }
 
