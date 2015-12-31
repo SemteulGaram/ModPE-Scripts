@@ -427,6 +427,7 @@ function thread(fc) {
  *   ㄴ customProgressBar
  *   ㄴ loadBitmapLayout
  *   ㄴ document √
+ *   ㄴ dialog
  * ㄴ net
  *   ㄴ download √
  *   ㄴ loadServerData √
@@ -441,6 +442,7 @@ function thread(fc) {
  *   ㄴ screenBitmap (CAN'T FIX)
  *   ㄴ screenBrightness √
  *   ㄴ explore
+ *   ㄴ fileChooser
  * (√: Need test)
  */
 var sgUtils =  {
@@ -2317,6 +2319,142 @@ sgUtils.gui = {
 			}
 		}
 		return layout;
+	},
+	
+	/**
+	 * Dialog
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-12-31
+	 *
+	 * @param {String} title
+	 * @param {Layout} layout
+	 * @param {String|null} btn1Text
+	 * @param {function|null} btn1Func
+	 * @param {String|null} btn2Text
+	 * @param {function|null} btn2Func
+	 * @param {Boolean} isFullscreen
+	 * @param {Boolean} focus
+	 * @param {Gravity} gravity
+	 * @param {number[2]} margins
+	 */
+	dialog: function(title, layout, btn1Text, btn1Func, btn2Text, btn2Func, isFullscreen, focus, gravity, margins) {
+		var that = this;
+
+		this.name = title;
+		this.layout = layout;
+		this.layoutData = [];
+		this.btn1Text = btn1Text;
+		this.btn1Func = btn1Func;
+		this.btn2Text = btn2Text;
+		this.btn2Func = btn2Func;
+		this.isFullscreen = isFullscreen;
+		this.focus = focus;
+		this.gravity = gravity || Gravity.CENTER;
+		this.margins = margins || [0, 0];
+		this.wd = null;
+		
+		this.close = function() {
+			uiThread(function() {try {
+				if(that.wd !== null && that.wd.isShowing()) {
+					that.wd.dismiss();
+				}
+			}catch(err) {
+				sgError(err);
+			}});
+		}
+		
+		this.show = function() {
+			if(that.wd === null) {
+				that.build();
+			}
+			uiThread(function() {try {
+				if(!that.wd.isShowing()) {
+					that.wd.showAtLocation(sg.dv, that.gravity, that.margins[0], that.margins[1]);
+				}
+			}catch(err) {
+				sgError(err);
+			}});
+		}
+			
+		this.build = function() {
+			//main Layout
+			var rl = new sg.rl(ctx);
+			rl.setBackgroundColor(/*Color.argb(0x88, 0, 0, 0)*/sgColors.lg500);
+
+			//title Part
+			var title = new sg.rl(ctx);
+			title.setId(sgUtils.math.randomId());
+			var title_p = new sg.rlp(sg.mp, sg.px*0x30);
+			title_p.addRule(sg.rl.ALIGN_PARENT_TOP);
+			title.setLayoutParams(title_p);
+			title.setBackgroundColor(sgColors.lg800);
+			var t_text = sgUtils.gui.mcFastText(this.name, sg.px*0x10, false, sgColors.lg50, null, null, null, [sg.px*2, sg.px*2, sg.px*2, sg.px*2]);
+			var t_text_p = new sg.rlp(sg.wc, sg.wc);
+			t_text_p.addRule(sg.rl.CENTER_IN_PARENT);
+			t_text.setLayoutParams(t_text_p);
+			title.addView(t_text);
+
+			var cf, cc;
+
+			if(that.btn1Text) {
+				cf = sgUtils.gui.mcFastButton(that.btn1Text, sg.px*0xa, false, sgColors.lg500, null, null, null, [sg.px*8, sg.px*8, sg.px*8, sg.px*8], null, null, null, function(view) {
+					that.btn1Func();
+				});
+				var cf_p = new sg.rlp(sg.wc, sg.mp);
+				cf_p.addRule(sg.rl.CENTER_VERTICAL);
+				cf_p.addRule(sg.rl.ALIGN_PARENT_LEFT);
+			cf.setLayoutParams(cf_p);
+					cf.setBackgroundColor(sgColors.lg50);
+				title.addView(cf);
+			}
+			
+			if(that.btn2Text) {
+				cc = sgUtils.gui.mcFastButton(that.btn2Text, sg.px*0xa, false, sgColors.lg500, null, null, null, [sg.px*8, sg.px*8, sg.px*8, sg.px*8], null, null, null, function(view) {
+					that.btn2Func();
+				});
+				var cc_p = new sg.rlp(sg.wc, sg.mp);
+				cc_p.addRule(sg.rl.CENTER_VERTICAL);
+				cc_p.addRule(sg.rl.ALIGN_PARENT_RIGHT);
+				cc.setLayoutParams(cc_p);
+				cc.setBackgroundColor(sgColors.lg50);
+				title.addView(cc);
+			}
+			rl.addView(title);
+
+			//content layout
+			var scroll = new ScrollView(ctx);
+			var scroll_p = new sg.rlp(sg.wc, sg.wc);
+			scroll_p.addRule(sg.rl.BELOW, title.getId());
+			scroll_p.addRule(sg.rl.CENTER_HORIZONTAL);
+			scroll.setLayoutParams(scroll_p);
+			scroll.setPadding(sg.px*2, 0, sg.px*2, sg.px*2);
+			scroll.addView(that.layout);
+			rl.addView(scroll);
+
+			that.layoutData = [rl, title, scroll, t_text, cf, cc];
+
+			that.wd = new PopupWindow(rl, that.isFullscreen ? sg.ww : sg.wc, that.isFullscreen ? sg.wh : sg.wc, that.focus == true);
+		}
+			
+		this.setLayout = function(layout) {
+			that.layout = layout;
+			uiThread(function() {try {
+				that.layoutData[2].removeAllViews();
+				that.layoutData[2].addView(layout);
+			}catch(err) {
+				sgError(err);
+			}});
+		}
+		
+		this.setTitle = function(str) {
+			that.name = str;
+			uiThread(function() {try {
+				that.layoutData[3].setText(str);
+			}catch(err) {
+				sgError(err);
+			}});
+		}
 	}
 }
 
@@ -3052,10 +3190,27 @@ sgUtils.android = {
 		if(typeof p.screenBrightness === "number") {
 			p.screenBrightness = bright;
 			ctx.getWindow().setAttributes(p);
+			return true;
 		}
+		return false;
 	},
 
-	explore: function(dir, rootDir, fileFilter) {
+	/**
+	 * Explore
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-12-31
+	 *
+	 * @param {File} dir
+	 * @param {File} rootDir
+	 * @param {String[]} fileFilter
+	 * @param {Boolean} showHideFiles
+	 */
+	explore: function(dir, rootDir, fileFilter, showHideFiles) {
+		
+		this.toString = function() {
+			return '[object Explore(' + this.currentDir.toString() + ')]';
+		}
 
 		this.getName = function() {
 			return this.currentDir.getName();
@@ -3065,8 +3220,33 @@ sgUtils.android = {
 			return this.currentDir;
 		}
 
-		this.getFileList = function() {
-			return sgUtils.convert.sort(this.currentDir.getFileList(), 1);
+		this.getList = function() {
+			var content = this.currentDir.listFiles();
+			var dirs = [];
+			var files = [];
+			for(var e = 0; e < content.length; e++) {
+				var name = content[e].getName() + '';
+				if(!this.showHideFiles && name.substring(0, 1) === '.') {
+					continue;
+				}
+				if(content[e].isDirectory()) {
+					dirs.push(content[e]);
+				}else if(content[e].isFile()) {
+					if(!this.filter) {
+						files.push(content[e]);
+					}else {
+						for(var f = 0; f < this.filter; f++) {
+							var len = this.filter[f].length;
+							if(name.length > len && name.substring(name.length - (len + 1), name.length) === '.' + this.filter[f]) {
+								files.push(content[e]);
+								break;
+							}
+						}
+					}
+				}
+			}
+			var result = sgUtils.convert.sort(dirs, 1);
+			return result.concat(sgUtils.convert.sort(files, 1));
 		}
 
 		this.goParent = function() {
@@ -3088,6 +3268,26 @@ sgUtils.android = {
 		this.currentDir = dir;
 		this.rootDir = rootDir;
 		this.filter = fileFilter;
+		this.showHideFiles = showHideFiles;
+	},
+
+	/**
+	 * FileChooser
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-12-31
+	 *
+	 * @param {File} dir
+	 * @param {File} rootDir
+	 * @param {String[]} fileFilter
+	 * @param {Boolean} showHideFiles
+	 * @param {function} func
+	 * - ex.function(File) {}
+	 */
+	fileChooser: function(dir, rootDir, fileFilter, showHideFiles, func) {
+		this.explore = sgUtils.android.explore(dir, rootDir, fileFilter, showHideFiles);
+		this.func = func;
+		
 	}
 }
 
@@ -3389,28 +3589,48 @@ function ttsIt(str, pitch, speed) {
 thread(function() {try {
 	sleep(2000);
 	sgUtils.gui.toast("Hello");
-	try {
-		var e = new java.lang.Error('HelloError');
-		throw e;
-	}catch(err) {
-		sgError(err);
-	}
-	sleep(2000);
-	try {
-		if(crash.hijihi.jrjdhxi) {}
-	}catch(err) {
-		sgError(err);
-	}
-	sleep(2000);
-	try {
-		Button.javaError('');
-	}catch(err) {
-		sgError(err);
-	}
+	var dl = new sgUtils.gui.dialog('Test Dialog', sgUtils.gui.textView('hi'), 'btn1', function() {print('Hello btn1!')}, 'exit', function() {this.close()}, false, false, Gravity.RIGHT);
+	dl.show();
 	//ctx.scriptErrorCallback("System", new java.lang.Error("관리자가 이탈했습니다"));
 }catch(err) {
 	sgError(err);
 }}).start();
+
+var cDir = new sgUtils.android.explore(sgFiles.sdcard, sgFiles.sdcard, null);
+
+function procCmd(cmd) {
+	if(cmd === "/") {
+		if(cDir.goParent()) {
+			clientMessage("PATH: " + (cDir.getDir().getAbsolutePath()));
+			var list = cDir.getList();
+			var str = [];
+			for(var e = 0; e < list.length; e++) {
+				str.push(list[e].getName());
+			}
+			clientMessage(str.join('/'));
+		}else {
+			clientMessage("This is root");
+		}
+		return;
+	}
+	var file = new File(cDir.getDir(), cmd);
+	if(file.exists()) {
+		if(cDir.move(file)) {
+			clientMessage("PATH: " + (cDir.getDir().getAbsolutePath()));
+			var list = cDir.getList();
+			var str = [];
+			for(var e = 0; e < list.length; e++) {
+				str.push(list[e].getName());
+			}
+			clientMessage(str.join('/'));
+		}else {
+			clientMessage("Can't");
+		}
+		return;
+	}else {
+		clientMessage("no exists");
+	}
+}
 
 /*
 uiThread(function() {try {
@@ -3426,29 +3646,7 @@ uiThread(function() {try {
 	showError(err);
 }});
 
-var cDir = new sgUtils.android.explore(sgFiles.sdcard, sgFiles.sdcard, null);
 
-function procCmd(cmd) {
-	if(cmd === "/") {
-		if(cDir.goParent()) {
-			clientMessage("PATH: " + (cDir.getDir().getAbsolutePath()));
-		}else {
-			clientMessage("This is root");
-		}
-		return;
-	}
-	var file = new File(cDir.getDir(), cmd);
-	if(file.exists()) {
-		if(cDir.move(file)) {
-			clientMessage("PATH: " + (cDir.getDir().getAbsolutePath()));
-		}else {
-			clientMessage("Can't");
-		}
-		return;
-	}else {
-		clientMessage("no exists");
-	}
-}
 
 
 var vt = null;

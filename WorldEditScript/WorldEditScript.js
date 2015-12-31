@@ -174,6 +174,137 @@ function showError(e) {
 
 
 
+function sgError(err) {try {
+	if(sgUtils.data.error === undefined) {
+		sgUtils.data.error = [];
+
+		var layout = new sg.rl(ctx);
+		layout.setBackgroundColor(sgColors.re500);
+
+		var title = new sg.rl(ctx);
+		title.setId(sgUtils.math.randomId());
+		title.setBackgroundColor(sgColors.re800);
+		var titleP = new sg.rlp(sg.mp, sg.px*0x30);
+		titleP.addRule(sg.rl.ALIGN_PARENT_TOP);
+		title.setLayoutParams(titleP);
+
+		var titleExit = sgUtils.gui.button("Ignore", sg.px*0x10, false, sgColors.re500, null, Gravity.CENTER, null, null, null, [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2], null, sgColors.re50, null, function(view) {
+			sgUtils.data.errorLayout[0].dismiss();
+		});
+		titleExit.setId(sgUtils.math.randomId());
+		var titleExitP = new sg.rlp(sg.px*0x40, sg.mp);
+		titleExitP.addRule(sg.rl.ALIGN_PARENT_RIGHT);
+		titleExit.setLayoutParams(titleExitP);
+		title.addView(titleExit);
+
+		var titleText = sgUtils.gui.textView(NAME + " Error", sg.px*0x10, false, sgColors.re50, null, Gravity.CENTER, null, null, null, [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2]);
+		var titleTextP = new sg.rlp(sg.mp, sg.wc);
+		titleTextP.addRule(sg.rl.CENTER_VERTICAL);
+		titleTextP.addRule(sg.rl.LEFT_OF, titleExit.getId());
+		titleText.setLayoutParams(titleTextP);
+		title.addView(titleText);
+		
+		layout.addView(title);
+
+		var contentScroll = new ScrollView(ctx);
+		var contentScrollP = new sg.rlp(sg.mp, sg.wc);
+		contentScrollP.addRule(sg.rl.BELOW, title.getId());
+		contentScroll.setLayoutParams(contentScrollP);
+		var contentLayout = new sg.ll(ctx);
+		contentLayout.setOrientation(sg.ll.VERTICAL);
+
+		var contentText = sgUtils.gui.textView("", sg.px*0xa, false, sgColors.re50, null, Gravity.LEFT, null, null, null, [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2]);
+
+		contentLayout.addView(contentText);
+		contentScroll.addView(contentLayout);
+		layout.addView(contentScroll);
+		
+		var wd = new PopupWindow(layout, sg.wc, sg.wc, false);
+
+		sgUtils.data.errorLayout = [wd, titleText, contentText];
+	}
+	sgUtils.data.error.push(err);
+
+	uiThread(function() {try {
+		var index = sgUtils.data.error.length;
+		sgUtils.data.errorLayout[1].setText(NAME + " Error " + index);
+		sgUtils.data.errorLayout[2].setText(getSgErrorMsg(10) + '');
+		if(!sgUtils.data.errorLayout[0].isShowing()) {
+			sgUtils.data.errorLayout[0].showAtLocation(sg.dv, Gravity.CENTER, 0, 0);
+		}
+	}catch(err) {
+		toast(err + '');
+	}});
+}catch(err) {
+	toast(err + '');
+}}
+
+function getSgErrorMsg(count) {
+	var str = "";
+	var index = sgUtils.data.error.length;
+
+	for(var e = 0; e < count; e++) {
+		if(index < 1) {
+			break;
+		}
+		var err = sgUtils.data.error[index - 1];
+		if(err instanceof Error) {
+			str += "No." + index + " [JavaScript] " + err.name + "\n" + err.message + "\n" + err.stack + "\n\n";
+		}else if(err instanceof java.lang.Error) {
+			var sts = '\n' + err.toString();
+			var st = err.getStackTrace();
+			for(var e = 0; e < st.length; e++) {
+				sts += "\n" + st[e].toString();
+			}
+			str += "No." + index + " [Java]" + sts + "\n\n";
+		}else {
+			str += "No." + index + " [Undefined]\n" + err + "\n\n";
+		}
+		index--;
+	}
+	return str;
+}
+
+
+
+var sgColors = {
+	re50: Color.parseColor("#FFEBEE"),
+	re100: Color.parseColor("#FFCDD2"),
+	re200: Color.parseColor("#EF9A9A"),
+	re300: Color.parseColor("#E57373"),
+	re400: Color.parseColor("#EF5350"),
+	re500: Color.parseColor("#F44336"),
+	re600: Color.parseColor("#E53935"),
+	re700: Color.parseColor("#D32F2F"),
+	re800: Color.parseColor("#C62828"),
+	re900: Color.parseColor("#B71C1C"),
+	reA100: Color.parseColor("#FF8A80"),
+	reA200: Color.parseColor("#FF5252"),
+	reA400: Color.parseColor("#FF1744"),
+	reA700: Color.parseColor("#D50000"),
+	lg50: Color.parseColor("#F1F8E9"),
+	lg100: Color.parseColor("#DCEDC8"),
+	lg200: Color.parseColor("#C5E1A5"),
+	lg300: Color.parseColor("#AED581"),
+	lg400: Color.parseColor("#9CCC65"),
+	lg500: Color.parseColor("#8BC34A"),
+	lg600: Color.parseColor("#7CB342"),
+	lg700: Color.parseColor("#689F38"),
+	lg800: Color.parseColor("#558B2F"),
+	lg900: Color.parseColor("#33691E"),
+	lgA100: Color.parseColor("#CCFF90"),
+	lgA200: Color.parseColor("#B2FF59"),
+	lgA400: Color.parseColor("#76FF03"),
+	lgA700: Color.parseColor("#64DD17"),
+	main: Color.parseColor("#8BC34A"),
+	mainBr: Color.parseColor("#C5E1A5"),
+	mainDk: Color.parseColor("#558B2F"),
+	warning: Color.parseColor("#ffab00"),
+	critical: Color.parseColor("#ab0000")
+}
+
+
+
 var sgUrls = {
 	font: "https://www.dropbox.com/s/y1o46b2jkbxwl3o/minecraft.ttf?dl=1",
 	pkg: "https://www.dropbox.com/s/0vdmuiyvhtlv2bj/wes1.pkg?dl=1",
@@ -2821,16 +2952,6 @@ function loadMcpeAssets() {try {
 }catch(e) {
 	showError(e);
 }}
-
-
-
-var sgColors = {
-	main: Color.parseColor("#348893"),
-	mainBr: Color.parseColor("#3cbca4"),
-	mainDk: Color.parseColor("#31878b"),
-	warning: Color.parseColor("#ffab00"),
-	critical: Color.parseColor("#ab0000")
-}
 
 
 
