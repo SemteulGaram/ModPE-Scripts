@@ -328,7 +328,7 @@ var sgColors = {
 var sgAssets = {
 
 	customAssetCreator: function(pixel, width, height, scale, scaleType, left, top, right, bottom) {
-		if (!(this instanceof arguments.callee)) return new arguments.callee(pixel, width, height, scale, left, top, right, bottom);
+		if (!(this instanceof arguments.callee)) {var oNew=Object.create(arguments.callee.prototype);arguments.callee.apply(oNew, arguments);return oNew} 
 
 		this.pixel = pixel;
 		this.rawBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
@@ -338,10 +338,47 @@ var sgAssets = {
 	},
 
 	bitmapAssetCreator: function(bitmap, xPos, yPos, xSize, ySize, scale, scaleType, left, top, right, bottom) {
-		if (!(this instanceof arguments.callee)) return new arguments.callee(bitmap, xPos, yPos, xSize, ySize, scale, scaleType, left, top, right, bottom);
+		if (!(this instanceof arguments.callee)) {var oNew=Object.create(arguments.callee.prototype);arguments.callee.apply(oNew, arguments);return oNew} 
 		this.rawBitmap = Bitmap.createBitmap(bitmap, xPos, yPos, xSize, ySize);
 		this.scaleBitmap = Bitmap.createScaledBitmap(this.raw, xSize*scale, ySize*scale, scaleType);
 		this.ninePatch = function() {return ninePatch1(this.scaleBitmap, (top*(scale-1))+1, (left*(scale-1))+1, bottom*scale, right*scale)}
+	},
+	
+	underline: function(underlineColor, backgroundColor) {
+		var p = underlineColor, o = backgroundColor;
+		return new this.customAssetCreator([
+		o,o,o,o,o,o,o,o,
+		o,o,o,o,o,o,o,o,
+		o,o,o,o,o,o,o,o,
+		o,o,o,o,o,o,o,o,
+		o,o,o,o,o,o,o,o,
+		o,o,o,o,o,o,o,o,
+		o,o,o,o,o,o,o,o,
+		o,o,o,p,p,o,o,o
+		], 8, 8, sg.px*2, false, 4, 4, 5, 5);
+	},
+	
+	underlineHighlight: function(underlineColor, backgroundColor, highlightColor) {
+		var p = underlineColor, o = backgroundColor, i = highlightColor;
+		return new this.customAssetCreator([
+		o,o,o,o,o,o,o,o,
+		o,o,o,o,o,o,o,o,
+		o,o,o,o,o,o,o,o,
+		o,o,o,o,o,o,o,o,
+		o,o,o,o,o,o,o,o,
+		o,o,o,o,o,o,o,o,
+		o,o,o,i,i,o,o,o,
+		o,o,o,p,p,o,o,o
+		], 8, 8, sg.px*2, false, 4, 4, 5, 5);
+	},
+	
+	stroke: function(strokeColor, backgroundColor) {
+		var p = strokeColor, o = backgroundColor;
+		return new this.customAssetCreator([
+		p,p,p,
+		p,o,p,
+		p,p,p
+		], 3, 3, sg.px*2, false, 2, 2, 2, 2);
 	}
 }
 
@@ -967,7 +1004,7 @@ sgUtils.io = {
 	 * return this
 	 */
 	loadZipAsset: function(file) {
-		if (!(this instanceof arguments.callee)) return new arguments.callee(file);
+		if (!(this instanceof arguments.callee)) {var oNew=Object.create(arguments.callee.prototype);arguments.callee.apply(oNew, arguments);return oNew} 
 
 		/**
 		 * @param {String} innerPath
@@ -1972,7 +2009,7 @@ sgUtils.gui = {
 	 * @return {customProgressBar}
 	 */
 	progressBar: function(type) {
-		if (!(this instanceof arguments.callee)) return new arguments.callee(type);
+		if (!(this instanceof arguments.callee)) {var oNew=Object.create(arguments..prototype);arguments.callee.apply(oNew, arguments);return oNew} 
 		var that = this;
 		this.progressBar = null;
 		this.textView = null;
@@ -2339,6 +2376,8 @@ sgUtils.gui = {
 	 * @param {number[2]} margins
 	 */
 	dialog: function(title, layout, btn1Text, btn1Func, btn2Text, btn2Func, isFullscreen, focus, gravity, margins) {
+		if (!(this instanceof arguments.callee)) {var oNew=Object.create(arguments.callee.prototype);arguments.callee.apply(oNew, arguments);return oNew}
+		
 		var that = this;
 
 		this.name = title;
@@ -2380,7 +2419,7 @@ sgUtils.gui = {
 		this.build = function() {
 			//main Layout
 			var rl = new sg.rl(ctx);
-			rl.setBackgroundColor(/*Color.argb(0x88, 0, 0, 0)*/sgColors.lg500);
+			rl.setBackground(sgAssets.stroke(sgColors.lg800, sgColors.lg500).ninePatch());
 
 			//title Part
 			var title = new sg.rl(ctx);
@@ -2662,7 +2701,7 @@ sgUtils.android = {
   * @since 2015-04
   */
 	battery: function() {
-		if(!(this instanceof arguments.callee)) return new arguments.callee();
+		if (!(this instanceof arguments.callee)) {var oNew=Object.create(arguments.callee.prototype);arguments.callee.apply(oNew, arguments);return oNew} 
 		var that = this;
 		this.ifilter = new android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED);
 
@@ -2767,6 +2806,8 @@ sgUtils.android = {
 	//convert Java to Javascript by [SemteulGaram]
 
 	visualizer: function() {
+		if (!(this instanceof arguments.callee)) {var oNew=Object.create(arguments.callee.prototype);arguments.callee.apply(oNew, arguments);return oNew} 
+		
 		var that = this;
 		//int
 		this.TYPE_PCM = 0;
@@ -3207,6 +3248,7 @@ sgUtils.android = {
 	 * @param {Boolean} showHideFiles
 	 */
 	explore: function(dir, rootDir, fileFilter, showHideFiles) {
+		if (!(this instanceof arguments.callee)) {var oNew=Object.create(arguments.callee.prototype);arguments.callee.apply(oNew, arguments);return oNew}
 
 		this.toString = function() {
 			return '[object Explore(' + this.currentDir.toString() + ')]';
@@ -3235,9 +3277,10 @@ sgUtils.android = {
 					if(!this.filter) {
 						files.push(content[e]);
 					}else {
-						for(var f = 0; f < this.filter; f++) {
+						for(var f = 0; f < this.filter.length; f++) {
 							var len = this.filter[f].length;
-							if(name.length > len && name.substring(name.length - (len + 1), name.length) === '.' + this.filter[f]) {
+							if(name.length > len && name.substring(name.length - (len + 1), name.length).toLowerCase() === 
+							('.' + this.filter[f]).toLowerCase()) {
 								files.push(content[e]);
 								break;
 							}
@@ -3248,21 +3291,33 @@ sgUtils.android = {
 			var result = sgUtils.convert.sort(dirs, 1);
 			return result.concat(sgUtils.convert.sort(files, 1));
 		}
+		
+		this.isRoot = function() {
+			return this.currentDir.getAbsolutePath() == this.rootDir.getAbsolutePath();			
+		}
 
 		this.goParent = function() {
-			if(this.currentDir.getAbsolutePath() == this.rootDir.getAbsolutePath()) {
+			if(this.isRoot()) {
 				return false;
 			}
 			this.currentDir = this.currentDir.getParentFile();
 			return true;
 		}
 
-		this.move = function(dir) {
+		this.setDir = function(dir) {
 			if(!dir.isDirectory()) {
 				return false;
 			}
 			this.currentDir = dir;
 			return true;
+		}
+		
+		this.move = function(str) {
+			var dir = new File(this.getDir(), str);
+			if(dir.exists()) {
+				return this.setDir(dir);
+			}
+			return false;
 		}
 
 		this.currentDir = dir;
@@ -3282,16 +3337,130 @@ sgUtils.android = {
 	 * @param {File} rootDir
 	 * @param {String[]} fileFilter
 	 * @param {Boolean} showHideFiles
+	 * @param {(function|null)} extraIcons
+	 * - ex.function(File, ImageView) {}
 	 * @param {function} func
 	 * - ex.function(File) {}
 	 */
-	fileChooser: function(title, closeText, dir, rootDir, fileFilter, showHideFiles, func) {
-		var explore = sgUtils.android.explore(dir, rootDir, fileFilter, showHideFiles);
-		var dialog = new sgUtils.gui.dialog(title, sgUtils.gui.textView("Loading..."), closeText || "Close", function() {this.close()});
+	fileChooser: function(title, closeText, dir, rootDir, fileFilter, showHideFiles, extraIcons, func) {
+		
+		var loading = new ProgressBar(ctx);
+		var loadingP = new sg.rlp(sg.px*0x28, sg.px*0x28);
+		loadingP.setMargins(sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4);
+		loadingP.addRule(sg.rl.ALIGN_PARENT_RIGHT);
+		loading.setLayoutParams(loadingP);
 
-		var changeLayout = function (name) {
-
+		var explore = new sgUtils.android.explore(dir, rootDir, fileFilter, showHideFiles);
+		var layout = new sg.ll(ctx);
+		layout.setOrientation(sg.ll.VERTICAL);
+		var dialog = new sgUtils.gui.dialog(title, layout, closeText || "Close", function() {this.close()});
+		
+		if(!extraIcons) {
+			var iconFolder = Bitmap.createBitmap(sg.px*0x30, sg.px*0x30, Bitmap.Config.ARGB_8888);
+			var iconFolderCanvas = new Canvas(iconFolder);
+			var iconPaint1 = new Paint(Paint.ANTI_ALIAS_FLAG);
+			iconPaint1.setStyle(Paint.Style.FILL);
+			iconPaint1.setColor(Color.parseColor('#FFEB3B'));
+			var iconPaint2 = new Paint(Paint.ANTI_ALIAS_FLAG);
+			iconPaint2.setStyle(Paint.Style.FILL);
+			iconPaint2.setColor(Color.parseColor('#FDD835'));
+			iconFolderCanvas.drawRect(sg.px*0x4, sg.px*0xa, sg.px*0x14, sg.px*0xf, iconPaint2);
+			iconFolderCanvas.drawRect(sg.px*0x2, sg.px*0xf, sg.px*0x2d, sg.px*0x26, iconPaint1);
+			
+			var iconFile = Bitmap.createBitmap(sg.px*0x30, sg.px*0x30, Bitmap.Config.ARGB_8888);
+			var iconFileCanvas = new Canvas(iconFile);
+			var iconPaint3 = new Paint(Paint.ANTI_ALIAS_FLAG);
+			iconPaint3.setStyle(Paint.Style.FILL);
+			iconPaint3.setColor(Color.parseColor('#ECEFF1'));
+			var iconPaint4 = new Paint(Paint.ANTI_ALIAS_FLAG);
+			iconPaint4.setStyle(Paint.Style.FILL);
+			iconPaint4.setColor(Color.parseColor('#CFD8DC'));
+			iconFileCanvas.drawRect(sg.px*0x8, sg.px*0x2, sg.px*0x20, sg.px*0xa, iconPaint3);
+			iconFileCanvas.drawRect(sg.px*0x8, sg.px*0xa, sg.px*0x28, sg.px*0x2d, iconPaint3);
+			var iconFilePath1 = new Path();
+			iconFilePath1.moveTo(sg.px*0x20, sg.px*0x2);
+			iconFilePath1.lineTo(sg.px*0x20, sg.px*0xa);
+			iconFilePath1.lineTo(sg.px*0x28, sg.px*0xa);
+			iconFilePath1.lineTo(sg.px*0x20, sg.px*0x2);
+			iconFilePath1.close();
+			iconFileCanvas.drawPath(iconFilePath1, iconPaint4);
 		}
+
+		var changeLayout = function (dir) {
+			if(!explore.setDir(dir)) {
+				toast("폴더가 존재하지 않습니다");
+				return;
+			}
+			var list = explore.getList();
+			var buildLayout = thread(function() {try {
+				var underlineDrawable = sgAssets.underline(sgColors.lg50, 0);
+				if(!explore.isRoot()) {
+					var subLayout = new sg.rl(ctx);
+					subLayout.setBackground(underlineDrawable.ninePatch());
+					subLayout.setPadding(sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4);
+					
+					var name = sgUtils.gui.button(".../", sg.px*0x10, false, sgColors.lg50, null, Gravity.CENTER, null, null, null, null, null, Color.TRANSPARENT, null, function(view) {
+						changeLayout(explore.getDir().getParentFile());
+					}, null);
+					var nameP = new sg.rlp(sg.mp, sg.mp);
+					name.setLayoutParams(nameP);
+					subLayout.addView(name);
+					layout.addView(subLayout);
+				}
+				for(var e = 0; e < list.length; e++) {
+					var subLayout = new sg.rl(ctx);
+					subLayout.setBackground(underlineDrawable.ninePatch());
+					subLayout.setPadding(sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4);
+					
+					var icon = new ImageView(ctx);
+					icon.setId(sgUtils.math.randomId());
+					var iconP = new sg.rlp(sg.px*0x30, sg.px*0x30);
+					iconP.addRule(sg.rl.ALIGN_PARENT_LEFT);
+					icon.setLayoutParams(iconP);
+					if(list[e].isDirectory()) {
+						icon.setImageBitmap(iconFolder);
+					}else {
+						icon.setImageBitmap(iconFile);
+					}
+					if(extraIcons) {
+						extraIcons(list[e], icon);
+					}
+					subLayout.addView(icon);
+					
+					var name = sgUtils.gui.button(list[e].getName(), sg.px*0x10, false, sgColors.lg50, null, Gravity.CENTER, null, null, null, [0, 0, 0, 0], null, Color.TRANSPARENT, null, list[e].isDirectory() ? function(view) {
+						changeLayout(new File(explore.getDir(), view.getText()));
+					} : function(view) {
+						dialog.close();
+						func(new File(explore.getDir(), view.getText()));
+					}, null);
+					var nameP = new sg.rlp(sg.mp, sg.wc);
+					nameP.addRule(sg.rl.RIGHT_OF, icon.getId());
+					name.setLayoutParams(nameP);
+					subLayout.addView(name);
+					layout.addView(subLayout);
+				}
+				uiThread(function() {try {
+					dialog.layoutData[2].addView(layout);
+					dialog.layoutData[0].removeView(loading);
+				}catch(err) {
+					sgError(err);
+				}});
+			}catch(err) {
+				sgError(err);
+			}});
+			uiThread(function() {try {
+				dialog.layoutData[2].removeView(layout);
+				layout.removeAllViews();
+				if(!loading.getParent()) {
+					dialog.layoutData[0].addView(loading);
+				}
+				buildLayout.start();
+			}catch(err) {
+				sgError(err);
+			}});
+		}
+		dialog.show();
+		changeLayout(dir);
 	}
 }
 
@@ -3409,16 +3578,6 @@ sgUtils.openGL = {
 	}
 }
 
-function onActivityResult(requestCode, resultCode, data) {
-	if (requestCode == 1) {
-		if (resultCode != Activity.RESULT_OK) {
-			toast("user_cancel");
-			return;
-		}
-		toast("user_pass");
-		sgUtils.data._mediaProjection = sgUtils.data._mediaProjectionService.getMediaProjection(resultCode, data);
-	}
-}
 
 
 function loadMcpeAssets() {try {
@@ -3593,7 +3752,31 @@ function ttsIt(str, pitch, speed) {
 thread(function() {try {
 	sleep(2000);
 	sgUtils.gui.toast("Hello");
-	var dl = new sgUtils.gui.dialog('Test Dialog', sgUtils.gui.textView('hi'), 'btn1', function() {print('Hello btn1!')}, 'exit', function() {this.close()}, false, false, Gravity.RIGHT);
+	
+	var btm = BitmapFactory.decodeFile("sdcard/test.jpeg");
+	var bw = btm.getWidth(), bh = btm.getHeight();
+	if(bw > bh) {
+		var scale = (sg.px*0x20)/bw;
+		bw = Math.round(bw*scale);
+		bh = Math.round(bh*scale);
+	}else {
+		var scale = (sg.px*0x20)/bh;
+		bw = Math.round(bw*scale);
+		bh = Math.round(bh*scale);
+	}
+	var btm2 = Bitmap.createScaledBitmap(btm, bw, bh, true);
+	
+	var img = new ImageView(ctx);
+	img.setImageBitmap(btm);
+	
+	var img2 = new ImageView(ctx);
+	img2.setImageBitmap(btm2);
+	
+	var layout = new sg.ll(ctx);
+	layout.addView(img);
+	layout.addView(img2);
+	
+	var dl = new sgUtils.gui.dialog('Test Dialog', layout, 'btn1', function() {print('Hello btn1!')}, 'exit', function() {this.close()}, false, false, Gravity.RIGHT);
 	dl.show();
 	//ctx.scriptErrorCallback("System", new java.lang.Error("관리자가 이탈했습니다"));
 }catch(err) {
@@ -3602,39 +3785,10 @@ thread(function() {try {
 
 var cDir = new sgUtils.android.explore(sgFiles.sdcard, sgFiles.sdcard, null);
 
-function procCmd(cmd) {
-	if(cmd === "/") {
-		if(cDir.goParent()) {
-			clientMessage("PATH: " + (cDir.getDir().getAbsolutePath()));
-			var list = cDir.getList();
-			var str = [];
-			for(var e = 0; e < list.length; e++) {
-				str.push(list[e].getName());
-			}
-			clientMessage(str.join('/'));
-		}else {
-			clientMessage("This is root");
-		}
-		return;
-	}
-	var file = new File(cDir.getDir(), cmd);
-	if(file.exists()) {
-		if(cDir.move(file)) {
-			clientMessage("PATH: " + (cDir.getDir().getAbsolutePath()));
-			var list = cDir.getList();
-			var str = [];
-			for(var e = 0; e < list.length; e++) {
-				str.push(list[e].getName());
-			}
-			clientMessage(str.join('/'));
-		}else {
-			clientMessage("Can't");
-		}
-		return;
-	}else {
-		clientMessage("no exists");
-	}
-}
+sgUtils.android.fileChooser("FileChooser Test", null, sgFiles.sdcard, sgFiles.sdcard, ["jpeg", "jpg", "bmp", "png"], false, null, function(file) {
+	toast(file + "");	
+});
+
 
 /*
 uiThread(function() {try {
