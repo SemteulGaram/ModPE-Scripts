@@ -1659,10 +1659,10 @@ sgUtils.gui = {
 		if(gravity !== null && gravity !== undefined) {
 			tv.setGravity(gravity);
 		}
-		if(background instanceof Drawable) {
-			tv.setBackground(background);
-		}else if(sgUtils.math.isNumber(background)) {
+		if(sgUtils.math.isNumber(background)) {
 			tv.setBackgroundColor(background);
+		}else if(background !== null && background !== undefined) {
+			tv.setBackground(background);
 		}
 		var tv_p;
 		if(width !== null && height !== null && width !== undefined && height !== undefined) {
@@ -1743,10 +1743,10 @@ sgUtils.gui = {
 		if(gravity !== null && gravity !== undefined) {
 			btn.setGravity(gravity);
 		}
-		if(background instanceof Drawable) {
-			btn.setBackground(background);
-		}else if(sgUtils.math.isNumber(background)) {
+		if(sgUtils.math.isNumber(background)) {
 			btn.setBackgroundColor(background);
+		}else if(background !== null && background !== undefined) {
+			btn.setBackground(background);
 		}
 		if(onTouchFunction !== null && onTouchFunction !== undefined) {
 			btn.setOnTouchListener(View.OnTouchListener({onTouch: function(view, event) {try {
