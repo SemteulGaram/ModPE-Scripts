@@ -70,6 +70,7 @@ var MediaPlayer = android.media.MediaPlayer;
 var Environment = android.os.Environment;
 var Process = android.os.Process;
 var Handler = android.os.Handler;
+var Looper = android.os.Looper;
 var InputType = android.text.InputType;
 var View = android.view.View;
 var ViewGroup = android.view.ViewGroup;
@@ -465,6 +466,7 @@ function thread(fc) {
  *   ㄴ loadBitmapLayout
  *   ㄴ document
  *   ㄴ dialog
+ *   ㄴ thumbnail
  * ㄴ net
  *   ㄴ download √
  *   ㄴ loadServerData √
@@ -2494,6 +2496,39 @@ sgUtils.gui = {
 				sgError(err);
 			}});
 		}
+	},
+	
+	/**
+	 * Thumbnail
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-01-04
+	 *
+	 * @param {(File|String)} file
+	 * @param {number} width
+	 * @param {number} height
+	 * @return {Bitmap} bm
+	 */
+	thumbnail: function(file, width, height) {
+		if(file instanceof File) {
+			file = file.getAbsolutePath();
+		}
+		var bm = BitmapFactory.decodeFile(file);
+		if(!bm) {
+			return false;
+		}
+		var wScale = bm.getWidth()/width, hScale = bm.getHeight()/height;
+		if(wScale < 1 && hScale < 1) {
+			return bm;
+		}else if(wScale > hScale) {
+			var rbm = Bitmap.createScaledBitmap(bm, width, bm.getHeight()/wScale, true);
+			bm.recycle();
+			return rbm;
+		}else {
+			var rbm = Bitmap.createScaledBitmap(bm, bm.getWidth()/hScale, height, true);
+			bm.recycle();
+			return rbm;
+		}
 	}
 }
 
@@ -3339,10 +3374,14 @@ sgUtils.android = {
 	 * @param {Boolean} showHideFiles
 	 * @param {(function|null)} extraIcons
 	 * - ex.function(File, ImageView) {}
-	 * @param {function} func
+	 * @param {function} onSelect
+	 * - ex.function(File) {}
+	 * @param {function} onChangeDir
+	 * - ex.function(File) {}
+	 * @param {function} onCancel
 	 * - ex.function(File) {}
 	 */
-	fileChooser: function(title, closeText, dir, rootDir, fileFilter, showHideFiles, extraIcons, func) {
+	fileChooser: function(title, closeText, dir, rootDir, fileFilter, showHideFiles, extraIcons, onSelect, onChangeDir, onCancel) {
 		
 		var loading = new ProgressBar(ctx);
 		var loadingP = new sg.rlp(sg.px*0x28, sg.px*0x28);
@@ -3353,7 +3392,13 @@ sgUtils.android = {
 		var explore = new sgUtils.android.explore(dir, rootDir, fileFilter, showHideFiles);
 		var layout = new sg.ll(ctx);
 		layout.setOrientation(sg.ll.VERTICAL);
-		var dialog = new sgUtils.gui.dialog(title, layout, closeText || "Close", function() {this.close()});
+		var dialog = new sgUtils.gui.dialog(title, layout, closeText || "Close", function() {
+			this.close();
+			//콜백
+			if(onCancel) {
+				onCancel();
+			}
+		});
 		
 		if(!extraIcons) {
 			var iconFolder = Bitmap.createBitmap(sg.px*0x30, sg.px*0x30, Bitmap.Config.ARGB_8888);
@@ -3391,9 +3436,13 @@ sgUtils.android = {
 				toast("폴더가 존재하지 않습니다");
 				return;
 			}
-			var list = explore.getList();
+			
+			//내용물 레이아웃 빌드 쓰레드
 			var buildLayout = thread(function() {try {
+				//밑줄 드로어블 나인패치
 				var underlineDrawable = sgAssets.underline(sgColors.lg50, 0);
+				
+				//루트 폴더가 아니라면
 				if(!explore.isRoot()) {
 					var subLayout = new sg.rl(ctx);
 					subLayout.setBackground(underlineDrawable.ninePatch());
@@ -3407,6 +3456,9 @@ sgUtils.android = {
 					subLayout.addView(name);
 					layout.addView(subLayout);
 				}
+				//목록 정렬해서 불러오기
+				var list = explore.getList();
+				//레이아웃에 각각 추가
 				for(var e = 0; e < list.length; e++) {
 					var subLayout = new sg.rl(ctx);
 					subLayout.setBackground(underlineDrawable.ninePatch());
@@ -3427,11 +3479,14 @@ sgUtils.android = {
 					}
 					subLayout.addView(icon);
 					
-					var name = sgUtils.gui.button(list[e].getName(), sg.px*0x10, false, sgColors.lg50, null, Gravity.CENTER, null, null, null, [0, 0, 0, 0], null, Color.TRANSPARENT, null, list[e].isDirectory() ? function(view) {
+					var name = sgUtils.gui.button(list[e].getName(), sg.px*0x10, false, sgColors.lg50, null, Gravity.CENTER, null, null, null, [0, 0, 0, 0], null, Color.TRANSPARENT, null, list[e].isDirectory() ? function(view) {//폴더라면
 						changeLayout(new File(explore.getDir(), view.getText()));
-					} : function(view) {
+					} : function(view) {//파일이라면
 						dialog.close();
-						func(new File(explore.getDir(), view.getText()));
+						//콜백
+						if(onSelect) {
+							onSelect(new File(explore.getDir(), view.getText()));
+						}
 					}, null);
 					var nameP = new sg.rlp(sg.mp, sg.wc);
 					nameP.addRule(sg.rl.RIGHT_OF, icon.getId());
@@ -3448,6 +3503,8 @@ sgUtils.android = {
 			}catch(err) {
 				sgError(err);
 			}});
+			
+			//기존 내용물 비우고 로딩프로그래스바 띄우기
 			uiThread(function() {try {
 				dialog.layoutData[2].removeView(layout);
 				layout.removeAllViews();
@@ -3458,6 +3515,10 @@ sgUtils.android = {
 			}catch(err) {
 				sgError(err);
 			}});
+			//콜백
+			if(onChangeDir) {
+				onChangeDir(explore.getDir());
+			}
 		}
 		dialog.show();
 		changeLayout(dir);
