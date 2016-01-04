@@ -17,8 +17,8 @@
 const NAME = "WorldEdit script";
 const NAME_CODE = "WorldEdit";
 //Season . Release Number . Commits
-const VERSION = "0.6.0";
-const VERSION_CODE = 117;
+const VERSION = "0.7.0";
+const VERSION_CODE = 118;
 const ASSETS_VERSION = 1;
 const SERVER_VERSION = 1;
 const TAG = "[" + "WorldEdit" + " " + VERSION + "] ";
@@ -26,6 +26,7 @@ const TAG = "[" + "WorldEdit" + " " + VERSION + "] ";
 /**
  * TODOS
  *
+ * Fix copy method
  * ServerMessage
  * Schemathics
  * TaskManager
@@ -265,6 +266,9 @@ function getSgErrorMsg(count) {
 	return str;
 }
 
+//새 메서드로 대체
+showError = sgError;
+
 
 
 var sgColors = {
@@ -335,7 +339,7 @@ sgFiles.pkg = new File(sgFiles.assets, "wes.pkg");
 var sgAssets = {
 
 	customAssetCreator: function(pixel, width, height, scale, scaleType, left, top, right, bottom) {
-		if (!(this instanceof arguments.callee)) return new arguments.callee(pixel, width, height, scale, left, top, right, bottom);
+		if (!(this instanceof arguments.callee)) {var oNew=Object.create(arguments.callee.prototype);arguments.callee.apply(oNew, arguments);return oNew} 
 
 		this.pixel = pixel;
 		this.rawBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
@@ -345,10 +349,47 @@ var sgAssets = {
 	},
 
 	bitmapAssetCreator: function(bitmap, xPos, yPos, xSize, ySize, scale, scaleType, left, top, right, bottom) {
-		if (!(this instanceof arguments.callee)) return new arguments.callee(bitmap, xPos, yPos, xSize, ySize, scale, scaleType, left, top, right, bottom);
+		if (!(this instanceof arguments.callee)) {var oNew=Object.create(arguments.callee.prototype);arguments.callee.apply(oNew, arguments);return oNew} 
 		this.rawBitmap = Bitmap.createBitmap(bitmap, xPos, yPos, xSize, ySize);
-		this.scaleBitmap = Bitmap.createScaledBitmap(this.rawBitmap, xSize*scale, ySize*scale, scaleType);
+		this.scaleBitmap = Bitmap.createScaledBitmap(this.raw, xSize*scale, ySize*scale, scaleType);
 		this.ninePatch = function() {return ninePatch1(this.scaleBitmap, (top*(scale-1))+1, (left*(scale-1))+1, bottom*scale, right*scale)}
+	},
+	
+	underline: function(underlineColor, backgroundColor) {
+		var p = underlineColor, o = backgroundColor;
+		return new this.customAssetCreator([
+		o,o,o,o,o,o,o,o,
+		o,o,o,o,o,o,o,o,
+		o,o,o,o,o,o,o,o,
+		o,o,o,o,o,o,o,o,
+		o,o,o,o,o,o,o,o,
+		o,o,o,o,o,o,o,o,
+		o,o,o,o,o,o,o,o,
+		o,o,o,p,p,o,o,o
+		], 8, 8, sg.px*2, false, 4, 4, 5, 5);
+	},
+	
+	underlineHighlight: function(underlineColor, backgroundColor, highlightColor) {
+		var p = underlineColor, o = backgroundColor, i = highlightColor;
+		return new this.customAssetCreator([
+		o,o,o,o,o,o,o,o,
+		o,o,o,o,o,o,o,o,
+		o,o,o,o,o,o,o,o,
+		o,o,o,o,o,o,o,o,
+		o,o,o,o,o,o,o,o,
+		o,o,o,o,o,o,o,o,
+		o,o,o,i,i,o,o,o,
+		o,o,o,p,p,o,o,o
+		], 8, 8, sg.px*2, false, 4, 4, 5, 5);
+	},
+	
+	stroke: function(strokeColor, backgroundColor) {
+		var p = strokeColor, o = backgroundColor;
+		return new this.customAssetCreator([
+		p,p,p,
+		p,o,p,
+		p,p,p
+		], 3, 3, sg.px*2, false, 2, 2, 2, 2);
 	}
 }
 
@@ -601,10 +642,11 @@ sgUtils.io = {
 	 *
 	 * @param {(File|String|InputStream)} file
 	 * @param {Object} obj
+ 	 * @param {boolean} mkDir
 	 * @return {boolean} success
 	 */
-	saveJSON: function(file, obj) {
-		return this.writeFile(file, JSON.stringify(obj));
+	saveJSON: function(file, obj, mkDir) {
+		return this.writeFile(file, JSON.stringify(obj), mkDir);
 	},
 
 	/**
@@ -911,7 +953,7 @@ sgUtils.io = {
 	 * return this
 	 */
 	loadZipAsset: function(file) {
-		if (!(this instanceof arguments.callee)) return new arguments.callee(file);
+		if (!(this instanceof arguments.callee)) {var oNew=Object.create(arguments.callee.prototype);arguments.callee.apply(oNew, arguments);return oNew} 
 
 		/**
 		 * @param {String} innerPath
@@ -1188,6 +1230,168 @@ sgUtils.convert = {
 		}else {
 			return numberToString(parseInt(Math.round(size*100/(1099511627776*1024)), 10)/100) + "PB";
 		}
+	},
+
+	/**
+	 * Get CharCodes
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-12-19
+	 *
+	 * @param {String[]} str
+	 * @return {Int[]}
+	 */
+	getCharCodes: function(str) {
+		str = str + "";
+		var sResult = [];
+		for(var e = 0; e < str.length; e++) {
+			sResult.push(str.charCodeAt(e));
+		}
+		return sResult;
+	},
+
+	/**
+	 * Sort
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-12-19
+	 *
+	 * @param {(String[]|File[])} elements
+	 * @param {int} sortType - [
+	 * 	0: CharCode
+	 * 	1: Alphabet
+	 * 	]
+	 * @return {(String[]|File[])}
+	 */
+	sort: function(elements, sortType) {
+		var sResult = []; //최종결과
+		var _sort = function(ary, pos) { //내부 재귀함수
+			while(ary.length > 0) { //없어질때까지 반복
+				var tempCode = [];
+				var tempIndex = [];
+				var min = null;
+				for(var e = 0; e < ary.length; e++) {
+					if(ary[e][0][pos] === undefined) { //파일 이름길이가 끝이면 그냥 최종결과로 넘기기
+						sResult.push(ary[e][1]);
+						ary.splice(e, 1);
+						e--;
+						continue;
+					}else if(min === null) { //만약 루프의 처음이면 최초 설정
+						min = ary[e][0][pos];
+						tempCode.push(ary[e]);
+						tempIndex.push(e);
+					}else if(min === ary[e][0][pos]) { //등록된 값이랑 같은 코드의 문자열이면
+						tempCode.push(ary[e]);
+						tempIndex.push(e);
+					}else if(min > ary[e][0][pos]) { //등록된 값보다 작은(우선순위의) 코드의 문자열이면
+						min = ary[e][0][pos];
+						tempCode = []; //초기화 후 우선순위 먼저 등록
+						tempIndex = [];
+						tempCode.push(ary[e]);
+						tempIndex.push(e);
+					}
+				}
+				for(var e = tempIndex.length - 1; e >= 0; e--) { //뒤에서부터 반복 (그래야 인덱스가 안꼬임)
+					ary.splice(tempIndex[e], 1); //사용된 번호들을 삭제
+				}
+				tempIndex = [];
+				if(tempCode.length === 0) {
+					if(ary.length !== 0) {
+						throw new Error("Sort Error: Unknown error"); //Never happen
+					}
+				}else if(tempCode.length === 1) { //결과가 하나면 최종결과에 등록
+					sResult.push(tempCode[0][1]);
+					tempCode = [];
+				}else { //결과가 여러개면
+					_sort(tempCode, pos + 1); //재귀함수
+					tempCode = [];
+				}
+			}
+		}
+		var dat = [], name;
+		switch(sortType) {
+
+			case 1:
+			for(var e = 0; e < elements.length; e++) {
+				if(elements[e] instanceof File) {
+					name = (elements[e].getName() + "").toLowerCase();
+				}else {
+					name = (elements[e] + "").toLowerCase();
+				}
+				dat.push([sgUtils.convert.getCharCodes(name), elements[e]]);
+			}
+			_sort(dat, 0);
+			break;
+
+			default:
+			for(var e = 0; e < elements.length; e++) {
+				if(elements[e] instanceof File) { //문자열로 변환
+					name = elements[e].getName() + "";
+				}else {
+					name = elements[e] + "";
+				}
+				dat.push([sgUtils.convert.getCharCodes(name), elements[e]]); //배열에 Char 배열과 내용물들을 등록
+			}
+			_sort(dat, 0);
+		}
+		return sResult;
+	},
+
+	/**
+	 * Filter
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-12-27
+	 *
+	 * @param {(String[]|File[])} list
+	 * @param {Int} type -
+	 * {
+	 * 1: Contain
+	 * 2: Contain in front
+	 * 3: Contain in Back
+ 	 * }
+	 * @param {String} str
+	 */
+	filter: function(list, type, str) {
+
+		var names = [];
+		var result = [];
+
+		for(var e = 0; e < list.length; e++) {
+			if(list[e] instanceof File) {
+				names[e] = list[e].getName();
+			}else {
+				names[e] = list[e] + "";
+			}
+		}
+
+		switch(type) {
+			case 1:
+				for(var e = 0; e < names.length; e++) {
+					if(names[e].indexOf(str) >= 0) {
+						result.push(list[e]);
+					}
+				}
+				break;
+			case 2:
+				for(var e = 0; e < names.length; e++) {
+					if(names[e].indexOf(str) === 0) {
+						result.push(list[e]);
+					}
+				}
+				break;
+			case 3:
+				for(var e = 0; e < names.length; e++) {
+					var index = names[e].indexOf(str);
+					if(index >= 0 && index === (names[e].length - str.length)) {
+						result.push(list[e]);
+					}
+				}
+				break;
+			default: throw new Error("sgUtils.convert.filter - type parameter is unknown: " + type);
+		}
+
+		return result;
 	}
 }
 
@@ -1348,6 +1552,175 @@ sgUtils.gui = {
 
 	toString: function() {
 		return "[object sgUtils - GUI]";
+	},
+
+	/**
+	 * TextView
+	 * 메소드 하나로 끝내는 텍스트뷰 생성
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-12-27
+	 *
+	 * @param {(String|null)} str
+	 * @param {(number|null)} size
+	 * @param {(boolean|null)} hasShadow
+	 * @param {(Color|null)} color
+	 * @param {(Color|null)} shadowColor
+	 * @param {(Int|null)} gravity
+	 * @param {(File|null)} font
+	 * @param {(number|null)} width
+	 * @param {(number|null)} height
+	 * @param {(Array|null)} padding
+	 * @param {(Array|null)} margins
+	 * @param {(Drawable|Color|null)} background
+	 * @return {TextView}
+	 */
+	textView: function(str, size, hasShadow, color, shadowColor, gravity, font, width, height, padding, margins, background) {
+		var tv = new TextView(ctx);
+		tv.setTransformationMethod(null);
+		tv.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+		if(font !== null && font !== undefined) {
+			if(font.exists()) {
+				tv.setTypeface(android.graphics.Typeface.createFromFile(font));
+			}
+		}
+		if(str !== null && str !== undefined) {
+			tv.setText((str + ""));
+		}
+		if(size !== null && size !== undefined) {
+			tv.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, size);
+		}else {
+			tv.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, sg.px*0x10);
+		}
+		if(color !== null && color !== undefined) {
+			tv.setTextColor(color);
+		}
+		if(hasShadow) {
+			if(shadowColor !== null && shadowColor !== undefined) {
+				tv.setShadowLayer(1/0xffffffff, sg.px*1.3, sg.px*1.3, shadowColor);
+			}else {
+				tv.setShadowLayer(1/0xffffffff, sg.px*1.3, sg.px*1.3, Color.DKGRAY);
+			}
+		}
+		if(padding !== null && padding !== undefined) {
+			tv.setPadding(padding[0], padding[1], padding[2], padding[3]);
+		}
+		if(gravity !== null && gravity !== undefined) {
+			tv.setGravity(gravity);
+		}
+		if(sgUtils.math.isNumber(background)) {
+			tv.setBackgroundColor(background);
+		}else if(background !== null && background !== undefined) {
+			tv.setBackground(background);
+		}
+		var tv_p;
+		if(width !== null && height !== null && width !== undefined && height !== undefined) {
+			tv_p = new sg.ll.LayoutParams(width, height);
+		}else {
+			tv_p = new sg.ll.LayoutParams(sg.wc, sg.wc);
+		}
+		if(margins !== null && margins !== undefined) {
+			tv_p.setMargins(margins[0], margins[1], margins[2], margins[3]);
+		}
+		tv.setLayoutParams(tv_p);
+		return tv;
+	},
+
+	/**
+	 * Button
+	 * 메소드 하나로 끝내는 버튼 생성
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-10-24
+	 *
+	 * @param {String} str
+	 * @param {(number|null)} size
+	 * @param {(boolean|null)} hasShadow
+	 * @param {(Color|null)} color
+	 * @param {(Color|null)} shadowColor
+	 * @param {(Int|null)} gravity
+	 * @param {(File|null)} font
+	 * @param {(number|null)} width
+	 * @param {(number|null)} height
+	 * @param {(Array|null)} padding
+	 * @param {(Array|null)} margins
+	 * @param {(Drawable|Color|null)} background
+	 * @param {(function|null)} onTouchFunction - ex.function(view, event){return Boolean}
+	 * @param {(function|null)} onClickFunction - ex.function(view)
+	 * @param {(function|null)} onLongClickFunction - ex.function(view){return Boolean}
+	 * @return {Button}
+	 */
+	button: function(str, size, hasShadow, color, shadowColor, gravity, font, width, height, padding, margins, background, onTouchFunction, onClickFunction, onLongClickFunction) {
+		var btn = new Button(ctx);
+		btn.setTransformationMethod(null);	btn.setLayerType(android.view.View.LAYER_TYPE_SOFTWARE, null);
+		if(font !== null && font !== undefined) {
+			if(font.exists()) {
+				tv.setTypeface(android.graphics.Typeface.createFromFile(font));
+			}
+		}
+		if(str !== null && str !== undefined) {
+			btn.setText((str + ""));
+		}
+		if(size !== null && size !== undefined) {
+			btn.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, size);
+		}else {
+			btn.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, sg.px*0x10);
+		}
+		if(color !== null && color !== undefined) {
+			btn.setTextColor(color);
+		}
+		if(hasShadow) {
+			if(shadowColor !== null && shadowColor !== undefined) {
+				btn.setShadowLayer(1/0xffffffff, sg.px*1.3, sg.px*1.3, shadowColor);
+			}else {
+				btn.setShadowLayer(1/0xffffffff, sg.px*1.3, sg.px*1.3, Color.DKGRAY);
+			}
+		}
+		if(padding !== null && padding !== undefined) {
+			btn.setPadding(padding[0], padding[1], padding[2], padding[3]);
+		}
+		var btn_p;
+		if(width !== null && height !== null && width !== undefined && height !== undefined) {
+			btn_p = new sg.ll.LayoutParams(width, height);
+		}else {
+			btn_p = new sg.ll.LayoutParams(sg.wc, sg.wc);
+		}
+		if(margins !== null && margins !== undefined) {
+			btn_p.setMargins(margins[0], margins[1], margins[2], margins[3]);
+		}
+		btn.setLayoutParams(btn_p);
+		if(gravity !== null && gravity !== undefined) {
+			btn.setGravity(gravity);
+		}
+		if(sgUtils.math.isNumber(background)) {
+			btn.setBackgroundColor(background);
+		}else if(background !== null && background !== undefined) {
+			btn.setBackground(background);
+		}
+		if(onTouchFunction !== null && onTouchFunction !== undefined) {
+			btn.setOnTouchListener(View.OnTouchListener({onTouch: function(view, event) {try {
+				return onTouchFunction(view, event);
+			}catch(err) {
+				showError(err);
+				return false;
+			}}}));
+		}
+		if(onClickFunction !== null && onClickFunction !== undefined) {
+			btn.setOnClickListener(View.OnClickListener({onClick: function(view) {try {
+				onClickFunction(view);
+			}catch(err) {
+				showError(err);
+			}}}));
+		}
+		if(onLongClickFunction !== null && onLongClickFunction !== undefined) {
+					btn.setOnLongClickListener(View.OnLongClickListener({onLongClick: function(view) {try {
+				return onLongClickFunction(view);
+			}catch(err) {
+				showError(err);
+				return false;
+			}}}));
+		}
+		return btn;
 	},
 
 	/**
@@ -1585,7 +1958,7 @@ sgUtils.gui = {
 	 * @return {customProgressBar}
 	 */
 	progressBar: function(type) {
-		if (!(this instanceof arguments.callee)) return new arguments.callee(type);
+		if (!(this instanceof arguments.callee)) {var oNew=Object.create(arguments..prototype);arguments.callee.apply(oNew, arguments);return oNew} 
 		var that = this;
 		this.progressBar = null;
 		this.textView = null;
@@ -1932,6 +2305,144 @@ sgUtils.gui = {
 			}
 		}
 		return layout;
+	},
+
+	/**
+	 * Dialog
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-12-31
+	 *
+	 * @param {String} title
+	 * @param {Layout} layout
+	 * @param {String|null} btn1Text
+	 * @param {function|null} btn1Func
+	 * @param {String|null} btn2Text
+	 * @param {function|null} btn2Func
+	 * @param {Boolean} isFullscreen
+	 * @param {Boolean} focus
+	 * @param {Gravity} gravity
+	 * @param {number[2]} margins
+	 */
+	dialog: function(title, layout, btn1Text, btn1Func, btn2Text, btn2Func, isFullscreen, focus, gravity, margins) {
+		if (!(this instanceof arguments.callee)) {var oNew=Object.create(arguments.callee.prototype);arguments.callee.apply(oNew, arguments);return oNew}
+		
+		var that = this;
+
+		this.name = title;
+		this.layout = layout;
+		this.layoutData = [];
+		this.btn1Text = btn1Text;
+		this.btn1Func = btn1Func;
+		this.btn2Text = btn2Text;
+		this.btn2Func = btn2Func;
+		this.isFullscreen = isFullscreen;
+		this.focus = focus;
+		this.gravity = gravity || Gravity.CENTER;
+		this.margins = margins || [0, 0];
+		this.wd = null;
+
+		this.close = function() {
+			uiThread(function() {try {
+				if(that.wd !== null && that.wd.isShowing()) {
+					that.wd.dismiss();
+				}
+			}catch(err) {
+				sgError(err);
+			}});
+		}
+
+		this.show = function() {
+			if(that.wd === null) {
+				that.build();
+			}
+			uiThread(function() {try {
+				if(!that.wd.isShowing()) {
+					that.wd.showAtLocation(sg.dv, that.gravity, that.margins[0], that.margins[1]);
+				}
+			}catch(err) {
+				sgError(err);
+			}});
+		}
+
+		this.build = function() {
+			//main Layout
+			var rl = new sg.rl(ctx);
+			rl.setBackground(sgAssets.stroke(sgColors.lg800, sgColors.lg500).ninePatch());
+
+			//title Part
+			var title = new sg.rl(ctx);
+			title.setId(sgUtils.math.randomId());
+			var title_p = new sg.rlp(sg.mp, sg.px*0x30);
+			title_p.addRule(sg.rl.ALIGN_PARENT_TOP);
+			title.setLayoutParams(title_p);
+			title.setBackgroundColor(sgColors.lg800);
+			var t_text = sgUtils.gui.mcFastText(this.name, sg.px*0x10, false, sgColors.lg50, null, null, null, [sg.px*2, sg.px*2, sg.px*2, sg.px*2]);
+			var t_text_p = new sg.rlp(sg.wc, sg.wc);
+			t_text_p.addRule(sg.rl.CENTER_IN_PARENT);
+			t_text.setLayoutParams(t_text_p);
+			title.addView(t_text);
+
+			var cf, cc;
+
+			if(that.btn1Text) {
+				cf = sgUtils.gui.mcFastButton(that.btn1Text, sg.px*0xa, false, sgColors.lg500, null, null, null, [sg.px*8, sg.px*8, sg.px*8, sg.px*8], null, null, null, function(view) {
+					that.btn1Func();
+				});
+				var cf_p = new sg.rlp(sg.wc, sg.mp);
+				cf_p.addRule(sg.rl.CENTER_VERTICAL);
+				cf_p.addRule(sg.rl.ALIGN_PARENT_LEFT);
+			cf.setLayoutParams(cf_p);
+					cf.setBackgroundColor(sgColors.lg50);
+				title.addView(cf);
+			}
+
+			if(that.btn2Text) {
+				cc = sgUtils.gui.mcFastButton(that.btn2Text, sg.px*0xa, false, sgColors.lg500, null, null, null, [sg.px*8, sg.px*8, sg.px*8, sg.px*8], null, null, null, function(view) {
+					that.btn2Func();
+				});
+				var cc_p = new sg.rlp(sg.wc, sg.mp);
+				cc_p.addRule(sg.rl.CENTER_VERTICAL);
+				cc_p.addRule(sg.rl.ALIGN_PARENT_RIGHT);
+				cc.setLayoutParams(cc_p);
+				cc.setBackgroundColor(sgColors.lg50);
+				title.addView(cc);
+			}
+			rl.addView(title);
+
+			//content layout
+			var scroll = new ScrollView(ctx);
+			var scroll_p = new sg.rlp(sg.wc, sg.wc);
+			scroll_p.addRule(sg.rl.BELOW, title.getId());
+			scroll_p.addRule(sg.rl.CENTER_HORIZONTAL);
+			scroll.setLayoutParams(scroll_p);
+			scroll.setPadding(sg.px*2, 0, sg.px*2, sg.px*2);
+			scroll.addView(that.layout);
+			rl.addView(scroll);
+
+			that.layoutData = [rl, title, scroll, t_text, cf, cc];
+
+			that.wd = new PopupWindow(rl, that.isFullscreen ? sg.ww : sg.wc, that.isFullscreen ? sg.wh : sg.wc, that.focus == true);
+		}
+
+		this.setLayout = function(layout) {
+			that.layout = layout;
+			uiThread(function() {try {
+				that.layoutData[2].removeAllViews();
+				that.layoutData[2].addView(layout);
+			}catch(err) {
+				sgError(err);
+			}});
+		}
+
+		this.setTitle = function(str) {
+			that.name = str;
+			uiThread(function() {try {
+				that.layoutData[3].setText(str);
+			}catch(err) {
+				sgError(err);
+			}});
+		}
 	}
 }
 
@@ -2139,7 +2650,7 @@ sgUtils.android = {
   * @since 2015-04
   */
 	battery: function() {
-		if(!(this instanceof arguments.callee)) return new arguments.callee();
+		if (!(this instanceof arguments.callee)) {var oNew=Object.create(arguments.callee.prototype);arguments.callee.apply(oNew, arguments);return oNew} 
 		var that = this;
 		this.ifilter = new android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED);
 
@@ -2244,6 +2755,8 @@ sgUtils.android = {
 	//convert Java to Javascript by [SemteulGaram]
 
 	visualizer: function() {
+		if (!(this instanceof arguments.callee)) {var oNew=Object.create(arguments.callee.prototype);arguments.callee.apply(oNew, arguments);return oNew} 
+		
 		var that = this;
 		//int
 		this.TYPE_PCM = 0;
@@ -2636,209 +3149,6 @@ sgUtils.android = {
 	 */
 	//THIS METHOD ISN'T WORK ON FULL SCREEN
 	screenshot: function(file, view) {
-
-		/*public class Cam_View extends Activity implements SurfaceHolder.Callback {
-
-
-    ctx.setContentView(R.layout.camera);
-
-    CamView = ctx.findViewById(R.id.camview);//RELATIVELAYOUT OR
-                                                          //ANY LAYOUT OF YOUR XML
-
-    var SurView = ctx.findViewById(R.id.sview);
-    //SURFACEVIEW FOR THE PREVIEW
-			//OF THE CAMERA FEED
-    var camHolder = SurView.getHolder();
-    //NEEDED FOR THE PREVIEW
-    camHolder.addCallback(this);
-    //NEEDED FOR THE PREVIEW
-    camHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-    //NEEDED FOR THE PREVIEW
-    var camera_image = ctx.findViewById(R.id.camera_image);
-    //NEEDED FOR THE PREVIEW
-
-    camera.takePicture(null, null, mPicture);
-
-@Override
-public void surfaceChanged(SurfaceHolder holder, int format, int width,//NEEDED FOR THE PREVIEW
-    int height) {
-    if(previewRunning) {
-        camera.stopPreview();
-    }
-    Camera.Parameters camParams = camera.getParameters();
-    Camera.Size size = camParams.getSupportedPreviewSizes().get(0);
-    camParams.setPreviewSize(size.width, size.height);
-    camera.setParameters(camParams);
-    try {
-        camera.setPreviewDisplay(holder);
-        camera.startPreview();
-        previewRunning=true;
-    } catch(IOException e) {
-        e.printStackTrace();
-    }
-}
-
-public void surfaceCreated(SurfaceHolder holder) {                  //NEEDED FOR THE PREVIEW
-    try {
-        camera=Camera.open();
-    } catch(Exception e) {
-        e.printStackTrace();
-        Toast.makeText(getApplicationContext(),"Error",Toast.LENGTH_LONG).show();
-        finish();
-    }
-}
-
-@Override
-public void surfaceDestroyed(SurfaceHolder holder) {             //NEEDED FOR THE PREVIEW
-    camera.stopPreview();
-    camera.release();
-    camera=null;
-}
-
-public void TakeScreenshot(){    //THIS METHOD TAKES A SCREENSHOT AND SAVES IT AS .jpg
-    Random num = new Random();
-    int nu=num.nextInt(1000); //PRODUCING A RANDOM NUMBER FOR FILE NAME
-    CamView.setDrawingCacheEnabled(true); //CamView OR THE NAME OF YOUR LAYOUR
-    CamView.buildDrawingCache(true);
-    Bitmap bmp = Bitmap.createBitmap(CamView.getDrawingCache());
-    CamView.setDrawingCacheEnabled(false); // clear drawing cache
-    ByteArrayOutputStream bos = new ByteArrayOutputStream();
-    bmp.compress(CompressFormat.JPEG, 100, bos);
-    byte[] bitmapdata = bos.toByteArray();
-    ByteArrayInputStream fis = new ByteArrayInputStream(bitmapdata);
-
-    String picId=String.valueOf(nu);
-    String myfile="Ghost"+picId+".jpeg";
-
-    File dir_image = new  File(Environment.getExternalStorageDirectory()+//<---
-                    File.separator+"Ultimate Entity Detector");          //<---
-    dir_image.mkdirs();                                                  //<---
-    //^IN THESE 3 LINES YOU SET THE FOLDER PATH/NAME . HERE I CHOOSE TO SAVE
-    //THE FILE IN THE SD CARD IN THE FOLDER "Ultimate Entity Detector"
-
-    try {
-        File tmpFile = new File(dir_image,myfile);
-        FileOutputStream fos = new FileOutputStream(tmpFile);
-
-        byte[] buf = new byte[1024];
-        int len;
-        while ((len = fis.read(buf)) > 0) {
-            fos.write(buf, 0, len);
-        }
-        fis.close();
-        fos.close();
-        Toast.makeText(getApplicationContext(),
-                       "The file is saved at :SD/Ultimate Entity Detector",Toast.LENGTH_LONG).show();
-        bmp1 = null;
-        camera_image.setImageBitmap(bmp1); //RESETING THE PREVIEW
-        camera.startPreview();             //RESETING THE PREVIEW
-    } catch (FileNotFoundException e) {
-        e.printStackTrace();
-    } catch (IOException e) {
-        e.printStackTrace();
-    }
-}
-
-private PictureCallback mPicture = new PictureCallback() {   //THIS METHOD AND THE METHOD BELOW
-                             //CONVERT THE CAPTURED IMAGE IN A JPG FILE AND SAVE IT
-
-    @Override
-    public void onPictureTaken(byte[] data, Camera camera) {
-
-        File dir_image2 = new  File(Environment.getExternalStorageDirectory()+
-                        File.separator+"Ultimate Entity Detector");
-        dir_image2.mkdirs();  //AGAIN CHOOSING FOLDER FOR THE PICTURE(WHICH IS LIKE A SURFACEVIEW
-                              //SCREENSHOT)
-
-        File tmpFile = new File(dir_image2,"TempGhost.jpg"); //MAKING A FILE IN THE PATH
-                        //dir_image2(SEE RIGHT ABOVE) AND NAMING IT "TempGhost.jpg" OR ANYTHING ELSE
-        try { //SAVING
-            FileOutputStream fos = new FileOutputStream(tmpFile);
-            fos.write(data);
-            fos.close();
-            //grabImage();
-        } catch (FileNotFoundException e) {
-            Toast.makeText(getApplicationContext(),"Error",Toast.LENGTH_LONG).show();
-        } catch (IOException e) {
-            Toast.makeText(getApplicationContext(),"Error",Toast.LENGTH_LONG).show();
-        }
-
-        String path = (Environment.getExternalStorageDirectory()+
-                        File.separator+"Ultimate EntityDetector"+
-                                            File.separator+"TempGhost.jpg");//<---
-
-        BitmapFactory.Options options = new BitmapFactory.Options();//<---
-            options.inPreferredConfig = Bitmap.Config.ARGB_8888;//<---
-        bmp1 = BitmapFactory.decodeFile(path, options);//<---     *********(SEE BELOW)
-        //THE LINES ABOVE READ THE FILE WE SAVED BEFORE AND CONVERT IT INTO A BitMap
-        camera_image.setImageBitmap(bmp1); //SETTING THE BitMap AS IMAGE IN AN IMAGEVIEW(SOMETHING
-                                    //LIKE A BACKGROUNG FOR THE LAYOUT)
-
-        tmpFile.delete();
-        TakeScreenshot();//CALLING THIS METHOD TO TAKE A SCREENSHOT
-        //********* THAT LINE MIGHT CAUSE A CRASH ON SOME PHONES (LIKE XPERIA T)<----(SEE HERE)
-        //IF THAT HAPPENDS USE THE LINE "bmp1 =decodeFile(tmpFile);" WITH THE METHOD BELOW
-
-    }
-};
-
-public Bitmap decodeFile(File f) {  //FUNCTION BY Arshad Parwez
-    Bitmap b = null;
-    try {
-        // Decode image size
-        BitmapFactory.Options o = new BitmapFactory.Options();
-        o.inJustDecodeBounds = true;
-
-        FileInputStream fis = new FileInputStream(f);
-        BitmapFactory.decodeStream(fis, null, o);
-        fis.close();
-        int IMAGE_MAX_SIZE = 1000;
-        int scale = 1;
-        if (o.outHeight > IMAGE_MAX_SIZE || o.outWidth > IMAGE_MAX_SIZE) {
-            scale = (int) Math.pow(
-                    2,
-                    (int) Math.round(Math.log(IMAGE_MAX_SIZE
-                            / (double) Math.max(o.outHeight, o.outWidth))
-                            / Math.log(0.5)));
-        }
-
-        // Decode with inSampleSize
-        BitmapFactory.Options o2 = new BitmapFactory.Options();
-        o2.inSampleSize = scale;
-        fis = new FileInputStream(f);
-        b = BitmapFactory.decodeStream(fis, null, o2);
-        fis.close();
-    } catch (IOException e) {
-        e.printStackTrace();
-    }
-    return b;
-}
-}
-
-		if(sgUtils.data._mediaProjectionManager === undefined) {
-			sgUtils.data._mediaProjectionManager = ctx.getSystemService(Context.MEDIA_PROJECTION_SERVICE);
-		}
-		ctx.startActivityForResult(sgUtils.data._mediaProjectionManager.createScreenCaptureIntent(), 1);
-
-
-		if(view === undefined) {
-			view = ctx.getWindow().getDecorView();
-		}
-		view.setDrawingCacheEnabled(true);
-		view.buildDrawingCache(true);
-		//Bitmap
-		var drawingCache = view.getDrawingCache();
-		if(file.exists()) {
-			file["delete"]();//file.delete();
-		}
-		file.getParentFile().mkdirs();
-		file.createNewFile();
-
-		var fos = new FileOutputStream(file);
-		drawingCache.compress(Bitmap.CompressFormat.PNG, 100, fos);
-		fos.close();
-		view.setDrawingCacheEnabled(false);
-		*/
 		throw new NoSuchMethodError("This method isn't implement");
 	},
 
@@ -2854,16 +3164,6 @@ public Bitmap decodeFile(File f) {  //FUNCTION BY Arshad Parwez
 	 */
 	//THIS METHOD ISN'T WORK ON FULL SCREEM
 	screenBitmap: function(view) {
-		/*
-		if(view === undefined) {
-			view = ctx.getWindow().getDecorView();
-		}
-		view.setDrawingCacheEnabled(true);
-		//Bitmap
-		var drawingCache = Bitmap.createBitmap(view.getDrawingCache());
-		view.setDrawingCacheEnabled(false);
-		return drawingCache;
-		*/
 		throw new NoSuchMethodError("This method isn't implement");
 	},
 
@@ -2880,7 +3180,236 @@ public Bitmap decodeFile(File f) {  //FUNCTION BY Arshad Parwez
 		if(typeof p.screenBrightness === "number") {
 			p.screenBrightness = bright;
 			ctx.getWindow().setAttributes(p);
+			return true;
 		}
+		return false;
+	},
+
+	/**
+	 * Explore
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-12-31
+	 *
+	 * @param {File} dir
+	 * @param {File} rootDir
+	 * @param {String[]} fileFilter
+	 * @param {Boolean} showHideFiles
+	 */
+	explore: function(dir, rootDir, fileFilter, showHideFiles) {
+		if (!(this instanceof arguments.callee)) {var oNew=Object.create(arguments.callee.prototype);arguments.callee.apply(oNew, arguments);return oNew}
+
+		this.toString = function() {
+			return '[object Explore(' + this.currentDir.toString() + ')]';
+		}
+
+		this.getName = function() {
+			return this.currentDir.getName();
+		}
+
+		this.getDir = function() {
+			return this.currentDir;
+		}
+
+		this.getList = function() {
+			var content = this.currentDir.listFiles();
+			var dirs = [];
+			var files = [];
+			for(var e = 0; e < content.length; e++) {
+				var name = content[e].getName() + '';
+				if(!this.showHideFiles && name.substring(0, 1) === '.') {
+					continue;
+				}
+				if(content[e].isDirectory()) {
+					dirs.push(content[e]);
+				}else if(content[e].isFile()) {
+					if(!this.filter) {
+						files.push(content[e]);
+					}else {
+						for(var f = 0; f < this.filter.length; f++) {
+							var len = this.filter[f].length;
+							if(name.length > len && name.substring(name.length - (len + 1), name.length).toLowerCase() === 
+							('.' + this.filter[f]).toLowerCase()) {
+								files.push(content[e]);
+								break;
+							}
+						}
+					}
+				}
+			}
+			var result = sgUtils.convert.sort(dirs, 1);
+			return result.concat(sgUtils.convert.sort(files, 1));
+		}
+		
+		this.isRoot = function() {
+			return this.currentDir.getAbsolutePath() == this.rootDir.getAbsolutePath();			
+		}
+
+		this.goParent = function() {
+			if(this.isRoot()) {
+				return false;
+			}
+			this.currentDir = this.currentDir.getParentFile();
+			return true;
+		}
+
+		this.setDir = function(dir) {
+			if(!dir.isDirectory()) {
+				return false;
+			}
+			this.currentDir = dir;
+			return true;
+		}
+		
+		this.move = function(str) {
+			var dir = new File(this.getDir(), str);
+			if(dir.exists()) {
+				return this.setDir(dir);
+			}
+			return false;
+		}
+
+		this.currentDir = dir;
+		this.rootDir = rootDir;
+		this.filter = fileFilter;
+		this.showHideFiles = showHideFiles;
+	},
+
+	/**
+	 * FileChooser
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-12-31
+	 *
+	 * @param {String} title
+	 * @param {File} dir
+	 * @param {File} rootDir
+	 * @param {String[]} fileFilter
+	 * @param {Boolean} showHideFiles
+	 * @param {(function|null)} extraIcons
+	 * - ex.function(File, ImageView) {}
+	 * @param {function} func
+	 * - ex.function(File) {}
+	 */
+	fileChooser: function(title, closeText, dir, rootDir, fileFilter, showHideFiles, extraIcons, func) {
+		
+		var loading = new ProgressBar(ctx);
+		var loadingP = new sg.rlp(sg.px*0x28, sg.px*0x28);
+		loadingP.setMargins(sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4);
+		loadingP.addRule(sg.rl.ALIGN_PARENT_RIGHT);
+		loading.setLayoutParams(loadingP);
+
+		var explore = new sgUtils.android.explore(dir, rootDir, fileFilter, showHideFiles);
+		var layout = new sg.ll(ctx);
+		layout.setOrientation(sg.ll.VERTICAL);
+		var dialog = new sgUtils.gui.dialog(title, layout, closeText || "Close", function() {this.close()});
+		
+		if(!extraIcons) {
+			var iconFolder = Bitmap.createBitmap(sg.px*0x30, sg.px*0x30, Bitmap.Config.ARGB_8888);
+			var iconFolderCanvas = new Canvas(iconFolder);
+			var iconPaint1 = new Paint(Paint.ANTI_ALIAS_FLAG);
+			iconPaint1.setStyle(Paint.Style.FILL);
+			iconPaint1.setColor(Color.parseColor('#FFEB3B'));
+			var iconPaint2 = new Paint(Paint.ANTI_ALIAS_FLAG);
+			iconPaint2.setStyle(Paint.Style.FILL);
+			iconPaint2.setColor(Color.parseColor('#FDD835'));
+			iconFolderCanvas.drawRect(sg.px*0x4, sg.px*0xa, sg.px*0x14, sg.px*0xf, iconPaint2);
+			iconFolderCanvas.drawRect(sg.px*0x2, sg.px*0xf, sg.px*0x2d, sg.px*0x26, iconPaint1);
+			
+			var iconFile = Bitmap.createBitmap(sg.px*0x30, sg.px*0x30, Bitmap.Config.ARGB_8888);
+			var iconFileCanvas = new Canvas(iconFile);
+			var iconPaint3 = new Paint(Paint.ANTI_ALIAS_FLAG);
+			iconPaint3.setStyle(Paint.Style.FILL);
+			iconPaint3.setColor(Color.parseColor('#ECEFF1'));
+			var iconPaint4 = new Paint(Paint.ANTI_ALIAS_FLAG);
+			iconPaint4.setStyle(Paint.Style.FILL);
+			iconPaint4.setColor(Color.parseColor('#CFD8DC'));
+			iconFileCanvas.drawRect(sg.px*0x8, sg.px*0x2, sg.px*0x20, sg.px*0xa, iconPaint3);
+			iconFileCanvas.drawRect(sg.px*0x8, sg.px*0xa, sg.px*0x28, sg.px*0x2d, iconPaint3);
+			var iconFilePath1 = new Path();
+			iconFilePath1.moveTo(sg.px*0x20, sg.px*0x2);
+			iconFilePath1.lineTo(sg.px*0x20, sg.px*0xa);
+			iconFilePath1.lineTo(sg.px*0x28, sg.px*0xa);
+			iconFilePath1.lineTo(sg.px*0x20, sg.px*0x2);
+			iconFilePath1.close();
+			iconFileCanvas.drawPath(iconFilePath1, iconPaint4);
+		}
+
+		var changeLayout = function (dir) {
+			if(!explore.setDir(dir)) {
+				toast("폴더가 존재하지 않습니다");
+				return;
+			}
+			var list = explore.getList();
+			var buildLayout = thread(function() {try {
+				var underlineDrawable = sgAssets.underline(sgColors.lg50, 0);
+				if(!explore.isRoot()) {
+					var subLayout = new sg.rl(ctx);
+					subLayout.setBackground(underlineDrawable.ninePatch());
+					subLayout.setPadding(sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4);
+					
+					var name = sgUtils.gui.button(".../", sg.px*0x10, false, sgColors.lg50, null, Gravity.CENTER, null, null, null, null, null, Color.TRANSPARENT, null, function(view) {
+						changeLayout(explore.getDir().getParentFile());
+					}, null);
+					var nameP = new sg.rlp(sg.mp, sg.mp);
+					name.setLayoutParams(nameP);
+					subLayout.addView(name);
+					layout.addView(subLayout);
+				}
+				for(var e = 0; e < list.length; e++) {
+					var subLayout = new sg.rl(ctx);
+					subLayout.setBackground(underlineDrawable.ninePatch());
+					subLayout.setPadding(sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4);
+					
+					var icon = new ImageView(ctx);
+					icon.setId(sgUtils.math.randomId());
+					var iconP = new sg.rlp(sg.px*0x30, sg.px*0x30);
+					iconP.addRule(sg.rl.ALIGN_PARENT_LEFT);
+					icon.setLayoutParams(iconP);
+					if(list[e].isDirectory()) {
+						icon.setImageBitmap(iconFolder);
+					}else {
+						icon.setImageBitmap(iconFile);
+					}
+					if(extraIcons) {
+						extraIcons(list[e], icon);
+					}
+					subLayout.addView(icon);
+					
+					var name = sgUtils.gui.button(list[e].getName(), sg.px*0x10, false, sgColors.lg50, null, Gravity.CENTER, null, null, null, [0, 0, 0, 0], null, Color.TRANSPARENT, null, list[e].isDirectory() ? function(view) {
+						changeLayout(new File(explore.getDir(), view.getText()));
+					} : function(view) {
+						dialog.close();
+						func(new File(explore.getDir(), view.getText()));
+					}, null);
+					var nameP = new sg.rlp(sg.mp, sg.wc);
+					nameP.addRule(sg.rl.RIGHT_OF, icon.getId());
+					name.setLayoutParams(nameP);
+					subLayout.addView(name);
+					layout.addView(subLayout);
+				}
+				uiThread(function() {try {
+					dialog.layoutData[2].addView(layout);
+					dialog.layoutData[0].removeView(loading);
+				}catch(err) {
+					sgError(err);
+				}});
+			}catch(err) {
+				sgError(err);
+			}});
+			uiThread(function() {try {
+				dialog.layoutData[2].removeView(layout);
+				layout.removeAllViews();
+				if(!loading.getParent()) {
+					dialog.layoutData[0].addView(loading);
+				}
+				buildLayout.start();
+			}catch(err) {
+				sgError(err);
+			}});
+		}
+		dialog.show();
+		changeLayout(dir);
 	}
 }
 
@@ -3050,7 +3579,7 @@ sgAssets.weButton = new sgAssets.customAssetCreator([
 ], 8, 8, sg.px*2, false, 4, 4, 5, 5);
 
 var p = Color.WHITE;
-var o = sgColors.mainBr;
+var o = sgColors.lgA700;
 sgAssets.weButtonClick = new sgAssets.customAssetCreator([
 0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,
@@ -4193,7 +4722,17 @@ var messageContainer = {
 		help_backup_restore: "To restore the backuped area, press 'restore' button witch is on the top of 'edit'menu or use '@restore' command.\nIf you run it agian, canceled work will be restart.",
 
 		help_sync: "synchronism help",
-		help_sync_content: "synchronism : edit faster than asynchronism.\n but you can't move while edit and If you edit a lot, Minecraft some time stop.\n\n asynchronism : It has slower speed to edit than synchronism, but you can do other work while it's working and you can edit safety a lot."
+		help_sync_content: "synchronism : edit faster than asynchronism.\n but you can't move while edit and If you edit a lot, Minecraft some time stop.\n\n asynchronism : It has slower speed to edit than synchronism, but you can do other work while it's working and you can edit safety a lot.",
+		
+		alpha: "Alpha",
+		lock: "Lock",
+		open: "Open",
+		set: "Set",
+		msg_select_image: "Select image...",
+		warn_not_image: "This is not Image",
+		warn_not_support_on_this_device: "Not support on this device",
+		tool_pos: "Pos setting tool",
+		tool_image_viewer: "Image viewer"
 	},
 
 	ko_KR: {
@@ -4384,10 +4923,23 @@ var messageContainer = {
 		help_backup_restore: "백업된 영역을 복원하기 위해서는 '에딧'메뉴 최상단에 있는 '복원'을 누르시거나 '@복원' 명령어를 통해 복원시킬 수 있습니다.\n복원을 한번 더 실행하면 취소된 작업이 다시 실행됩니다.",
 
 		help_sync: "작업타입 도움말",
-		help_sync_content: "동기: 비동기보다 훨씬 빠른 속도로 에딧합니다.\n대신 에딧하는 도중에는 움직이지 못하고 많은 양을 한꺼번에 에딧하면 마인크래프트가 멈출 수 있습니다.\n\n비동기: 동기보다는 느린 작업 속도를 가지지만 작업하는 도중에 다른일을 할 수가 있고 많은 양을 안전하게 에딧할 수 있습니다."
+		help_sync_content: "동기: 비동기보다 훨씬 빠른 속도로 에딧합니다.\n대신 에딧하는 도중에는 움직이지 못하고 많은 양을 한꺼번에 에딧하면 마인크래프트가 멈출 수 있습니다.\n\n비동기: 동기보다는 느린 작업 속도를 가지지만 작업하는 도중에 다른일을 할 수가 있고 많은 양을 안전하게 에딧할 수 있습니다.",
+		
+		alpha: "투명도",
+		lock: "잠금",
+		open: "열기",
+		set: "설정",
+		msg_select_image: "이미지를 선택하세요...",
+		warn_not_image: " 대상은 이미지가 아닙니다",
+		warn_not_support_on_this_device: "이 기기에서는 지원되지 않습니다",
+		tool_pos: "위치지정 도구",
+		tool_image_viewer: "이미지 뷰어"
 	}
 }
 
+
+
+//!!! 이 메소드들은 오래되었습니다. 일부 메소드는 답이 없으며 다른 메소드와 호환이 안되니 추가기능을 부여할때 주의가 필요합니다 !!!
 function WorldEdit() {
 	if (!(this instanceof arguments.callee)) return new arguments.callee();
 
@@ -4412,7 +4964,9 @@ function WorldEdit() {
 		SafeMode: 1,
 		Whitelist: [],
 		HollowCircular: 0,
-		Lang: 0
+		Lang: 0,
+		ImageX: sg.ww,
+		ImageY: Math.floor(sg.wh/5)
 	}
 	this.setting = null;
 	this.button = null;
@@ -4430,6 +4984,7 @@ function WorldEdit() {
 	this.modTickWorking = false;
 	this.modTickMsgTick = 0;
 	this.server = null;
+	this.imageView = null;
 
 	sgUtils.data.isProcessing = false;
 	sgUtils.data.progress = [0, 1];
@@ -4441,8 +4996,9 @@ function WorldEdit() {
 
 	this.readyInit = false;
 
-	this.editorGroup = new we_editorGroup(this);
+	this.editorGroup = null;
 
+	//0.11.0 Block Data
 	//type -1: No image
 	//type -2: Custom image
 	this.blockData = [
@@ -4742,12 +5298,16 @@ WorldEdit.prototype = {
 
 	init: function() {
 		//각종 변수 초기화 및 등록
+		//!!!절대로 이것들의 순서가 이상하다고 바꾸지 마세요 로딩 순서가 달라지면 크래쉬가 날 수도 있습니다!!!
 		if(this.loading !== null) {
 			this.loading.close();
 		}
 		this.loading = new sgUtils.gui.progressBar(7);
 		this.loading.setText("Load WorldEdit script...");
 		this.loading.show();
+		//필요한 추가 기능들 불러오기
+		this.imageView = new we_imageView(this);
+		this.editorGroup = new we_editorGroup(this);
 		//설정 불러오기
 		this.loading.setText("Load Setting...");
 		this.loadSetting();
@@ -5024,7 +5584,7 @@ WorldEdit.prototype = {
 		this.mainMenu = new we_menu(msg("tag"));
 		//메인 메뉴 하위메뉴
 		var mm_edit = new we_menu(msg("edit"));
-		//var mm_tool = new we_menu(msg("tool"));
+		var mm_tool = new we_menu(msg("tool"));
 		var mm_setting = new we_menu(msg("setting"));
 		var mm_help = new we_menu(msg("help"));
 		//에딧메뉴 하위 메뉴
@@ -5033,15 +5593,7 @@ WorldEdit.prototype = {
 
 		//메인메뉴 목록
 		this.mainMenu.addMenu(this.contentType.REDIRECT_MENU, msg("edit"), mm_edit);
-		this.mainMenu.addMenu(this.contentType.RUN_FUNCTION, msg("tool"), function() {
-			if(Level.getGameMode() === 0) {
-				//서바이벌에서는 아이템 추가시켜주기
-				Player.addItemInventory(271, 1, 0);
-			}else {
-				//그외(크리에이티브, 관전모드)는 직접 지정
-				Entity.setCarriedItem(Player.getEntity(), 271, 1, 0);
-			}
-		});
+		this.mainMenu.addMenu(this.contentType.REDIRECT_MENU, msg("tool"), mm_tool);
 		this.mainMenu.addMenu(this.contentType.RUN_FUNCTION, msg("whitelist"), this.editorGroup.showWhitelist);;
 		this.mainMenu.addMenu(this.contentType.REDIRECT_MENU, msg("setting"), mm_setting);
     this.mainMenu.addMenu(this.contentType.REDIRECT_MENU, msg("help"), mm_help);
@@ -5101,6 +5653,25 @@ WorldEdit.prototype = {
 		});
 		mme_copy.addMenu(this.contentType.RUN_FUNCTION, msg("rotation"), function() {
 			we_initEdit(parseInt(that.get("SafeMode")), parseInt(that.get("WorkType")), that.getLocalEditor(), EditType.ROTATION);
+		});
+		//도구메뉴 목록
+		mm_tool.addMenu(this.contentType.RUN_FUNCTION, msg("tool_pos"), function() {
+			if(Level.getGameMode() === 0) {
+				//서바이벌에서는 아이템 추가시켜주기
+				Player.addItemInventory(271, 1, 0);
+			}else {
+				//그외(크리에이티브, 관전모드)는 직접 지정
+				Entity.setCarriedItem(Player.getEntity(), 271, 1, 0);
+			}
+		});
+		mm_tool.addMenu(this.contentType.TOGGLE, msg("tool_image_viewer"), function(bool) {
+			if(bool === undefined) {
+				return that.imageView.isShowing();
+			}else if(bool) {
+				that.imageView.show();
+			}else {
+				that.imageView.dismiss();
+			}
 		});
 		//설정메뉴 목록
 		mm_setting.addMenu(this.contentType.RUN_FUNCTION, function() {return "Language:\n" + that.langName[parseInt(that.get("Lang"))]}, function(view) {
@@ -7852,6 +8423,350 @@ we_blockSelect.prototype = {
 		}catch(err) {
 			showError(err);
 		}});
+	}
+}
+
+function we_imageView(parent) {
+	this._parent = parent;
+	this.wd = null;
+	this.ctr = null;
+	this.viewLock = false;
+	this.underlineAsset = sgAssets.underline(sgColors.lg50, sgColors.lg500);
+	this.highlightAsset = sgAssets.underlineHighlight(sgColors.lg50, sgColors.lg500, sgColors.lgA400);
+	this.oldVersion = true;
+	this.wx = null;
+	this.wy = null;
+	this.imageView = null;
+	this.matrix = null;
+}
+
+we_imageView.prototype = {
+	
+	toString: function() {
+		return "[objevt we_imageView]";
+	},
+	
+	build: function() {
+		var that = this;
+		
+		this.wx = this._parent.get("ImageX");
+		this.wy = this._parent.get("ImageY");
+		
+		this.imageView = new ImageView(ctx);
+		this.imageView.setBackgroundColor(Color.argb(0x88, 0, 0, 0));
+		this.imageView.setScaleType(ImageView.ScaleType.MATRIX);
+		
+		this.imageView.setOnTouchListener(View.OnTouchListener({onTouch: function(view, event) {try {
+			if(!that.matrix) {
+				return false;
+			}
+			var matrix = new Matrix();
+			matrix.set(that.matrix);
+			var dat = view.getTag();
+			if(!dat) {
+				dat = {};
+			}
+			switch(event.action & MotionEvent.ACTION_MASK) {
+				case MotionEvent.ACTION_DOWN:
+					dat.mode = 1;
+					dat.x = event.getX();
+					dat.y = event.getY();
+					break;
+				case MotionEvent.ACTION_POINTER_DOWN:
+					dat.mode = 2;
+					dat.distance = that.getDistance(event);
+					break;
+				case MotionEvent.ACTION_MOVE:
+					if(dat.mode === 1) {
+						if(event.getPointerCount() !== 1) {
+							return false;
+						}
+						matrix.postTranslate(event.getX() - dat.x, event.getY() - dat.y);
+						dat.x = event.getX();
+						dat.y = event.getY();
+					}else if(dat.mode === 2) {
+						if(event.getPointerCount() < 2) {
+							return false;
+						}
+						var newDistance = that.getDistance(event);
+						var scale = newDistance / dat.distance;
+						dat.distance = newDistance;
+						var c = that.getCenter(event);
+						dat.x = c[0];
+						dat.y = c[1];
+						matrix.postScale(scale, scale, dat.x, dat.y);
+					}
+					break;
+				case MotionEvent.ACTION_UP:
+				case MotionEvent.ACTION_CANCEL:
+					dat.mode = 0;
+					break;
+			}
+			view.setTag(dat);
+			that.matrix.set(that.matrixTuning(matrix, view));
+			that.imageView.setImageMatrix(that.matrix);
+		}catch(err) {
+			sgError(err);
+		}return false;}}));
+		
+		this.wd = new PopupWindow(this.imageView, sg.ww, sg.wh, false);
+		
+		var layout = new sg.ll(ctx);
+		layout.setOrientation(sg.ll.VERTICAL);
+		layout.setPadding(0, 0, 0, 0);
+		
+		layout.addView(sgUtils.gui.button("•••", sg.px*0x8, false, sgColors.lg50, null, Gravity.CENTER, null, sg.px*0x20, sg.px*20, [0, 0, 0, 0], null, this.underlineAsset.ninePatch(), function(view, event) {try {
+			switch(event.action) {
+				case MotionEvent.ACTION_DOWN:
+				that.relX = event.getX();
+				that.relY = event.getY();
+				that.absX = event.getRawX();
+				that.absY = event.getRawY();
+				that.viewX = that.absX - that.relX;
+				that.viewY = that.absY - that.relY;
+				that.width = that.ctr.getWidth();
+				that.height = that.ctr.getHeight();
+				break;
+				case MotionEvent.ACTION_MOVE:
+				that.wx = event.getRawX() - that.absX + that.viewX;
+				that.wy = event.getRawY() - that.absY + that.viewY;
+				that.ctr.update(that.wx, that.wy, that.width, that.height);
+				break;
+				case MotionEvent.ACTION_UP:
+				that.wx = event.getRawX() - that.absX + that.viewX;
+				that.wy = event.getRawY() - that.absY + that.viewY;
+				that.ctr.update(that.wx, that.wy, that.width, that.height);
+				that._parent.set("ImageX", that.wx);
+				that._parent.set("ImageY", that.wy, true);
+				break;
+			}
+		}catch(err) {
+			showError(err);
+		}return false}, null, null));
+		
+		layout.addView(sgUtils.gui.button(msg("open"), sg.px*0x8, false, sgColors.lg50, null, Gravity.CENTER, null, sg.px*0x20, sg.px*20, [0, 0, 0, 0], null, this.underlineAsset.ninePatch(), null, function(view) {
+			sgUtils.android.fileChooser(msg("msg_select_image"), msg("cancel"), sgFiles.sdcard, sgFiles.sdcard, ["jpeg", "jpg", "png", "bmp"], false, null, function(file) {
+				that.setImage(file);
+			});
+		}, null));
+		
+		layout.addView(sgUtils.gui.button(msg("alpha"), sg.px*0x8, false, sgColors.lg50, null, Gravity.CENTER, null, sg.px*0x20, sg.px*20, [0, 0, 0, 0], null, this.underlineAsset.ninePatch(), null, function(view) {
+			that.alphaSettingWindow();
+		}, null));
+		
+		layout.addView(sgUtils.gui.button(msg("lock"), sg.px*0x8, false, sgColors.lg50, null, Gravity.CENTER, null, sg.px*0x20, sg.px*20, [0, 0, 0, 0], null, this.underlineAsset.ninePatch(), null, function(view) {
+			if(that.isLock()) {
+				that.lock(false);
+				view.setBackground(that.underlineAsset.ninePatch());
+			}else {
+				that.lock(true);
+				view.setBackground(that.highlightAsset.ninePatch());
+			}
+		}, null));
+		
+		this.ctr = new PopupWindow(layout, sg.wc, sg.wc, false);
+		/** NEEDTEST
+		try {
+			this.ctr.setAttachedInDecor(true);
+			this.oldVersion = false;
+		}catch(err) {
+			this.oldVersion = true;
+		}
+		*/
+	},
+	
+	isShowing: function() {
+		if(this.wd) {
+			return this.wd.isShowing();
+		}
+		return false;
+	},
+	
+	show: function() {
+		var that = this;
+		
+		if(!this.wd || !this.ctr) {
+			this.build();
+		}
+		uiThread(function() {try {
+			that.wd.showAtLocation(sg.dv, 0, 0, 0);
+			that.ctr.showAtLocation(sg.dv, Gravity.LEFT|Gravity.TOP, that.wx, that.wy);
+		}catch(err) {
+			sgError(err);
+		}});
+	},
+	
+	//개노답. 다른곳은 close로 써놓고 왜 여기만??
+	//유지보수 귀찮
+	dismiss: function() {
+		var that = this;
+		
+		if(this.wd && this.wd.isShowing()) {
+			uiThread(function() {try {
+				that.wd.dismiss();
+			}catch(err) {
+				sgError(err);
+			}});
+		}
+		
+		if(this.ctr && this.ctr.isShowing()) {
+			uiThread(function() {try {
+				that.ctr.dismiss();
+			}catch(err) {
+				sgError(err);
+			}});
+		}
+	},
+	
+	//자. 이제 만족하시나요
+	close: function() {
+		this.dismiss();
+	},
+	//으아아 무슨짓이야
+	
+	isLock: function() {
+		return this.viewLock;
+	},
+	
+	lock: function(bool) {
+		var that = this;
+		
+		if(bool) {
+			if(!this.isLock()) {
+				uiThread(function() {try {
+					that.wd.dismiss();
+					that.wd.setTouchable(false);
+					that.imageView.setBackgroundColor(Color.TRANSPARENT);
+					that.wd.showAtLocation(sg.dv, 0, 0, 0);
+					if(that.oldVersion) {
+						that.ctr.dismiss();
+						that.ctr.showAtLocation(sg.dv, Gravity.LEFT|Gravity.TOP, that.wx, that.wy);
+					}
+					that.viewLock = true;
+				}catch(err) {
+					sgError(err);
+				}});
+			}
+		}else {
+			if(this.isLock()) {
+				uiThread(function() {try {
+					that.wd.dismiss();
+					that.wd.setTouchable(true);
+					that.imageView.setBackgroundColor(Color.argb(0x88, 0, 0, 0));
+					that.wd.showAtLocation(sg.dv, 0, 0, 0);
+					if(that.oldVersion) {
+						that.ctr.dismiss();
+						that.ctr.showAtLocation(sg.dv, Gravity.LEFT|Gravity.TOP, that.wx, that.wy);
+					}
+					that.viewLock = false;
+				}catch(err) {
+					sgError(err);
+				}});
+			}
+		}
+	},
+	
+	setImage: function(file) {
+		var that = this;
+		
+		var btm = BitmapFactory.decodeFile(file.getAbsolutePath());
+		if(btm) {
+			this.matrix = new Matrix();
+			this.savedMatrix = new Matrix();
+			uiThread(function() {try {
+				that.imageView.setImageMatrix(that.matrix);
+				that.imageView.setImageBitmap(btm);
+			}catch(err) {
+				sgError(err);
+			}});
+		}else {
+			we_toast(msg("warn_not_image"), 2);
+		}
+	},
+	
+	matrixTuning: function(matrix, view) {
+		//메트릭스의 값 얻어오기
+		var value = new sg.ai(Float.TYPE, 9);
+		matrix.getValues(value);
+		var savedValue = new sg.ai(Float.TYPE, 9);
+		this.savedMatrix.getValues(savedValue);
+		
+		//뷰의 크기 (화면 전체)
+		var width = view.getWidth();
+		var height = view.getHeight();
+
+		// 이미지의 크기 얻어오기
+		var draw = view.getDrawable();
+		if(draw == null) {
+			return;
+		}
+		var imageWidth = draw.getIntrinsicWidth();
+		var imageHeight = draw.getIntrinsicHeight();
+		var scaleWidth = imageWidth * value[0];
+		var scaleHeight = imageHeight * value[4];
+		
+		//화면 밖으로 안나가게
+		if(value[2] > width - sg.px*0x10) {
+			value[2] = width - sg.px*0x10;
+		}
+		if(value[5] > height - sg.px*0x10) {
+			value[5] = height - sg.px*0x10;
+		}
+		if(value[2] < sg.px*0x10 - scaleWidth) {
+			value[2] = sg.px*0x10 - scaleWidth;
+		}
+		if(value[5] < sg.px*0x10 - scaleHeight) {
+			value[5] = sg.px*0x10 - scaleHeight;
+		}
+
+		//확대 제한
+		if(value[0] > 10 || value[4] > 10) {
+			value[0] = 10.0;
+			value[4] = 10.0;
+			value[2] = savedValue[2];
+			value[5] = savedValue[5];
+		}
+
+		//축소 제한
+		if(value[0] < 0.1 || value[4] < 0.1) {
+			value[0] = 0.1;
+			value[4] = 0.1;
+			value[2] = savedValue[2];
+			value[5] = savedValue[5];
+		}
+		
+		matrix.setValues(value);
+		this.savedMatrix.set(this.matrix);
+		
+		return matrix;
+	},
+	
+	getDistance: function(event) {
+		return Math.sqrt(Math.pow(event.getX(0) - event.getX(1), 2) + Math.pow(event.getY(0) - event.getY(1), 2));
+	},
+	
+	getCenter: function(event) {
+		return [(event.getX(0) + event.getX(1))/2, (event.getY(0) + event.getY(1))/2];
+	},
+	
+	alphaSettingWindow: function() {
+		var that = this;
+		try {
+			var alpha = this.imageView.getImageAlpha();
+		}catch(err) {
+			we_toast(msg("warn_not_support_on_this_device"), 2);
+			return;
+		}
+		var seek = new SeekBar(ctx);
+		seek.setLayoutParams(new sg.llp(sg.px*0x100, sg.px*0x30));
+		
+		seek.setMax(255);
+		seek.setProgress(alpha);
+		var dl = new sgUtils.gui.dialog(msg("alpha"), seek, msg("cancel"), function() {this.close()}, msg("set"), function() {
+			that.imageView.setImageAlpha(seek.getProgress());
+			this.close();
+		}, false, false);
+		dl.show();
 	}
 }
 
