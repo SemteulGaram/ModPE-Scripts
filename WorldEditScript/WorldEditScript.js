@@ -17,8 +17,8 @@
 const NAME = "WorldEdit script";
 const NAME_CODE = "WorldEdit";
 //Season . Release Number . Commits
-const VERSION = "0.7.0";
-const VERSION_CODE = 118;
+const VERSION = "0.7.1";
+const VERSION_CODE = 119;
 const ASSETS_VERSION = 1;
 const SERVER_VERSION = 1;
 const TAG = "[" + "WorldEdit" + " " + VERSION + "] ";
@@ -78,6 +78,7 @@ var MediaPlayer = android.media.MediaPlayer;
 var Environment = android.os.Environment;
 var Process = android.os.Process;
 var Handler = android.os.Handler;
+var Looper = android.os.Looper;
 var InputType = android.text.InputType;
 var View = android.view.View;
 var ViewGroup = android.view.ViewGroup;
@@ -2443,6 +2444,39 @@ sgUtils.gui = {
 				sgError(err);
 			}});
 		}
+	},
+	
+	/**
+	 * Thumbnail
+	 *
+	 * @author SemteulGaram
+	 * @since 2015-01-04
+	 *
+	 * @param {(File|String)} file
+	 * @param {number} width
+	 * @param {number} height
+	 * @return {Bitmap} bm
+	 */
+	thumbnail: function(file, width, height) {
+		if(file instanceof File) {
+			file = file.getAbsolutePath();
+		}
+		var bm = BitmapFactory.decodeFile(file);
+		if(!bm) {
+			return false;
+		}
+		var wScale = bm.getWidth()/width, hScale = bm.getHeight()/height;
+		if(wScale < 1 && hScale < 1) {
+			return bm;
+		}else if(wScale > hScale) {
+			var rbm = Bitmap.createScaledBitmap(bm, width, bm.getHeight()/wScale, true);
+			bm.recycle();
+			return rbm;
+		}else {
+			var rbm = Bitmap.createScaledBitmap(bm, bm.getWidth()/hScale, height, true);
+			bm.recycle();
+			return rbm;
+		}
 	}
 }
 
@@ -3288,10 +3322,14 @@ sgUtils.android = {
 	 * @param {Boolean} showHideFiles
 	 * @param {(function|null)} extraIcons
 	 * - ex.function(File, ImageView) {}
-	 * @param {function} func
+	 * @param {function} onSelect
+	 * - ex.function(File) {}
+	 * @param {function} onChangeDir
+	 * - ex.function(File) {}
+	 * @param {function} onCancel
 	 * - ex.function(File) {}
 	 */
-	fileChooser: function(title, closeText, dir, rootDir, fileFilter, showHideFiles, extraIcons, func) {
+	fileChooser: function(title, closeText, dir, rootDir, fileFilter, showHideFiles, extraIcons, onSelect, onChangeDir, onCancel) {
 		
 		var loading = new ProgressBar(ctx);
 		var loadingP = new sg.rlp(sg.px*0x28, sg.px*0x28);
@@ -3302,47 +3340,55 @@ sgUtils.android = {
 		var explore = new sgUtils.android.explore(dir, rootDir, fileFilter, showHideFiles);
 		var layout = new sg.ll(ctx);
 		layout.setOrientation(sg.ll.VERTICAL);
-		var dialog = new sgUtils.gui.dialog(title, layout, closeText || "Close", function() {this.close()});
+		var dialog = new sgUtils.gui.dialog(title, layout, closeText || "Close", function() {
+			this.close();
+			//콜백
+			if(onCancel) {
+				onCancel();
+			}
+		});
 		
-		if(!extraIcons) {
-			var iconFolder = Bitmap.createBitmap(sg.px*0x30, sg.px*0x30, Bitmap.Config.ARGB_8888);
-			var iconFolderCanvas = new Canvas(iconFolder);
-			var iconPaint1 = new Paint(Paint.ANTI_ALIAS_FLAG);
-			iconPaint1.setStyle(Paint.Style.FILL);
-			iconPaint1.setColor(Color.parseColor('#FFEB3B'));
-			var iconPaint2 = new Paint(Paint.ANTI_ALIAS_FLAG);
-			iconPaint2.setStyle(Paint.Style.FILL);
-			iconPaint2.setColor(Color.parseColor('#FDD835'));
-			iconFolderCanvas.drawRect(sg.px*0x4, sg.px*0xa, sg.px*0x14, sg.px*0xf, iconPaint2);
-			iconFolderCanvas.drawRect(sg.px*0x2, sg.px*0xf, sg.px*0x2d, sg.px*0x26, iconPaint1);
-			
-			var iconFile = Bitmap.createBitmap(sg.px*0x30, sg.px*0x30, Bitmap.Config.ARGB_8888);
-			var iconFileCanvas = new Canvas(iconFile);
-			var iconPaint3 = new Paint(Paint.ANTI_ALIAS_FLAG);
-			iconPaint3.setStyle(Paint.Style.FILL);
-			iconPaint3.setColor(Color.parseColor('#ECEFF1'));
-			var iconPaint4 = new Paint(Paint.ANTI_ALIAS_FLAG);
-			iconPaint4.setStyle(Paint.Style.FILL);
-			iconPaint4.setColor(Color.parseColor('#CFD8DC'));
-			iconFileCanvas.drawRect(sg.px*0x8, sg.px*0x2, sg.px*0x20, sg.px*0xa, iconPaint3);
-			iconFileCanvas.drawRect(sg.px*0x8, sg.px*0xa, sg.px*0x28, sg.px*0x2d, iconPaint3);
-			var iconFilePath1 = new Path();
-			iconFilePath1.moveTo(sg.px*0x20, sg.px*0x2);
-			iconFilePath1.lineTo(sg.px*0x20, sg.px*0xa);
-			iconFilePath1.lineTo(sg.px*0x28, sg.px*0xa);
-			iconFilePath1.lineTo(sg.px*0x20, sg.px*0x2);
-			iconFilePath1.close();
-			iconFileCanvas.drawPath(iconFilePath1, iconPaint4);
-		}
+		var iconFolder = Bitmap.createBitmap(sg.px*0x30, sg.px*0x30, Bitmap.Config.ARGB_8888);
+		var iconFolderCanvas = new Canvas(iconFolder);
+		var iconPaint1 = new Paint(Paint.ANTI_ALIAS_FLAG);
+		iconPaint1.setStyle(Paint.Style.FILL);
+		iconPaint1.setColor(Color.parseColor('#FFEB3B'));
+		var iconPaint2 = new Paint(Paint.ANTI_ALIAS_FLAG);
+		iconPaint2.setStyle(Paint.Style.FILL);
+		iconPaint2.setColor(Color.parseColor('#FDD835'));
+		iconFolderCanvas.drawRect(sg.px*0x4, sg.px*0xa, sg.px*0x14, sg.px*0xf, iconPaint2);
+		iconFolderCanvas.drawRect(sg.px*0x2, sg.px*0xf, sg.px*0x2d, sg.px*0x26, iconPaint1);
+		
+		var iconFile = Bitmap.createBitmap(sg.px*0x30, sg.px*0x30, Bitmap.Config.ARGB_8888);
+		var iconFileCanvas = new Canvas(iconFile);
+		var iconPaint3 = new Paint(Paint.ANTI_ALIAS_FLAG);
+		iconPaint3.setStyle(Paint.Style.FILL);
+		iconPaint3.setColor(Color.parseColor('#ECEFF1'));
+		var iconPaint4 = new Paint(Paint.ANTI_ALIAS_FLAG);
+		iconPaint4.setStyle(Paint.Style.FILL);
+		iconPaint4.setColor(Color.parseColor('#CFD8DC'));
+		iconFileCanvas.drawRect(sg.px*0x8, sg.px*0x2, sg.px*0x20, sg.px*0xa, iconPaint3);
+		iconFileCanvas.drawRect(sg.px*0x8, sg.px*0xa, sg.px*0x28, sg.px*0x2d, iconPaint3);
+		var iconFilePath1 = new Path();
+		iconFilePath1.moveTo(sg.px*0x20, sg.px*0x2);
+		iconFilePath1.lineTo(sg.px*0x20, sg.px*0xa);
+		iconFilePath1.lineTo(sg.px*0x28, sg.px*0xa);
+		iconFilePath1.lineTo(sg.px*0x20, sg.px*0x2);
+		iconFilePath1.close();
+		iconFileCanvas.drawPath(iconFilePath1, iconPaint4);
 
 		var changeLayout = function (dir) {
 			if(!explore.setDir(dir)) {
 				toast("폴더가 존재하지 않습니다");
 				return;
 			}
-			var list = explore.getList();
+			
+			//내용물 레이아웃 빌드 쓰레드
 			var buildLayout = thread(function() {try {
+				//밑줄 드로어블 나인패치
 				var underlineDrawable = sgAssets.underline(sgColors.lg50, 0);
+				
+				//루트 폴더가 아니라면
 				if(!explore.isRoot()) {
 					var subLayout = new sg.rl(ctx);
 					subLayout.setBackground(underlineDrawable.ninePatch());
@@ -3356,6 +3402,9 @@ sgUtils.android = {
 					subLayout.addView(name);
 					layout.addView(subLayout);
 				}
+				//목록 정렬해서 불러오기
+				var list = explore.getList();
+				//레이아웃에 각각 추가
 				for(var e = 0; e < list.length; e++) {
 					var subLayout = new sg.rl(ctx);
 					subLayout.setBackground(underlineDrawable.ninePatch());
@@ -3376,11 +3425,14 @@ sgUtils.android = {
 					}
 					subLayout.addView(icon);
 					
-					var name = sgUtils.gui.button(list[e].getName(), sg.px*0x10, false, sgColors.lg50, null, Gravity.CENTER, null, null, null, [0, 0, 0, 0], null, Color.TRANSPARENT, null, list[e].isDirectory() ? function(view) {
+					var name = sgUtils.gui.button(list[e].getName(), sg.px*0x10, false, sgColors.lg50, null, Gravity.CENTER, null, null, null, [0, 0, 0, 0], null, Color.TRANSPARENT, null, list[e].isDirectory() ? function(view) {//폴더라면
 						changeLayout(new File(explore.getDir(), view.getText()));
-					} : function(view) {
+					} : function(view) {//파일이라면
 						dialog.close();
-						func(new File(explore.getDir(), view.getText()));
+						//콜백
+						if(onSelect) {
+							onSelect(new File(explore.getDir(), view.getText()));
+						}
 					}, null);
 					var nameP = new sg.rlp(sg.mp, sg.wc);
 					nameP.addRule(sg.rl.RIGHT_OF, icon.getId());
@@ -3397,6 +3449,8 @@ sgUtils.android = {
 			}catch(err) {
 				sgError(err);
 			}});
+			
+			//기존 내용물 비우고 로딩프로그래스바 띄우기
 			uiThread(function() {try {
 				dialog.layoutData[2].removeView(layout);
 				layout.removeAllViews();
@@ -3407,6 +3461,10 @@ sgUtils.android = {
 			}catch(err) {
 				sgError(err);
 			}});
+			//콜백
+			if(onChangeDir) {
+				onChangeDir(explore.getDir());
+			}
 		}
 		dialog.show();
 		changeLayout(dir);
@@ -4939,9 +4997,9 @@ var messageContainer = {
 
 
 
-//!!! 이 메소드들은 오래되었습니다. 일부 메소드는 답이 없으며 다른 메소드와 호환이 안되니 추가기능을 부여할때 주의가 필요합니다 !!!
 function WorldEdit() {
 	if (!(this instanceof arguments.callee)) return new arguments.callee();
+	var that = this;
 
 	this.contentType = {
 		REDIRECT_MENU: 0,
@@ -5102,6 +5160,14 @@ function WorldEdit() {
 ["44:5", BlockTypes.SLAB, [["stonebrick", 0]], true],
 ["44:6", BlockTypes.SLAB, [["quartz_block", 0]], true],
 ["44:7", BlockTypes.SLAB, [["nether_brick", 0]], true],
+["44:8", BlockTypes.SLAB, [["stone_slab", 1], ["stone_slab", 1], ["stone_slab", 0]], true, "Upper"],
+["44:9", BlockTypes.SLAB, [["sandstone", 0], ["sandstone", 0], ["sandstone", 3]], true, "Upper"],
+["44:10", BlockTypes.SLAB, [["planks", 0]], true, "Upper"],
+["44:11", BlockTypes.SLAB, [["cobblestone", 0]], true, "Upper"],
+["44:12", BlockTypes.SLAB, [["brick", 0]], true, "Upper"],
+["44:13", BlockTypes.SLAB, [["stonebrick", 0]], true, "Upper"],
+["44:14", BlockTypes.SLAB, [["quartz_block", 0]], true, "Upper"],
+["44:15", BlockTypes.SLAB, [["nether_brick", 0]], true, "Upper"],
 ["45:0", BlockTypes.CUBE, [["brick", 0]], true],
 ["46:0", BlockTypes.CUBE, [["tnt", 0], ["tnt", 0], ["tnt", 1]], true],
 ["47:0", BlockTypes.CUBE, [["bookshelf", 0], ["bookshelf", 0], ["planks", 0]], true],
@@ -5202,8 +5268,8 @@ function WorldEdit() {
 ["152:0", BlockTypes.CUBE, [["redstone_block", 0]], true],
 ["153:0", BlockTypes.CUBE, [["quartz_ore", 0]], true],
 ["155:0", BlockTypes.CUBE, [["quartz_block", 1]], true],
-["155:1", BlockTypes.CUBE, [["quartz_block", 3], ["quartz_block", 3], ["quartz_block", 4]], true],
-["155:2", BlockTypes.CUBE, [["quartz_block", 5]], true],
+["155:1", BlockTypes.CUBE, [["quartz_block", 5]], true],
+["155:2", BlockTypes.CUBE, [["quartz_block", 3], ["quartz_block", 3], ["quartz_block", 4]], true],
 ["156:0", BlockTypes.STAIR, [["quartz_block", 1]], true],
 ["157:0", BlockTypes.CUBE, [["planks", 0]], true, "Double slab"],
 ["157:1", BlockTypes.CUBE, [["planks", 1]], true, "Double slab"],
@@ -5298,7 +5364,6 @@ WorldEdit.prototype = {
 
 	init: function() {
 		//각종 변수 초기화 및 등록
-		//!!!절대로 이것들의 순서가 이상하다고 바꾸지 마세요 로딩 순서가 달라지면 크래쉬가 날 수도 있습니다!!!
 		if(this.loading !== null) {
 			this.loading.close();
 		}
@@ -5316,20 +5381,6 @@ WorldEdit.prototype = {
 		this.asynchEditSpeed = parseInt(this.setting.WorkSpeed);
 		//에딧 그룹의 화이트 리스트 불러오기
 		this.editorGroup.init();
-		//알림 서버 연결 시도
-		this.loading.setText("Read info server...");
-		this.server = new we_server(sgUtils.net.loadServerData(sgUrls.server));
-		//메뉴와 버튼 빌드
-		this.loading.setText("Load GUI...");
-		this.buildButton();
-		this.buildMenu();
-		//메뉴 이동시 보이는 로딩 프로그래스바 빌드
-		this.buildLoadingProgressBar();
-		//블럭 아이디를 입력할 레이아웃 빌드
-		this.buildBlockEditText();
-		this.loading.setText("Load BlockImage...");
-		//블럭 이미지 빌드
-		this.buildBlockImages();
 		//자료 불러오기
 		this.loading.setText("Read assets data...");
 		if(sgFiles.pkg.exists()) {
@@ -5361,6 +5412,20 @@ WorldEdit.prototype = {
 				we_toast(msg("warn_net_connection"), 1, 5000, true);
 			}
 		}
+		//메뉴와 버튼 빌드
+		this.loading.setText("Load GUI...");
+		this.buildButton();
+		this.buildMenu();
+		//메뉴 이동시 보이는 로딩 프로그래스바 빌드
+		this.buildLoadingProgressBar();
+		//블럭 아이디를 입력할 레이아웃 빌드
+		this.buildBlockEditText();
+		this.loading.setText("Load BlockImage...");
+		//블럭 이미지 빌드
+		this.buildBlockImages();
+		//알림 서버 연결 시도
+		this.loading.setText("Read info server...");
+		this.server = new we_server(sgUtils.net.loadServerData(sgUrls.server));
 		//로딩 끝
 		this.readyInit = true;
 		//우측 하단의 로딩창 닫기
@@ -8545,8 +8610,39 @@ we_imageView.prototype = {
 		}return false}, null, null));
 		
 		layout.addView(sgUtils.gui.button(msg("open"), sg.px*0x8, false, sgColors.lg50, null, Gravity.CENTER, null, sg.px*0x20, sg.px*20, [0, 0, 0, 0], null, this.underlineAsset.ninePatch(), null, function(view) {
-			sgUtils.android.fileChooser(msg("msg_select_image"), msg("cancel"), sgFiles.sdcard, sgFiles.sdcard, ["jpeg", "jpg", "png", "bmp"], false, null, function(file) {
+			var that2 = this;
+			
+			thread(function() {try {
+				Looper.prepare();
+				that2.handler = new Handler();
+				Looper.loop();
+			}catch(err) {
+				sgError(err);
+			}}).start();
+			sgUtils.android.fileChooser(msg("msg_select_image"), msg("cancel"), sgFiles.sdcard, sgFiles.sdcard, ["jpeg", "jpg", "png", "bmp"], false, function(file, view) {
+				that2.handler.post(new Runnable({run: function() {try {
+					if(!file.isFile()) {
+						return;
+					}
+					var tn = sgUtils.gui.thumbnail(file, sg.px*0x30, sg.px*0x30);
+					if(!tn) {
+						return;
+					}
+					uiThread(function() {try {
+						view.setImageBitmap(tn);
+					}catch(err) {
+						sgError(err);
+					}});
+				}catch(err) {
+					sgError(err);
+				}}}));
+			}, function(file) {
+				that2.handler.getLooper().quit();
 				that.setImage(file);
+			}, function(file) {
+				that2.handler.removeCallbacksAndMessages(null);
+			}, function() {
+				that2.handler.getLooper().quit();
 			});
 		}, null));
 		
