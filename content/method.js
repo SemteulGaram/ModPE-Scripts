@@ -329,7 +329,7 @@ var sgColors = {
 var sgAssets = {
 
 	customAssetCreator: function(pixel, width, height, scale, scaleType, left, top, right, bottom) {
-		if (!(this instanceof arguments.callee)) {var oNew=Object.create(arguments.callee.prototype);arguments.callee.apply(oNew, arguments);return oNew} 
+		if (!(this instanceof arguments.callee)) {var oNew=Object.create(arguments.callee.prototype);arguments.callee.apply(oNew, arguments);return oNew}
 
 		this.pixel = pixel;
 		this.rawBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
@@ -339,12 +339,12 @@ var sgAssets = {
 	},
 
 	bitmapAssetCreator: function(bitmap, xPos, yPos, xSize, ySize, scale, scaleType, left, top, right, bottom) {
-		if (!(this instanceof arguments.callee)) {var oNew=Object.create(arguments.callee.prototype);arguments.callee.apply(oNew, arguments);return oNew} 
+		if (!(this instanceof arguments.callee)) {var oNew=Object.create(arguments.callee.prototype);arguments.callee.apply(oNew, arguments);return oNew}
 		this.rawBitmap = Bitmap.createBitmap(bitmap, xPos, yPos, xSize, ySize);
 		this.scaleBitmap = Bitmap.createScaledBitmap(this.raw, xSize*scale, ySize*scale, scaleType);
 		this.ninePatch = function() {return ninePatch1(this.scaleBitmap, (top*(scale-1))+1, (left*(scale-1))+1, bottom*scale, right*scale)}
 	},
-	
+
 	underline: function(underlineColor, backgroundColor) {
 		var p = underlineColor, o = backgroundColor;
 		return new this.customAssetCreator([
@@ -358,7 +358,7 @@ var sgAssets = {
 		o,o,o,p,p,o,o,o
 		], 8, 8, sg.px*2, false, 4, 4, 5, 5);
 	},
-	
+
 	underlineHighlight: function(underlineColor, backgroundColor, highlightColor) {
 		var p = underlineColor, o = backgroundColor, i = highlightColor;
 		return new this.customAssetCreator([
@@ -372,7 +372,7 @@ var sgAssets = {
 		o,o,o,p,p,o,o,o
 		], 8, 8, sg.px*2, false, 4, 4, 5, 5);
 	},
-	
+
 	stroke: function(strokeColor, backgroundColor) {
 		var p = strokeColor, o = backgroundColor;
 		return new this.customAssetCreator([
@@ -466,6 +466,7 @@ function thread(fc) {
  *   ㄴ loadBitmapLayout
  *   ㄴ document
  *   ㄴ dialog
+ *   ㄴ buttonDialog
  *   ㄴ thumbnail
  * ㄴ net
  *   ㄴ download √
@@ -1006,7 +1007,7 @@ sgUtils.io = {
 	 * return this
 	 */
 	loadZipAsset: function(file) {
-		if (!(this instanceof arguments.callee)) {var oNew=Object.create(arguments.callee.prototype);arguments.callee.apply(oNew, arguments);return oNew} 
+		if (!(this instanceof arguments.callee)) {var oNew=Object.create(arguments.callee.prototype);arguments.callee.apply(oNew, arguments);return oNew}
 
 		/**
 		 * @param {String} innerPath
@@ -2011,7 +2012,7 @@ sgUtils.gui = {
 	 * @return {customProgressBar}
 	 */
 	progressBar: function(type) {
-		if (!(this instanceof arguments.callee)) {var oNew=Object.create(arguments..prototype);arguments.callee.apply(oNew, arguments);return oNew} 
+		if (!(this instanceof arguments.callee)) {var oNew=Object.create(arguments..prototype);arguments.callee.apply(oNew, arguments);return oNew}
 		var that = this;
 		this.progressBar = null;
 		this.textView = null;
@@ -2379,7 +2380,7 @@ sgUtils.gui = {
 	 */
 	dialog: function(title, layout, btn1Text, btn1Func, btn2Text, btn2Func, isFullscreen, focus, gravity, margins) {
 		if (!(this instanceof arguments.callee)) {var oNew=Object.create(arguments.callee.prototype);arguments.callee.apply(oNew, arguments);return oNew}
-		
+
 		var that = this;
 
 		this.name = title;
@@ -2497,7 +2498,35 @@ sgUtils.gui = {
 			}});
 		}
 	},
-	
+
+	/**
+	 * Button Dialog
+	 *
+	 * @author SemteulGaram
+	 * @since 2016-01-06
+	 *
+	 * @param {String} title
+	 * @param {(String|null)} btn1Text
+	 * @param {(function|null)} btn1Func
+	 * @param {(String|null)} btn2Text
+	 * @param {(function|null)} btn2Func
+	 * @param {Array[]} buttons
+	 * - ex.[[ctn1Name, ctn1Func], [ctn2Name, ctn2Func], [ctnnName, ctnnFunc], ...]
+	 * @return {sgUtils.gui.dislog}
+	 */
+	buttonDialog: function(title, btn1Text, btn1Func, btn2Text, btn2Func, buttons) {
+		var layout = new sg.ll(ctx);
+		layout.setOrientation(sg.ll.VERTICAL);
+		var underlineDrawable = sgAssets.underline(sgColors.lg500, sgColors.lg50);
+
+		for(var e = 0; e < buttons.length, e++) {
+			var btn = new sgUtils.gui.button(buttons[e][0], sg.px*0x10, false, sgColors.lg800, null, Gravity.CENTER, null, sg.mp, sg.wc, [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2], [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2], underlineDrawable.ninePatch(), null, buttons[e][1], null);
+			layout.addView(btn);
+		}
+
+		return new sgUtils.gui.dialog(title, layout, btn1Text, btn1Func, btn2Text, btn2Func, false, false);
+	},
+
 	/**
 	 * Thumbnail
 	 *
@@ -2736,7 +2765,7 @@ sgUtils.android = {
   * @since 2015-04
   */
 	battery: function() {
-		if (!(this instanceof arguments.callee)) {var oNew=Object.create(arguments.callee.prototype);arguments.callee.apply(oNew, arguments);return oNew} 
+		if (!(this instanceof arguments.callee)) {var oNew=Object.create(arguments.callee.prototype);arguments.callee.apply(oNew, arguments);return oNew}
 		var that = this;
 		this.ifilter = new android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED);
 
@@ -2841,8 +2870,8 @@ sgUtils.android = {
 	//convert Java to Javascript by [SemteulGaram]
 
 	visualizer: function() {
-		if (!(this instanceof arguments.callee)) {var oNew=Object.create(arguments.callee.prototype);arguments.callee.apply(oNew, arguments);return oNew} 
-		
+		if (!(this instanceof arguments.callee)) {var oNew=Object.create(arguments.callee.prototype);arguments.callee.apply(oNew, arguments);return oNew}
+
 		var that = this;
 		//int
 		this.TYPE_PCM = 0;
@@ -3314,7 +3343,7 @@ sgUtils.android = {
 					}else {
 						for(var f = 0; f < this.filter.length; f++) {
 							var len = this.filter[f].length;
-							if(name.length > len && name.substring(name.length - (len + 1), name.length).toLowerCase() === 
+							if(name.length > len && name.substring(name.length - (len + 1), name.length).toLowerCase() ===
 							('.' + this.filter[f]).toLowerCase()) {
 								files.push(content[e]);
 								break;
@@ -3326,9 +3355,9 @@ sgUtils.android = {
 			var result = sgUtils.convert.sort(dirs, 1);
 			return result.concat(sgUtils.convert.sort(files, 1));
 		}
-		
+
 		this.isRoot = function() {
-			return this.currentDir.getAbsolutePath() == this.rootDir.getAbsolutePath();			
+			return this.currentDir.getAbsolutePath() == this.rootDir.getAbsolutePath();
 		}
 
 		this.goParent = function() {
@@ -3346,7 +3375,7 @@ sgUtils.android = {
 			this.currentDir = dir;
 			return true;
 		}
-		
+
 		this.move = function(str) {
 			var dir = new File(this.getDir(), str);
 			if(dir.exists()) {
@@ -3382,7 +3411,7 @@ sgUtils.android = {
 	 * - ex.function(File) {}
 	 */
 	fileChooser: function(title, closeText, dir, rootDir, fileFilter, showHideFiles, extraIcons, onSelect, onChangeDir, onCancel) {
-		
+
 		var loading = new ProgressBar(ctx);
 		var loadingP = new sg.rlp(sg.px*0x28, sg.px*0x28);
 		loadingP.setMargins(sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4);
@@ -3399,7 +3428,7 @@ sgUtils.android = {
 				onCancel();
 			}
 		});
-		
+
 		if(!extraIcons) {
 			var iconFolder = Bitmap.createBitmap(sg.px*0x30, sg.px*0x30, Bitmap.Config.ARGB_8888);
 			var iconFolderCanvas = new Canvas(iconFolder);
@@ -3411,7 +3440,7 @@ sgUtils.android = {
 			iconPaint2.setColor(Color.parseColor('#FDD835'));
 			iconFolderCanvas.drawRect(sg.px*0x4, sg.px*0xa, sg.px*0x14, sg.px*0xf, iconPaint2);
 			iconFolderCanvas.drawRect(sg.px*0x2, sg.px*0xf, sg.px*0x2d, sg.px*0x26, iconPaint1);
-			
+
 			var iconFile = Bitmap.createBitmap(sg.px*0x30, sg.px*0x30, Bitmap.Config.ARGB_8888);
 			var iconFileCanvas = new Canvas(iconFile);
 			var iconPaint3 = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -3436,18 +3465,18 @@ sgUtils.android = {
 				toast("폴더가 존재하지 않습니다");
 				return;
 			}
-			
+
 			//내용물 레이아웃 빌드 쓰레드
 			var buildLayout = thread(function() {try {
 				//밑줄 드로어블 나인패치
 				var underlineDrawable = sgAssets.underline(sgColors.lg50, 0);
-				
+
 				//루트 폴더가 아니라면
 				if(!explore.isRoot()) {
 					var subLayout = new sg.rl(ctx);
 					subLayout.setBackground(underlineDrawable.ninePatch());
 					subLayout.setPadding(sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4);
-					
+
 					var name = sgUtils.gui.button(".../", sg.px*0x10, false, sgColors.lg50, null, Gravity.CENTER, null, null, null, null, null, Color.TRANSPARENT, null, function(view) {
 						changeLayout(explore.getDir().getParentFile());
 					}, null);
@@ -3463,7 +3492,7 @@ sgUtils.android = {
 					var subLayout = new sg.rl(ctx);
 					subLayout.setBackground(underlineDrawable.ninePatch());
 					subLayout.setPadding(sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4);
-					
+
 					var icon = new ImageView(ctx);
 					icon.setId(sgUtils.math.randomId());
 					var iconP = new sg.rlp(sg.px*0x30, sg.px*0x30);
@@ -3478,7 +3507,7 @@ sgUtils.android = {
 						extraIcons(list[e], icon);
 					}
 					subLayout.addView(icon);
-					
+
 					var name = sgUtils.gui.button(list[e].getName(), sg.px*0x10, false, sgColors.lg50, null, Gravity.CENTER, null, null, null, [0, 0, 0, 0], null, Color.TRANSPARENT, null, list[e].isDirectory() ? function(view) {//폴더라면
 						changeLayout(new File(explore.getDir(), view.getText()));
 					} : function(view) {//파일이라면
@@ -3503,7 +3532,7 @@ sgUtils.android = {
 			}catch(err) {
 				sgError(err);
 			}});
-			
+
 			//기존 내용물 비우고 로딩프로그래스바 띄우기
 			uiThread(function() {try {
 				dialog.layoutData[2].removeView(layout);
@@ -3813,7 +3842,7 @@ function ttsIt(str, pitch, speed) {
 thread(function() {try {
 	sleep(2000);
 	sgUtils.gui.toast("Hello");
-	
+
 	var btm = BitmapFactory.decodeFile("sdcard/test.jpeg");
 	var bw = btm.getWidth(), bh = btm.getHeight();
 	if(bw > bh) {
@@ -3826,17 +3855,17 @@ thread(function() {try {
 		bh = Math.round(bh*scale);
 	}
 	var btm2 = Bitmap.createScaledBitmap(btm, bw, bh, true);
-	
+
 	var img = new ImageView(ctx);
 	img.setImageBitmap(btm);
-	
+
 	var img2 = new ImageView(ctx);
 	img2.setImageBitmap(btm2);
-	
+
 	var layout = new sg.ll(ctx);
 	layout.addView(img);
 	layout.addView(img2);
-	
+
 	var dl = new sgUtils.gui.dialog('Test Dialog', layout, 'btn1', function() {print('Hello btn1!')}, 'exit', function() {this.close()}, false, false, Gravity.RIGHT);
 	dl.show();
 	//ctx.scriptErrorCallback("System", new java.lang.Error("관리자가 이탈했습니다"));
@@ -3847,7 +3876,7 @@ thread(function() {try {
 var cDir = new sgUtils.android.explore(sgFiles.sdcard, sgFiles.sdcard, null);
 
 sgUtils.android.fileChooser("FileChooser Test", null, sgFiles.sdcard, sgFiles.sdcard, ["jpeg", "jpg", "bmp", "png"], false, null, function(file) {
-	toast(file + "");	
+	toast(file + "");
 });
 
 
