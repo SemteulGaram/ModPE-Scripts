@@ -17,8 +17,8 @@
 const NAME = "WorldEdit script";
 const NAME_CODE = "WorldEdit";
 //Season . Release Number . Commits
-const VERSION = "0.7.1";
-const VERSION_CODE = 119;
+const VERSION = "0.7.2";
+const VERSION_CODE = 120;
 const ASSETS_VERSION = 1;
 const SERVER_VERSION = 1;
 const TAG = "[" + "WorldEdit" + " " + VERSION + "] ";
@@ -4278,6 +4278,11 @@ Vector3.prototype = {
  */
 
 function Block(id, data, x, y, z) {
+	if(!data) {
+		data = 0;
+	}else if(!(data >= 0 && data < 16)) {
+		throw new Error("Block data must over 0 and  under 15");
+	}
 	this.id = parseInt(id);
 	this.data = parseInt(data);
 	this.x = parseInt(x);
@@ -4289,6 +4294,10 @@ Block.prototype = {
 
 	toString: function() {
 		return "[Block " + this.id + ":" + this.data + "]";
+	},
+	
+	getInstance: function(hashCode) {
+		return new Block(hashCode >> 4, hashCode % 16);
 	},
 
 	getId: function() {
@@ -4309,6 +4318,14 @@ Block.prototype = {
 
 	getZ: function() {
 		return this.z;
+	},
+	
+	getHashCode: function() {
+		return (this.id << 4) + (this.data);
+	},
+	
+	getPosition: function() {
+		return new Vector3(this.x, this.y, this.y);
 	}
 }
 
@@ -4320,13 +4337,42 @@ Block.prototype = {
  * @author CodeInside
  * @since 2015-10-12
  */
-function Piece(xSize, ySize, zSize, piece) {
+function Piece(xSize, ySize, zSize, piece, changeableBlockData) {
 	this.xs = xSize;
 	this.ys = ySize;
 	this.zs = zSize;
 	this.piece = piece;
 	if((xSize*ySize*zSize) != piece.length) {
-		throw new Error("warning not match size " + (xSize*ySize*zSize) + "!=" + piece.length);
+		throw new Error("warning not match size (Native)" + (xSize*ySize*zSize) + "!= (Array length)" + piece.length);
+	}
+	this.changeableBlockData = changeableBlockData || {rotation: {x: [], y: [], z:[]}, flip: {x: [], y: [], z:[]}};
+	
+	this.needRotationXBlock = [];
+	this.needRotationYBlock = [];
+	this.needRotationZBlock = [];
+	
+	this.needFlipXBlock = [];
+	this.needFlipYBlock = [];
+	this.needFlipZBlock = [];
+	
+	for(var e = 0; e < this.changeableBlockData.rotation.x.length; e++) {
+		this.needRotationXBlock = this.needRotationXBlock.concat(this.changeableBlockData.rotation.x[e]);
+	}
+	for(var e = 0; e < this.changeableBlockData.rotation.y.length; e++) {
+		this.needRotationYBlock = this.needRotationYBlock.concat(this.changeableBlockData.rotation.y[e]);
+	}
+	for(var e = 0; e < this.changeableBlockData.rotation.z.length; e++) {
+		this.needRotationZBlock = this.needRotationZBlock.concat(this.changeableBlockData.rotation.z[e]);
+	}
+	
+	for(var e = 0; e < this.changeableBlockData.flip.x.length; e++) {
+		this.needFlipXBlock = this.needFlipXBlock.concat(this.changeableBlockData.flip.x[e]);
+	}
+	for(var e = 0; e < this.changeableBlockData.flip.y.length; e++) {
+		this.needFlipYBlock = this.needFlipYBlock.concat(this.changeableBlockData.flip.y[e]);
+	}
+	for(var e = 0; e < this.changeableBlockData.flip.z.length; e++) {
+		this.needFlipZBlock = this.needFlipZBlock.concat(this.changeableBlockData.flip.z[e]);
 	}
 }
 
@@ -4356,7 +4402,7 @@ Piece.prototype = {
 		return this.piece[index];
 	},
 
-	rotation: function(axis, rot) {
+	rotation: function(axis, rot, blockRot) {
 		var buffer = [];
 		switch(axis) {
 			case "x":
@@ -4366,6 +4412,9 @@ Piece.prototype = {
 				for(var z = 0; z < this.zs; z++) {
 				for(var x = 0; x < this.xs; x++) {
 					var t = this.getBlock(x, y, z);
+					if(blockRot) {
+						t = this.rotationBlock(0, rot, t);
+					}
 					buffer.push(t);
 				}
 				}
@@ -4380,7 +4429,11 @@ Piece.prototype = {
 				for(var z = this.zs-1; z >= 0; z--) {
 				for(var y = this.ys-1; y >= 0; y--) {
 				for(var x = 0; x < this.xs; x++) {
-					buffer.push(this.getBlock(x, y, z));
+					var t = this.getBlock(x, y, z);
+					if(blockRot) {
+						t = this.rotationBlock(0, rot, t);
+					}
+					buffer.push(t);
 				}
 				}
 				}
@@ -4391,7 +4444,11 @@ Piece.prototype = {
 				for(var y = 0; y < this.ys; y++) {
 				for(var z = this.zs-1; z >= 0; z--) {
 				for(var x = 0; x < this.xs; x++) {
-					buffer.push(this.getBlock(x, y, z));
+					var t = this.getBlock(x, y, z);
+					if(blockRot) {
+						t = this.rotationBlock(0, rot, t);
+					}
+					buffer.push(t);
 				}
 				}
 				}
@@ -4412,7 +4469,11 @@ Piece.prototype = {
 				for(var x = 0; x < this.xs; x++) {
 				for(var y = 0; y < this.ys; y++) {
 				for(var z = this.zs-1; z >= 0; z--) {
-					buffer.push(this.getBlock(x, y, z));
+					var t = this.getBlock(x, y, z);
+					if(blockRot) {
+						t = this.rotationBlock(1, rot, t);
+					}
+					buffer.push(t);
 				}
 				}
 				}
@@ -4426,7 +4487,11 @@ Piece.prototype = {
 				for(var z = this.zs-1; z >= 0; z--) {
 				for(var y = 0; y < this.ys; y++) {
 				for(var x = this.xs-1; x >= 0; x--) {
-					buffer.push(this.getBlock(x, y, z));
+					var t = this.getBlock(x, y, z);
+					if(blockRot) {
+						t = this.rotationBlock(1, rot, t);
+					}
+					buffer.push(t);
 				}
 				}
 				}
@@ -4437,7 +4502,11 @@ Piece.prototype = {
 				for(var x = this.xs-1; x >= 0; x--) {
 				for(var y = 0; y < this.ys; y++) {
 				for(var z = 0; z < this.zs; z++) {
-					buffer.push(this.getBlock(x, y, z));
+					var t = this.getBlock(x, y, z);
+					if(blockRot) {
+						t = this.rotationBlock(1, rot, t);
+					}
+					buffer.push(t);
 				}
 				}
 				}
@@ -4458,7 +4527,11 @@ Piece.prototype = {
 				for(var z = 0; z < this.zs; z++) {
 				for(var x = 0; x < this.xs; x++) {
 				for(var y = this.ys-1; y >= 0; y--) {
-					buffer.push(this.getBlock(x, y, z));
+					var t = this.getBlock(x, y, z);
+					if(blockRot) {
+						t = this.rotationBlock(2, rot, t);
+					}
+					buffer.push(t);
 				}
 				}
 				}
@@ -4472,7 +4545,11 @@ Piece.prototype = {
 				for(var z = 0; z < this.zs; z++) {
 				for(var y = this.ys-1; y >= 0; y--) {
 				for(var x = this.xs-1; x >= p; x--) {
-					buffer.push(this.getBlock(x, y, z));
+					var t = this.getBlock(x, y, z);
+					if(blockRot) {
+						t = this.rotationBlock(2, rot, t);
+					}
+					buffer.push(t);
 				}
 				}
 				}
@@ -4483,7 +4560,11 @@ Piece.prototype = {
 				for(var z = 0; z < this.zs; z++) {
 				for(var x = this.xs-1; x >= 0; x--) {
 				for(var y = 0; y < this.ys; y++) {
-					buffer.push(this.getBlock(x, y, z));
+					var t = this.getBlock(x, y, z);
+					if(blockRot) {
+						t = this.rotationBlock(2, rot, t);
+					}
+					buffer.push(t);
 				}
 				}
 				}
@@ -4503,14 +4584,18 @@ Piece.prototype = {
 		}
 	},
 
-	flip: function(axis) {
+	flip: function(axis, blockRot) {
 		var buffer = [];
 		switch(axis) {
 			case "x":
 			for(var z = 0; z < this.zs; z++) {
 			for(var y = 0; y < this.ys; y++) {
 			for(var x = this.xs-1; x >= 0; x--) {
-				buffer.push(this.getBlock(x, y, z));
+				var t = this.getBlock(x, y, z);
+				if(blockRot) {
+					t = this.flipBlock(0, t);
+				}
+				buffer.push(t);
 			}
 			}
 			}
@@ -4521,7 +4606,11 @@ Piece.prototype = {
 			for(var z = 0; z < this.zs; z++) {
 			for(var y = this.ys-1; y >= 0; y--) {
 			for(var x = 0; x < this.xs; x++) {
-				buffer.push(this.getBlock(x, y, z));
+				var t = this.getBlock(x, y, z);
+				if(blockRot) {
+					t = this.flipBlock(1, t);
+				}
+				buffer.push(t);
 			}
 			}
 			}
@@ -4532,7 +4621,11 @@ Piece.prototype = {
 			for(var z = this.zs-1; z >= 0; z--) {
 			for(var y = 0; y < this.ys; y++) {
 			for(var x = 0; x < this.xs; x++) {
-				buffer.push(this.getBlock(x, y, z));
+				var t = this.getBlock(x, y, z);
+				if(blockRot) {
+					t = this.flipBlock(2, t);
+				}
+				buffer.push(t);
 			}
 			}
 			}
@@ -4542,8 +4635,109 @@ Piece.prototype = {
 			default:
 			throw new Error("ERROR AXIS MUST BE INSTANCE OF 'x', 'y', 'z'");
 		}
+	},
+	
+	rotationBlock: function(axisId, rot, block) {
+		switch(axisId) {
+			case 0:
+				if((var index = this.needRotationXBlock.indexOf(block.getHashCode())) === -1) {
+					return block;
+				}
+				var index1 = index >> 2;
+				var index2 = index % 4;
+				var hash = this.changeableBlockData.rotation.x[index1][(index2 + rot) % 4];
+				if(!hash) {
+					return block;
+				}else {
+					return Block.getInstance(hash);
+				}
+				break;
+			
+			case 1:
+				if((var index = this.needRotationYBlock.indexOf(block.getHashCode())) === -1) {
+					return block;
+				}
+				var index1 = index >> 2;
+				var index2 = index % 4;
+				var hash = this.changeableBlockData.rotation.y[index1][(index2 + rot) % 4];
+				if(!hash) {
+					return block;
+				}else {
+					return Block.getInstance(hash);
+				}
+				break;
+			
+			case 2:
+				if((var index = this.needRotationZBlock.indexOf(block.getHashCode())) === -1) {
+					return block;
+				}
+				var index1 = index >> 2;
+				var index2 = index % 4;
+				var hash = this.changeableBlockData.rotation.z[index1][(index2 + rot) % 4];
+				if(!hash) {
+					return block;
+				}else {
+					return Block.getInstance(hash);
+				}
+				break;
+				
+			default:
+				toastL("[WARNING] " + block + " rotationBlock has undefined axisId: " + axisId);
+				return block; //continue
+		}
+	},
+	
+	flipBlock: function(axidId, block) {
+		switch(axisId) {
+			case 0:
+				if((var index = this.needFlipXBlock.indexOf(block.getHashCode())) === -1) {
+					return block;
+				}
+				var index1 = index >> 2;
+				var index2 = index % 4;
+				var hash = this.changeableBlockData.flip.x[index1][(index2 + 1) % 2];
+				if(!hash) {
+					return block;
+				}else {
+					return Block.getInstance(hash);
+				}
+				break;
+			
+			case 1:
+				if((var index = this.needFlipYBlock.indexOf(block.getHashCode())) === -1) {
+					return block;
+				}
+				var index1 = index >> 2;
+				var index2 = index % 4;
+				var hash = this.changeableBlockData.flip.y[index1][(index2 + 1) % 2];
+				if(!hash) {
+					return block;
+				}else {
+					return Block.getInstance(hash);
+				}
+				break;
+			
+			case 2:
+				if((var index = this.needFlipZBlock.indexOf(block.getHashCode())) === -1) {
+					return block;
+				}
+				var index1 = index >> 2;
+				var index2 = index % 4;
+				var hash = this.changeableBlockData.flip.z[index1][(index2 + 1) % 2];
+				if(!hash) {
+					return block;
+				}else {
+					return Block.getInstance(hash);
+				}
+				break;
+				
+			default:
+				toastL("[WARNING] " + block + " flipBlock has undefined axisId: " + axisId);
+				return block; //continue
+		}
 	}
 }
+
 
 
 var lang = "en_EU";
@@ -5024,7 +5218,8 @@ function WorldEdit() {
 		HollowCircular: 0,
 		Lang: 0,
 		ImageX: sg.ww,
-		ImageY: Math.floor(sg.wh/5)
+		ImageY: Math.floor(sg.wh/5),
+		ChangeableBlockData: {rotation: {x: [], y: [], z: []}, flip: {x: [], y: [], z: []}}
 	}
 	this.setting = null;
 	this.button = null;
@@ -5466,8 +5661,10 @@ WorldEdit.prototype = {
 		}
 		var value = this.setting[article];
 		if(value === undefined) {
-			//we_toast("[Warning] try to read undefined setting article: " + article, 1, 5000, true);
 			value = this.defaultSetting[article];
+			if(value === undefined) {
+				we_toast("[Warning] try to read undefined setting article: " + article, 2, 5000, true);
+			}
 		}
 		return value;
 	},
@@ -5476,9 +5673,9 @@ WorldEdit.prototype = {
 		if(this.setting === null) {
 			this.loadSetting();
 		}
-		if(this.setting[article] === undefined) {
+		//if(this.setting[article] === undefined) {
 			//we_toast("[Warning] try to save undefined setting article: " + article, 2, 5000, true);
-		}
+		//}
 		this.setting[article] = value;
 		if(save) {
 			this.saveSetting();
@@ -8140,7 +8337,7 @@ function we_edit(editType, editor, detail) {
 				}
 			}
 		}
-		editor.setCopy(new Piece(ex-sx+1, ey-sy+1, ez-sz+1, sblocks));
+		editor.setCopy(new Piece(ex-sx+1, ey-sy+1, ez-sz+1, sblocks, ));
 		break;
 
 
