@@ -2440,7 +2440,7 @@ sgUtils.gui = {
 			var cf, cc;
 
 			if(that.btn1Text) {
-				cf = sgUtils.gui.mcFastButton(that.btn1Text, sg.px*0xa, false, sgColors.lg500, null, null, null, [sg.px*8, sg.px*8, sg.px*8, sg.px*8], null, null, null, function(view) {
+				cf = sgUtils.gui.mcFastButton(that.btn1Text, sg.px*0xa, false, sgColors.lg800, null, null, null, [sg.px*8, sg.px*8, sg.px*8, sg.px*8], null, null, null, function(view) {
 					that.btn1Func();
 				});
 				var cf_p = new sg.rlp(sg.wc, sg.mp);
@@ -2452,7 +2452,7 @@ sgUtils.gui = {
 			}
 
 			if(that.btn2Text) {
-				cc = sgUtils.gui.mcFastButton(that.btn2Text, sg.px*0xa, false, sgColors.lg500, null, null, null, [sg.px*8, sg.px*8, sg.px*8, sg.px*8], null, null, null, function(view) {
+				cc = sgUtils.gui.mcFastButton(that.btn2Text, sg.px*0xa, false, sgColors.lg800, null, null, null, [sg.px*8, sg.px*8, sg.px*8, sg.px*8], null, null, null, function(view) {
 					that.btn2Func();
 				});
 				var cc_p = new sg.rlp(sg.wc, sg.mp);
@@ -2519,8 +2519,8 @@ sgUtils.gui = {
 		layout.setOrientation(sg.ll.VERTICAL);
 		var underlineDrawable = sgAssets.underline(sgColors.lg500, sgColors.lg50);
 
-		for(var e = 0; e < buttons.length, e++) {
-			var btn = new sgUtils.gui.button(buttons[e][0], sg.px*0x10, false, sgColors.lg800, null, Gravity.CENTER, null, sg.mp, sg.wc, [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2], [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2], underlineDrawable.ninePatch(), null, buttons[e][1], null);
+		for(var e = 0; e < buttons.length; e++) {
+			var btn = new sgUtils.gui.button(buttons[e][0], sg.px*0x10, false, sgColors.lg800, null, Gravity.CENTER, null, sg.mp, sg.wc, [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2], null, underlineDrawable.ninePatch(), null, buttons[e][1], null);
 			layout.addView(btn);
 		}
 
