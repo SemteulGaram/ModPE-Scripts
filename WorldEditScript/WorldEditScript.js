@@ -325,7 +325,7 @@ sgFiles.world = new File(sgFiles.mcpe, "minecraftWorlds");
 sgFiles.mod = new File(sgFiles.mcpe, "minecraftpe/mods");
 sgFiles.font = new File(sgFiles.mod, "minecraft.ttf");
 sgFiles.script = new File(sgFiles.mod, NAME_CODE);
-sgFiles.setting = new File(sgFiles.script, "setting.json");
+sgFiles.setting = new File(sgFiles.script, "Setting.json");
 sgFiles.test = new File(sgFiles.script, "log.txt");
 sgFiles.noMedia = new File(sgFiles.script, ".nomedia");
 sgFiles.map = function() {return new File(mfiles.map, Level.getWorldDir())};
@@ -334,6 +334,7 @@ sgFiles.mapSetting = function() {return new File(sgFiles.map, Level.getWorldDir(
 
 sgFiles.assets = new File(sgFiles.script, "assets");
 sgFiles.pkg = new File(sgFiles.assets, "wes.pkg");
+sgFiles.changeableBlockData = new File(sgFiles.script, "ChangeableBlockData.json");
 
 
 
@@ -2387,7 +2388,7 @@ sgUtils.gui = {
 			var cf, cc;
 
 			if(that.btn1Text) {
-				cf = sgUtils.gui.mcFastButton(that.btn1Text, sg.px*0xa, false, sgColors.lg500, null, null, null, [sg.px*8, sg.px*8, sg.px*8, sg.px*8], null, null, null, function(view) {
+				cf = sgUtils.gui.mcFastButton(that.btn1Text, sg.px*0xa, false, sgColors.lg800, null, null, null, [sg.px*8, sg.px*8, sg.px*8, sg.px*8], null, null, null, function(view) {
 					that.btn1Func();
 				});
 				var cf_p = new sg.rlp(sg.wc, sg.mp);
@@ -2399,7 +2400,7 @@ sgUtils.gui = {
 			}
 
 			if(that.btn2Text) {
-				cc = sgUtils.gui.mcFastButton(that.btn2Text, sg.px*0xa, false, sgColors.lg500, null, null, null, [sg.px*8, sg.px*8, sg.px*8, sg.px*8], null, null, null, function(view) {
+				cc = sgUtils.gui.mcFastButton(that.btn2Text, sg.px*0xa, false, sgColors.lg800, null, null, null, [sg.px*8, sg.px*8, sg.px*8, sg.px*8], null, null, null, function(view) {
 					that.btn2Func();
 				});
 				var cc_p = new sg.rlp(sg.wc, sg.mp);
@@ -2466,8 +2467,8 @@ sgUtils.gui = {
 		layout.setOrientation(sg.ll.VERTICAL);
 		var underlineDrawable = sgAssets.underline(sgColors.lg500, sgColors.lg50);
 
-		for(var e = 0; e < buttons.length, e++) {
-			var btn = new sgUtils.gui.button(buttons[e][0], sg.px*0x10, false, sgColors.lg800, null, Gravity.CENTER, null, sg.mp, sg.wc, [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2], [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2], underlineDrawable.ninePatch(), null, buttons[e][1], null);
+		for(var e = 0; e < buttons.length; e++) {
+			var btn = new sgUtils.gui.button(buttons[e][0], sg.px*0x10, false, sgColors.lg800, null, Gravity.CENTER, null, sg.mp, sg.wc, [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2], null, underlineDrawable.ninePatch(), null, buttons[e][1], null);
 			layout.addView(btn);
 		}
 
@@ -4324,10 +4325,6 @@ Block.prototype = {
 		return "[Block " + this.id + ":" + this.data + "]";
 	},
 
-	getInstance: function(hashCode) {
-		return new Block(hashCode >> 4, hashCode % 16);
-	},
-
 	getId: function() {
 		return this.id;
 	},
@@ -4357,6 +4354,10 @@ Block.prototype = {
 	}
 }
 
+function BlockInstance(hash) {
+	return new Block(hash >> 4, hash % 16);
+}
+
 
 
 /**
@@ -4365,42 +4366,13 @@ Block.prototype = {
  * @author CodeInside
  * @since 2015-10-12
  */
-function Piece(xSize, ySize, zSize, piece, changeableBlockData) {
+function Piece(xSize, ySize, zSize, piece) {
 	this.xs = xSize;
 	this.ys = ySize;
 	this.zs = zSize;
 	this.piece = piece;
 	if((xSize*ySize*zSize) != piece.length) {
 		throw new Error("warning not match size (Native)" + (xSize*ySize*zSize) + "!= (Array length)" + piece.length);
-	}
-	this.changeableBlockData = changeableBlockData || {rotation: {x: [], y: [], z:[]}, flip: {x: [], y: [], z:[]}};
-
-	this.needRotationXBlock = [];
-	this.needRotationYBlock = [];
-	this.needRotationZBlock = [];
-
-	this.needFlipXBlock = [];
-	this.needFlipYBlock = [];
-	this.needFlipZBlock = [];
-
-	for(var e = 0; e < this.changeableBlockData.rotation.x.length; e++) {
-		this.needRotationXBlock = this.needRotationXBlock.concat(this.changeableBlockData.rotation.x[e]);
-	}
-	for(var e = 0; e < this.changeableBlockData.rotation.y.length; e++) {
-		this.needRotationYBlock = this.needRotationYBlock.concat(this.changeableBlockData.rotation.y[e]);
-	}
-	for(var e = 0; e < this.changeableBlockData.rotation.z.length; e++) {
-		this.needRotationZBlock = this.needRotationZBlock.concat(this.changeableBlockData.rotation.z[e]);
-	}
-
-	for(var e = 0; e < this.changeableBlockData.flip.x.length; e++) {
-		this.needFlipXBlock = this.needFlipXBlock.concat(this.changeableBlockData.flip.x[e]);
-	}
-	for(var e = 0; e < this.changeableBlockData.flip.y.length; e++) {
-		this.needFlipYBlock = this.needFlipYBlock.concat(this.changeableBlockData.flip.y[e]);
-	}
-	for(var e = 0; e < this.changeableBlockData.flip.z.length; e++) {
-		this.needFlipZBlock = this.needFlipZBlock.concat(this.changeableBlockData.flip.z[e]);
 	}
 }
 
@@ -4434,6 +4406,15 @@ Piece.prototype = {
 		var buffer = [];
 		switch(axis) {
 			case "x":
+			
+			if(blockRot) {
+				this.changeableBlockData = main.getChangeableBlockData("RotationX");
+				this.changeableBlockList = [];
+				for(var e = 0; e < this.changeableBlockData.length; e++) {
+					this.changeableBlockList = this.changeableBlockList.concat(this.changeableBlockData[e]);
+				}
+			}
+			
 			switch(rot) {
 				case 1:
 				for(var y = this.ys-1; y >= 0; y--) {
@@ -4441,7 +4422,7 @@ Piece.prototype = {
 				for(var x = 0; x < this.xs; x++) {
 					var t = this.getBlock(x, y, z);
 					if(blockRot) {
-						t = this.rotationBlock(0, rot, t);
+						t = this.rotationBlock(rot, t);
 					}
 					buffer.push(t);
 				}
@@ -4459,7 +4440,7 @@ Piece.prototype = {
 				for(var x = 0; x < this.xs; x++) {
 					var t = this.getBlock(x, y, z);
 					if(blockRot) {
-						t = this.rotationBlock(0, rot, t);
+						t = this.rotationBlock(rot, t);
 					}
 					buffer.push(t);
 				}
@@ -4474,7 +4455,7 @@ Piece.prototype = {
 				for(var x = 0; x < this.xs; x++) {
 					var t = this.getBlock(x, y, z);
 					if(blockRot) {
-						t = this.rotationBlock(0, rot, t);
+						t = this.rotationBlock(rot, t);
 					}
 					buffer.push(t);
 				}
@@ -4492,6 +4473,15 @@ Piece.prototype = {
 			break;
 
 			case "y":
+			
+			if(blockRot) {
+				this.changeableBlockData = main.getChangeableBlockData("RotationY");
+				this.changeableBlockList = [];
+				for(var e = 0; e < this.changeableBlockData.length; e++) {
+					this.changeableBlockList = this.changeableBlockList.concat(this.changeableBlockData[e]);
+				}
+			}
+			
 			switch(rot) {
 				case 1:
 				for(var x = 0; x < this.xs; x++) {
@@ -4499,7 +4489,7 @@ Piece.prototype = {
 				for(var z = this.zs-1; z >= 0; z--) {
 					var t = this.getBlock(x, y, z);
 					if(blockRot) {
-						t = this.rotationBlock(1, rot, t);
+						t = this.rotationBlock(rot, t);
 					}
 					buffer.push(t);
 				}
@@ -4517,7 +4507,7 @@ Piece.prototype = {
 				for(var x = this.xs-1; x >= 0; x--) {
 					var t = this.getBlock(x, y, z);
 					if(blockRot) {
-						t = this.rotationBlock(1, rot, t);
+						t = this.rotationBlock(rot, t);
 					}
 					buffer.push(t);
 				}
@@ -4532,7 +4522,7 @@ Piece.prototype = {
 				for(var z = 0; z < this.zs; z++) {
 					var t = this.getBlock(x, y, z);
 					if(blockRot) {
-						t = this.rotationBlock(1, rot, t);
+						t = this.rotationBlock(rot, t);
 					}
 					buffer.push(t);
 				}
@@ -4550,6 +4540,15 @@ Piece.prototype = {
 			break;
 
 			case "z":
+			
+			if(blockRot) {
+				this.changeableBlockData = main.getChangeableBlockData("RotationZ");
+				this.changeableBlockList = [];
+				for(var e = 0; e < this.changeableBlockData.length; e++) {
+					this.changeableBlockList = this.changeableBlockList.concat(this.changeableBlockData[e]);
+				}
+			}
+			
 			switch(rot) {
 				case 1:
 				for(var z = 0; z < this.zs; z++) {
@@ -4557,7 +4556,7 @@ Piece.prototype = {
 				for(var y = this.ys-1; y >= 0; y--) {
 					var t = this.getBlock(x, y, z);
 					if(blockRot) {
-						t = this.rotationBlock(2, rot, t);
+						t = this.rotationBlock(rot, t);
 					}
 					buffer.push(t);
 				}
@@ -4575,7 +4574,7 @@ Piece.prototype = {
 				for(var x = this.xs-1; x >= p; x--) {
 					var t = this.getBlock(x, y, z);
 					if(blockRot) {
-						t = this.rotationBlock(2, rot, t);
+						t = this.rotationBlock(rot, t);
 					}
 					buffer.push(t);
 				}
@@ -4590,7 +4589,7 @@ Piece.prototype = {
 				for(var y = 0; y < this.ys; y++) {
 					var t = this.getBlock(x, y, z);
 					if(blockRot) {
-						t = this.rotationBlock(2, rot, t);
+						t = this.rotationBlock(rot, t);
 					}
 					buffer.push(t);
 				}
@@ -4608,7 +4607,7 @@ Piece.prototype = {
 			break;
 
 			default:
-			throw new Error("Axis must be instance of 'x', 'y', 'z'");
+			throw new Error("Axis must be instance of 'x', 'y', 'z' input: " + axis);
 		}
 	},
 
@@ -4616,12 +4615,21 @@ Piece.prototype = {
 		var buffer = [];
 		switch(axis) {
 			case "x":
+			
+			if(blockRot) {
+				this.changeableBlockData = main.getChangeableBlockData("FlipX");
+				this.changeableBlockList = [];
+				for(var e = 0; e < this.changeableBlockData.length; e++) {
+					this.changeableBlockList = this.changeableBlockList.concat(this.changeableBlockData[e]);
+				}
+			}
+			
 			for(var z = 0; z < this.zs; z++) {
 			for(var y = 0; y < this.ys; y++) {
 			for(var x = this.xs-1; x >= 0; x--) {
 				var t = this.getBlock(x, y, z);
 				if(blockRot) {
-					t = this.flipBlock(0, t);
+					t = this.flipBlock(t);
 				}
 				buffer.push(t);
 			}
@@ -4631,12 +4639,21 @@ Piece.prototype = {
 			break;
 
 			case "y":
+			
+			if(blockRot) {
+				this.changeableBlockData = main.getChangeableBlockData("FlipY");
+				this.changeableBlockList = [];
+				for(var e = 0; e < this.changeableBlockData.length; e++) {
+					this.changeableBlockList = this.changeableBlockList.concat(this.changeableBlockData[e]);
+				}
+			}
+			
 			for(var z = 0; z < this.zs; z++) {
 			for(var y = this.ys-1; y >= 0; y--) {
 			for(var x = 0; x < this.xs; x++) {
 				var t = this.getBlock(x, y, z);
 				if(blockRot) {
-					t = this.flipBlock(1, t);
+					t = this.flipBlock(t);
 				}
 				buffer.push(t);
 			}
@@ -4646,12 +4663,21 @@ Piece.prototype = {
 			break;
 
 			case "z":
+			
+			if(blockRot) {
+				this.changeableBlockData = main.getChangeableBlockData("FlipZ");
+				this.changeableBlockList = [];
+				for(var e = 0; e < this.changeableBlockData.length; e++) {
+					this.changeableBlockList = this.changeableBlockList.concat(this.changeableBlockData[e]);
+				}
+			}
+			
 			for(var z = this.zs-1; z >= 0; z--) {
 			for(var y = 0; y < this.ys; y++) {
 			for(var x = 0; x < this.xs; x++) {
 				var t = this.getBlock(x, y, z);
 				if(blockRot) {
-					t = this.flipBlock(2, t);
+					t = this.flipBlock(t);
 				}
 				buffer.push(t);
 			}
@@ -4665,103 +4691,38 @@ Piece.prototype = {
 		}
 	},
 
-	rotationBlock: function(axisId, rot, block) {
-		switch(axisId) {
-			case 0:
-				if((var index = this.needRotationXBlock.indexOf(block.getHashCode())) === -1) {
-					return block;
-				}
-				var index1 = index >> 2;
-				var index2 = index % 4;
-				var hash = this.changeableBlockData.rotation.x[index1][(index2 + rot) % 4];
-				if(!hash) {
-					return block;
-				}else {
-					return Block.getInstance(hash);
-				}
-				break;
-
-			case 1:
-				if((var index = this.needRotationYBlock.indexOf(block.getHashCode())) === -1) {
-					return block;
-				}
-				var index1 = index >> 2;
-				var index2 = index % 4;
-				var hash = this.changeableBlockData.rotation.y[index1][(index2 + rot) % 4];
-				if(!hash) {
-					return block;
-				}else {
-					return Block.getInstance(hash);
-				}
-				break;
-
-			case 2:
-				if((var index = this.needRotationZBlock.indexOf(block.getHashCode())) === -1) {
-					return block;
-				}
-				var index1 = index >> 2;
-				var index2 = index % 4;
-				var hash = this.changeableBlockData.rotation.z[index1][(index2 + rot) % 4];
-				if(!hash) {
-					return block;
-				}else {
-					return Block.getInstance(hash);
-				}
-				break;
-
-			default:
-				toastL("[WARNING] " + block + " rotationBlock has undefined axisId: " + axisId);
-				return block; //continue
+	rotationBlock: function(rot, block) {
+		
+		var index;
+		
+		if((index = this.changeableBlockList.indexOf(block.getHashCode())) === -1) {
+			return block;
+		}
+		var index1 = index >> 2;
+		var index2 = index % 4;
+		var hash = this.changeableBlockData[index1][(index2 + rot) % 4];
+		
+		if(!hash) {
+			return block;
+		}else {
+			return BlockInstance(hash);
 		}
 	},
 
-	flipBlock: function(axidId, block) {
-		switch(axisId) {
-			case 0:
-				if((var index = this.needFlipXBlock.indexOf(block.getHashCode())) === -1) {
-					return block;
-				}
-				var index1 = index >> 2;
-				var index2 = index % 4;
-				var hash = this.changeableBlockData.flip.x[index1][(index2 + 1) % 2];
-				if(!hash) {
-					return block;
-				}else {
-					return Block.getInstance(hash);
-				}
-				break;
-
-			case 1:
-				if((var index = this.needFlipYBlock.indexOf(block.getHashCode())) === -1) {
-					return block;
-				}
-				var index1 = index >> 2;
-				var index2 = index % 4;
-				var hash = this.changeableBlockData.flip.y[index1][(index2 + 1) % 2];
-				if(!hash) {
-					return block;
-				}else {
-					return Block.getInstance(hash);
-				}
-				break;
-
-			case 2:
-				if((var index = this.needFlipZBlock.indexOf(block.getHashCode())) === -1) {
-					return block;
-				}
-				var index1 = index >> 2;
-				var index2 = index % 4;
-				var hash = this.changeableBlockData.flip.z[index1][(index2 + 1) % 2];
-				if(!hash) {
-					return block;
-				}else {
-					return Block.getInstance(hash);
-				}
-				break;
-
-			default:
-				toastL("[WARNING] " + block + " flipBlock has undefined axisId: " + axisId);
-				return block; //continue
+	flipBlock: function(block) {
+		var index;
+		
+		if((index = this.changeableBlockList.indexOf(block.getHashCode())) === -1) {
+			return block;
+		}
+		var index1 = index >> 2;
+		var index2 = index % 4;
+		var hash = this.changeableBlockData[index1][(index2 + 1) % 2];
+		
+		if(!hash) {
+			return block;
+		}else {
+			return BlockInstance(hash);
 		}
 	}
 }
@@ -5247,10 +5208,20 @@ function WorldEdit() {
 		Lang: 0,
 		ImageX: sg.ww,
 		ImageY: Math.floor(sg.wh/5),
-		BlockRotationOrFlip: 1,
-		ChangeableBlockData: {rotation: {x: [], y: [], z: []}, flip: {x: [], y: [], z: []}}
+		BlockRotationOrFlip: 1
 	}
 	this.setting = null;
+	this.defaultChangeableBlockData = {
+		VERSION: 1,
+		RotationX: [],
+		RotationY: [],
+		RotationZ: [],
+		FlipX: [],
+		FlipY: [],
+		FlipZ: []
+	}
+	this.changeableBlockData = null;
+	this.changeableBlockDataVersion = 1;
 	this.button = null;
 	this.menu = null;
 	this.currentMenu = null;
@@ -5600,6 +5571,7 @@ WorldEdit.prototype = {
 		//설정 불러오기
 		this.loading.setText("Load Setting...");
 		this.loadSetting();
+		this.loadChangeableBlockData();
 		//언어 설정
 		this.loadLang();
 		this.asynchEditSpeed = parseInt(this.setting.WorkSpeed);
@@ -5665,11 +5637,10 @@ WorldEdit.prototype = {
 		this.setting = sgUtils.io.loadJSON(this.settingFile);
 		try {
 			if(this.setting.Type !== "ModPE_Script_WorldEdit") {
-				throw new Error("");
+				throw new Error();
 			}
 		}catch(err) {
-			this.settingFile.delete();
-			this.saveSetting();
+			this.resetSetting();
 		}
 	},
 
@@ -5682,6 +5653,13 @@ WorldEdit.prototype = {
 		if(!sgUtils.io.saveJSON(this.settingFile, this.setting)) {
 			we_toast("[ERROR] Can't save setting File", 2, 5000, true);
 		}
+	},
+	
+	resetSetting: function() {
+		if(this.settingFile.exists()) {
+			this.settingFile.delete();
+		}
+		this.saveSetting();
 	},
 
 	get: function(article) {
@@ -5698,7 +5676,7 @@ WorldEdit.prototype = {
 		return value;
 	},
 
-	set: function(article, value, save) {
+	set: function(article, value, needSave) {
 		if(this.setting === null) {
 			this.loadSetting();
 		}
@@ -5706,7 +5684,7 @@ WorldEdit.prototype = {
 			//we_toast("[Warning] try to save undefined setting article: " + article, 2, 5000, true);
 		//}
 		this.setting[article] = value;
-		if(save) {
+		if(needSave) {
 			this.saveSetting();
 		}
 		return true;
@@ -5718,6 +5696,56 @@ WorldEdit.prototype = {
 			lang = sgUtils.io.loadMcpeSetting("game_language");
 		}else {
 			lang = this.langType[type];
+		}
+	},
+	
+	loadChangeableBlockData: function() {
+		if(!sgFiles.changeableBlockData.exists()) {
+			this.saveChangeableBlockData();
+			return;
+		}
+		this.changeableBlockData = sgUtils.io.loadJSON(sgFiles.changeableBlockData);
+		try {
+			if(!(this.changeableBlockData.VERSION >= this.changeableBlockDataVersion)) {
+				throw new Error();
+			}
+		}catch(err) {
+			this.resetChangeableBlockData();
+		}
+	},
+	
+	saveChangeableBlockData: function() {
+		if(!sgFiles.changeableBlockData.exists()) {
+			sgFiles.changeableBlockData.getParentFile().mkdirs();
+			sgFiles.changeableBlockData.createNewFile();
+			this.changeableBlockData = this.defaultChangeableBlockData;
+		}
+		if(!sgUtils.io.saveJSON(sgFiles.changeableBlockData, this.changeableBlockData)) {
+			we_toast("[ERROR] Can't save ChangeableBlockData File", 2, 5000, true);
+		}
+	},
+	
+	resetChangeableBlockData: function() {
+		if(sgFiles.changeableBlockData.exists()) {
+			sgFiles.changeableBlockData.delete();
+		}
+		this.savsChangeableBlockData();
+	},
+	
+	getChangeableBlockData: function(type) {
+		if(!this.changeableBlockData) {
+			this.loadChangeableBlockData();
+		}
+		return this.changeableBlockData[type];
+	},
+	
+	setChangeableBlockData: function(type, value, needSave) {
+		if(!this.changeableBlockData) {
+			this.loadChangeableBlockData();
+		}
+		this.changeableBlockData[type] = value;
+		if(needSave) {
+			this.saveChangeableBlockData();
 		}
 	},
 
@@ -5940,10 +5968,10 @@ WorldEdit.prototype = {
 			we_initEdit(parseInt(that.get("SafeMode")), parseInt(that.get("WorkType")), that.getLocalEditor(), EditType.PASTE);
 		});
 		mme_copy.addMenu(this.contentType.RUN_FUNCTION, msg("flip"), function() {
-			we_initEdit(parseInt(that.get("SafeMode")), parseInt(that.get("WorkType")), that.getLocalEditor(), EditType.FLIP, parseInt(that.get("BlockRotationOrFlip")));
+			we_initEdit(parseInt(that.get("SafeMode")), parseInt(that.get("WorkType")), that.getLocalEditor(), EditType.FLIP, undefined, parseInt(that.get("BlockRotationOrFlip")));
 		});
 		mme_copy.addMenu(this.contentType.RUN_FUNCTION, msg("rotation"), function() {
-			we_initEdit(parseInt(that.get("SafeMode")), parseInt(that.get("WorkType")), that.getLocalEditor(), EditType.ROTATION, parseInt(that.get("BlockRotationOrFlip")));
+			we_initEdit(parseInt(that.get("SafeMode")), parseInt(that.get("WorkType")), that.getLocalEditor(), EditType.ROTATION, undefined, parseInt(that.get("BlockRotationOrFlip")));
 		});
 		//도구메뉴 목록
 		mm_tool.addMenu(this.contentType.RUN_FUNCTION, msg("tool_pos"), function() {
@@ -6055,18 +6083,20 @@ WorldEdit.prototype = {
 			}
 		});
 		mm_setting.addMenu(this.contentType.RUN_FUNCTION, msg("edit_custom_changeable_block_data"), function() {
-			sgUtils.gui.buttonDialog(msg("select_type"), msg("cancel"), function(view) {
+			var dl;
+			dl = sgUtils.gui.buttonDialog(msg("select_type"), msg("cancel"), function(view) {
 				this.close();
 			}, null, null, [
 				[msg("rotation"), function() {
 					toast("TODO");
-					this.close();
+					dl.close();
 				}],
 				[msg("flip"), function() {
 					toast("TODO");
-					this.close();
+					dl.close();
 				}]
 			]);
+			dl.show();
 		});
 		//도움말 메뉴목록
     mm_help.addMenu(this.contentType.RUN_FUNCTION, msg("help_pos"), function(view) {
@@ -6507,6 +6537,22 @@ WorldEdit.prototype = {
 		}catch(err) {
 			showError(err);
 		}})
+	}
+}
+
+
+
+function we_changeableBlockDataDialog(listType) {
+}
+
+we_changeableBlockDataDialog.prototype = {
+	
+	toString: function() {
+		return "[object we_changeableBlockDataDialog]";
+	},
+	
+	changeableBlockData: function(ary) {
+		
 	}
 }
 
@@ -8390,7 +8436,7 @@ function we_edit(editType, editor, detail, blockRotationOrFlip) {
 				}
 			}
 		}
-		editor.setCopy(new Piece(ex-sx+1, ey-sy+1, ez-sz+1, sblocks, ));
+		editor.setCopy(new Piece(ex-sx+1, ey-sy+1, ez-sz+1, sblocks));
 		break;
 
 
