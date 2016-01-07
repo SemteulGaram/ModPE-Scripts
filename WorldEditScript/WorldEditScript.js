@@ -2344,7 +2344,7 @@ sgUtils.gui = {
 		this.margins = margins || [0, 0];
 		this.wd = null;
 
-		this.close = function() {
+		this.dismiss = function() {
 			uiThread(function() {try {
 				if(that.wd !== null && that.wd.isShowing()) {
 					that.wd.dismiss();
@@ -2352,6 +2352,10 @@ sgUtils.gui = {
 			}catch(err) {
 				sgError(err);
 			}});
+		}
+
+		this.close = function() {
+			this.dismiss();
 		}
 
 		this.show = function() {
@@ -4406,7 +4410,7 @@ Piece.prototype = {
 		var buffer = [];
 		switch(axis) {
 			case "x":
-			
+
 			if(blockRot) {
 				this.changeableBlockData = main.getChangeableBlockData("RotationX");
 				this.changeableBlockList = [];
@@ -4414,7 +4418,7 @@ Piece.prototype = {
 					this.changeableBlockList = this.changeableBlockList.concat(this.changeableBlockData[e]);
 				}
 			}
-			
+
 			switch(rot) {
 				case 1:
 				for(var y = this.ys-1; y >= 0; y--) {
@@ -4473,7 +4477,7 @@ Piece.prototype = {
 			break;
 
 			case "y":
-			
+
 			if(blockRot) {
 				this.changeableBlockData = main.getChangeableBlockData("RotationY");
 				this.changeableBlockList = [];
@@ -4481,7 +4485,7 @@ Piece.prototype = {
 					this.changeableBlockList = this.changeableBlockList.concat(this.changeableBlockData[e]);
 				}
 			}
-			
+
 			switch(rot) {
 				case 1:
 				for(var x = 0; x < this.xs; x++) {
@@ -4540,7 +4544,7 @@ Piece.prototype = {
 			break;
 
 			case "z":
-			
+
 			if(blockRot) {
 				this.changeableBlockData = main.getChangeableBlockData("RotationZ");
 				this.changeableBlockList = [];
@@ -4548,7 +4552,7 @@ Piece.prototype = {
 					this.changeableBlockList = this.changeableBlockList.concat(this.changeableBlockData[e]);
 				}
 			}
-			
+
 			switch(rot) {
 				case 1:
 				for(var z = 0; z < this.zs; z++) {
@@ -4615,7 +4619,7 @@ Piece.prototype = {
 		var buffer = [];
 		switch(axis) {
 			case "x":
-			
+
 			if(blockRot) {
 				this.changeableBlockData = main.getChangeableBlockData("FlipX");
 				this.changeableBlockList = [];
@@ -4623,7 +4627,7 @@ Piece.prototype = {
 					this.changeableBlockList = this.changeableBlockList.concat(this.changeableBlockData[e]);
 				}
 			}
-			
+
 			for(var z = 0; z < this.zs; z++) {
 			for(var y = 0; y < this.ys; y++) {
 			for(var x = this.xs-1; x >= 0; x--) {
@@ -4639,7 +4643,7 @@ Piece.prototype = {
 			break;
 
 			case "y":
-			
+
 			if(blockRot) {
 				this.changeableBlockData = main.getChangeableBlockData("FlipY");
 				this.changeableBlockList = [];
@@ -4647,7 +4651,7 @@ Piece.prototype = {
 					this.changeableBlockList = this.changeableBlockList.concat(this.changeableBlockData[e]);
 				}
 			}
-			
+
 			for(var z = 0; z < this.zs; z++) {
 			for(var y = this.ys-1; y >= 0; y--) {
 			for(var x = 0; x < this.xs; x++) {
@@ -4663,7 +4667,7 @@ Piece.prototype = {
 			break;
 
 			case "z":
-			
+
 			if(blockRot) {
 				this.changeableBlockData = main.getChangeableBlockData("FlipZ");
 				this.changeableBlockList = [];
@@ -4671,7 +4675,7 @@ Piece.prototype = {
 					this.changeableBlockList = this.changeableBlockList.concat(this.changeableBlockData[e]);
 				}
 			}
-			
+
 			for(var z = this.zs-1; z >= 0; z--) {
 			for(var y = 0; y < this.ys; y++) {
 			for(var x = 0; x < this.xs; x++) {
@@ -4692,16 +4696,16 @@ Piece.prototype = {
 	},
 
 	rotationBlock: function(rot, block) {
-		
+
 		var index;
-		
+
 		if((index = this.changeableBlockList.indexOf(block.getHashCode())) === -1) {
 			return block;
 		}
 		var index1 = index >> 2;
 		var index2 = index % 4;
 		var hash = this.changeableBlockData[index1][(index2 + rot) % 4];
-		
+
 		if(!hash) {
 			return block;
 		}else {
@@ -4711,14 +4715,14 @@ Piece.prototype = {
 
 	flipBlock: function(block) {
 		var index;
-		
+
 		if((index = this.changeableBlockList.indexOf(block.getHashCode())) === -1) {
 			return block;
 		}
 		var index1 = index >> 2;
 		var index2 = index % 4;
 		var hash = this.changeableBlockData[index1][(index2 + 1) % 2];
-		
+
 		if(!hash) {
 			return block;
 		}else {
@@ -5654,7 +5658,7 @@ WorldEdit.prototype = {
 			we_toast("[ERROR] Can't save setting File", 2, 5000, true);
 		}
 	},
-	
+
 	resetSetting: function() {
 		if(this.settingFile.exists()) {
 			this.settingFile.delete();
@@ -5698,7 +5702,7 @@ WorldEdit.prototype = {
 			lang = this.langType[type];
 		}
 	},
-	
+
 	loadChangeableBlockData: function() {
 		if(!sgFiles.changeableBlockData.exists()) {
 			this.saveChangeableBlockData();
@@ -5713,7 +5717,7 @@ WorldEdit.prototype = {
 			this.resetChangeableBlockData();
 		}
 	},
-	
+
 	saveChangeableBlockData: function() {
 		if(!sgFiles.changeableBlockData.exists()) {
 			sgFiles.changeableBlockData.getParentFile().mkdirs();
@@ -5724,21 +5728,21 @@ WorldEdit.prototype = {
 			we_toast("[ERROR] Can't save ChangeableBlockData File", 2, 5000, true);
 		}
 	},
-	
+
 	resetChangeableBlockData: function() {
 		if(sgFiles.changeableBlockData.exists()) {
 			sgFiles.changeableBlockData.delete();
 		}
 		this.savsChangeableBlockData();
 	},
-	
+
 	getChangeableBlockData: function(type) {
 		if(!this.changeableBlockData) {
 			this.loadChangeableBlockData();
 		}
 		return this.changeableBlockData[type];
 	},
-	
+
 	setChangeableBlockData: function(type, value, needSave) {
 		if(!this.changeableBlockData) {
 			this.loadChangeableBlockData();
@@ -6542,17 +6546,117 @@ WorldEdit.prototype = {
 
 
 
-function we_changeableBlockDataDialog(listType) {
+//기존틀에 끼워 맞추느라고 코드가 상당히 엉망입니다
+//해석에 주의를 요합니다
+function we_changeableBlockDataDialog(parent, name, listType) {
+	this.super = parent;
+	this.name = name;
+	this.listType = listType;
+	this.btns = null;
+	this.dl = null;
 }
 
 we_changeableBlockDataDialog.prototype = {
-	
+
 	toString: function() {
 		return "[object we_changeableBlockDataDialog]";
 	},
-	
-	changeableBlockData: function(ary) {
-		
+
+	build: function() {
+		var that = this;
+		var list = this.super.getChangeableBlockData(this.listType);
+		//버튼다이얼로그에 넘겨줄 데이터 생성
+		this.btns = [];
+		for(var e = 0; e < list.length; e++) {
+			this.btns.push([this.blockHashCodeListToNameList(list[e]), function(view) {
+				var index = view.getTag()[0];
+				this.confirmDelete(view.getText() + "", index);
+			}]);
+		}
+		//다이얼로그
+		this.dl = sgUtils.gui.buttonDialog(name, msg("close"), function(view) {this.dismiss()}, msg("add"), function(view) {
+			sgUtils.data.useItemQueue = {
+				type: this.listType,
+				data: [],
+				//블럭을 다 선택하고 나서 행할것
+				func: function() {
+					var tmp = that.super.getChangeableBlockData(sgUtils.data.useItemQueue.type);
+					tmp.push(that.blockListToHashCodeList(sgUtils.data.useItemQueue.data));
+					that.super.setChangeableBlockData(sgUtils.data.useItemQueue.type, tmp, true);
+				}
+			}
+			this.dismiss();
+		}, btns);
+	},
+
+	isShowing: function() {
+		if(this.dl === null) {
+			return false;
+		}
+		return this.dl.isShowing();
+	},
+
+	show: function() {
+		if(this.dl === null) {
+			this.build();
+		}
+		this.dl.show();
+	},
+
+	dismiss: function() {
+		if(this.dl === null) {
+			return;
+		}
+		this.dl.dismiss();
+	},
+
+	refresh: function() {
+		var show = this.isShowing();
+		if(show) {
+			this.dismiss();
+		}
+		this.build();
+		if(show) {
+			this.show();
+		}
+	},
+
+	blockHashCodeListToNameList: function(data) {
+		var name = "";
+		for(var e = 0; e < data.length; e++) {
+			if(name !== "") {
+				name += "/";
+			}
+			var hash = data[e];
+			var name += " " + (hash >> 4) + ":" + (hash % 16) + " ";
+		}
+		return name;
+	},
+
+	blockListToHashCodeList: function(ary) {
+		var ary = [];
+		for(var e = 0; e < ary.length; e++) {
+			ary.push(ary[e].getHashCode());
+		}
+		return ary;
+	},
+
+	comfirmDelete: function(name, index) {
+		var that = this;
+		var dl = new sgUtils.gui.dislog(msg("warning"), sgUtils.gui.mcFastText(msg("warn_delete") + "\n\n" + name, sg.px*0x10, false, sgColors.re200, null, null, null, [sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4], null), msg("cancel"), function(view) {
+			this.dismiss();
+		}, msg("delete"), function(view) {
+			that.deleteIndex(index);
+			that.refresh();
+			this.dismiss();
+		});
+		dl.show();
+	},
+
+	deleteIndex: function(index) {
+		var list = this.super.getChangeableBlockData(this.listType);
+		list.splice(index, 1);
+		this.super.setChangeableBlockData(this.listType, list, true);
 	}
 }
 
@@ -9228,7 +9332,68 @@ function modTick() {
 	}
 }
 
+sgUtils.data.useItemQueue = null;
 function useItem(x, y, z, itemId, blockId, side) {
+	if(sgUtils.data.useItemQueue !== null) {
+		switch(sgUtils.data.useItemQueue.type) {
+			case "RotationX":
+			case "RotationY":
+			case "RotationZ":
+				preventDefault();
+				sgUtils.data.useItemQueue.data.push(new Block(blockId, Level.getData(x, y, z));
+				switch(sgUtils.data.useItemQueue.data.length) {
+					case 1:
+						msg("msg_select_next_changeable_block", true, Player.getName(Playe.getName()), [["d", "0"], ["c", "90"]]);
+						break;
+					case 2:
+						msg("msg_select_next_changeable_block", true, Player.getName(Playe.getName()), [["d", "90"], ["c", "180"]]);
+						break;
+					case 3:
+						msg("msg_select_next_changeable_block", true, Player.getName(Playe.getName()), [["d", "180"], ["c", "270"]]);
+						break;
+					case 4:
+						sgUtils.data.useItemQueue.func();
+						msg("msg_finish_select_changeable_block", true, Player.getName(Playe.getName()), [["r", sgUtils.data.useItemQueue.data + ""]]);
+						sgUtils.data.useItemQueue = null;
+						break;
+					default:
+						msg("warn_unknown_error", true, Player.getName(Playe.getName()));
+						sgUtils.data.useItemQueue = null;
+				}
+				return;
+				break;
+
+				case "FlipX":
+				case "FlipY":
+				case "FlipZ":
+				preventDefault();
+				sgUtils.data.useItemQueue.data.push(new Block(blockId, Level.getData(x, y, z));
+				switch(sgUtils.data.useItemQueue.data.length) {
+					case 1:
+						msg("msg_select_next_changeable_block", true, Player.getName(Playe.getName()), [["d", msg("normal")], ["c", msg("flip")]]);
+						break;
+					case 2:
+						sgUtils.data.useItemQueue.func();
+						msg("msg_finish_select_changeable_block", true, Player.getName(Playe.getName()), [["r", sgUtils.data.useItemQueue.data + ""]]);
+						sgUtils.data.useItemQueue = null;
+						break;
+					default:
+						msg("warn_unknown_error", true, Player.getName(Playe.getName()));
+						sgUtils.data.useItemQueue = null;
+				}
+				return;
+				break;
+
+			default:
+				preventDefault();
+				try {
+					throw new Error("Unknown useItemType: " + sgUtils.data.useItemQueue.type);
+				}catch(err) {
+					sgError(err);
+				}
+				return;
+		}
+	}
 	if(itemId === 271 && Player.getCarriedItem() === 271) {
 		if(Math.sqrt(Math.pow((Player.getX() - x), 2) + Math.pow((Player.getY() - y), 2) + Math.pow((Player.getZ() - z), 2)) > 12) {
 			var np = sgUtils.modPE.playerExtra.getNearPlayers(x, y, z);

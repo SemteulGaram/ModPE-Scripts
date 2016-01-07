@@ -2396,7 +2396,7 @@ sgUtils.gui = {
 		this.margins = margins || [0, 0];
 		this.wd = null;
 
-		this.close = function() {
+		this.dismiss = function() {
 			uiThread(function() {try {
 				if(that.wd !== null && that.wd.isShowing()) {
 					that.wd.dismiss();
@@ -2404,6 +2404,10 @@ sgUtils.gui = {
 			}catch(err) {
 				sgError(err);
 			}});
+		}
+
+		this.close = function() {
+			this.dismiss();
 		}
 
 		this.show = function() {
