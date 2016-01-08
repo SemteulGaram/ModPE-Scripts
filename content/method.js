@@ -2395,6 +2395,14 @@ sgUtils.gui = {
 		this.gravity = gravity || Gravity.CENTER;
 		this.margins = margins || [0, 0];
 		this.wd = null;
+		
+		this.isShowing = function() {
+			if(that.wd !== null && that.wd.isShowing()) {
+				return true;
+			}else {
+				return false;
+			}
+		}
 
 		this.dismiss = function() {
 			uiThread(function() {try {
@@ -2525,6 +2533,7 @@ sgUtils.gui = {
 
 		for(var e = 0; e < buttons.length; e++) {
 			var btn = new sgUtils.gui.button(buttons[e][0], sg.px*0x10, false, sgColors.lg800, null, Gravity.CENTER, null, sg.mp, sg.wc, [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2], null, underlineDrawable.ninePatch(), null, buttons[e][1], null);
+			btn.setTag([e, buttons[e][2]]);
 			layout.addView(btn);
 		}
 
