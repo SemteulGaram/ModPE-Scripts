@@ -2343,6 +2343,14 @@ sgUtils.gui = {
 		this.gravity = gravity || Gravity.CENTER;
 		this.margins = margins || [0, 0];
 		this.wd = null;
+		
+		this.isShowing = function() {
+			if(that.wd !== null && that.wd.isShowing()) {
+				return true;
+			}else {
+				return false;
+			}
+		}
 
 		this.dismiss = function() {
 			uiThread(function() {try {
@@ -2473,6 +2481,7 @@ sgUtils.gui = {
 
 		for(var e = 0; e < buttons.length; e++) {
 			var btn = new sgUtils.gui.button(buttons[e][0], sg.px*0x10, false, sgColors.lg800, null, Gravity.CENTER, null, sg.mp, sg.wc, [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2], null, underlineDrawable.ninePatch(), null, buttons[e][1], null);
+			btn.setTag([e, buttons[e][2]]);
 			layout.addView(btn);
 		}
 
@@ -4575,7 +4584,7 @@ Piece.prototype = {
 				case 2:
 				for(var z = 0; z < this.zs; z++) {
 				for(var y = this.ys-1; y >= 0; y--) {
-				for(var x = this.xs-1; x >= p; x--) {
+				for(var x = this.xs-1; x >= 0; x--) {
 					var t = this.getBlock(x, y, z);
 					if(blockRot) {
 						t = this.rotationBlock(rot, t);
@@ -5178,7 +5187,11 @@ var messageContainer = {
 		warn_not_image: " 대상은 이미지가 아닙니다",
 		warn_not_support_on_this_device: "이 기기에서는 지원되지 않습니다",
 		tool_pos: "위치지정 도구",
-		tool_image_viewer: "이미지 뷰어"
+		tool_image_viewer: "이미지 뷰어"/*,
+		
+		msg_select_next_changeable_block: "",
+		msg_finish_select_changeable_block: "",
+		warn_unknown_error: ""*/
 	}
 }
 
@@ -5217,9 +5230,9 @@ function WorldEdit() {
 	this.setting = null;
 	this.defaultChangeableBlockData = {
 		VERSION: 1,
-		RotationX: [],
-		RotationY: [],
-		RotationZ: [],
+		RotationX: [[1072,null,1076,null],[1074,1075,1079,1078],[1073,null,1077,null],[848,null,852,null],[850,851,855,854],[849,null,853,null],[2144,null,2148,null],[2146,2147,2151,2150],[2145,null,2149,null],[2160,null,2164,null],[2162,2163,2167,2166],[2161,null,2165,null],[2176,null,2180,null],[2178,2179,2183,2182],[2177,null,2181,null],[2608,null,2612,null],[2610,2611,2615,2614],[2609,null,2613,null],[2624,null,2628,null],[2626,2627,2631,2630],[2625,null,2629,null],[1728,null,1732,null],[1730,1731,1735,1734],[1729,null,1733,null],[2048,null,2052,null],[2050,2051,2055,2054],[2049,null,2053,null],[1744,null,1748,null],[1746,1747,1751,1750],[1745,null,1749,null],[1824,null,1828,null],[1826,1827,1831,1830],[1825,null,1829,null],[2496,null,2500,null],[2498,2499,2503,2502],[2497,null,2501,null],[704,null,712,null],[707,null,715,null],[2528,null,2536,null],[2529,null,2537,null],[2530,null,2538,null],[2531,null,2539,null],[2532,null,2540,null],[2533,null,2541,null],[708,null,716,null],[705,null,713,null],[709,null,717,null],[710,null,718,null],[711,null,719,null],[1042,null,1043,null],[1697,null,1700,null],[1539,null,1542,null],[1547,null,1550,null],[1537,null,1541,null],[1545,null,1549,null],[1538,null,1543,null],[1546,null,1551,null],[1536,null,1540,null],[1544,null,1548,null],[2675,null,2678,null],[2683,null,2686,null],[2673,null,2677,null],[2681,null,2685,null],[2674,null,2679,null],[2682,null,2687,null],[2672,null,2676,null],[2680,null,2684,null],[866,null,867,null],[2338,null,2339,null],[978,null,979,null],[994,null,995,null],[2720,2728,2720,2728],[272,280,272,280],[273,281,273,281],[274,282,274,282],[275,283,275,283],[2592,2600,2592,2600],[2593,2601,2593,2601],[2482,2490,2482,2490],[2290,2289,2291,2288],[1234,1233,1235,1232],[1108,1109,1107,1111],[1116,1117,1115,1119],[1108,1110,1107,1104],[1116,1118,1115,1112]],
+		RotationY: [[1072,1074,1073,1075],[848,850,849,851],[2144,2146,2145,2147],[2160,2162,2161,2163],[2176,2178,2177,2179],[2608,2610,2609,2611],[2624,2626,2625,2627],[1728,1730,1729,1731],[2048,2050,2049,2051],[1744,1746,1745,1747],[1824,1826,1825,1827],[2496,2498,2497,2499],[1044,1042,1045,1043],[1704,1697,1698,1700],[1024,1025,1026,1027],[1028,1029,1030,1031],[3088,3089,3090,3091],[3092,3093,3094,3095],[3104,3105,3106,3107],[3108,3109,3110,3111],[3120,3121,3122,3123],[3124,3125,3126,3127],[3136,3137,3138,3139],[3140,3141,3142,3143],[3152,3153,3154,3155],[3156,3157,3158,3159],[1136,1137,1138,1139],[1140,1141,1142,1143],[1715,1712,1713,1714],[1719,1716,1717,1718],[2931,2928,2929,2930],[2935,2932,2933,2934],[2947,2944,2945,2946],[2951,2948,2949,2950],[2963,2960,2961,2962],[2967,2964,2965,2966],[2995,2992,2993,2994],[2999,2996,2997,2998],[2979,2976,2977,2978],[2983,2980,2981,2982],[419,416,417,418],[427,424,425,426],[868,866,869,867],[2340,2338,2341,2339],[980,978,981,979],[996,994,997,995],[2320,2321,2322,2323],[2324,2325,2326,2327],[2328,2329,2330,2331],[1377,1378,1379,1376],[1457,1458,1459,1456],[1012,1016,1020,1008],[1011,1015,1019,1023],[1010,1014,1018,1022],[1009,1013,1017,1021],[1056,1057,1056,1057],[1063,1064,1065,1062],[432,433,432,433],[440,441,440,441],[448,449,448,449],[456,457,456,457],[2016,2017,2016,2017],[2024,2025,2024,2025],[1110,1109,1110,1109],[1118,1117,1118,1117],[276,280,276,280],[277,281,277,281],[278,282,278,282],[279,283,279,283],[2596,2600,2596,2600],[2597,2601,2597,2601],[2724,2728,2724,2728],[2486,2490,2486,2490],[1061,1059,1060,1058],[437,435,436,434],[445,443,444,442],[453,451,452,450],[461,459,460,16],[2021,2019,2020,2018],[2029,2027,2028,2026],[2292,2290,2293,2291],[1236,1234,1237,1235],[1218,1220,1217,1219],[1202,1204,1201,1203],[2097,2098,2099,2096],[802,804,801,803],[1537,1539,1536,1538],[1545,1547,1544,1546],[1541,1543,1540,1542],[1549,1551,1548,1550],[2673,2675,2672,2674],[2681,2683,2680,2682],[2677,2679,2676,2678],[2685,2687,2684,2686],[1092,1090,1093,1091],[2308,2306,2309,2307]],
+		RotationZ: [[1074,null,1078,null],[1073,1072,1076,1077],[1075,null,1079,null],[850,null,854,null],[849,848,852,853],[851,null,855,null],[2146,null,2150,null],[2145,2144,2148,2149],[2147,null,2151,null],[2162,null,2166,null],[2161,2160,2164,2165],[2163,null,2167,null],[2178,null,2182,null],[2177,2176,2180,2181],[2179,null,2183,null],[2610,null,2614,null],[2609,2608,2612,2613],[2611,null,2615,null],[2626,null,2630,null],[2625,2624,2628,2629],[2627,null,2631,null],[1730,null,1734,null],[1729,1728,1732,1733],[1731,null,1735,null],[2050,null,2054,null],[2049,2048,2052,2053],[2051,null,2055,null],[1746,null,1750,null],[1745,1744,1748,1749],[1747,null,1751,null],[1826,null,1830,null],[1825,1824,1828,1829],[1827,null,1831,null],[2498,null,2502,null],[2497,2496,2500,2501],[2499,null,2503,null],[704,null,712,null],[707,null,715,null],[2528,null,2536,null],[2529,null,2537,null],[2530,null,2538,null],[2531,null,2539,null],[2532,null,2540,null],[2533,null,2541,null],[708,null,716,null],[705,null,713,null],[709,null,717,null],[710,null,718,null],[711,null,719,null],[1045,null,1044,null],[1698,null,1704,null],[null,null,null,null],[1536,null,1541,null],[1544,null,1549,null],[1539,null,1543,null],[1547,null,1551,null],[1537,null,1540,null],[1545,null,1548,null],[1538,null,1542,null],[1546,null,1550,null],[2672,null,2677,null],[2680,null,2685,null],[2675,null,2679,null],[2683,null,2687,null],[2673,null,2676,null],[2681,null,2684,null],[2674,null,2678,null],[2682,null,2686,null],[869,null,868,null],[2341,null,2340,null],[981,null,980,null],[997,null,996,null],[2720,2724,2720,2724],[272,276,272,276],[273,277,273,277],[274,278,274,278],[275,279,275,279],[2592,2596,2592,2596],[2593,2597,2593,2597],[2482,2486,2482,2486],[2293,2289,2292,2288],[1237,1233,1236,1232],[1113,1118,1114,1112],[1105,1109,1106,1111],[1113,1117,1114,1119]],
 		FlipX: [],
 		FlipY: [],
 		FlipZ: []
@@ -6087,17 +6100,41 @@ WorldEdit.prototype = {
 			}
 		});
 		mm_setting.addMenu(this.contentType.RUN_FUNCTION, msg("edit_custom_changeable_block_data"), function() {
-			var dl;
+			var dl, dl2, type;
 			dl = sgUtils.gui.buttonDialog(msg("select_type"), msg("cancel"), function(view) {
 				this.close();
 			}, null, null, [
 				[msg("rotation"), function() {
-					toast("TODO");
+					type = "Rotation";
+					dl2.show();
 					dl.close();
 				}],
 				[msg("flip"), function() {
-					toast("TODO");
+					type = "Flip";
+					dl2.show();
 					dl.close();
+				}]
+			]);
+			dl2 = sgUtils.gui.buttonDialog(msg("select_type"), msg("cancel"), function(view) {
+				this.close();
+			}, null, null, [
+				["X", function() {
+					type += "X";
+					var dl3 = new we_changeableBlockDataDialog(that, type, type);
+					dl3.show();
+					dl2.close();
+				}],
+				["Y", function() {
+					type += "Y";
+					var dl3 = new we_changeableBlockDataDialog(that, type, type);
+					dl3.show();
+					dl2.close();
+				}],
+				["Z", function() {
+					type += "Z";
+					var dl3 = new we_changeableBlockDataDialog(that, type, type);
+					dl3.show();
+					dl2.close();
 				}]
 			]);
 			dl.show();
@@ -6570,13 +6607,13 @@ we_changeableBlockDataDialog.prototype = {
 		for(var e = 0; e < list.length; e++) {
 			this.btns.push([this.blockHashCodeListToNameList(list[e]), function(view) {
 				var index = view.getTag()[0];
-				this.confirmDelete(view.getText() + "", index);
+				that.comfirmDelete(view.getText() + "", index);
 			}]);
 		}
 		//다이얼로그
-		this.dl = sgUtils.gui.buttonDialog(name, msg("close"), function(view) {this.dismiss()}, msg("add"), function(view) {
+		this.dl = sgUtils.gui.buttonDialog(this.name, msg("close"), function(view) {this.dismiss()}, msg("add"), function(view) {
 			sgUtils.data.useItemQueue = {
-				type: this.listType,
+				type: that.listType,
 				data: [],
 				//블럭을 다 선택하고 나서 행할것
 				func: function() {
@@ -6585,8 +6622,9 @@ we_changeableBlockDataDialog.prototype = {
 					that.super.setChangeableBlockData(sgUtils.data.useItemQueue.type, tmp, true);
 				}
 			}
+			msg("msg_touch_block", true, Player.getName(Player.getEntity()));
 			this.dismiss();
-		}, btns);
+		}, this.btns);
 	},
 
 	isShowing: function() {
@@ -6628,22 +6666,30 @@ we_changeableBlockDataDialog.prototype = {
 				name += "/";
 			}
 			var hash = data[e];
-			var name += " " + (hash >> 4) + ":" + (hash % 16) + " ";
+			if(hash) {
+				name += " " + (hash >> 4) + ":" + (hash % 16) + " ";
+			}else {
+				name += " X "
+			}
 		}
 		return name;
 	},
 
 	blockListToHashCodeList: function(ary) {
-		var ary = [];
+		var hash = [];
 		for(var e = 0; e < ary.length; e++) {
-			ary.push(ary[e].getHashCode());
+			if(ary[e]) {
+				hash.push(ary[e].getHashCode());
+			}else {
+				hash.push(null);
+			}
 		}
-		return ary;
+		return hash;
 	},
 
 	comfirmDelete: function(name, index) {
 		var that = this;
-		var dl = new sgUtils.gui.dislog(msg("warning"), sgUtils.gui.mcFastText(msg("warn_delete") + "\n\n" + name, sg.px*0x10, false, sgColors.re200, null, null, null, [sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4], null), msg("cancel"), function(view) {
+		var dl = new sgUtils.gui.dialog(msg("warning"), sgUtils.gui.mcFastText(msg("warn_delete") + "\n\n" + name, sg.px*0x10, false, sgColors.re800, null, null, null, [sg.px*0x4, sg.px*0x4, sg.px*0x4, sg.px*0x4], null), msg("cancel"), function(view) {
 			this.dismiss();
 		}, msg("delete"), function(view) {
 			that.deleteIndex(index);
@@ -9340,45 +9386,49 @@ function useItem(x, y, z, itemId, blockId, side) {
 			case "RotationY":
 			case "RotationZ":
 				preventDefault();
-				sgUtils.data.useItemQueue.data.push(new Block(blockId, Level.getData(x, y, z));
+				if(itemId === 271) {
+					sgUtils.data.useItemQueue.data.push(new Block(blockId, Level.getData(x, y, z)));
+				}else {
+					sgUtils.data.useItemQueue.data.push(null);
+				}
 				switch(sgUtils.data.useItemQueue.data.length) {
 					case 1:
-						msg("msg_select_next_changeable_block", true, Player.getName(Playe.getName()), [["d", "0"], ["c", "90"]]);
+						msg("msg_select_next_changeable_block", true, undefined, [["d", "0"], ["c", "90"]]);
 						break;
 					case 2:
-						msg("msg_select_next_changeable_block", true, Player.getName(Playe.getName()), [["d", "90"], ["c", "180"]]);
+						msg("msg_select_next_changeable_block", true, undefined, [["d", "90"], ["c", "180"]]);
 						break;
 					case 3:
-						msg("msg_select_next_changeable_block", true, Player.getName(Playe.getName()), [["d", "180"], ["c", "270"]]);
+						msg("msg_select_next_changeable_block", true, undefined, [["d", "180"], ["c", "270"]]);
 						break;
 					case 4:
 						sgUtils.data.useItemQueue.func();
-						msg("msg_finish_select_changeable_block", true, Player.getName(Playe.getName()), [["r", sgUtils.data.useItemQueue.data + ""]]);
+						msg("msg_finish_select_changeable_block", true, undefined, [["r", sgUtils.data.useItemQueue.data + ""]]);
 						sgUtils.data.useItemQueue = null;
 						break;
 					default:
-						msg("warn_unknown_error", true, Player.getName(Playe.getName()));
+						msg("warn_unknown_error", true, undefined);
 						sgUtils.data.useItemQueue = null;
 				}
 				return;
 				break;
 
-				case "FlipX":
-				case "FlipY":
-				case "FlipZ":
+			case "FlipX":
+			case "FlipY":
+			case "FlipZ":
 				preventDefault();
-				sgUtils.data.useItemQueue.data.push(new Block(blockId, Level.getData(x, y, z));
+				sgUtils.data.useItemQueue.data.push(new Block(blockId, Level.getData(x, y, z)));
 				switch(sgUtils.data.useItemQueue.data.length) {
 					case 1:
-						msg("msg_select_next_changeable_block", true, Player.getName(Playe.getName()), [["d", msg("normal")], ["c", msg("flip")]]);
+						msg("msg_select_next_changeable_block", true, undefined, [["d", msg("normal")], ["c", msg("flip")]]);
 						break;
 					case 2:
 						sgUtils.data.useItemQueue.func();
-						msg("msg_finish_select_changeable_block", true, Player.getName(Playe.getName()), [["r", sgUtils.data.useItemQueue.data + ""]]);
+						msg("msg_finish_select_changeable_block", true, undefined, [["r", sgUtils.data.useItemQueue.data + ""]]);
 						sgUtils.data.useItemQueue = null;
 						break;
 					default:
-						msg("warn_unknown_error", true, Player.getName(Playe.getName()));
+						msg("warn_unknown_error", true);
 						sgUtils.data.useItemQueue = null;
 				}
 				return;
