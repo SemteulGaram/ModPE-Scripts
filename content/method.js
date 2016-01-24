@@ -174,8 +174,8 @@ function showError(e) {
 
 
 function sgError(err) {try {
-	if(sgUtils.data.error === undefined) {
-		sgUtils.data.error = [];
+	if(sgUtils.D.error === undefined) {
+		sgUtils.D.error = [];
 
 		var layout = new sg.rl(ctx);
 		layout.setBackgroundColor(sgColors.re500);
@@ -188,7 +188,7 @@ function sgError(err) {try {
 		title.setLayoutParams(titleP);
 
 		var titleExit = sgUtils.gui.button("Ignore", sg.px*0x10, false, sgColors.re500, null, Gravity.CENTER, null, null, null, [sg.px*0x2, sg.px*0x2, sg.px*0x2, sg.px*0x2], null, sgColors.re50, null, function(view) {
-			sgUtils.data.errorLayout[0].dismiss();
+			sgUtils.D.errorLayout[0].dismiss();
 		});
 		titleExit.setId(sgUtils.math.randomId());
 		var titleExitP = new sg.rlp(sg.px*0x40, sg.mp);
@@ -220,16 +220,16 @@ function sgError(err) {try {
 
 		var wd = new PopupWindow(layout, sg.wc, sg.wc, false);
 
-		sgUtils.data.errorLayout = [wd, titleText, contentText];
+		sgUtils.D.errorLayout = [wd, titleText, contentText];
 	}
-	sgUtils.data.error.push(err);
+	sgUtils.D.error.push(err);
 
 	uiThread(function() {try {
-		var index = sgUtils.data.error.length;
-		sgUtils.data.errorLayout[1].setText(NAME + " Error " + index);
-		sgUtils.data.errorLayout[2].setText(getSgErrorMsg(10) + '');
-		if(!sgUtils.data.errorLayout[0].isShowing()) {
-			sgUtils.data.errorLayout[0].showAtLocation(sg.dv, Gravity.CENTER, 0, 0);
+		var index = sgUtils.D.error.length;
+		sgUtils.D.errorLayout[1].setText(NAME + " Error " + index);
+		sgUtils.D.errorLayout[2].setText(getSgErrorMsg(10) + '');
+		if(!sgUtils.D.errorLayout[0].isShowing()) {
+			sgUtils.D.errorLayout[0].showAtLocation(sg.dv, Gravity.CENTER, 0, 0);
 		}
 	}catch(err) {
 		toast(err + '');
@@ -240,13 +240,13 @@ function sgError(err) {try {
 
 function getSgErrorMsg(count) {
 	var str = "";
-	var index = sgUtils.data.error.length;
+	var index = sgUtils.D.error.length;
 
 	for(var e = 0; e < count; e++) {
 		if(index < 1) {
 			break;
 		}
-		var err = sgUtils.data.error[index - 1];
+		var err = sgUtils.D.error[index - 1];
 		if(err instanceof Error) {
 			str += "No." + index + " [JavaScript] " + err.name + "\n" + err.message + "\n" + err.stack + "\n\n";
 		}else if(err instanceof java.lang.Error) {
@@ -493,16 +493,16 @@ var sgUtils =  {
 		return "[object sgUtils]";
 	},
 
-	data: {}//Pointer storage
-	//sgUtils.data["progress"] = value;
+	D: {}//Pointer storage
+	//sgUtils.D["progress"] = value;
 }
 
 sgUtils.P = {
-	
+
 	toString: function() {
 		return "[object sgUtils - P]";
 	},
-	
+
 	isSet: function(var1) {
 		return var1 !== null && var1 !== undefined;
 	}
@@ -523,8 +523,8 @@ sgUtils.io = {
 	 * @param {(File|String|InputStream)} input
 	 * @param {(File|String)} output
 	 * @param {boolean} mkDir
-	 * @param getMax - sgUtils.data pointer
-	 * @param getProgress - sgUtils.data pointer
+	 * @param getMax - sgUtils.D pointer
+	 * @param getProgress - sgUtils.D pointer
 	 * @return {true} success
 	 */
 	copyFile: function(input, output, mkDir, getMax, gerProgress) {
@@ -558,16 +558,16 @@ sgUtils.io = {
 		var bos = new BufferdOutputStream(fos);
 		var buffer = new sg.ai(Byte.TYPE, 4096);
 		if(getMax !== null && getMax !== undefined) {
-			sgUtils.data[getMax] = input.available();
+			sgUtils.D[getMax] = input.available();
 		}
 		if(getProgress !== null && getProgress !== undefined) {
-			sgUtils.data[getProgress] = 0;
+			sgUtils.D[getProgress] = 0;
 		}
 		var len;
 		while((len = bis.read(buffer)) != null) {
 			bos.write(buffer, 0, len);
 		 if(getProgress !== null && getProgress !== undefined) {
-				sgUtils.data[getProgress] += parseInt(len);
+				sgUtils.D[getProgress] += parseInt(len);
 			}
 		}
 		input.close();
@@ -844,10 +844,10 @@ sgUtils.io = {
 	 * @since 2015-03-08
 	 * @param {(String|File)} inputPath - 압축을 할 파일 및 폴더
 	 * @param {(String|File)} outputPath - 출력할 zip 파일
-	 * @param {(String|null|undefined)} getTotalMax - 전체 파일의 갯수 sgUtils.data pointer
-	 * @param {(String|null|undefined)} getTotalProgress - 작업완료한 파일의 갯수 sgUtils.data pointer
-	 * @param {(String|null|undefined)} getCrtMax - 현재 작업중인 파일의 크기 sgUtils.data pointer
-	 * @param {(String|null|undefined)} getCrtProgress - 현재 진행중인 파일의 작업완료 크기 sgUtils.data pointer
+	 * @param {(String|null|undefined)} getTotalMax - 전체 파일의 갯수 sgUtils.D pointer
+	 * @param {(String|null|undefined)} getTotalProgress - 작업완료한 파일의 갯수 sgUtils.D pointer
+	 * @param {(String|null|undefined)} getCrtMax - 현재 작업중인 파일의 크기 sgUtils.D pointer
+	 * @param {(String|null|undefined)} getCrtProgress - 현재 진행중인 파일의 작업완료 크기 sgUtils.D pointer
 	 * @return {Int} - [
 	 * 	1 = 성공
 	 * 	0 = 입력경로에 파일이 존재하지 않음
@@ -906,10 +906,10 @@ sgUtils.io = {
 		//모든 파일을 등록
 		getFiles(inputPath);
 		if(getTotalMax !== undefined && getTotalMax !== null) {
-			sgUtils.data[getTotalMax] = fileList.length;
+			sgUtils.D[getTotalMax] = fileList.length;
 		}
 		if(getTotalProgress !== undefined && getTotalProgress !== null) {
-			sgUtils.data[getTotalProgress] = 0;
+			sgUtils.D[getTotalProgress] = 0;
 		}
 
 		//압축 개시
@@ -922,10 +922,10 @@ sgUtils.io = {
 			zos.putNextEntry(ze);
 			var fis = new FileInputStream(fileList[e]);
 			if(getCrtMax !== undefined && getCrtMax !== null) {
-				sgUtils.data[getCrtMax] = fis.available();
+				sgUtils.D[getCrtMax] = fis.available();
 			}
 			if(getCrtProgress !== undefined && getCrtProgress !== null) {
-				sgUtils.data[getCrtProgress] = 0;
+				sgUtils.D[getCrtProgress] = 0;
 			}
 			//1024바이트씩 읽어오기
 			var buffer = sg.ai(Byte.TYPE, 1024);
@@ -934,14 +934,14 @@ sgUtils.io = {
 				//ZipOutputStream에다가 파일 쓰기
 				zos.write(buffer, 0, content);
 				if(getCrtProgress !== undefined && getCrtProgress !== null) {
-					sgUtils.data[getCrtProgress] += parseInt(content);
+					sgUtils.D[getCrtProgress] += parseInt(content);
 				}
 			}
 			//다음 파일로
 			zos.closeEntry();
 			fis.close();
 			if(getTotalProgress !== undefined && getTotalProgress !== null) {
-				sgUtils.data[getTotalProgress]++;
+				sgUtils.D[getTotalProgress]++;
 			}
 		}
 		//닫기
@@ -1484,16 +1484,16 @@ sgUtils.math = {
 			_repeat = 0;
 		}
 		var num = parseInt(Math.floor(Math.random() * 0xffffff));
-		if(sgUtils.data._randomId === undefined) {
-			sgUtils.data._randomId = [];
+		if(sgUtils.D._randomId === undefined) {
+			sgUtils.D._randomId = [];
 		}
-		if(sgUtils.data._randomId.indexOf(num) !== -1) {
+		if(sgUtils.D._randomId.indexOf(num) !== -1) {
 			if(_repeat > 10) {
 				throw new Error("Can't make a randomId: " + num);
 			}
 			return this.randomId(++_repeat);
 		}
-		sgUtils.data._randomId.push(num);
+		sgUtils.D._randomId.push(num);
 		return num;
 	},
 
@@ -1953,8 +1953,8 @@ sgUtils.gui = {
 	 = @param {(Color|null)} textColor
 	 */
 	toast: function(text, drawable, duration, isImportent, size, textColor) {
-		if(sgUtils.data._toast === undefined) {
-			sgUtils.data._toast = [];
+		if(sgUtils.D._toast === undefined) {
+			sgUtils.D._toast = [];
 		}
 		if(!duration) {
 			duration = 3000;
@@ -1966,42 +1966,42 @@ sgUtils.gui = {
 		}
 		var wd = new PopupWindow(tv, sg.wc, sg.wc, false);
 		wd.setTouchable(false);
-		if(sgUtils.data._toast.length > 0 && !sgUtils.data._toast[0][2]) {
-			var owd = sgUtils.data._toast[0][0];
-			sgUtils.data._toast = [];
+		if(sgUtils.D._toast.length > 0 && !sgUtils.D._toast[0][2]) {
+			var owd = sgUtils.D._toast[0][0];
+			sgUtils.D._toast = [];
 			uiThread(function() {try {
 				if(owd.isShowing()) {
 					owd.dismiss();
 				}
 			}catch(err) {}});
 		}else {
-			for(var e = 0; e < sgUtils.data._toast.length; e++) {
-				if(!sgUtils.data._toast[e][2]) {
-					sgUtils.data._toast.splice(e--, 1);
+			for(var e = 0; e < sgUtils.D._toast.length; e++) {
+				if(!sgUtils.D._toast[e][2]) {
+					sgUtils.D._toast.splice(e--, 1);
 				}
 			}
 		}
-		sgUtils.data._toast.push([wd, duration, isImportent, sgUtils.math.randomId()]);
-		if(sgUtils.data._toast.length === 1) {
+		sgUtils.D._toast.push([wd, duration, isImportent, sgUtils.math.randomId()]);
+		if(sgUtils.D._toast.length === 1) {
 			this._toastActivity();
 		}
 	},
 
 	_toastActivity: function() {
 		var that = this;
-		if(sgUtils.data._toast.length === 0) {
+		if(sgUtils.D._toast.length === 0) {
 			return;
 		}
 		uiThread(function() {try {
-			var cwd = sgUtils.data._toast[0][0];
-			var cid = sgUtils.data._toast[0][3];
+			var cwd = sgUtils.D._toast[0][0];
+			var cid = sgUtils.D._toast[0][3];
 			cwd.showAtLocation(sg.dv, Gravity.CENTER|Gravity.BOTTOM, 0, sg.px*80);
 			new Handler().postDelayed(new Runnable({run: function() {try {
-				if(sgUtils.data._toast.length === 0) {
+				if(sgUtils.D._toast.length === 0) {
 					return;
 				}
-				if(cid === sgUtils.data._toast[0][3]) {
-					sgUtils.data._toast.splice(0, 1);
+				if(cid === sgUtils.D._toast[0][3]) {
+					sgUtils.D._toast.splice(0, 1);
 				}
 				if(cwd.isShowing()) {
 					cwd.dismiss();
@@ -2009,7 +2009,7 @@ sgUtils.gui = {
 				that._toastActivity();
 			}catch(err) {
 				showError(err);
-			}}}), sgUtils.data._toast[0][1]);
+			}}}), sgUtils.D._toast[0][1]);
 		}catch(err) {
 			showError(err);
 		}});
@@ -2341,11 +2341,11 @@ sgUtils.gui = {
 		if(!padding) {
 			padding = [0, 0, 0, 0];
 		}
-		
+
 		if(!sgUtils.P.isSet(gravity)) {
 			gravity = Gravity.LEFT;
 		}
-		
+
 		if(!sgUtils.P.isSet(type)) {
 			type = sg.ll.VERTICAL;
 		}
@@ -2420,7 +2420,7 @@ sgUtils.gui = {
 		this.gravity = gravity || Gravity.CENTER;
 		this.margins = margins || [0, 0];
 		this.wd = null;
-		
+
 		this.isShowing = function() {
 			if(that.wd !== null && that.wd.isShowing()) {
 				return true;
@@ -2615,8 +2615,8 @@ sgUtils.net = {
 	 *
 	 * @param {File} path
 	 * @param {String} url
-	 * @param getMax - sgUtils.data pointer
-	 * @param getProgress - sgUtils.data pointer
+	 * @param getMax - sgUtils.D pointer
+	 * @param getProgress - sgUtils.D pointer
 	 * @return {boolean} success
 	 */
 	download: function(path, url, getMax, getProgress) {
@@ -2626,7 +2626,7 @@ sgUtils.net = {
 			urlConnect.connect();
 			var bis = new BufferedInputStream(url.openStream());
 			if(getMax !== null || getMax !== undefined) {
-				sgUtils.data[getMax] = urlConnect.getContentLength();
+				sgUtils.D[getMax] = urlConnect.getContentLength();
 			}
 			var fos = new FileOutputStream(path);
 			var buffer = sg.ai(Byte.TYPE, 1024);
@@ -2635,7 +2635,7 @@ sgUtils.net = {
 				fos.write(buffer, 0, content);
 				count += parseInt(content);
 				if(getProgress !== null || getProgress !== undefined) {
-					sgUtils.data[getProgress] = count;
+					sgUtils.D[getProgress] = count;
 				}
 			}
 			fos.flush();
@@ -3121,12 +3121,12 @@ sgUtils.android = {
 		controler.setVolume(v[0]*vol, v[1]*vol);
 		controler.prepare();
 		controler.start();
-		if(sgUtils.data._bgs === null) {
-			sgUtils.data._bgs = [];
+		if(sgUtils.D._bgs === null) {
+			sgUtils.D._bgs = [];
 		}
-		sgUtils.data._bgs.push({x: x, y: y, z: z, ent: ent, ct: controler, file: file, session: controler.getAudioSessionId(), vol: vol, range: range, airResistance: airResistance, loop: loop, stopFunc: stopFunc});
-		if(sgUtils.data._bgsThread === undefined || !sgUtils.data._bgsThread.isAlive()) {
-			sgUtils.data._bgsThread = new thread(function() {try {
+		sgUtils.D._bgs.push({x: x, y: y, z: z, ent: ent, ct: controler, file: file, session: controler.getAudioSessionId(), vol: vol, range: range, airResistance: airResistance, loop: loop, stopFunc: stopFunc});
+		if(sgUtils.D._bgsThread === undefined || !sgUtils.D._bgsThread.isAlive()) {
+			sgUtils.D._bgsThread = new thread(function() {try {
 				while(true) {
 					sgUtils.android._bgsManager();
 					sleep(50);
@@ -3141,28 +3141,28 @@ sgUtils.android = {
 
 	//Private method
 	_bgsManager: function() {try {
-		for(var e = 0; e < sgUtils.data._bgs.length; e++) {
-			if(!sgUtils.data._bgs[e].ct.isPlaying()) {
-				sgUtils.data._bgs[e].ct.release();
-				sgUtils.data._bgs.splice(e, 1);
+		for(var e = 0; e < sgUtils.D._bgs.length; e++) {
+			if(!sgUtils.D._bgs[e].ct.isPlaying()) {
+				sgUtils.D._bgs[e].ct.release();
+				sgUtils.D._bgs.splice(e, 1);
 				continue;
 			}
-			if(sgUtils.data._bgs[e].stopFunc !== null && sgUtils.data._bgs[e].stopFunc(e)) {
-				sgUtils.data._bgs[e].ct.stop();
-				sgUtils.data._bgs[e].ct.release();
-				sgUtils.data._bgs.splice(e, 1);
+			if(sgUtils.D._bgs[e].stopFunc !== null && sgUtils.D._bgs[e].stopFunc(e)) {
+				sgUtils.D._bgs[e].ct.stop();
+				sgUtils.D._bgs[e].ct.release();
+				sgUtils.D._bgs.splice(e, 1);
 				continue;
 			}
-			if(sgUtils.data._bgs[e].ent !== null && Entity.getHealth(sgUtils.data._bgs[e].ent) <= 0) {
-				sgUtils.data._bgs[e].ent = null;
+			if(sgUtils.D._bgs[e].ent !== null && Entity.getHealth(sgUtils.D._bgs[e].ent) <= 0) {
+				sgUtils.D._bgs[e].ent = null;
 			}
-			if(sgUtils.data._bgs[e].ent !== null) {
-				sgUtils.data._bgs[e].x = Entity.getX(sgUtils.data._bgs[e].ent);
-				sgUtils.data._bgs[e].y = Entity.getY(sgUtils.data._bgs[e].ent);
-				sgUtils.data._bgs[e].z = Entity.getZ(sgUtils.data._bgs[e].ent);
+			if(sgUtils.D._bgs[e].ent !== null) {
+				sgUtils.D._bgs[e].x = Entity.getX(sgUtils.D._bgs[e].ent);
+				sgUtils.D._bgs[e].y = Entity.getY(sgUtils.D._bgs[e].ent);
+				sgUtils.D._bgs[e].z = Entity.getZ(sgUtils.D._bgs[e].ent);
 			}
-			var v = sgUtils.android._bgsMeasure(sgUtils.data._bgs[e].x, sgUtils.data._bgs[e].y, sgUtils.data._bgs[e].z, sgUtils.data._bgs[e].range, sgUtils.data._bgs[e].airResistance);
-			sgUtils.data._bgs[e].ct.setVolume(v[0]*sgUtils.data._bgs[e].vol, v[1]*sgUtils.data._bgs[e].vol);
+			var v = sgUtils.android._bgsMeasure(sgUtils.D._bgs[e].x, sgUtils.D._bgs[e].y, sgUtils.D._bgs[e].z, sgUtils.D._bgs[e].range, sgUtils.D._bgs[e].airResistance);
+			sgUtils.D._bgs[e].ct.setVolume(v[0]*sgUtils.D._bgs[e].vol, v[1]*sgUtils.D._bgs[e].vol);
 		}
 	}catch(e) {
 		showError(e);
@@ -3236,47 +3236,47 @@ sgUtils.android = {
 	 * (-1: unlimited)
 	 */
 	vibrator: function(pattern, repeat) {
-		if(sgUtils.data._vib === undefined) {
-			sgUtils.data._vib = ctx.getSystemService(Context.VIBRATOR_SERVICE);
+		if(sgUtils.D._vib === undefined) {
+			sgUtils.D._vib = ctx.getSystemService(Context.VIBRATOR_SERVICE);
 		}
-		sgUtils.data._vib.cancel();
+		sgUtils.D._vib.cancel();
 		if(repeat === undefined) {
 			repeat = 1;
 		}
 		if(pattern === null || pattern === undefined) {
-			sgUtils.data._vibThread = null;
-			sgUtils.data._vibThreadId = null;
+			sgUtils.D._vibThread = null;
+			sgUtils.D._vibThreadId = null;
 			return;
 		}else if(typeof pattern === "number") {
 			if(repeat === -1) {
 				var id = sgUtils.math.randomId();
-				sgUtils.data._vibThreadId = id;
-				sgUtils.data._vibThread = thread(function() {try {
+				sgUtils.D._vibThreadId = id;
+				sgUtils.D._vibThread = thread(function() {try {
 					while(true) {
-						if(sgUtils.data._vibThreadId !== id) {
+						if(sgUtils.D._vibThreadId !== id) {
 							return;
 						}
-						sgUtils.data._vib.vibrate(0xffff);
+						sgUtils.D._vib.vibrate(0xffff);
 						sleep(0xffff);
 					}
 				}catch(e) {
 					showError(e);
 				}});
-				sgUtils.data._vibThread.start();
+				sgUtils.D._vibThread.start();
 			}else {
-				sgUtils.data._vib.vibrate(pattern*repeat);
+				sgUtils.D._vib.vibrate(pattern*repeat);
 			}
 		}else if(pattern instanceof Array) {
 			var id = sgUtils.math.randomId();
-			sgUtils.data._vibThreadId = id;
-			sgUtils.data._vibThread = thread(function() {try {
+			sgUtils.D._vibThreadId = id;
+			sgUtils.D._vibThread = thread(function() {try {
 				while(repeat-- !== 0) {
 					for(var e = 0; e < pattern.length; e++) {
-						if(sgUtils.data._vibThreadId !== id) {
+						if(sgUtils.D._vibThreadId !== id) {
 							return;
 						}
 						if((e % 2) === 1) {
-							sgUtils.data._vib.vibrate(pattern[e]);
+							sgUtils.D._vib.vibrate(pattern[e]);
 						}
 						sleep(pattern[e]);
 					}
@@ -3284,7 +3284,7 @@ sgUtils.android = {
 			}catch(e) {
 				showError(e);
 			}});
-			sgUtils.data._vibThread.start();
+			sgUtils.D._vibThread.start();
 		}else {
 			throw new Error("Illegal vibrator pattern type");
 		}
@@ -3917,14 +3917,14 @@ thread(function() {try {
 	}catch(err) {
 		sgError(err);
 	}
-	
+
 	sleep(1000);
 	try {
 		throw new Error("javascript error");
 	}catch(err) {
 		sgError(err);
 	}
-	
+
 	sleep(1000);
 	try {
 		var he = "개 노답 방법";
@@ -3932,7 +3932,7 @@ thread(function() {try {
 	}catch(err) {
 		sgError(err);
 	}
-	
+
 }catch(err) {
 	sgError(err);
 }});
