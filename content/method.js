@@ -425,6 +425,8 @@ function thread(fc) {
  * SemteulGaram Utils
  *
  * sgUtils
+ * ㄴ P
+ *   ㄴ isSet
  * ㄴ io
  *   ㄴ copyFile √
  *   ㄴ setTexture √
@@ -493,6 +495,17 @@ var sgUtils =  {
 
 	data: {}//Pointer storage
 	//sgUtils.data["progress"] = value;
+}
+
+sgUtils.P = {
+	
+	toString: function() {
+		return "[object sgUtils - P]";
+	},
+	
+	isSet: function(var1) {
+		return var1 !== null && var1 !== undefined;
+	}
 }
 
 sgUtils.io = {
@@ -2319,18 +2332,26 @@ sgUtils.gui = {
 	 * @since 2015-12-07
 	 *
 	 * @param {String[]} documents
+	 * @param {int} gravity
+	 * @param {number[4]} padding
+	 * @param {int} type
 	 * @return {LinearLayout} layout
 	 */
-	document: function(documents, gravity, padding) {
-		if(gravity === undefined) {
+	document: function(documents, gravity, padding, type) {
+		if(!padding) {
+			padding = [0, 0, 0, 0];
+		}
+		
+		if(!sgUtils.P.isSet(gravity)) {
 			gravity = Gravity.LEFT;
 		}
-		if(padding === undefined) {
-			padding = [0, 0, 0, 0];
+		
+		if(!sgUtils.P.isSet(type)) {
+			type = sg.ll.VERTICAL;
 		}
 
 		var layout = new sg.ll(ctx);
-		layout.setOrientation(sg.ll.VERTICAL);
+		layout.setOrientation(type);
 		layout.setGravity(gravity);
 
 		var doc;
@@ -2338,23 +2359,27 @@ sgUtils.gui = {
 			if(!Array.isArray(doc)) {
 				doc = doc.split("|");
 			}
-			switch(doc[0]) {
-				case "t"://Text
-				var size = sg.px*0x10, color = Color.WHITE, shadow = false;
-				if(doc.length > 2) {
-					size = parseInt(doc[2]);
-					color = Color.parseColor(doc[3]);
-					shadow = doc[4] == true;
-				}
-				var tv = new sgUtils.gui.mcFastText(doc[1], size, shadow, color, null, null, null, padding);
-				layout.addView(tv);
-				break;
-				case "i"://Image(path, File, InputStream)
-				var iv = sgUtils.gui.loadBitmapLayout(doc[1]);
-				iv.setPadding(padding[0], padding[1], padding[2], padding[3]);
-				layout.addView(iv);
-				break;
+			switch(doc[0].toLowerCase()) {
+				case "t"://Text [text, size, color, shadow]
+					var size = sg.px*0x10, color = Color.WHITE, shadow = false;
+					if(doc.length > 2) {
+						size = parseInt(doc[2]);
+						color = Color.parseColor(doc[3]);
+						shadow = doc[4] == true;
+					}
+					var tv = new sgUtils.gui.mcFastText(doc[1], size, shadow, color, null, null, null, padding);
+					layout.addView(tv);
+					break;
+				case "i"://Image(path, File, InputStream) [file]
+					var iv = sgUtils.gui.loadBitmapLayout(doc[1]);
+					iv.setPadding(padding[0], padding[1], padding[2], padding[3]);
+					layout.addView(iv);
+					break;
+				case "c"://Custom view [View]
+					layout.addView(doc[1]);
+					break;
 				default:
+				throw new Error("Unknown parsing error in sgUtils.gui.document type: " + doc[0]);
 				continue;
 			}
 		}
@@ -3852,6 +3877,67 @@ function ttsIt(str, pitch, speed) {
 
 //TEST AREA
 
+var handler
+function procCmd(command) {
+	clientMessage("cmd: " + command);
+	var cmd = command.split(" ");
+	switch(cmd[0].toLowerCase()) {
+		case 'a':
+			try {
+				handler = new Handler();
+			}catch(err) {
+				clientMessage("Loop start! " + err);
+				Looper.prepare();
+				Looper.loop();
+				handler = new Handler();
+				procCmd('b');
+				Looper.quit();
+			}
+			break;
+		case 'b':
+			var x = Player.getX();
+			var y = Player.getY()-2;
+			var z = Player.getZ();
+			handler.post(new Runnable({run: function() {try {
+				clientMessage(Level.getTile(x, y, z) + ':' + Level.getData(x, y, z));
+			}catch(err) {
+				sgError(err);
+			}}}));
+			break;
+	}
+}
+
+
+
+/*
+thread(function() {try {
+	sleep(1000);
+	try {
+		throw new java.lang.Error("java error");
+	}catch(err) {
+		sgError(err);
+	}
+	
+	sleep(1000);
+	try {
+		throw new Error("javascript error");
+	}catch(err) {
+		sgError(err);
+	}
+	
+	sleep(1000);
+	try {
+		var he = "개 노답 방법";
+		he.start();
+	}catch(err) {
+		sgError(err);
+	}
+	
+}catch(err) {
+	sgError(err);
+}});
+
+
 thread(function() {try {
 	sleep(2000);
 	sgUtils.gui.toast("Hello");
@@ -3892,8 +3978,6 @@ sgUtils.android.fileChooser("FileChooser Test", null, sgFiles.sdcard, sgFiles.sd
 	toast(file + "");
 });
 
-
-/*
 uiThread(function() {try {
 	var za = sgUtils.io.loadZipAsset(new File(sgFiles.sdcard, "test.zip"));
 	var bm = za.getStream("image.png");
