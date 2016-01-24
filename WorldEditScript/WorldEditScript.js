@@ -447,6 +447,17 @@ var sgUtils =  {
 	//sgUtils.data["progress"] = value;
 }
 
+sgUtils.P = {
+	
+	toString: function() {
+		return "[object sgUtils - P]";
+	},
+	
+	isSet: function(var1) {
+		return var1 !== null && var1 !== undefined;
+	}
+}
+
 sgUtils.io = {
 
 	toString: function() {
@@ -2271,18 +2282,26 @@ sgUtils.gui = {
 	 * @since 2015-12-07
 	 *
 	 * @param {String[]} documents
+	 * @param {int} gravity
+	 * @param {number[4]} padding
+	 * @param {int} type
 	 * @return {LinearLayout} layout
 	 */
-	document: function(documents, gravity, padding) {
-		if(gravity === undefined) {
-			gravity = Gravity.LEFT;
-		}
-		if(padding === undefined) {
+	document: function(documents, gravity, padding, type) {
+		if(!padding) {
 			padding = [0, 0, 0, 0];
 		}
 
+		if(!sgUtils.P.isSet(gravity)) {
+			gravity = Gravity.LEFT;
+		}
+		
+		if(!sgUtils.P.isSet(type)) {
+			type = sg.ll.VERTICAL;
+		}
+
 		var layout = new sg.ll(ctx);
-		layout.setOrientation(sg.ll.VERTICAL);
+		layout.setOrientation(type);
 		layout.setGravity(gravity);
 
 		var doc;
@@ -2290,23 +2309,27 @@ sgUtils.gui = {
 			if(!Array.isArray(doc)) {
 				doc = doc.split("|");
 			}
-			switch(doc[0]) {
-				case "t"://Text
-				var size = sg.px*0x10, color = Color.WHITE, shadow = false;
-				if(doc.length > 2) {
-					size = parseInt(doc[2]);
-					color = Color.parseColor(doc[3]);
-					shadow = doc[4] == true;
-				}
-				var tv = new sgUtils.gui.mcFastText(doc[1], size, shadow, color, null, null, null, padding);
-				layout.addView(tv);
-				break;
-				case "i"://Image(path, File, InputStream)
-				var iv = sgUtils.gui.loadBitmapLayout(doc[1]);
-				iv.setPadding(padding[0], padding[1], padding[2], padding[3]);
-				layout.addView(iv);
-				break;
+			switch(doc[0].toLowerCase()) {
+				case "t"://Text [text, size, color, shadow]
+					var size = sg.px*0x10, color = Color.WHITE, shadow = false;
+					if(doc.length > 2) {
+						size = parseInt(doc[2]);
+						color = Color.parseColor(doc[3]);
+						shadow = doc[4] == true;
+					}
+					var tv = new sgUtils.gui.mcFastText(doc[1], size, shadow, color, null, null, null, padding);
+					layout.addView(tv);
+					break;
+				case "i"://Image(path, File, InputStream) [file]
+					var iv = sgUtils.gui.loadBitmapLayout(doc[1]);
+					iv.setPadding(padding[0], padding[1], padding[2], padding[3]);
+					layout.addView(iv);
+					break;
+				case "c"://Custom view [View]
+					layout.addView(doc[1]);
+					break;
 				default:
+				throw new Error("Unknown parsing error in sgUtils.gui.document type: " + doc[0]);
 				continue;
 			}
 		}
@@ -4791,6 +4814,14 @@ function findMessage(key) {
 //WORLD EDIT SCRIPT SIDE
 //======================
 
+var E = {};
+E.REQUEST_SYNC = 0;
+E.REQUEST_ASYNC = 1;
+E.SET_TILE = 0;
+E.GET_TILE = 1;
+E.REQUEST_IDLE = 0;
+E.REQUEST_WORK = 1;
+
 var messageContainer = {
 		en_EU: {
 		tag: "WorldEdit",
@@ -5221,6 +5252,42 @@ var messageContainer = {
 
 
 
+/**
+ * WorldEdit Refarence
+ * -toString() return {string}
+ * -init()
+ * -isInit() return {boolean}
+ * -loadSetting()
+ * -saveSetting()
+ * -resetSetting()
+ * -get({string} article) return {string} <setting>
+ * -set({string} article, {string} value, {boolean} needSave) <setting>
+ * -loadLang()
+ * -loadChangeableBlockData()
+ * -saveChangeableBlockData()
+ * -resetChangeableBlockData()
+ * -getChangeableBlockData({string} type) return {object}
+ * -setChangeableBlockData({string} type, {object} value, {boolean} needSave)
+ * -getLocalEditor()
+ * -isButtonVisible()
+ * -buildButton()
+ * -setButtonVisible({boolean} visible)
+ * -isMenuVisible()
+ * -buildMenu()
+ * -setMenuVisible({boolean} visible)
+ * -changeMenu({we_menu} menu)
+ * -backMenu()
+ * -getBlockDataIndex({int} id, {int} data) return {int} index
+ * -getBlockDataImage({int} index) return {bitmap} blockImage
+ * -getBlockDataDescription({int} index) return {string} description
+ * -buildLoadingProgressBar()
+ * -buildBlockEditText()
+ * -buildBlockImages()
+ * -getTileRequest() return {we_tileRequest}
+ * -enter()
+ * -leave()
+	* -showAbout()
+ */
 function WorldEdit() {
 	if (!(this instanceof arguments.callee)) return new arguments.callee();
 	var that = this;
@@ -5277,8 +5344,10 @@ function WorldEdit() {
 	this.asynchronousSetTileRequest = [];
 	this.modTickWorking = false;
 	this.modTickMsgTick = 0;
+	
 	this.server = null;
 	this.imageView = null;
+	this.tileRequest = null;
 
 	sgUtils.data.isProcessing = false;
 	sgUtils.data.progress = [0, 1];
@@ -5606,13 +5675,13 @@ WorldEdit.prototype = {
 		this.loading = new sgUtils.gui.progressBar(7);
 		this.loading.setText("Load WorldEdit script...");
 		this.loading.show();
+		//설정 불러오기
+		this.loadSetting();
+		this.loadChangeableBlockData();
 		//필요한 추가 기능들 불러오기
 		this.imageView = new we_imageView(this);
 		this.editorGroup = new we_editorGroup(this);
-		//설정 불러오기
-		this.loading.setText("Load Setting...");
-		this.loadSetting();
-		this.loadChangeableBlockData();
+		this.tileRequest = new we_tileRequest(this);
 		//언어 설정
 		this.loadLang();
 		this.asynchEditSpeed = parseInt(this.setting.WorkSpeed);
@@ -5668,6 +5737,15 @@ WorldEdit.prototype = {
 		//우측 하단의 로딩창 닫기
 		this.loading.close();
 		this.loading = null;
+	},
+	
+	isInit: function() {
+		if(this.readyInit) {
+			return true;
+		}else {
+			we_toast(msg("msg_not_init"), 1, 3000);
+			return false;
+		}
 	},
 
 	loadSetting: function() {
@@ -6241,8 +6319,7 @@ WorldEdit.prototype = {
 		var that = this;
 		
 		//init 완료되었는지 확인
-		if(!this.readyInit) {
-			we_toast(msg("msg_not_init"), 1, 3000);
+		if(!this.isInit()) {
 			return;
 		}
 		if(this.menu === null) {
@@ -6513,18 +6590,26 @@ WorldEdit.prototype = {
 		}
 	},
 
-	synchSetTileRequest: function(ary){
+	syncSetTileRequest: function(ary){
 		if(!(ary instanceof Array)) {
 			throw new Error("Unknown setTile request");
 		}
 		this.synchronizationSetTileRequest = this.synchronizationSetTileRequest.concat(ary);
 	},
 
-	asynchSetTileRequest: function(ary){
+	asyncSetTileRequest: function(ary){
 		if(!(ary instanceof Array)) {
 			throw new Error("Unknown setTile request");
 		}
 		this.asynchronousSetTileRequest = this.asynchronousSetTileRequest.concat(ary);
+	},
+	
+	getTileRequest: function() {
+		if(this.isInit()) {
+			return this.tileRequest;
+		}else {
+			return null;
+		}
 	},
 	
 	enter: function() {
@@ -6552,14 +6637,48 @@ WorldEdit.prototype = {
 		ex_p.addRule(sg.rl.ALIGN_PARENT_LEFT);
 		ex_p.addRule(sg.rl.ALIGN_PARENT_TOP);
 		ex.setLayoutParams(ex_p);
-		ex.setBackgroundDrawable(sgAssets.toast.ninePatch());
+		ex.setBackgroundColor(Color.WHITE);
 		ex.setImageBitmap(sgAssets.weExit.scaleBitmap);
+		
 		ex.setOnClickListener(View.OnClickListener({onClick: function(view) {try {
 			wd.dismiss();
 		}catch(err) {
 			showError(err);
 		}}}));
 		lo.addView(ex);
+
+		//추가 정보 다이얼로그
+		var ab = sgUtils.gui.mcFastButton("...", sg.px*0x18, false, sgColors.main, null, null, null, [0, 0, 0, 0], null, null, null, function(view) {
+			var dl = new sgUtils.gui.dialog("", sgUtils.gui.document([
+				["t", ""],
+				["t", "GNU GENERAL PUBLIC LICENSE", sg.px*0x20, "#ffffff", false],
+				["t", "Version 3, 29 June 2007", sg.px*0x8, "#ffff00", false],
+				["t", "Copyright © 2007 Free Software Foundation, Inc. <http://fsf.org/>\n", sg.px*0x8, "#ffffff", false],
+				["c", sgUtils.gui.document([
+					["t", "Affogatoman", sg.px*0x18, "#ffff00", false],
+					["t", " - BlockImageLoader", sg.px*0x10, "#ffffff", false]
+				], Gravity.CENTER, null, sg.ll.HORIZONTAL)],
+				["t", "-------------------- https://twitter.com/dfak0557?s=09\n", sg.px*0x08, "#ffffff", false],
+				["c", sgUtils.gui.document([
+					["t", "동그란세종", sg.px*0x18, "#ffff00", false],
+					["t", " - Translation (English)", sg.px*0x10, "#ffffff", false]
+				], Gravity.CENTER, null, sg.ll.HORIZONTAL)],
+				["t", "--------------------\n", sg.px*0x08, "#ffffff", false],
+				["c", sgUtils.gui.document([
+					["t", "AHue", sg.px*0x18, "#ffff00", false],
+					["t", " - Block flip data", sg.px*0x10, "#ffffff", false]
+				], Gravity.CENTER, null, sg.ll.HORIZONTAL)],
+				["t", "--------------------\n", sg.px*0x08, "#ffffff", false]
+			], Gravity.CENTER, null, sg.ll.VERTICAL), msg("close"), function(view) {this.close()}, null, null, true, false);
+			dl.show();
+		}, null);
+		var abP = new sg.rlp(sg.px*0x30, sg.px*0x30);
+		abP.addRule(sg.rl.ALIGN_PARENT_RIGHT);
+		abP.addRule(sg.rl.ALIGN_PARENT_TOP);
+		ab.setLayoutParams(abP);
+		ab.setGravity(Gravity.CENTER);
+		ab.setBackgroundColor(Color.WHITE);
+		lo.addView(ab);
 
 		//로고와 스크립트 타이틀 레이아웃
 		var lg = new sg.ll(ctx);
@@ -6760,7 +6879,7 @@ function we_toast(txt, type, duration, isImportent, size, color) {
 		default:
 		drawableType = sgAssets.toast.ninePatch();
 	}
-	sgUtils.gui.toast(txt, drawableType, duration, isImportent, size, color);
+	sgUtils.gui.toast(txt, drawableType, duration, isImportent, size, color || Color.WHITE);
 }
 
 
@@ -7245,19 +7364,19 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail, blockRota
 				var pgt;
 				//작업 상태가 3가 되면 종료
 				while(atv_m !== 3 && loading.isShowing()) {
-					pgt = "(" + sgUtils.convert.numberToString(sgUtils.data.progress[0]) + "/" + sgUtils.convert.numberToString(sgUtils.data.progress[1]) + ")";
+					pgt = "(" + sgUtils.convert.numberToString(sgUtils.data.weProgress || 0) + "/" + sgUtils.convert.numberToString(sgUtils.data.weTotal || 0) + ")";
 					if(atv_m === 0) {
 						loading.setText(msg("msg_preparing") + pgt);
-						loading.setMax(sgUtils.data.progress[1]);
-						loading.setProgress(sgUtils.data.progress[0]);
+						loading.setMax(sgUtils.data.weTotal || 0);
+						loading.setProgress(sgUtils.data.weProgress || 0);
 					}else if(atv_m === 1) {
 						loading.setText(msg("msg_backuping") + pgt);
-						loading.setMax(sgUtils.data.progress[1]);
-						loading.setProgress(sgUtils.data.progress[0]);
+						loading.setMax(sgUtils.data.weTotal || 0);
+						loading.setProgress(sgUtils.data.weProgress || 0);
 					}else if(atv_m === 2) {
 						loading.setText(msg("msg_working", false, null, [["w", workName]]) + pgt);
-						loading.setMax(sgUtils.data.progress[1]);
-						loading.setProgress(sgUtils.data.progress[0]);
+						loading.setMax(sgUtils.data.weTotal || 0);
+						loading.setProgress(sgUtils.data.weProgress || 0);
 					}
 					sleep(0x80);
 				}
@@ -7285,15 +7404,21 @@ function we_initEdit(safeMode, workType, editor, editType, editDetail, blockRota
 		atv_m = 2;
 
 		//에딧
-		if(loading !== null) {
-			_loadingScreen = loading;
-		};
+		/*
 		if(workType === 0) {
 			main.synchSetTileRequest(editor.getTempBlocks());
 		}else {
 			main.asynchSetTileRequest(editor.getTempBlocks());
+		}*/
+		var tileRequest = main.getTileRequest()
+		if(tileRequest) {
+			tileRequest.request(workName, E.SET_TILE, workType, editor.getTempBlocks(), "weName", "weProgress", "weTotal", function(name) {
+				if(loading) {
+					loading.close();
+				}
+				fin();
+			});
 		}
-		fin();
 	}catch(err) {
 		showError(err);
 	}});
@@ -8136,8 +8261,8 @@ function we_edit(editType, editor, detail, blockRotationOrFlip) {
 		var ex = (pos1.getX() > pos2.getX()) ? pos1.getX() : pos2.getX();
 		var ey = (pos1.getY() > pos2.getY()) ? pos1.getY() : pos2.getY();
 		var ez = (pos1.getZ() > pos2.getZ()) ? pos1.getZ() : pos2.getZ();
-		var max = (ex-sx+1)*(ey-sy+1)*(ez-sz+1);
-		sgUtils.data.progress = [0, max];
+		sgUtils.data.weTotal = (ex-sx+1)*(ey-sy+1)*(ez-sz+1);
+		sgUtils.data.weProgress = 0;
 
 		var bid = detail[0].getId();
 		var bdata = detail[0].getData();
@@ -8145,8 +8270,8 @@ function we_edit(editType, editor, detail, blockRotationOrFlip) {
 		for(var fy = sy; fy<= ey; fy++) {
 			for(var fz = sz; fz <= ez; fz++) {
 				for(var fx = sx; fx <= ex; fx++) {
-					blocks.push([fx, fy, fz, bid, bdata]);
-					sgUtils.data.progress[0]++;
+					blocks.push(new Block(bid, bdata, fx, fy, fz));
+					sgUtils.data.weProgress++;
 				}
 			}
 		}
@@ -9354,6 +9479,179 @@ we_imageView.prototype = {
 
 
 
+function we_tileRequest(parent) {
+	this.super = parent;
+	this.queue = [];
+	this.asyncQueue = [];
+	this.asyncSpeed = 8;
+	this.msgMini = false;
+	this.status = 0; //0: IDLE, 1: Working, 2: Booking (with Working)
+	this.msgDelay = 0;
+}
+
+we_tileRequest.prototype = {
+	
+	toString: function() {
+		return "[object we_tileRequest]";
+	},
+	
+	request: function(name, type, taskType, tasks, namePointer, processPointer, totalPointer, callback) {
+		
+		if(type !== E.SET_TILE && type !== E.GET_TILE) {
+			sgError(new Error("we_tileRequest - request - type is unknown"));
+			return false;
+		}
+		
+		if(taskType !== E.REQUEST_SYNC && taskType !== E.REQUEST_ASYNC) {
+			sgError(new Error("we_tileRequest - request - taskType is unknown"));
+			return false;
+		}
+		
+		if(taskType === E.REQUEST_SYNC) {
+			this.queue.push({
+				name: name || "Unknown Task",
+				type: type,
+				tasks: tasks,
+				workspace: [],
+				total: tasks.length,
+				nameP: namePointer,
+				processP: processPointer,
+				totalP: totalPointer,
+				callback: callback || function() {}
+			});
+		}else {
+			this.asyncQueue.push({
+				name: name || "Unknown Task",
+				type: type,
+				tasks: tasks,
+				workspace: [],
+				total: tasks.length,
+				nameP: namePointer,
+				processP: processPointer,
+				totalP: totalPointer,
+				callback: callback || function() {}
+			});
+		}
+		return true;
+	},
+	
+	//ModPE - (MUST) modtick callback run
+	ticking: function() {try {
+		//즉시 모두 실행 (동기)
+		if(this.queue.length > 0) {
+			//하나 꺼내오기
+			var dat = this.queue.shift();
+			//이름 등록
+			if(dat.nameP) {
+				sgUtils.data[dat.nameP] = dat.name;
+			}
+			
+			//전체길이 등록
+			if(dat.totalP) {
+				sgUtils.data[dat.totalP] = dat.total;
+				sgUtils.data[dat.processP] = 0;
+			}
+			
+			if(dat.type === E.GET_TILE) { //겟타일 요청
+				var blocks = [];
+				for(var e = 0; e < dat.total; e++) {
+					dat.workspace.push(Level.getTile(dat.tasks[e].x, dat.tasks[e].y, dat.tasks[e].z));
+					//완료된 작업량
+					sgUtils.data[dat.processP] = e + 1;
+				}
+				if(dat.callback) { //완료 후 콜백 실행
+					dat.callback(dat.name, dat.workspace);
+				}
+			}else if(dat.type === E.SET_TILE) { //셋타일 요청
+				for(var e = 0; e < dat.total; e++) {
+					Level.setTile(dat.tasks[e].x, dat.tasks[e].y, dat.tasks[e].z, dat.tasks[e].id, dat.tasks[e].data);
+					//프로세스
+					sgUtils.data[dat.processP] = e + 1;
+				}
+				if(dat.callback) { //완료 후 콜백 실행
+					dat.callback(dat.name);
+				}
+			}else {
+				throw new Error("Undefined request Type: " + dat.type + " in '" + dat.name + "' work");
+			}
+		}
+		
+		//비동기로 천천히 실행
+		if(this.asyncQueue.length > 0) {
+			//최초 시작 확인
+			if(this.status === E.REQUEST_IDLE) {
+				this.status = E.REQUEST_WORK;
+				toast("TODO START WORKING");
+				sgUtils.data[this.asyncQueue[0].totalP] = 0;
+				sgUtils.data[this.asyncQueue[0].processP] = 0;
+			}
+			
+			//이름 등록
+			if(this.asyncQueue[0].nameP) {
+				sgUtils.data[this.asyncQueue[0].nameP] = this.asyncQueue[0].name;
+			}
+			
+			//전체길이 등록
+			if(this.asyncQueue[0].totalP) {
+				sgUtils.data[this.asyncQueue[0].totalP] = this.asyncQueue[0].total;
+			}
+			
+			if(this.asyncQueue[0].type === E.GET_TILE) { //겟타일 요청
+				for(var e = 0; e < this.asyncSpeed; e++) {
+					if(this.asyncQueue[0].tasks.length <= 0) { //작업 완료
+						var fin = this.asyncQueue.shift();
+						fin.callback(fin.name, fin.workspace); //완료한 작업 이름과 얻은 결과를 콜백발동
+						if(this.asyncQueue.length > 0 && this.asyncQueue[0].progressP) { //다음 작업이 존재하면
+							sgUtils.data[this.asyncQueue[0].progressP] = 0; //프로그래스 초기화
+						}
+						break;
+					}
+					var vec3 = this.asyncQueue[0].tasks.shift(); //겟타일할 위치 정보
+					this.asyncQueue[0].workspace.push(Level.getTile(vec3.x, vec3.y, vec3.z));
+					sgUtils.data[this.asyncQueue[0].processP]++; //프로그래스
+				}
+			}else if(this.asyncQueue[0].type === E.SET_TILE) { //셋타일 요청
+				for(var e = 0; e < this.asyncSpeed; e++) {
+					if(this.asyncQueue[0].tasks.length <= 0) { //작업 완료
+						var fin = this.asyncQueue.shift();
+						fin.callback(fin.name); //완료한 작업 이름으로 콜백발동
+						if(this.asyncQueue.length > 0 && this.asyncQueue[0].progressP) { //다음 작업이 존재하면
+							sgUtils.data[this.asyncQueue[0].progressP] = 0; //프로그래스 초기화
+						}
+						break;
+					}
+					var block = this.asyncQueue[0].tasks.shift(); //셋타일할 정보
+					Level.setTile(block.x, block.y, block.z, block.id, block.data);
+					sgUtils.data[this.asyncQueue[0].processP]++; //프로그래스
+				}
+			}else {
+				var dat = this.asyncQueue.shift();
+				throw new Eror("Undefined request Type: " + dat.type + " in '" + dat.name + "' work");
+			}
+		}else {
+			if(this.status === E.REQUEST_WORK) { //작업 완료
+				this.status = E.REQUEST_IDLE;
+				toast("TODO FINISH WORKING");
+			}
+		}
+	}catch(err) {
+		sgError(err);
+		this.status = E.REQUEST_IDLE;
+		this.queue = [];
+		this.asyncQueue = [];
+	}},
+	
+	setSpeed: function(spd) {
+		if(sgUtils.math.isNumber(spd)) {
+			this.asyncSpeed = parseInt(spd);
+		}else {
+			throw new Error(this + " setSpeed type must instance of number");
+		}
+	}
+}
+
+
+
 var main = new WorldEdit();
 thread(function() {try {
 	main.init();
@@ -9380,7 +9678,7 @@ function leaveGame() {
 
 var _loadingScreen = null;
 function modTick() {
-
+/* NOT USED
 	if(main.asynchronousSetTileRequest.length > 0) {
 		if(!main.modTickWorking) {
 			//msg("msg_async_start", true);
@@ -9414,6 +9712,9 @@ function modTick() {
 			_loadingScreen.close();
 			_loadingScreen = null;
 		}catch(err) {}});
+	}*/
+	if(main.readyInit) { //준비되었을 때 실행
+		main.tileRequest.ticking();
 	}
 }
 
