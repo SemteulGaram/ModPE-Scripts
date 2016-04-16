@@ -17,8 +17,8 @@
 const NAME = "WorldEdit script";
 const NAME_CODE = "WorldEdit";
 //Season . Release Number . Additional commits
-const VERSION = "0.8.0";
-const VERSION_CODE = 121;
+const VERSION = "0.8.0_HOTFIX";
+const VERSION_CODE = 122;
 const ASSETS_VERSION = 1;
 const SERVER_VERSION = 1;
 const TAG = "[" + "WorldEdit" + " " + VERSION + "] ";
@@ -4197,8 +4197,6 @@ BlockImageLoader.createWall = function(left, right, top, temp, hasNoShadow) {
     return temp;
 };
 
-BlockImageLoader.init();
-
 
 
 function highlightBlocks(ary, id, data) {
@@ -5668,6 +5666,8 @@ WorldEdit.prototype = {
 	},
 
 	init: function() {
+		//FIXME: NOT ABLE IN 0.14
+		//BlockImageLoader.init();
 		//각종 변수 초기화 및 등록
 		if(this.loading !== null) {
 			this.loading.close();
@@ -5887,8 +5887,8 @@ WorldEdit.prototype = {
 		}
 		this.buttonI = new ImageButton(ctx);
 		this.buttonI.setPadding(sg.px*4, sg.px*4, sg.px*4, sg.px*4);
-		this.buttonI.setImageBitmap(BlockImageLoader.create(["piston_side", 0], ["piston_side", 0], ["piston_top_normal", 0], BlockTypes.CUBE, true));
-		this.buttonI.setBackgroundColor(0);
+		this.buttonI.setImageBitmap(/*BlockImageLoader.create(["piston_side", 0], ["piston_side", 0], ["piston_top_normal", 0], BlockTypes.CUBE, true)*/Bitmap.createBitmap(51, 57, Bitmap.Config.ARGB_8888));//FIXME: NOT_ABLE_IN_0.14
+		this.buttonI.setBackgroundColor(Color.RED);
 		this.buttonI.setOnTouchListener(View.OnTouchListener({onTouch: function(view, event) {try {
 			switch(event.action) {
 				case MotionEvent.ACTION_DOWN:
@@ -6406,7 +6406,9 @@ WorldEdit.prototype = {
 		return -1;
 	},
 
+	//FIXME: ERROR IN 0.14
 	getBlockDataImage: function(index) {
+		return Bitmap.createBitmap(51, 57, Bitmap.Config.ARGB_8888);
 		if(index < 0 && index >= this.blockData.length) {
 			return Bitmap.createBitmap(51, 57, Bitmap.Config.ARGB_8888);
 		}

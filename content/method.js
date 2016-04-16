@@ -330,7 +330,14 @@ var sgAssets = {
 
 	customAssetCreator: function(pixel, width, height, scale, scaleType, left, top, right, bottom) {
 		if (!(this instanceof arguments.callee)) {var oNew=Object.create(arguments.callee.prototype);arguments.callee.apply(oNew, arguments);return oNew}
-
+		if(pixel instanceof Array) {
+			var tmp = new sg.ai(Int.TYPE, pixel.length);
+			for(var e = 0; e < pixel.length; e++) {
+				var v = parseInt(pixel[e]);
+				tmp[e] = v ? v : 0;
+			}
+			pixel = tmp;
+		}
 		this.pixel = pixel;
 		this.rawBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
 		this.rawBitmap.setPixels(this.pixel, 0, width, 0, 0, width, height);
@@ -341,7 +348,7 @@ var sgAssets = {
 	bitmapAssetCreator: function(bitmap, xPos, yPos, xSize, ySize, scale, scaleType, left, top, right, bottom) {
 		if (!(this instanceof arguments.callee)) {var oNew=Object.create(arguments.callee.prototype);arguments.callee.apply(oNew, arguments);return oNew}
 		this.rawBitmap = Bitmap.createBitmap(bitmap, xPos, yPos, xSize, ySize);
-		this.scaleBitmap = Bitmap.createScaledBitmap(this.raw, xSize*scale, ySize*scale, scaleType);
+		this.scaleBitmap = Bitmap.createScaledBitmap(this.rawBitmap, xSize*scale, ySize*scale, scaleType);
 		this.ninePatch = function() {return ninePatch1(this.scaleBitmap, (top*(scale-1))+1, (left*(scale-1))+1, bottom*scale, right*scale)}
 	},
 
@@ -493,8 +500,26 @@ var sgUtils =  {
 		return "[object sgUtils]";
 	},
 
-	D: {}//Pointer storage
+	D: {//Pointer storage
+		modTickCallbacks: [],
+		newLevelCallbacks: [],
+		leaveGameCallbacks: []
+	},
 	//sgUtils.D["progress"] = value;
+	
+	C: {//ModPE Callback
+		modTick: function() {
+			
+		},
+		
+		newLevel: function() {
+			
+		},
+		
+		leaveGame: function() {
+			
+		}
+	}
 }
 
 sgUtils.P = {
@@ -2785,6 +2810,112 @@ sgUtils.modPE = {
 			}
 			return false;
 		}
+	},
+	
+	stage: function(name) {
+		if(!(this instanceof arguments.callee)) {var oNew=Object.create(arguments.callee.prototype);arguments.callee.apply(oNew, arguments);return oNew}
+		
+		this.name = name || "Undefined Stage";
+		this.blockFuncPool = [];
+		this.entityFuncPool = [];
+		this.locationFuncPool = [];
+		this.BGM = null;
+		
+		this.getName = function() {
+			return this.name;
+		}
+		
+		this.setName = function(name) {
+			this.name = name;
+		}
+	
+		this.addBlockFunc = function(blockFunc) {
+			if(!(blockFunc instanceof BlockFunc)) throw new TypeError("blockFunc not instance of BlockFunc");
+			this.blockFuncPool.push(blockFunc);
+		}
+	
+		this.blockFuncIndexOf = function(name) {
+			for(var e = 0; e < this.blockFuncPool.length; e++) {
+				if(this.blockFuncPool[e].name === name) {
+					return e;
+				}
+			}
+			return -1;
+		}
+	
+		this.removeBlockFunc = function(name) {
+			var index = this.blockFuncIndexOf(name);
+			if(index < 0) {
+				return false;
+			}else {
+				this.blockFuncPool.splice(index, 1);
+				return true;
+			}
+		}
+	},
+	
+	stageManager: function() {
+		if(!sgUtils.D.stageManager) {
+			sgUtils.D.stageManager = function() {
+				
+				this.stagePool = [];
+				this.currentStageIndex = null;
+				
+				this.toString = function() {
+					return "[object stageManager]";
+				}
+				
+				this.addStage = function(stage) {
+					if(!(stage instanceof Stage)) throw new Exception("Parameter stage must instnace of Stage");
+					if(this.indexOf(stage.getName()) > 0) throw new Exception("Already exists stage: " + stage.getName());
+					this.stagePool.push(stage);
+				}
+				
+				this.removeStage = function(name) {
+					throw new Exception("DO NOT USE REMOVESTAGE"); //It ruin the system
+					/*
+					var index = this.indexOf(name);
+					if(index < 0)
+						throw new Exception("Undefined stage: " + name);
+					this.stagePool.splice(index, 1);
+					*/
+				}
+				
+				this.indexOf = function(name) {
+					for(var e = 0; e < this.stagePool.length; e++) {
+						if(this.stagePool[e].getName() === name) {
+							return e;
+						}
+						return -1;
+					}
+				}
+				
+				this.getStage = function(index) {
+					if(!sgUtils.math.isNumber(index))
+						index = this.indexOf(index);
+					return this.stagePool[index];
+				}
+				
+				this.getCurrentStageIndex = function() {
+					return this.currentStageIndex;
+				}
+				
+				this.getCurrentStage = function() {
+					return this.stagePool[this.currentStageIndex];
+				}
+				
+				this.setStage = function(name, ignoreChangeCallback) {
+					var index = this.indexOf(name);
+					if(index < 0)
+					 throw new Exception("Undefined stage: " + name);
+					if(!ignoreChangeCallback)	this.getCurrentStage().endCallback();
+					this.currentStageIndex = index;
+					if(!ignoreChangeCallback) this.getCurrentStage().startCallback();
+				}
+			}	
+		}
+		
+		return sgUtils.D.stageManager;
 	}
 }
 
@@ -2803,7 +2934,7 @@ sgUtils.android = {
   * @since 2015-04
   */
 	battery: function() {
-		if (!(this instanceof arguments.callee)) {var oNew=Object.create(arguments.callee.prototype);arguments.callee.apply(oNew, arguments);return oNew}
+		if(!(this instanceof arguments.callee)) {var oNew=Object.create(arguments.callee.prototype);arguments.callee.apply(oNew, arguments);return oNew}
 		var that = this;
 		this.ifilter = new android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED);
 
@@ -3708,6 +3839,277 @@ sgUtils.openGL = {
 
 
 
+function Vector2(x, y) {
+	this.x = x;
+	this.y = y;
+}
+
+Vector2.prototype = {
+	
+	toString: function() {
+		return "[Vector2 " + this.x + ":" + this.y + "]";
+	},
+	
+	toFloor: function() {
+		this.x = Math.floor(this.x);
+		this.y = Math.floor(this.y);
+	},
+	
+	isEqual: function(vec) {
+		return this.x === vec.x && this.y === vec.y;
+	}
+}
+
+function Vector3(x, y, z) {
+	this.x = x;
+	this.y = y;
+	this.z = z;
+}
+
+Vector3.prototype = {
+	
+	toString: function() {
+		return "[Vector3 " + this.x + ":" + this.y + ":" + this.z + "]";
+	},
+	
+	toFloor: function() {
+		this.x = Math.floor(this.x);
+		this.y = Math.floor(this.y);
+		this.z = Math.floor(this.z);
+	},
+	
+	isEqual: function(vec) {
+		return this.x === vec.x && this.y === vec.y && this.z === vec.z;
+	}
+}
+
+function BlockFunc(name, vec, onFocusCallback, offFocusCallback, onTouchCallback, onDestroyCallback) {
+	if(!(vec instanceof Vector3)) throw new Exception("vec must instance of Vector3");
+	this.name = name || "Unknown BlockFunc";
+	this.pos = vec;
+	this.onFocusCallback = onFocusCallback;
+	this.offFocusCallback = offFocusCallback;
+	this.onTouchCallback = onTouchCallback;
+	this.onDestroyCallback = onDestroyCallback;
+	
+	this.focus = false;
+}
+
+BlockFunc.prototype = {
+	
+	toString: function() {
+		return "[object BlockFunc(" + this.name + ")]";
+	},
+	
+	isEqual: function(vec) {
+		return this.vec.isEqual(vec);
+	},
+	
+	onFocus: function(vec) {
+		if(this.onFocusCallback)
+			this.onFocusCallback(this, vec);
+	},
+	
+	offFocus: function(vec) {
+		if(this.onFocusCallback)
+			this.offFocusCallback(this, vec);
+	},
+	
+	onTouch: function(vec) {
+		if(this.onTouchCallback)
+			this.onTouchCallback(this, vec);
+	},
+	
+	onDestroy: function(vec) {
+		if(this.onDestroyCallback)
+			this.onDestroyCallback(this, vec);
+	},
+	
+	hasFocus: function() {
+		return this.focus;
+	},
+	
+	setFocus: function(focus) {
+		this.focus = focus;
+	}
+}
+
+function EntityFunc(name, uuid, onFocusCallback, offFocusCallback, onAttackedCallback, onDestroyCallback) {
+	this.name = name || "Unknown EntityFunc";
+	this.uuid = uuid;
+	this.onFocusCallback = onFocusCallback;
+	this.offFocusCallback = offFocusCallback;
+	this.onAttackedCallback = onAttackedCallback;
+	this.onDestroyCallback = onDestroyCallback;
+	
+	this.hasFocus = false;
+}
+
+EntityFunc.prototype = {
+	
+	toString: function() {
+		return "[object EntityFunc(" + this.name + ")]";
+	},
+	
+	isEqual: function(ent) {
+		return Entity.getUniqId(ent) === this.uuid;
+	},
+	
+	onFocus: function(vec) {
+		if(this.onFocusCallback)
+			this.onFocusCallback(this, vec);
+	},
+	
+	offFocus: function(vec) {
+		if(this.offFocusCallback)
+			this.offFocusCallback(this, vec);
+	},
+	
+	onAttacked: function(vec) {
+		if(this.onAttackedCallback)
+			this.onAttackedCallback(this, vec);
+	},
+	
+	onDestroy: function(vec) {
+		if(this.onDestroyCallback)
+			this.onDestroyCallback(this, vec);
+	},
+	
+	hasFocus: function() {
+		return this.focus;
+	},
+	
+	setFocus: function(focus) {
+		this.focus = focus;
+	}
+}
+
+/**
+ * TrackingType
+ *
+ * 0001(1): Player
+ * 0010(2): Animal
+ * 0100(4): Hostile
+ * 1000(8): etc
+ *
+ * Ex) 0101(5): Player + Hostile
+ */
+function LocationFunc(name, trackingType, vec1, vec2, onEnterCallback, onLeaveCallback, inAreaTickCallback, outAreaTickCallback) {
+	this.name = name || "Unknown LocationFunc";
+	this.trackingType = trackingType;
+	this.minVec = new Vector3(vec1.x < vec2.x ? vec1.x : vec2.x, vec1.y < vec2.y ? vec1.y : vec2.y, vec1.z < vec2.z ? vec1.z : vec2.z);
+	this.maxVec = new Vector3(vec1.x > vec2.x ? vec1.x : vec2.x, vec1.y > vec2.y ? vec1.y : vec2.y, vec1.z > vec2.z ? vec1.z : vec2.z);
+	this.onEnterCallback = onEnterCallback;
+	this.onLeaveCallback = onLeaveCallback;
+	this.inAreaTickCallback = inAreaTickCallback;
+	this.outAreaTickCallback = outAreaTickCallback;
+	
+	this.focus = false;
+}
+
+LocationFunc.prototype = {
+	
+	toString: function() {
+		return "[object LocationFunc(" + this.name + ")]";
+	},
+	
+	isTracking: function(ent) {
+		if(Player.isPlayer(ent)) {
+			return this.trackingType % 2 === 1; //Player
+		}
+
+		var typeId = Entity.getEntityTypeId(ent);
+		if(typeId < 32) {
+			return this.trackingType >> 1 % 2 === 1; //Animal
+		}else if(typeId < 64) {
+			return this.trackingType >> 2 % 2 === 1; //Hostile
+		}else {
+			return this.trackingType >> 3 % 2 === 1; //etc
+		}
+	},
+	
+	isInArea: function(ent) {
+		var vec = new Vector3(Entity.getX(ent), Entity.getY(ent), Entity.getZ(ent));
+		return vec.x >= this.minVec.x && vec.x <= this.maxVec.x && vec.y >= this.minVec.y && vec.y <= this.maxVec.y && vec.z >= this.minVec.z && vec.z <= this.maxVec.z;
+	},
+	
+	onEnter: function(ent) {
+		if(this.onEnterCallback)
+			this.onEnterCallback(this, ent);
+	},
+	
+	onLeave: function(ent) {
+		if(this.onLeaveCallback)
+			this.onLeaveCallback(this, ent);
+	},
+	
+	inAreaTick: function(ent) {
+		if(this.inAreaTickCallback)
+			this.inAreaTickCallback(this, ent);
+	},
+	
+	outAreaTick: function(ent) {
+		if(this.outAreaTickCallback)
+			this.outAreaTickCallback(this, ent);
+	},
+	
+	hasFocus: function() {
+		return this.focus;
+	},
+	
+	setFocus: function(focus) {
+		this.focus = focus;
+	}
+}
+
+
+
+function BlockGroup(ary) {
+	this.progress = 0;
+	if(ary instanceof Array) {
+		this.blocks = ary;
+	}else {
+		this.blocks = [];
+	}
+}
+
+BlockGroup.prototype = {
+	
+	toString: function() {
+		return "[object BlockGroup]";
+	},
+	
+	addBlock: function(block) {
+		if(!(block instanceof Block)) {
+			throw new TypeError("block parameter must instance of Block");
+		}
+		
+		this.blocks.push(block);
+	},
+	
+	addBlocks: function(ary) {
+		this.blocks = this.blocks.concat(ary);
+	},
+	
+	size: function() {
+		return this.blocks.length;
+	},
+	
+	getProgress: function() {
+		return this.progress;
+	},
+	
+	hasNextElement: function() {
+		return this.size() > this.progress;
+	},
+	
+	getNextElement: function() {
+		return this.block[this.progress++];
+	}
+}
+
+
+
 function loadMcpeAssets() {try {
 	sgAssets.mcpeCPC = ctx.createPackageContext("com.mojang.minecraftpe", Context.CONTEXT_IGNORE_SECURITY);
 	sgAssets.nativeAssets = sgAssets.mcpeCPC.getAssets();
@@ -3722,10 +4124,13 @@ function loadMcpeAssets() {try {
 	sgAssets.SS_BF = BitmapFactory.decodeStream(sgAssets.SS);
 	sgAssets.TG_BF = BitmapFactory.decodeStream(sgAssets.TG);
 
+	//Full Background
 	sgAssets.fullBg = sgAssets.bitmapAssetCreator(sgAssets.SS_BF, 0, 0, 16, 16, sg.px*2, false, 5, 5, 12, 12);
 
+	//Window Background
 	sgAssets.bg = sgAssets.bitmapAssetCreator(sgAssets.SS_BF, 34, 43, 14, 14, sg.px*2, false, 4, 4, 11, 11);
 
+	//Title
 	sgAssets.title_l = new sgAssets.bitmapAssetCreator(sgAssets.TG_BF, 150, 26, 2, 25, sg.px*2, false);
 	sgAssets.title_c = new sgAssets.bitmapAssetCreator(sgAssets.TG_BF, 153, 26, 8, 25, sg.px*2, false);
 	sgAssets.title_r = new sgAssets.bitmapAssetCreator(sgAssets.TG_BF, 162, 26, 2, 25, sg.px*2, false);
@@ -3737,21 +4142,23 @@ function loadMcpeAssets() {try {
 	sgAssets.title_l.rawBitmap.getPixels(sgAssets.title_la, 0, 2, 0, 0, 2, 25);
 	sgAssets.title_c.rawBitmap.getPixels(sgAssets.title_ca, 0, 8, 0, 0, 8, 25);
 	sgAssets.title_r.rawBitmap.getPixels(sgAssets.title_ra, 0, 2, 0, 0, 2, 25);
-	sgAssets.title_b.rawBitmap.getPixels(sgAssets.title_ba, 0, 3, 0, 0, 3, 25);
-	sgAssets.title_p1 = sgUtils.convert,margeArray(sgAssets.title_l, sgAssets.title_c, 0, 2, 25, 8, 25, null);
+	sgAssets.title_b.rawBitmap.getPixels(sgAssets.title_ba, 0, 8, 0, 0, 8, 3);
+	sgAssets.title_p1 = sgUtils.convert.margeArray(sgAssets.title_l, sgAssets.title_c, 0, 2, 25, 8, 25, null);
 	sgAssets.title_p2 = sgUtils.convert.margeArray(sgAssets.title_p1, sgAssets.title_r, 0, 10, 25, 2, 25, null);
 	sgAssets.title_p3 = sgUtils.convert.margeArray(sgAssets.title_p2, sgAssets.title_b, 1, 12, 25, 8, 3, null);
 	sgAssets.title = new sgAssets.customAssetCreator(sgAssets.title_p3, 12, 28, sg.px*2, false, 3, 3, 9, 22);
 
+	//Exit Button
 	sgAssets.exit = new sgAssets.bitmapAssetCreator(sgAssets.SS_BF, 60, 0, 18, 18, sg.px*2, false);
 	sgAssets.exit_c = new sgAssets.bitmapAssetCreator(sgAssets.SS_BF, 78, 0, 18, 18, sg.px*2, false);
 
+	//Normal Button
 	sgAssets.button = new sgAssets.bitmapAssetCreator(sgAssets.SS_BF, 8, 32, 8, 8, sg.px*2, false, 1, 2, 7, 6);
-
 	sgAssets.button_c = new sgAssets.bitmapAssetCreator(sgAssets.SS_BF, 0, 32, 8, 8, sg.px*2, false, 1, 2, 7, 6);
 
-	var p = Color.parseColor("#6b6163");
-	var o = Color.parseColor("#3a393a");
+	//TextView
+	var i = Color.parseColor("#6b6163");
+	var b = Color.parseColor("#3a393a");
 	sgAssets.textView = new sgAssets.customAssetCreator([
 	b,b,b,b,b,b,
 	b,b,b,b,b,b,
@@ -3761,6 +4168,7 @@ function loadMcpeAssets() {try {
 	b,b,b,b,b,b
 	], 6, 6, sg.px*2, false, 3, 3, 4, 4);
 
+	//Background dirt tile
 	sgAssets.bg32 = Bitmap.createScaledBitmap(BitmapFactory.decodeStream(ModPE.openInputStreamFromTexturePack("images/gui/bg32.png")), sg.px*64, sg.px*64, false)
 }catch(e) {
 	showError(e);
@@ -3877,37 +4285,18 @@ function ttsIt(str, pitch, speed) {
 
 //TEST AREA
 
-var handler
-function procCmd(command) {
-	clientMessage("cmd: " + command);
-	var cmd = command.split(" ");
-	switch(cmd[0].toLowerCase()) {
-		case 'a':
-			try {
-				handler = new Handler();
-			}catch(err) {
-				clientMessage("Loop start! " + err);
-				Looper.prepare();
-				Looper.loop();
-				handler = new Handler();
-				procCmd('b');
-				Looper.quit();
-			}
-			break;
-		case 'b':
-			var x = Player.getX();
-			var y = Player.getY()-2;
-			var z = Player.getZ();
-			handler.post(new Runnable({run: function() {try {
-				clientMessage(Level.getTile(x, y, z) + ':' + Level.getData(x, y, z));
-			}catch(err) {
-				sgError(err);
-			}}}));
-			break;
-	}
-}
 
 
+var stage = sgUtils.modPE.stage("Hello, World!");
+print(stage.getName());
+
+loadMcpeAssets();
+var vw = new ImageButton(ctx);
+vw.setImageDrawable(sgAssets.button.ninePatch());
+var wd = new PopupWindow(vw, sg.mp, sg.mp, false);
+uiThread(function() {
+	//wd.showAtLocation(sg.dv, 0, 0, 0);
+})
 
 /*
 thread(function() {try {
