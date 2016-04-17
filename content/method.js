@@ -506,18 +506,18 @@ var sgUtils =  {
 		leaveGameCallbacks: []
 	},
 	//sgUtils.D["progress"] = value;
-	
+
 	C: {//ModPE Callback
 		modTick: function() {
-			
+
 		},
-		
+
 		newLevel: function() {
-			
+
 		},
-		
+
 		leaveGame: function() {
-			
+
 		}
 	}
 }
@@ -2811,29 +2811,29 @@ sgUtils.modPE = {
 			return false;
 		}
 	},
-	
+
 	stage: function(name) {
 		if(!(this instanceof arguments.callee)) {var oNew=Object.create(arguments.callee.prototype);arguments.callee.apply(oNew, arguments);return oNew}
-		
+
 		this.name = name || "Undefined Stage";
 		this.blockFuncPool = [];
 		this.entityFuncPool = [];
 		this.locationFuncPool = [];
 		this.BGM = null;
-		
+
 		this.getName = function() {
 			return this.name;
 		}
-		
+
 		this.setName = function(name) {
 			this.name = name;
 		}
-	
+
 		this.addBlockFunc = function(blockFunc) {
 			if(!(blockFunc instanceof BlockFunc)) throw new TypeError("blockFunc not instance of BlockFunc");
 			this.blockFuncPool.push(blockFunc);
 		}
-	
+
 		this.blockFuncIndexOf = function(name) {
 			for(var e = 0; e < this.blockFuncPool.length; e++) {
 				if(this.blockFuncPool[e].name === name) {
@@ -2842,7 +2842,7 @@ sgUtils.modPE = {
 			}
 			return -1;
 		}
-	
+
 		this.removeBlockFunc = function(name) {
 			var index = this.blockFuncIndexOf(name);
 			if(index < 0) {
@@ -2853,24 +2853,24 @@ sgUtils.modPE = {
 			}
 		}
 	},
-	
+
 	stageManager: function() {
 		if(!sgUtils.D.stageManager) {
 			sgUtils.D.stageManager = function() {
-				
+
 				this.stagePool = [];
 				this.currentStageIndex = null;
-				
+
 				this.toString = function() {
 					return "[object stageManager]";
 				}
-				
+
 				this.addStage = function(stage) {
 					if(!(stage instanceof Stage)) throw new Exception("Parameter stage must instnace of Stage");
 					if(this.indexOf(stage.getName()) > 0) throw new Exception("Already exists stage: " + stage.getName());
 					this.stagePool.push(stage);
 				}
-				
+
 				this.removeStage = function(name) {
 					throw new Exception("DO NOT USE REMOVESTAGE"); //It ruin the system
 					/*
@@ -2880,7 +2880,7 @@ sgUtils.modPE = {
 					this.stagePool.splice(index, 1);
 					*/
 				}
-				
+
 				this.indexOf = function(name) {
 					for(var e = 0; e < this.stagePool.length; e++) {
 						if(this.stagePool[e].getName() === name) {
@@ -2889,21 +2889,21 @@ sgUtils.modPE = {
 						return -1;
 					}
 				}
-				
+
 				this.getStage = function(index) {
 					if(!sgUtils.math.isNumber(index))
 						index = this.indexOf(index);
 					return this.stagePool[index];
 				}
-				
+
 				this.getCurrentStageIndex = function() {
 					return this.currentStageIndex;
 				}
-				
+
 				this.getCurrentStage = function() {
 					return this.stagePool[this.currentStageIndex];
 				}
-				
+
 				this.setStage = function(name, ignoreChangeCallback) {
 					var index = this.indexOf(name);
 					if(index < 0)
@@ -2912,9 +2912,9 @@ sgUtils.modPE = {
 					this.currentStageIndex = index;
 					if(!ignoreChangeCallback) this.getCurrentStage().startCallback();
 				}
-			}	
+			}
 		}
-		
+
 		return sgUtils.D.stageManager;
 	}
 }
@@ -3845,19 +3845,24 @@ function Vector2(x, y) {
 }
 
 Vector2.prototype = {
-	
+
 	toString: function() {
 		return "[Vector2 " + this.x + ":" + this.y + "]";
 	},
-	
+
 	toFloor: function() {
 		this.x = Math.floor(this.x);
 		this.y = Math.floor(this.y);
+    return this;
 	},
-	
+
 	isEqual: function(vec) {
 		return this.x === vec.x && this.y === vec.y;
-	}
+	},
+
+  isValid: function() {
+    return (typeof this.x === "number") && (typeof this.y === "number");
+  }
 }
 
 function Vector3(x, y, z) {
@@ -3867,20 +3872,25 @@ function Vector3(x, y, z) {
 }
 
 Vector3.prototype = {
-	
+
 	toString: function() {
 		return "[Vector3 " + this.x + ":" + this.y + ":" + this.z + "]";
 	},
-	
+
 	toFloor: function() {
 		this.x = Math.floor(this.x);
 		this.y = Math.floor(this.y);
 		this.z = Math.floor(this.z);
+    return this;
 	},
-	
+
 	isEqual: function(vec) {
 		return this.x === vec.x && this.y === vec.y && this.z === vec.z;
-	}
+	},
+
+  isValid: function() {
+    return (typeof this.x === "number") && (typeof this.y === "number") && (typeof this.z === "number");
+  }
 }
 
 function BlockFunc(name, vec, onFocusCallback, offFocusCallback, onTouchCallback, onDestroyCallback) {
@@ -3891,44 +3901,44 @@ function BlockFunc(name, vec, onFocusCallback, offFocusCallback, onTouchCallback
 	this.offFocusCallback = offFocusCallback;
 	this.onTouchCallback = onTouchCallback;
 	this.onDestroyCallback = onDestroyCallback;
-	
+
 	this.focus = false;
 }
 
 BlockFunc.prototype = {
-	
+
 	toString: function() {
 		return "[object BlockFunc(" + this.name + ")]";
 	},
-	
+
 	isEqual: function(vec) {
 		return this.vec.isEqual(vec);
 	},
-	
+
 	onFocus: function(vec) {
 		if(this.onFocusCallback)
 			this.onFocusCallback(this, vec);
 	},
-	
+
 	offFocus: function(vec) {
 		if(this.onFocusCallback)
 			this.offFocusCallback(this, vec);
 	},
-	
+
 	onTouch: function(vec) {
 		if(this.onTouchCallback)
 			this.onTouchCallback(this, vec);
 	},
-	
+
 	onDestroy: function(vec) {
 		if(this.onDestroyCallback)
 			this.onDestroyCallback(this, vec);
 	},
-	
+
 	hasFocus: function() {
 		return this.focus;
 	},
-	
+
 	setFocus: function(focus) {
 		this.focus = focus;
 	}
@@ -3941,44 +3951,44 @@ function EntityFunc(name, uuid, onFocusCallback, offFocusCallback, onAttackedCal
 	this.offFocusCallback = offFocusCallback;
 	this.onAttackedCallback = onAttackedCallback;
 	this.onDestroyCallback = onDestroyCallback;
-	
+
 	this.hasFocus = false;
 }
 
 EntityFunc.prototype = {
-	
+
 	toString: function() {
 		return "[object EntityFunc(" + this.name + ")]";
 	},
-	
+
 	isEqual: function(ent) {
 		return Entity.getUniqId(ent) === this.uuid;
 	},
-	
+
 	onFocus: function(vec) {
 		if(this.onFocusCallback)
 			this.onFocusCallback(this, vec);
 	},
-	
+
 	offFocus: function(vec) {
 		if(this.offFocusCallback)
 			this.offFocusCallback(this, vec);
 	},
-	
+
 	onAttacked: function(vec) {
 		if(this.onAttackedCallback)
 			this.onAttackedCallback(this, vec);
 	},
-	
+
 	onDestroy: function(vec) {
 		if(this.onDestroyCallback)
 			this.onDestroyCallback(this, vec);
 	},
-	
+
 	hasFocus: function() {
 		return this.focus;
 	},
-	
+
 	setFocus: function(focus) {
 		this.focus = focus;
 	}
@@ -4003,16 +4013,16 @@ function LocationFunc(name, trackingType, vec1, vec2, onEnterCallback, onLeaveCa
 	this.onLeaveCallback = onLeaveCallback;
 	this.inAreaTickCallback = inAreaTickCallback;
 	this.outAreaTickCallback = outAreaTickCallback;
-	
+
 	this.focus = false;
 }
 
 LocationFunc.prototype = {
-	
+
 	toString: function() {
 		return "[object LocationFunc(" + this.name + ")]";
 	},
-	
+
 	isTracking: function(ent) {
 		if(Player.isPlayer(ent)) {
 			return this.trackingType % 2 === 1; //Player
@@ -4027,36 +4037,36 @@ LocationFunc.prototype = {
 			return this.trackingType >> 3 % 2 === 1; //etc
 		}
 	},
-	
+
 	isInArea: function(ent) {
 		var vec = new Vector3(Entity.getX(ent), Entity.getY(ent), Entity.getZ(ent));
 		return vec.x >= this.minVec.x && vec.x <= this.maxVec.x && vec.y >= this.minVec.y && vec.y <= this.maxVec.y && vec.z >= this.minVec.z && vec.z <= this.maxVec.z;
 	},
-	
+
 	onEnter: function(ent) {
 		if(this.onEnterCallback)
 			this.onEnterCallback(this, ent);
 	},
-	
+
 	onLeave: function(ent) {
 		if(this.onLeaveCallback)
 			this.onLeaveCallback(this, ent);
 	},
-	
+
 	inAreaTick: function(ent) {
 		if(this.inAreaTickCallback)
 			this.inAreaTickCallback(this, ent);
 	},
-	
+
 	outAreaTick: function(ent) {
 		if(this.outAreaTickCallback)
 			this.outAreaTickCallback(this, ent);
 	},
-	
+
 	hasFocus: function() {
 		return this.focus;
 	},
-	
+
 	setFocus: function(focus) {
 		this.focus = focus;
 	}
@@ -4074,35 +4084,35 @@ function BlockGroup(ary) {
 }
 
 BlockGroup.prototype = {
-	
+
 	toString: function() {
 		return "[object BlockGroup]";
 	},
-	
+
 	addBlock: function(block) {
 		if(!(block instanceof Block)) {
 			throw new TypeError("block parameter must instance of Block");
 		}
-		
+
 		this.blocks.push(block);
 	},
-	
+
 	addBlocks: function(ary) {
 		this.blocks = this.blocks.concat(ary);
 	},
-	
+
 	size: function() {
 		return this.blocks.length;
 	},
-	
+
 	getProgress: function() {
 		return this.progress;
 	},
-	
+
 	hasNextElement: function() {
 		return this.size() > this.progress;
 	},
-	
+
 	getNextElement: function() {
 		return this.block[this.progress++];
 	}
