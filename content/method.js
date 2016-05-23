@@ -15,6 +15,7 @@
  */
 
 const NAME = "Method";
+const NAME_SHORT = "Method";
 const NAME_CODE = "method";
 const VERSION = "0.0.1";
 const VERSION_CODE = 1;
@@ -432,8 +433,6 @@ function thread(fc) {
  * SemteulGaram Utils
  *
  * sgUtils
- * ㄴ P
- *   ㄴ isSet
  * ㄴ io
  *   ㄴ copyFile √
  *   ㄴ setTexture √
@@ -500,37 +499,12 @@ var sgUtils =  {
 		return "[object sgUtils]";
 	},
 
-	D: {//Pointer storage
-		modTickCallbacks: [],
-		newLevelCallbacks: [],
-		leaveGameCallbacks: []
-	},
+	D: {},
+  //Pointer storage
 	//sgUtils.D["progress"] = value;
 
-	C: {//ModPE Callback
-		modTick: function() {
-
-		},
-
-		newLevel: function() {
-
-		},
-
-		leaveGame: function() {
-
-		}
-	}
-}
-
-sgUtils.P = {
-
-	toString: function() {
-		return "[object sgUtils - P]";
-	},
-
-	isSet: function(var1) {
-		return var1 !== null && var1 !== undefined;
-	}
+	C: {}
+  //MCPE callback (Not use)
 }
 
 sgUtils.io = {
@@ -3760,50 +3734,50 @@ sgUtils.openGL = {
 			return this.vertices;
 		}
 
-   this.getIndices = function() {
-   	if(!this.ready) {
+		this.getIndices = function() {
+		 	if(!this.ready) {
 				this.build();
 			}
 			return this.indeces;
    }
 
-   this.getColors = function() {
-   	if(!this.ready) {
+   	this.getColors = function() {
+   		if(!this.ready) {
 				this.build();
 			}
 			return this.colors;
-   }
-
-   this.geyIndicesLength = function() {
-   	if(!this.ready) {
-   		this.build();
    	}
-   	return this.idcAry.length;
-   }
 
-   this.build = function() {
-   	var vtx = [];
-   	var idc = [];
-   	var clr = [];
-   	for(var e = 0; e < this.blocks.length; e++) {
-   		var bl = this.blocks[e];
-   		switch(bl[0]) {
-   			case 0:
-   			vtx.concat(bl[1]);
-   			idc.concat(bl[2]);
-   			clr.concat(bl[3]);
-   			break;
-   			default: throw new Error("Unknown sgUtils.openGL.area.build - type (index: " + e + ")");
+   	this.geyIndicesLength = function() {
+   		if(!this.ready) {
+   			this.build();
    		}
+   		return this.idcAry.length;
    	}
-   	this.vtxAry = vtx;
-   	this.idcAry = idc;
-   	this.clrAry = clr;
-   	this.vertexs = sgUtils.openGL.getFloatBuffer(vtx);
-   	this.indices = sgUtils.openGL.getByteBuffer(idc);
-   	this.colors = sgUtils.openGL.getFloatBuffer(clr);
-   	this.ready = true;
-   }
+
+   	this.build = function() {
+   		var vtx = [];
+   		var idc = [];
+   		var clr = [];
+   		for(var e = 0; e < this.blocks.length; e++) {
+   			var bl = this.blocks[e];
+   			switch(bl[0]) {
+   				case 0:
+   				vtx.concat(bl[1]);
+   				idc.concat(bl[2]);
+   				clr.concat(bl[3]);
+   				break;
+   				default: throw new Error("Unknown sgUtils.openGL.area.build - type (index: " + e + ")");
+   			}
+   		}
+   		this.vtxAry = vtx;
+   		this.idcAry = idc;
+   		this.clrAry = clr;
+   		this.vertexs = sgUtils.openGL.getFloatBuffer(vtx);
+   		this.indices = sgUtils.openGL.getByteBuffer(idc);
+   		this.colors = sgUtils.openGL.getFloatBuffer(clr);
+   		this.ready = true;
+   	}
 
 		this.ready = false;
 		this.blocks = [];
@@ -4074,47 +4048,378 @@ LocationFunc.prototype = {
 
 
 
-function BlockGroup(ary) {
-	this.progress = 0;
-	if(ary instanceof Array) {
-		this.blocks = ary;
-	}else {
-		this.blocks = [];
+/**
+ * BlockArea
+ *
+ * @author CodeInside
+ * @since 2015-10-12
+ */
+function BlokArea(xSize, ySize, zSize, piece) {
+	this.xs = xSize;
+	this.ys = ySize;
+	this.zs = zSize;
+	this.piece = piece;
+	if((xSize*ySize*zSize) != piece.length) {
+		throw new Error("warning not match size (Native)" + (xSize*ySize*zSize) + "!= (Array length)" + piece.length);
 	}
 }
 
-BlockGroup.prototype = {
+BlockArea.prototype = {
 
-	toString: function() {
-		return "[object BlockGroup]";
+	toStrng: function() {
+		return "[BlockArea " + xSize + ":" + ySize + ":" + zSize + "]";
 	},
 
-	addBlock: function(block) {
-		if(!(block instanceof Block)) {
-			throw new TypeError("block parameter must instance of Block");
-		}
-
-		this.blocks.push(block);
+	getSizeX: function() {
+		return this.xs
 	},
 
-	addBlocks: function(ary) {
-		this.blocks = this.blocks.concat(ary);
+	getSizeY: function() {
+		return this.ys
 	},
 
-	size: function() {
-		return this.blocks.length;
+	getSizeZ: function() {
+		return this.zs
+	},
+
+	getTotal: function() {
+		return this.total;
 	},
 
 	getProgress: function() {
 		return this.progress;
+	}
+
+	getBlock: function(x, y, z) {
+		var index = (z*this.ys*this.xs) + (y*this.xs) + x;
+		if(index >= this.piece.length) {
+			throw new Error("Null pointer error(Not index: " + index + "/" + this.piece.length);
+		}
+		return this.piece[index];
 	},
 
-	hasNextElement: function() {
-		return this.size() > this.progress;
+	rotation: function(axis, rot, blockRot) {
+		var buffer = [];
+		switch(axis) {
+			case "x":
+
+			if(blockRot) {
+				this.changeableBlockData = main.getChangeableBlockData("RotationX");
+				this.changeableBlockList = [];
+				for(var e = 0; e < this.changeableBlockData.length; e++) {
+					this.changeableBlockList = this.changeableBlockList.concat(this.changeableBlockData[e]);
+				}
+			}
+
+			switch(rot) {
+				case 1:
+				for(var y = this.ys-1; y >= 0; y--) {
+				for(var z = 0; z < this.zs; z++) {
+				for(var x = 0; x < this.xs; x++) {
+					var t = this.getBlock(x, y, z);
+					if(blockRot) {
+						t = this.rotationBlock(rot, t);
+					}
+					buffer.push(t);
+				}
+				}
+				}
+				var temp = this.ys;
+				this.ys = this.zs;
+				this.zs = temp;
+				this.piece = buffer;
+				break;
+
+				case 2:
+				for(var z = this.zs-1; z >= 0; z--) {
+				for(var y = this.ys-1; y >= 0; y--) {
+				for(var x = 0; x < this.xs; x++) {
+					var t = this.getBlock(x, y, z);
+					if(blockRot) {
+						t = this.rotationBlock(rot, t);
+					}
+					buffer.push(t);
+				}
+				}
+				}
+				this.piece = buffer;
+				break;
+
+				case 3:
+				for(var y = 0; y < this.ys; y++) {
+				for(var z = this.zs-1; z >= 0; z--) {
+				for(var x = 0; x < this.xs; x++) {
+					var t = this.getBlock(x, y, z);
+					if(blockRot) {
+						t = this.rotationBlock(rot, t);
+					}
+					buffer.push(t);
+				}
+				}
+				}
+				var temp = this.ys;
+				this.ys = this.zs;
+				this.zs = temp;
+				this.piece = buffer;
+				break;
+
+				default:
+				throw new Error("Unknown rotation type: " + rot);
+			}
+			break;
+
+			case "y":
+
+			if(blockRot) {
+				this.changeableBlockData = main.getChangeableBlockData("RotationY");
+				this.changeableBlockList = [];
+				for(var e = 0; e < this.changeableBlockData.length; e++) {
+					this.changeableBlockList = this.changeableBlockList.concat(this.changeableBlockData[e]);
+				}
+			}
+
+			switch(rot) {
+				case 1:
+				for(var x = 0; x < this.xs; x++) {
+				for(var y = 0; y < this.ys; y++) {
+				for(var z = this.zs-1; z >= 0; z--) {
+					var t = this.getBlock(x, y, z);
+					if(blockRot) {
+						t = this.rotationBlock(rot, t);
+					}
+					buffer.push(t);
+				}
+				}
+				}
+				var temp = this.xs;
+				this.xs = this.zs;
+				this.zs = temp;
+				this.piece = buffer;
+				break;
+
+				case 2:
+				for(var z = this.zs-1; z >= 0; z--) {
+				for(var y = 0; y < this.ys; y++) {
+				for(var x = this.xs-1; x >= 0; x--) {
+					var t = this.getBlock(x, y, z);
+					if(blockRot) {
+						t = this.rotationBlock(rot, t);
+					}
+					buffer.push(t);
+				}
+				}
+				}
+				this.piece = buffer;
+				break;
+
+				case 3:
+				for(var x = this.xs-1; x >= 0; x--) {
+				for(var y = 0; y < this.ys; y++) {
+				for(var z = 0; z < this.zs; z++) {
+					var t = this.getBlock(x, y, z);
+					if(blockRot) {
+						t = this.rotationBlock(rot, t);
+					}
+					buffer.push(t);
+				}
+				}
+				}
+				var temp = this.xs;
+				this.xs = this.zs;
+				this.zs = temp;
+				this.piece = buffer;
+				break;
+
+				default:
+				throw new Error("Unknown rotation type: " + rot);
+			}
+			break;
+
+			case "z":
+
+			if(blockRot) {
+				this.changeableBlockData = main.getChangeableBlockData("RotationZ");
+				this.changeableBlockList = [];
+				for(var e = 0; e < this.changeableBlockData.length; e++) {
+					this.changeableBlockList = this.changeableBlockList.concat(this.changeableBlockData[e]);
+				}
+			}
+
+			switch(rot) {
+				case 1:
+				for(var z = 0; z < this.zs; z++) {
+				for(var x = 0; x < this.xs; x++) {
+				for(var y = this.ys-1; y >= 0; y--) {
+					var t = this.getBlock(x, y, z);
+					if(blockRot) {
+						t = this.rotationBlock(rot, t);
+					}
+					buffer.push(t);
+				}
+				}
+				}
+				var temp = this.xs;
+				this.xs = this.ys;
+				this.ys = temp;
+				this.piece = buffer;
+				break;
+
+				case 2:
+				for(var z = 0; z < this.zs; z++) {
+				for(var y = this.ys-1; y >= 0; y--) {
+				for(var x = this.xs-1; x >= 0; x--) {
+					var t = this.getBlock(x, y, z);
+					if(blockRot) {
+						t = this.rotationBlock(rot, t);
+					}
+					buffer.push(t);
+				}
+				}
+				}
+				this.piece = buffer;
+				break;
+
+				case 3:
+				for(var z = 0; z < this.zs; z++) {
+				for(var x = this.xs-1; x >= 0; x--) {
+				for(var y = 0; y < this.ys; y++) {
+					var t = this.getBlock(x, y, z);
+					if(blockRot) {
+						t = this.rotationBlock(rot, t);
+					}
+					buffer.push(t);
+				}
+				}
+				}
+				var temp = this.xs;
+				this.xs = this.ys;
+				this.ys = temp;
+				this.piece = buffer;
+				break;
+
+				default:
+				throw new Error("Unknown rotation type: " + rot);
+			}
+			break;
+
+			default:
+			throw new Error("Axis must be instance of 'x', 'y', 'z' input: " + axis);
+		}
 	},
 
-	getNextElement: function() {
-		return this.block[this.progress++];
+	flip: function(axis, blockRot) {
+		var buffer = [];
+		switch(axis) {
+			case "x":
+
+			if(blockRot) {
+				this.changeableBlockData = main.getChangeableBlockData("FlipX");
+				this.changeableBlockList = [];
+				for(var e = 0; e < this.changeableBlockData.length; e++) {
+					this.changeableBlockList = this.changeableBlockList.concat(this.changeableBlockData[e]);
+				}
+			}
+
+			for(var z = 0; z < this.zs; z++) {
+			for(var y = 0; y < this.ys; y++) {
+			for(var x = this.xs-1; x >= 0; x--) {
+				var t = this.getBlock(x, y, z);
+				if(blockRot) {
+					t = this.flipBlock(t);
+				}
+				buffer.push(t);
+			}
+			}
+			}
+			this.piece = buffer;
+			break;
+
+			case "y":
+
+			if(blockRot) {
+				this.changeableBlockData = main.getChangeableBlockData("FlipY");
+				this.changeableBlockList = [];
+				for(var e = 0; e < this.changeableBlockData.length; e++) {
+					this.changeableBlockList = this.changeableBlockList.concat(this.changeableBlockData[e]);
+				}
+			}
+
+			for(var z = 0; z < this.zs; z++) {
+			for(var y = this.ys-1; y >= 0; y--) {
+			for(var x = 0; x < this.xs; x++) {
+				var t = this.getBlock(x, y, z);
+				if(blockRot) {
+					t = this.flipBlock(t);
+				}
+				buffer.push(t);
+			}
+			}
+			}
+			this.piece = buffer;
+			break;
+
+			case "z":
+
+			if(blockRot) {
+				this.changeableBlockData = main.getChangeableBlockData("FlipZ");
+				this.changeableBlockList = [];
+				for(var e = 0; e < this.changeableBlockData.length; e++) {
+					this.changeableBlockList = this.changeableBlockList.concat(this.changeableBlockData[e]);
+				}
+			}
+
+			for(var z = this.zs-1; z >= 0; z--) {
+			for(var y = 0; y < this.ys; y++) {
+			for(var x = 0; x < this.xs; x++) {
+				var t = this.getBlock(x, y, z);
+				if(blockRot) {
+					t = this.flipBlock(t);
+				}
+				buffer.push(t);
+			}
+			}
+			}
+			this.piece = buffer;
+			break;
+
+			default:
+			throw new Error("ERROR AXIS MUST BE INSTANCE OF 'x', 'y', 'z'");
+		}
+	},
+
+	rotationBlock: function(rot, block) {
+
+		var index;
+
+		if((index = this.changeableBlockList.indexOf(block.getHashCode())) === -1) {
+			return block;
+		}
+		var index1 = index >> 2;
+		var index2 = index % 4;
+		var hash = this.changeableBlockData[index1][(index2 + rot) % 4];
+
+		if(!hash) {
+			return block;
+		}else {
+			return BlockInstance(hash);
+		}
+	},
+
+	flipBlock: function(block) {
+		var index;
+
+		if((index = this.changeableBlockList.indexOf(block.getHashCode())) === -1) {
+			return block;
+		}
+		var index1 = index >> 1;
+		var index2 = index % 2;
+		var hash = this.changeableBlockData[index1][(index2 + 1) % 2];
+
+		if(!hash) {
+			return block;
+		}else {
+			return BlockInstance(hash);
+		}
 	}
 }
 
