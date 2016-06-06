@@ -61,6 +61,7 @@ var MotionEvent = android.view.MotionEvent;
 var Gravity = android.view.Gravity;
 var SurfaceView = android.view.SurfaceView;
 var SurfaceHolder = android.view.SurfaceHolder;
+var aAnimation = android.view.animation;
 var TypedValue = android.util.TypedValue;
 
 var Drawable = android.graphics.drawable;
@@ -121,6 +122,7 @@ sg.wh = ctx.getScreenHeight();//ctx.getWindowManager().getDefaultDisplay().getHe
 sg.dv = ctx.getWindow().getDecorView();
 sg.px = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 1, ctx.getResources().getDisplayMetrics());
 sg.ct = System.currentTimeMillis;
+var px = sg.px;
 
 
 
@@ -418,11 +420,11 @@ var sgUtils =  {
 	},
 
 	D: {},
-  //Pointer storage
+	//Pointer storage
 	//sgUtils.D["progress"] = value;
 
 	C: {}
-  //MCPE callback (Not use)
+	//MCPE callback (Not use)
 }
 
 sgUtils.io = {
@@ -626,7 +628,7 @@ sgUtils.io = {
 	 *
 	 * @param {(File|String|InputStream)} file
 	 * @param {Object} obj
- 	 * @param {boolean} mkDir
+	 * @param {boolean} mkDir
 	 * @return {boolean} success
 	 */
 	saveJSON: function(file, obj, mkDir) {
@@ -993,6 +995,9 @@ sgUtils.io = {
 }
 
 
+
+//Script auto load 2 code
+
 const SCRIPT_DATA_TYPE = {
 		READY_SAVE: 0,
 		READY_RUN: 1
@@ -1009,14 +1014,18 @@ const DEFAULT_SETTING = {
 	type: "ModPE-SAL2",
 	version: VERSION_CODE,
 	autoload_enable: true,
-	script_list: [] // Type: {path, autoload}
+	dismiss_button_when_enter_game: true,
+	script_list: [], // Type: {path, autoload}
+	main_button_top_margins: 20,
+	main_button_horizontal_loc: 0,
+	main_menu_loc: 0
 }
 
 var settingData;
 var scriptList; //Type: {id, path, autoload, state}
 
 function main() { //Start point of Script
-  this.setting = new Setting(sgUtils.setting);
+	this.setting = new Setting(sgUtils.setting);
 	try {
 		this.scriptManager = new ScriptManager(this.setting.get("script_list"));
 	}catch(e) {
@@ -1133,6 +1142,8 @@ function Setting(settingFile) {
 	this.load();
 }
 
+
+
 Setting.prototype = {
 
 	get: function(article) {
@@ -1161,5 +1172,144 @@ Setting.prototype = {
 	  this.file.delete();
 	  this.file.createNewFile();
 	  sgUtils.io.saveJSON(this.file, DEFAULT_SETTING);
+	}
+}
+
+
+
+function SAL_Layout(scriptManager) {
+	this.layoutRoot = this;
+	this.sm = scriptManager;
+	this.mainButton = null;
+	this.mainMenu = null;
+}
+
+SAL_Layout.prototype = {
+
+	toString: function() {
+		return "[object SAL_Layout]";
+	},
+
+	mainButton: {
+		build: function() {
+			//Load button location
+			this.topMargins = main.setting.get("main_button_top_margins");
+			this.horizontalLoc = main.setting.get("main_button_horizontal_loc") == 0;
+
+			//Setting layout
+			this.rootLayout = new RelativeLayout(ctx);
+
+			this.button = new ImageButton(ctx);
+			this.button.setPadding(0, 0, 0, 0);
+			this.button.setBackgroundColor(Color.RED);
+			//this.button.setBackground(); //Background Drawable
+			this.button.setLayoutParams(new sg.rlp(px*20, px*80));
+			this.button.setGravity(Gravity.CENTER);
+
+			this.button.setOnClickListener(new View.OnClickListener({
+				onClick: function(view) {
+					layoutRoot.mainMenu.toggle();
+				}
+			}));
+
+			this.window = new PopupWindow(this.rootLayout, px*20, px*80);
+			this.aniRun = false;
+		},
+
+		show: function(visible) {
+			if(!this.window) this.build();
+			var that = this;
+
+			uiThread(function() {try {
+				if(visible && !that.window.isShowing()) {
+					that.window.showAtLocation(sg.dv, Gravity.LEFT|Gravity.TOP,
+						that.leftMargins, that.horizontalLoc ? 0, sg.ww - px*20);
+				}else if(!visible && that.window.isShowing()) {
+					that.window.dismiss();
+				}
+			}catch(e) {
+				sgError(e);
+			}});
+		},
+
+		toggle: function() {
+			if(this.window === undefined || !this.window.isShowing()) this.show(true)
+			else this.show(false);
+		}
+	},
+
+	mainMenu: {
+		build: function() {
+			//Fullscreen method
+			ctx.getWindow().addFlags(
+                android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN |
+								andriod.view.WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN);
+			sg.dv.setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+              | View.SYSTEM_UI_FLAG_FULLSCREEN);
+
+			this.menuLoc = main.setting.get("main_menu_loc") == 0;
+
+			this.rootLayout = new LinearLayout(ctx);
+
+			this.titleLayout = new RelativeLayout(ctx);
+			this.menuLayout = new LinearLayout(ctx);
+
+			this.window = new PopupWindow();
+
+			this.aniRun = false;
+
+			//Build animation
+			if(this.menuLoc) {
+				this.startAni = new aAnimation.TranslateAnimation(
+					aAnimation.Animation.RELATIVE_TO_SELF, -1,
+					aAnimation.Animation.RELATIVE_TO_SELF, 0,
+					aAnimation.Animation.RELATIVE_TO_SELF, 0,
+					aAnimation.Animation.RELATIVE_TO_SELF, 0);
+				this.startAni.setDuration(300);
+				this.startAni.setFillBefore(true);
+				this.startAni.setAnimationListener(new aAnimation.Animation.AnimationListener() {
+					onAnimationStart: function(ani) {
+						aniRun = true;
+					},
+
+					onAnimationEnd: function(ani) {
+						aniRun = false;
+					}
+				});
+			}else {
+
+			}
+
+		},
+
+		show: function(visible) {
+			if(this.aniRun) return;
+			if(!this.window) this.build();
+			var that = this;
+
+			uiThread(function() {try {
+				if(visible && !that.window.isShowing()) {
+					//Show and animate
+					that.window.showAtLocation(sg.dv, Gravity.LEFT|Gravity.TOP,
+						that.leftMargins, that.horizontalLoc ? 0, sg.ww - px*100);
+					that.rootLayout.startAnimation(that.startAni);
+				}else if(!visible && that.window.isShowing()) {
+					//Remove window after animate
+					that.rootLayout.startAnimation(that.endAni);
+					new Handler().postDelayed(new Runnable({
+						run: function() {
+							that.window.dismiss();
+						}
+					}), 300);
+				}
+			}catch(e) {
+				sgError(e);
+			}});
+		},
+
+		toggle: function() {
+			if(this.window === undefined || !this.window.isShowing()) this.show(true)
+			else this.show(false);
+		}
 	}
 }

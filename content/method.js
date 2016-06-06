@@ -79,6 +79,7 @@ var MotionEvent = android.view.MotionEvent;
 var Gravity = android.view.Gravity;
 var SurfaceView = android.view.SurfaceView;
 var SurfaceHolder = android.view.SurfaceHolder;
+var aAnimation = android.view.animation;
 var TypedValue = android.util.TypedValue;
 
 var Drawable = android.graphics.drawable;
@@ -139,6 +140,7 @@ sg.wh = ctx.getScreenHeight();//ctx.getWindowManager().getDefaultDisplay().getHe
 sg.dv = ctx.getWindow().getDecorView();
 sg.px = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 1, ctx.getResources().getDisplayMetrics());
 sg.ct = System.currentTimeMillis;
+var px = sg.px;
 
 
 
